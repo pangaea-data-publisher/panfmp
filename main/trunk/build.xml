@@ -1,0 +1,64 @@
+<project name="panFMP" default="dist" basedir=".">
+
+	<!-- PROPERTIES -->
+	<property name="src" location="src"/>
+	<property name="build" location="build"/>
+	<property name="dist" location="dist"/>
+	<property name="docs" location="apidocs"/>
+	<property name="libs" location="libs"/>
+	
+	<property name="version" value="0.1"/>
+	<property name="versionsuffix" value="-${version}"/>
+
+	<!-- GLOBALS -->
+	<target name="init">
+	</target>
+		
+	<!-- BUILD TARGETS -->
+  	<path id="classpath">
+		<fileset dir="${libs}">
+			<include name="**/*.jar"/>
+		</fileset>
+	</path>
+	
+	<target name="compile" depends="init">
+		<mkdir dir="${build}"/>
+		<javac srcdir="${src}" destdir="${build}" source="1.5" target="1.5">
+			<classpath refid="classpath"/>
+		</javac>
+	</target>
+	
+	<target name="dist" depends="compile">
+		<mkdir dir="${dist}"/>
+		<jar destfile="${dist}/metadataportal${versionsuffix}.jar" basedir="${build}"/>
+	</target>
+	
+	<!-- JAVADOCS TARGET -->
+	<target name="javadocs" depends="init">
+		<javadoc sourcepath="${src}" destdir="${docs}" source="1.5">
+			<classpath refid="classpath"/>
+		</javadoc>
+	</target>	
+	
+	<!-- PACKAGING -->
+	<target name="package" depends="dist,javadocs">
+		<zip destfile="${basedir}/${ant.project.name}${versionsuffix}.zip">
+			<zipfileset dir="${libs}/axis" prefix="libs/axis"/>
+			<zipfileset dir="${libs}/core" prefix="libs/core"/>
+			<zipfileset dir="${dist}" prefix="libs/core"/>
+			<zipfileset dir="${libs}/optional" prefix="libs/optional"/>
+			<zipfileset dir="${basedir}/scripts" prefix="scripts"/>
+			<zipfileset dir="${basedir}/webapp-template" prefix="webapp-template"/>
+			<zipfileset dir="${docs}" prefix="javadocs"/>
+		</zip>
+	</target>	
+	
+	<!-- CLEANUP TARGET -->
+	<target name="clean">
+		<delete dir="${build}"/>
+		<delete dir="${dist}"/>
+		<delete dir="${docs}"/>
+		<delete file="${basedir}/${ant.project.name}${versionsuffix}.zip"/>
+	</target>
+	
+</project>
