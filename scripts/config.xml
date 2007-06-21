@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+<config xmlns="urn:java:de.pangaea.metadataportal.config.Config" xmlns:cfg="urn:java:de.pangaea.metadataportal.config.Config">
+	<metadata>
+		<fields xmlns:dif="http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/">
+			<field name="citation" datatype="tokenizedText" lucenestorage="false" luceneindexed="true">/dif:DIF/dif:Data_Set_Citation|/dif:DIF/dif:Entry_Title|/dif:DIF/dif:Entry_ID</field>
+			<field name="investigator" datatype="tokenizedText" lucenestorage="false" luceneindexed="true">/dif:DIF/dif:Personnel[contains(dif:Role,'nvestigat')]</field>
+			<field name="parameter" datatype="tokenizedText" lucenestorage="false" luceneindexed="true">/dif:DIF/dif:Parameters</field>
+			<field name="method" datatype="tokenizedText" lucenestorage="false" luceneindexed="true">/dif:DIF/dif:Sensor_Name</field>
+			<field name="project" datatype="tokenizedText" lucenestorage="false" luceneindexed="true">/dif:DIF/dif:Project</field>
+			<field name="projectFull" datatype="string" lucenestorage="true" luceneindexed="true">/dif:DIF/dif:Project/dif:Short_Name</field>
+			<field name="minLatitude" datatype="number" lucenestorage="true" luceneindexed="true">/dif:DIF/dif:Spatial_Coverage/dif:Southernmost_Latitude</field>
+			<field name="maxLatitude" datatype="number" lucenestorage="true" luceneindexed="true">/dif:DIF/dif:Spatial_Coverage/dif:Northernmost_Latitude</field>
+			<field name="minLongitude" datatype="number" lucenestorage="true" luceneindexed="true">/dif:DIF/dif:Spatial_Coverage/dif:Westernmost_Longitude</field>
+			<field name="maxLongitude" datatype="number" lucenestorage="true" luceneindexed="true">/dif:DIF/dif:Spatial_Coverage/dif:Easternmost_Longitude</field>
+			<field name="minDateTime" datatype="dateTime" lucenestorage="true" luceneindexed="true" default="1900-01-01T00:00:00">/dif:DIF/dif:Temporal_Coverage/dif:Start_Date</field>
+			<field name="maxDateTime" datatype="dateTime" lucenestorage="true" luceneindexed="true" default="2038-12-31T23:59:59">/dif:DIF/dif:Temporal_Coverage/dif:Stop_Date</field>
+			<field name="minMonth" datatype="number" lucenestorage="true" luceneindexed="true">substring-before(substring-after(/dif:DIF/dif:Temporal_Coverage/dif:Start_Date,'-'),'-')</field>
+			<field name="maxMonth" datatype="number" lucenestorage="true" luceneindexed="true">substring-before(substring-after(/dif:DIF/dif:Temporal_Coverage/dif:Stop_Date,'-'),'-')</field>
+			<field name="dataCenter" datatype="tokenizedText" lucenestorage="false" luceneindexed="true">/dif:DIF/dif:Data_Center/dif:Data_Center_Name</field>
+			<field name="dataCenterFull" datatype="string" lucenestorage="true" luceneindexed="true">/dif:DIF/dif:Data_Center/dif:Data_Center_Name/dif:Short_Name</field>
+			<default>.</default>
+		</fields>
+		<schema>
+			<url>http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/dif_v9.4.xsd</url>
+			<haltOnError>false</haltOnError>
+		</schema>
+    </metadata>
+    <analyzer>
+        <class>org.apache.lucene.analysis.standard.StandardAnalyzer</class>
+        <importEnglishStopWords/>
+        <addStopWords>
+            latitude,longitude,elevation,depth,source,e-mail,north,south,east,west, 
+            area,location,geocode,method,parameter
+        </addStopWords>
+    </analyzer>
+    <indices>
+        <index id="pangaea-carboocean">
+            <displayName>PANGAEA datasets for CARBOOCEAN</displayName>
+            <indexDir>./lucene-store/pangaea-carboocean</indexDir>
+            <autoOptimize>true</autoOptimize>
+            <validate>false</validate>
+            <harvesterClass>de.pangaea.metadataportal.harvester.OAIHarvester</harvesterClass>
+            <harvesterProperties>
+                <baseUrl>http://ws.pangaea.de/oai/</baseUrl>
+                <metadataPrefix>dif</metadataPrefix>
+                <setSpec>CARBOOCEAN</setSpec>
+            </harvesterProperties>
+        </index>
+        <index id="pangaea-georeport">
+            <displayName>PANGAEA datasets for GeoReport</displayName>
+            <indexDir>./lucene-store/pangaea-georeport</indexDir>
+            <autoOptimize>true</autoOptimize>
+            <validate>false</validate>
+            <harvesterClass>de.pangaea.metadataportal.harvester.OAIHarvester</harvesterClass>
+            <harvesterProperties>
+                <baseUrl>http://ws.pangaea.de/oai/</baseUrl>
+                <metadataPrefix>dif</metadataPrefix>
+                <setSpec>GeoReport</setSpec>
+            </harvesterProperties>
+        </index>
+        <!--<index id="pangaea-depth-water">
+            <displayName>PANGAEA datasets</displayName>
+            <indexDir>./lucene-store/pangaea-depth-water</indexDir>
+            <autoOptimize>false</autoOptimize>
+            <validate>false</validate>
+            <harvesterClass>de.pangaea.metadataportal.harvester.OAIHarvester</harvesterClass>
+            <harvesterProperties>
+                <baseUrl>http://ws.pangaea.de/oai/</baseUrl>
+                <metadataPrefix>dif</metadataPrefix>
+                <setSpec>geocode1619</setSpec>
+            </harvesterProperties>
+        </index>-->
+        <index id="ifremer">
+            <displayName>IFREMER datasets</displayName>
+            <indexDir>./lucene-store/ifremer</indexDir>
+            <autoOptimize>true</autoOptimize>
+            <validate>true</validate>
+            <harvesterClass>de.pangaea.metadataportal.harvester.OAIHarvester</harvesterClass>
+            <harvesterProperties>
+                <baseUrl>http://www.ifremer.fr/oai/provider</baseUrl>
+                <metadataPrefix>dif</metadataPrefix>
+            </harvesterProperties>
+            <!--<transform>
+                <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="./ns-convert.xslt"/>
+            </transform>-->
+        </index>
+        <index id="cdiac">
+            <displayName>CDIAC datasets</displayName>
+            <indexDir>./lucene-store/cdiac</indexDir>
+            <autoOptimize>true</autoOptimize>
+            <validate>false</validate>
+            <harvesterClass>de.pangaea.metadataportal.harvester.DirectoryHarvester</harvesterClass>
+            <harvesterProperties>
+                <directory>./xml/cdiac</directory>
+                <recursive>true</recursive>
+                <filenameFilter>.*\.xml</filenameFilter>
+            </harvesterProperties>
+            <transform>
+                <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="./cdiac-fgdc.xslt"/>
+            </transform>
+        </index>
+        <virtualIndex id="dataportal-carboocean">
+            <displayName>CARBOOCEAN Dataportal</displayName>
+            <threaded>true</threaded>
+            <index ref="pangaea-carboocean"/>
+            <index ref="cdiac"/>
+            <index ref="ifremer"/>
+        </virtualIndex>
+        <!--<virtualIndex id="dataportal-euroceans">
+            <displayName>EUR-OCEANS Dataportal</displayName>
+            <threaded>true</threaded>
+            <index ref="pangaea-depth-water"/>
+            <index ref="cdiac"/>
+            <index ref="ifremer"/>
+        </virtualIndex>-->
+    </indices>
+    <search>
+        <returnXML>true</returnXML>
+        <returnStoredFields>true</returnStoredFields>
+        <cacheMaxAge>300</cacheMaxAge>
+        <cacheMaxSessions>10</cacheMaxSessions>
+        <reloadIndexIfChangedAfter>60</reloadIndexIfChangedAfter>
+    </search>
+</config>
