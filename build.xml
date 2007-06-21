@@ -7,7 +7,7 @@
 	<property name="docs" location="apidocs"/>
 	<property name="libs" location="libs"/>
 	
-	<property name="version" value="0.1"/>
+	<property name="version" value="0.0-dev"/>
 	<property name="versionsuffix" value="-${version}"/>
 
 	<!-- GLOBALS -->
