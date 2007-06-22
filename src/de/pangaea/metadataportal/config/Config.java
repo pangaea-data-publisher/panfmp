@@ -39,6 +39,7 @@ public class Config {
         this.configMode=configMode;
         setAnalyzerClass(org.apache.lucene.analysis.standard.StandardAnalyzer.class);
         org.apache.lucene.search.BooleanQuery.setMaxClauseCount(DEFAULT_MAX_CLAUSE_COUNT);
+        org.apache.lucene.search.BooleanQuery.setAllowDocsOutOfOrder(true);
         try {
             dig=new ExtendedDigester(StaticFactories.xinclSaxFactory.newSAXParser());
             dig.setLogger(log.isDebugEnabled()?log:new org.apache.commons.logging.impl.NoOpLog());
