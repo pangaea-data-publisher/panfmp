@@ -90,7 +90,7 @@ public class LuceneSession {
                 else if (r.max instanceof java.util.Date) maxStr=LuceneConversions.dateToLucene((java.util.Date)r.max);
                 else throw new IllegalArgumentException("Invalid datatype for range query!"); // should not occur
             }
-            q.add(new AdvRangeQuery(r.fieldName,minStr,maxStr),BooleanClause.Occur.MUST);
+            q.add(new TrieRangeQuery(r.fieldName,minStr,maxStr),BooleanClause.Occur.MUST);
             ok=true;
         }
 
