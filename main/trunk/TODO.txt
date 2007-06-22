@@ -1,0 +1,11 @@
+Harvester:
+* Configureable IndexBuilder stack size (config.xml and/or real memory usage)
+* Completely rebuilding index from source without deleting old one having readers online (new commit lock-less usage!)
+* Compression on/off for XML stored
+* Lucene extraction of XML/control info directly in MetadataDocument code (no inner class in Rebuilder)
+  to make it possible to use Rebuilder with other MetadataDocument classes (PANGAEA search)
+
+Search:
+* New Search API:
+  - Optional usage of default lucene "Query" classes when requesting search results
+  - split AXIS api from generic API
