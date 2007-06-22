@@ -130,7 +130,7 @@ public class LuceneConversions {
 
     // helpers for searches for shorter lucene converted numeric values
 
-    public static void addSpecialNumericIndexEntries(Document ldoc, String fieldname, String val) {
+    public static void addTrieIndexEntries(Document ldoc, String fieldname, String val) {
         for (int i=7; i>0; i--)
             ldoc.add(new Field(fieldname, new StringBuilder(i*2+1).append((char)(LUCENE_LOOSE_PADDING_START+i)).append(val.substring(0,i*2)).toString(), Field.Store.NO, Field.Index.UN_TOKENIZED));
     }

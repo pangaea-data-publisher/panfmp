@@ -72,7 +72,7 @@ public class MetadataDocument {
             if (datestamp!=null) {
                 String val;
                 ldoc.add(new Field(IndexConstants.FIELDNAME_DATESTAMP, val=LuceneConversions.dateToLucene(datestamp), Field.Store.YES, Field.Index.UN_TOKENIZED));
-                LuceneConversions.addSpecialNumericIndexEntries(ldoc,IndexConstants.FIELDNAME_DATESTAMP,val);
+                LuceneConversions.addTrieIndexEntries(ldoc,IndexConstants.FIELDNAME_DATESTAMP,val);
             }
             for (String set : sets) ldoc.add(new Field(IndexConstants.FIELDNAME_SET, set, Field.Store.YES, Field.Index.UN_TOKENIZED));
             return ldoc;
@@ -184,7 +184,7 @@ public class MetadataDocument {
         if (f.luceneindexed) in=token?Field.Index.TOKENIZED:Field.Index.UN_TOKENIZED;
         ldoc.add(new Field(f.name, val, f.lucenestorage?Field.Store.YES:Field.Store.NO, in));
         if (f.luceneindexed && (f.datatype==Config.DataType.number || f.datatype==Config.DataType.dateTime))
-            LuceneConversions.addSpecialNumericIndexEntries(ldoc,f.name,val);
+            LuceneConversions.addTrieIndexEntries(ldoc,f.name,val);
     }
 
     public boolean deleted=false;

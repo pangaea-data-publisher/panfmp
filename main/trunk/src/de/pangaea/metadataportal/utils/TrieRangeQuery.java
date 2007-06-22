@@ -22,12 +22,12 @@ import java.io.IOException;
 import java.util.BitSet;
 import java.util.Date;
 
-public class AdvRangeQuery extends Query {
+public class TrieRangeQuery extends Query {
 
-    private static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(AdvRangeQuery.class);
+    private static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(TrieRangeQuery.class);
 
     // Generic constructor: uses already converted min/max fields
-    public AdvRangeQuery(String field, String min, String max) {
+    public TrieRangeQuery(String field, String min, String max) {
         if (min==null && max==null) throw new IllegalArgumentException("The min and max values cannot be both null.");
         this.min=(min==null) ? LuceneConversions.LUCENE_NUMERIC_MIN : min;
         this.max=(max==null) ? LuceneConversions.LUCENE_NUMERIC_MAX : max;
@@ -35,21 +35,21 @@ public class AdvRangeQuery extends Query {
     }
 
     // Constructors for different numeric datatypes
-    public AdvRangeQuery(String field, Double min, Double max) {
+    public TrieRangeQuery(String field, Double min, Double max) {
         if (min==null && max==null) throw new IllegalArgumentException("The min and max double values cannot be both null.");
         this.min=(min==null) ? LuceneConversions.LUCENE_NUMERIC_MIN : LuceneConversions.doubleToLucene(min.doubleValue());
         this.max=(max==null) ? LuceneConversions.LUCENE_NUMERIC_MAX : LuceneConversions.doubleToLucene(max.doubleValue());
         this.field=field.intern();
     }
 
-    public AdvRangeQuery(String field, Date min, Date max) {
+    public TrieRangeQuery(String field, Date min, Date max) {
         if (min==null && max==null) throw new IllegalArgumentException("The min and max date values cannot be both null.");
         this.min=(min==null) ? LuceneConversions.LUCENE_NUMERIC_MIN : LuceneConversions.dateToLucene(min);
         this.max=(max==null) ? LuceneConversions.LUCENE_NUMERIC_MAX : LuceneConversions.dateToLucene(max);
         this.field=field.intern();
     }
 
-    public AdvRangeQuery(String field, Long min, Long max) {
+    public TrieRangeQuery(String field, Long min, Long max) {
         if (min==null && max==null) throw new IllegalArgumentException("The min and max long values cannot be both null.");
         this.min=(min==null) ? LuceneConversions.LUCENE_NUMERIC_MIN : LuceneConversions.longToLucene(min.longValue());
         this.max=(max==null) ? LuceneConversions.LUCENE_NUMERIC_MAX : LuceneConversions.longToLucene(max.longValue());
@@ -68,8 +68,8 @@ public class AdvRangeQuery extends Query {
     }
 
     public boolean equals(Object o) {
-        if (o instanceof AdvRangeQuery) {
-            AdvRangeQuery q=(AdvRangeQuery)o;
+        if (o instanceof TrieRangeQuery) {
+            TrieRangeQuery q=(TrieRangeQuery)o;
             return (field==q.field && min.equals(q.min) && max.equals(q.max));
         } else return false;
     }
