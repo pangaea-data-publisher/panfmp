@@ -121,13 +121,13 @@ public class IndexBuilder implements Runnable {
                 // get current status of buffer
                 synchronized(this) { docBufferSize=docBuffer.size(); }
 
-                // only flush if commitEvent interface registered
-                if (commitEvent!=null) writer.flush();
-
-                log.info(deleted+" documents deleted and "+updated+" documents updated.");
-
-                // notify Harvester of index commit
                 synchronized(commitEventLock) {
+                    // only flush if commitEvent interface registered
+                    if (commitEvent!=null) writer.flush();
+
+                    log.info(deleted+" documents deleted and "+updated+" documents indexed.");
+
+                    // notify Harvester of index commit
                     if (commitEvent!=null) commitEvent.harvesterCommitted(Collections.unmodifiableMap(docs).keySet().iterator());
                 }
 
