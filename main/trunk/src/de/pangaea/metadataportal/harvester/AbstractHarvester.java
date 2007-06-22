@@ -39,7 +39,7 @@ public abstract class AbstractHarvester {
 
     public void close() throws Exception {
         if (index==null) throw new IllegalStateException("Harvester must be opened before using");
-        index.close();
+        if (!index.isClosed()) index.close();
         index=null;
     }
 

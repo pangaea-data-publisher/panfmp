@@ -168,7 +168,13 @@ public class IndexBuilder implements Runnable {
         }
     }
 
+    public boolean isClosed() {
+        return (th==null);
+    }
+
     public void close() throws IOException {
+        if (th==null) throw new IllegalStateException("IndexBuilder already closed");
+
         if (failure!=null) throw failure;
         else {
             if (!th.isAlive()) th.start(); // start thread to make sure index is created if nothing was added before
@@ -188,6 +194,8 @@ public class IndexBuilder implements Runnable {
             out.close();
             lastHarvested=null;
         }
+
+        th=null;
     }
 
     private synchronized void internalWaitIndexer() {
@@ -198,7 +206,9 @@ public class IndexBuilder implements Runnable {
     }
 
     public void addDocument(MetadataDocument mdoc) throws Exception {
+        if (th==null) throw new IllegalStateException("IndexBuilder already closed");
         if (failure!=null) throw failure;
+
         if (!th.isAlive()) th.start();
 
         if (log.isDebugEnabled()) log.debug("Handling document: "+mdoc.toString());
@@ -215,7 +225,9 @@ public class IndexBuilder implements Runnable {
 
     // call this between harvest resumptions to give the indexer a chance NOW to set this thread to wait not while HTTP transfers
     public synchronized void checkIndexerBuffer() throws IOException {
+        if (th==null) throw new IllegalStateException("IndexBuilder already closed");
         if (failure!=null) throw failure;
+
         if (!th.isAlive()) th.start();
 
         if (docBuffer.size()>=(maxChangesBeforeCommit+minChangesBeforeCommit)/2) internalWaitIndexer();
