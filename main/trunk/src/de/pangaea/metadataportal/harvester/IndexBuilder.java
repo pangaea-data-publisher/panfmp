@@ -58,11 +58,6 @@ public class IndexBuilder implements Runnable {
         th=new Thread(this);
     }
 
-    protected void setIndexerProperties(IndexWriter writer) {
-        writer.setMaxFieldLength(Integer.MAX_VALUE);
-        writer.setMaxBufferedDocs(minChangesBeforeCommit);
-    }
-
     public boolean isCreatingNew() {
         return create;
     }
@@ -86,7 +81,12 @@ public class IndexBuilder implements Runnable {
     // this thread eats from the docs and fills index
     public void run() {
         try {
-            IndexWriter writer=null;
+            IndexWriter writer = new IndexWriter(dir, true, iconfig.parent.getAnalyzer(), !IndexReader.indexExists(dir));
+            //writer.setInfoStream(System.err);
+            writer.setMaxFieldLength(Integer.MAX_VALUE);
+            writer.setMaxBufferedDocs(minChangesBeforeCommit);
+            writer.setMaxBufferedDeleteTerms(minChangesBeforeCommit);
+
             int docBufferSize=0;
             do {
                 TreeMap<String,Document> docs=null;
@@ -104,59 +104,41 @@ public class IndexBuilder implements Runnable {
 
                 log.info("Updating index...");
 
-                if (!create) {
-                    IndexReader reader = IndexReader.open(dir);
-                    int count=0;
-                    for (String i : docs.keySet()) {
-                        count+=reader.deleteDocuments(new Term(IndexConstants.FIELDNAME_IDENTIFIER,i));
-                    }
-                    reader.close();
-                    log.info(count+" old documents deleted from index.");
-                }
-
-                // open index only if not already opened
-                if (writer==null) {
-                    writer = new IndexWriter(dir, iconfig.parent.getAnalyzer(), !IndexReader.indexExists(dir));
-                    //writer.setInfoStream(System.err);
-                    setIndexerProperties(writer);
-                }
-                int count=0;
-                for (Document ldoc : docs.values()) {
+                int updated=0, deleted=0;
+                for (Map.Entry<String,Document> docEntry : docs.entrySet()) {
                     // map contains NULL if only delete doc
-                    if (ldoc!=null) {
-                        writer.addDocument(ldoc);
-                        count++;
+                    Term t=new Term(IndexConstants.FIELDNAME_IDENTIFIER,docEntry.getKey());
+                    Document ldoc=docEntry.getValue();
+                    if (ldoc==null) {
+                        writer.deleteDocuments(t);
+                        deleted++;
+                    } else {
+                        writer.updateDocument(t,ldoc);
+                        updated++;
                     }
                 }
-                log.info(count+" new documents added to index.");
 
                 // get current status of buffer
                 synchronized(this) { docBufferSize=docBuffer.size(); }
+
+                // only flush if commitEvent interface registered
+                if (commitEvent!=null) writer.flush();
+
+                log.info(deleted+" documents deleted and "+updated+" documents updated.");
+
+                // notify Harvester of index commit
+                synchronized(commitEventLock) {
+                    if (commitEvent!=null) commitEvent.harvesterCommitted(Collections.unmodifiableMap(docs).keySet().iterator());
+                }
 
                 if (iconfig.autoOptimize && finished && docBufferSize==0) {
                     log.info("Optimizing index...");
                     writer.optimize();
                     log.info("Index optimized.");
                 }
-
-                // close writer only when updating existing index
-                if (!create) {
-                    writer.close();
-                    writer=null;
-                    // notify Harvester of index commit
-                    synchronized(commitEventLock) {
-                        if (commitEvent!=null) commitEvent.harvesterCommitted(Collections.unmodifiableMap(docs).keySet().iterator());
-                    }
-                }
             } while (!finished || docBufferSize>0);
 
-            if (writer!=null) {
-                writer.close();
-                // notify Harvester of index commit
-                synchronized(commitEventLock) {
-                    if (commitEvent!=null) commitEvent.harvesterCommitted(null);
-                }
-            }
+            writer.close();
         } catch (IOException e) {
             log.debug("IO error in indexer thread",e);
             failure=e;
