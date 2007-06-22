@@ -58,8 +58,8 @@ public class Rebuilder {
                 try {
                     // und los gehts
                     log.info("Opening index \""+iconf.id+"\" for harvesting all documents...");
-                    builder = new IndexBuilder(false,siconf);
                     reader = siconf.getIndexReader();
+                    builder = new IndexBuilder(false,siconf);
                     log.info("Harvesting documents...");
                     for (int i=0, c=reader.maxDoc(); i<c; i++) {
                         if (!reader.isDeleted(i)) {
@@ -71,8 +71,8 @@ public class Rebuilder {
                     }
                     log.info(count+" documents harvested from index and queued for reindexing.");
                 } finally {
-                    if (reader!=null) reader.close();
                     if (builder!=null) builder.close();
+                    if (reader!=null) reader.close();
                 }
                 log.info("Finished index rebuilding.");
             }
