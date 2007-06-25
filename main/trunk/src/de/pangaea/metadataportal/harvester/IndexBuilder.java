@@ -80,8 +80,9 @@ public class IndexBuilder implements Runnable {
 
     // this thread eats from the docs and fills index
     public void run() {
+        IndexWriter writer=null;
         try {
-            IndexWriter writer = new IndexWriter(dir, true, iconfig.parent.getAnalyzer(), !IndexReader.indexExists(dir));
+            writer = new IndexWriter(dir, true, iconfig.parent.getAnalyzer(), !IndexReader.indexExists(dir));
             //writer.setInfoStream(System.err);
             writer.setMaxFieldLength(Integer.MAX_VALUE);
             writer.setMaxBufferedDocs(minChangesBeforeCommit);
@@ -138,10 +139,17 @@ public class IndexBuilder implements Runnable {
                 }
             } while (!finished || docBufferSize>0);
 
-            writer.close();
+            writer.flush();
         } catch (IOException e) {
             log.debug("IO error in indexer thread",e);
             failure=e;
+        } finally {
+            if (writer!=null) try {
+                writer.close();
+            } catch (IOException ioe) {
+                log.warn("Failed to close IndexWriter, you may need to remove lock files!",ioe);
+            }
+            writer=null;
         }
 
         synchronized(this) {
