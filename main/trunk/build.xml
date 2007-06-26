@@ -9,6 +9,7 @@
 	
 	<property name="version" value="0.0-dev"/>
 	<property name="versionsuffix" value="-${version}"/>
+	<property name="pkgname" value="${ant.project.name}${versionsuffix}"/>
 
 	<!-- GLOBALS -->
 	<target name="init">
@@ -23,33 +24,43 @@
 	
 	<target name="compile" depends="init">
 		<mkdir dir="${build}"/>
-		<javac srcdir="${src}" destdir="${build}" source="1.5" target="1.5">
-			<classpath refid="classpath"/>
-		</javac>
+		<javac srcdir="${src}" destdir="${build}" source="1.5" target="1.5" classpathref="classpath"/>
 	</target>
 	
 	<target name="dist" depends="compile">
 		<mkdir dir="${dist}"/>
-		<jar destfile="${dist}/metadataportal${versionsuffix}.jar" basedir="${build}"/>
+		<jar destfile="${dist}/metadataportal${versionsuffix}.jar" basedir="${build}">
+			<manifest>
+				<attribute name="Implementation-Title" value="de.pangaea.metadataportal"/>
+				<attribute name="Implementation-Version" value="${version}"/>
+				<attribute name="Implementation-Vendor" value="panFMP Developers c/o Uwe Schindler"/>
+			</manifest>    	
+			<metainf dir="${basedir}">
+				<include name="LICENSE.txt"/>
+				<include name="NOTICE.txt"/>
+			</metainf>
+		</jar>
 	</target>
 	
 	<!-- JAVADOCS TARGET -->
 	<target name="javadocs" depends="init">
-		<javadoc sourcepath="${src}" destdir="${docs}" source="1.5" packagenames="*">
-			<classpath refid="classpath"/>
-		</javadoc>
+		<mkdir dir="${docs}"/>
+		<javadoc sourcepath="${src}" destdir="${docs}" source="1.5" packagenames="*" classpathref="classpath"/>
 	</target>	
 	
 	<!-- PACKAGING -->
 	<target name="package" depends="dist,javadocs">
-		<zip destfile="${basedir}/${ant.project.name}${versionsuffix}.zip">
-			<zipfileset dir="${libs}/axis" prefix="libs/axis"/>
-			<zipfileset dir="${libs}/core" prefix="libs/core"/>
-			<zipfileset dir="${dist}" prefix="libs/core"/>
-			<zipfileset dir="${libs}/optional" prefix="libs/optional"/>
-			<zipfileset dir="${basedir}/scripts" prefix="scripts"/>
-			<zipfileset dir="${basedir}/webapp-template" prefix="webapp-template"/>
-			<zipfileset dir="${docs}" prefix="javadocs"/>
+		<zip destfile="${basedir}/${pkgname}.zip">
+			<zipfileset dir="${libs}/axis" prefix="${pkgname}/libs/axis"/>
+			<zipfileset dir="${libs}/core" prefix="${pkgname}/libs/core"/>
+			<zipfileset dir="${dist}" prefix="${pkgname}/libs/core"/>
+			<zipfileset dir="${libs}/optional" prefix="${pkgname}/libs/optional"/>
+			<zipfileset dir="${basedir}/scripts" prefix="${pkgname}/scripts"/>
+			<zipfileset dir="${basedir}/webapp-template" prefix="${pkgname}/webapp-template"/>
+			<zipfileset dir="${docs}" prefix="${pkgname}/javadocs"/>
+			<zipfileset dir="${basedir}" prefix="${pkgname}">
+				<include name="*.txt"/>
+			</zipfileset>
 		</zip>
 	</target>	
 	
@@ -58,7 +69,7 @@
 		<delete dir="${build}"/>
 		<delete dir="${dist}"/>
 		<delete dir="${docs}"/>
-		<delete file="${basedir}/${ant.project.name}${versionsuffix}.zip"/>
+		<delete file="${basedir}/${pkgname}.zip"/>
 	</target>
 	
 </project>
