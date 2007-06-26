@@ -20,7 +20,7 @@
 		<fileset dir="${libs}">
 			<include name="**/*.jar"/>
 			<!-- exclude local version of metadataportal itsself from compile classpath! -->
-			<exclude name="**/metadataportal*.jar/>
+			<exclude name="**/metadataportal*.jar"/>
 		</fileset>
 	</path>
 	
