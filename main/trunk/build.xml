@@ -71,7 +71,7 @@
 	<target name="srcpackage" depends="clean">
 		<zip destfile="${basedir}/${pkgname}-src.zip">
 			<zipfileset dir="${basedir}" prefix="${pkgname}">
-				<exclude name="**/*.java"/>
+				<exclude name="**/.svn"/>
 				<exclude name="${pkgname}-src.zip"/>
 			</zipfileset>
 		</zip>
