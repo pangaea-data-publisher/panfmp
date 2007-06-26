@@ -46,30 +46,6 @@
                 <setSpec>CARBOOCEAN</setSpec>
             </harvesterProperties>
         </index>
-        <index id="pangaea-georeport">
-            <displayName>PANGAEA datasets for GeoReport</displayName>
-            <indexDir>./lucene-store/pangaea-georeport</indexDir>
-            <autoOptimize>true</autoOptimize>
-            <validate>false</validate>
-            <harvesterClass>de.pangaea.metadataportal.harvester.OAIHarvester</harvesterClass>
-            <harvesterProperties>
-                <baseUrl>http://ws.pangaea.de/oai/</baseUrl>
-                <metadataPrefix>dif</metadataPrefix>
-                <setSpec>GeoReport</setSpec>
-            </harvesterProperties>
-        </index>
-        <!--<index id="pangaea-depth-water">
-            <displayName>PANGAEA datasets</displayName>
-            <indexDir>./lucene-store/pangaea-depth-water</indexDir>
-            <autoOptimize>false</autoOptimize>
-            <validate>false</validate>
-            <harvesterClass>de.pangaea.metadataportal.harvester.OAIHarvester</harvesterClass>
-            <harvesterProperties>
-                <baseUrl>http://ws.pangaea.de/oai/</baseUrl>
-                <metadataPrefix>dif</metadataPrefix>
-                <setSpec>geocode1619</setSpec>
-            </harvesterProperties>
-        </index>-->
         <index id="ifremer">
             <displayName>IFREMER datasets</displayName>
             <indexDir>./lucene-store/ifremer</indexDir>
@@ -84,35 +60,12 @@
                 <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="./ns-convert.xslt"/>
             </transform>-->
         </index>
-        <index id="cdiac">
-            <displayName>CDIAC datasets</displayName>
-            <indexDir>./lucene-store/cdiac</indexDir>
-            <autoOptimize>true</autoOptimize>
-            <validate>false</validate>
-            <harvesterClass>de.pangaea.metadataportal.harvester.DirectoryHarvester</harvesterClass>
-            <harvesterProperties>
-                <directory>./xml/cdiac</directory>
-                <recursive>true</recursive>
-                <filenameFilter>.*\.xml</filenameFilter>
-            </harvesterProperties>
-            <transform>
-                <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="./cdiac-fgdc.xslt"/>
-            </transform>
-        </index>
         <virtualIndex id="dataportal-carboocean">
             <displayName>CARBOOCEAN Dataportal</displayName>
             <threaded>true</threaded>
             <index ref="pangaea-carboocean"/>
-            <index ref="cdiac"/>
             <index ref="ifremer"/>
         </virtualIndex>
-        <!--<virtualIndex id="dataportal-euroceans">
-            <displayName>EUR-OCEANS Dataportal</displayName>
-            <threaded>true</threaded>
-            <index ref="pangaea-depth-water"/>
-            <index ref="cdiac"/>
-            <index ref="ifremer"/>
-        </virtualIndex>-->
     </indices>
     <search>
         <returnXML>true</returnXML>

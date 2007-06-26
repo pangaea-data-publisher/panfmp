@@ -1,2 +1,2 @@
 @echo off
-set classpath=%1;%classpath%
+set classpath=%classpath%;%1
