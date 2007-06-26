@@ -35,7 +35,7 @@
 	
 	<!-- JAVADOCS TARGET -->
 	<target name="javadocs" depends="init">
-		<javadoc sourcepath="${src}" destdir="${docs}" source="1.5">
+		<javadoc sourcepath="${src}" destdir="${docs}" source="1.5" packagenames="*">
 			<classpath refid="classpath"/>
 		</javadoc>
 	</target>	
