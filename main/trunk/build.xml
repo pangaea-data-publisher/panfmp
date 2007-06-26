@@ -52,8 +52,9 @@
 	</target>	
 	
 	<!-- PACKAGING -->
-	<target name="package" depends="dist,javadocs">
-		<zip destfile="${basedir}/${pkgname}.zip">
+	<target name="binpackage" depends="dist,javadocs">
+		<zip destfile="${basedir}/${pkgname}-bin.zip">
+			<exclude name="**/.svn"/>
 			<zipfileset dir="${libs}/axis" prefix="${pkgname}/libs/axis"/>
 			<zipfileset dir="${libs}/core" prefix="${pkgname}/libs/core"/>
 			<zipfileset dir="${dist}" prefix="${pkgname}/libs/core"/>
@@ -65,14 +66,32 @@
 				<include name="*.txt"/>
 			</zipfileset>
 		</zip>
-	</target>	
+	</target>
+
+	<target name="srcpackage" depends="clean">
+		<zip destfile="${basedir}/${pkgname}-src.zip">
+			<zipfileset dir="${basedir}" prefix="${pkgname}">
+				<exclude name="**/*.java"/>
+				<exclude name="${pkgname}-src.zip"/>
+			</zipfileset>
+		</zip>
+	</target>
 	
+	<target name="package">
+		<!-- this target was created as a target without dependencies and uses subcalls
+		     to do it as two really separate targets in the right order -->
+		<antcall target="srcpackage"/>
+		<antcall target="binpackage"/>
+	</target>
+
 	<!-- CLEANUP TARGET -->
 	<target name="clean">
 		<delete dir="${build}"/>
 		<delete dir="${dist}"/>
 		<delete dir="${docs}"/>
-		<delete file="${basedir}/${pkgname}.zip"/>
+		<delete>
+			<fileset dir="${basedir}" includes="*.zip"/>
+		</delete>
 	</target>
 	
 </project>
