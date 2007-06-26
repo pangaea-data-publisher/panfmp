@@ -31,7 +31,8 @@
 		<mkdir dir="${dist}"/>
 		<jar destfile="${dist}/metadataportal${versionsuffix}.jar" basedir="${build}">
 			<manifest>
-				<attribute name="Implementation-Title" value="de.pangaea.metadataportal"/>
+				<attribute name="Package" value="de.pangaea.metadataportal"/>
+				<attribute name="Implementation-Title" value="panFMP"/>
 				<attribute name="Implementation-Version" value="${version}"/>
 				<attribute name="Implementation-Vendor" value="panFMP Developers c/o Uwe Schindler"/>
 			</manifest>    	
