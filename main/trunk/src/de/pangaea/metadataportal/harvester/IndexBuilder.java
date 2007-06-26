@@ -131,15 +131,15 @@ public class IndexBuilder implements Runnable {
                     // notify Harvester of index commit
                     if (commitEvent!=null) commitEvent.harvesterCommitted(Collections.unmodifiableMap(docs).keySet().iterator());
                 }
-
-                if (iconfig.autoOptimize && finished && docBufferSize==0) {
-                    log.info("Optimizing index...");
-                    writer.optimize();
-                    log.info("Index optimized.");
-                }
             } while (!finished || docBufferSize>0);
 
             writer.flush();
+
+            if (iconfig.autoOptimize) {
+                log.info("Optimizing index...");
+                writer.optimize();
+                log.info("Index optimized.");
+            }
         } catch (IOException e) {
             log.debug("IO error in indexer thread",e);
             failure=e;

@@ -71,8 +71,8 @@ public class Rebuilder {
                     }
                     log.info(count+" documents harvested from index and queued for reindexing.");
                 } finally {
-                    if (builder!=null) builder.close();
                     if (reader!=null) reader.close();
+                    if (builder!=null) builder.close();
                 }
                 log.info("Finished index rebuilding.");
             }
