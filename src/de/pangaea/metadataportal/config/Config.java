@@ -16,18 +16,19 @@
 
 package de.pangaea.metadataportal.config;
 
-import javax.xml.XMLConstants;
 import java.util.*;
+import java.io.*;
+import java.net.*;
 import de.pangaea.metadataportal.utils.*;
 import org.apache.commons.digester.*;
+import org.xml.sax.*;
+import javax.xml.XMLConstants;
+import javax.xml.namespace.QName;
 import javax.xml.transform.*;
 import javax.xml.transform.sax.*;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.*;
-import org.xml.sax.*;
 import javax.xml.xpath.*;
-import java.io.*;
-import java.net.*;
 
 public class Config {
 
@@ -56,17 +57,25 @@ public class Config {
             // fields
             dig.addDoNothing("config/metadata/fields");
 
+            final Class[] X_PATH_PARAMS=new Class[]{ExtendedDigester.class,String.class};
+
             dig.addObjectCreate("config/metadata/fields/field", Config_Field.class);
             dig.addSetNext("config/metadata/fields/field", "addField");
-
             SetPropertiesRule r=new SetPropertiesRule();
             r.setIgnoreMissingProperty(false);
             dig.addRule("config/metadata/fields/field",r);
-
-            final Class[] X_PATH_PARAMS=new Class[]{ExtendedDigester.class,String.class};
             dig.addCallMethod("config/metadata/fields/field","setXPath", 2, X_PATH_PARAMS);
             dig.addObjectParam("config/metadata/fields/field", 0, dig);
             dig.addCallParam("config/metadata/fields/field", 1);
+
+            dig.addObjectCreate("config/metadata/fields/variable", Config_XPathVariable.class);
+            dig.addSetNext("config/metadata/fields/variable", "addVariable");
+            dig.addCallMethod("config/metadata/fields/variable","setXPath", 2, X_PATH_PARAMS);
+            dig.addObjectParam("config/metadata/fields/variable", 0, dig);
+            dig.addCallParam("config/metadata/fields/variable", 1);
+            dig.addCallMethod("config/metadata/fields/variable","setName", 2, X_PATH_PARAMS);
+            dig.addObjectParam("config/metadata/fields/variable", 0, dig);
+            dig.addCallParam("config/metadata/fields/variable", 1, "name");
 
             dig.addCallMethod("config/metadata/fields/default", "setDefaultField", 0);
 
@@ -142,11 +151,18 @@ public class Config {
     public void addField(Config_Field f) {
         if (f.name==null) throw new IllegalArgumentException("The field name is mandatory");
         if (fields.containsKey(f.name)) throw new IllegalArgumentException("A field with name '"+f.name+"' already exists!");
-        if (f.xPathExpr==null) throw new IllegalArgumentException("The xpath itsself may not be empty");
+        if (f.xPathExpr==null) throw new IllegalArgumentException("The XPath itsself may not be empty");
         if (!f.lucenestorage && !f.luceneindexed) throw new IllegalArgumentException("A field must be at least indexed and/or stored");
         if (f.defaultValue!=null && f.datatype!=DataType.number && f.datatype!=DataType.dateTime)
             throw new IllegalArgumentException("A default value can only be given for number or dateTime fields");
         fields.put(f.name,f);
+    }
+
+    public void addVariable(Config_XPathVariable f) {
+        if (fields.size()>0 || defaultField!=null) throw new IllegalStateException("All XPath variables must be declared before any fields because values are assigned on harvesting in config order before any field's XPath is executed!");
+        if (f.name==null) throw new IllegalArgumentException("The XPath variable name is mandatory");
+        if (f.xPathExpr==null) throw new IllegalArgumentException("The XPath itsself may not be empty");
+        xPathVariables.add(f);
     }
 
     public void addIndex(IndexConfig i) {
@@ -258,6 +274,17 @@ public class Config {
     public Map<String,Config_Field> fields=new HashMap<String,Config_Field>();
     public Config_Field defaultField=null;
 
+    // variables and resolver
+    public List<Config_XPathVariable> xPathVariables=new ArrayList<Config_XPathVariable>();
+    public ThreadLocal<Map<QName,Object>> xPathVariableData=new ThreadLocal<Map<QName,Object>>();
+    protected XPathVariableResolver xPathVariableResolv=new XPathVariableResolver() {
+        public Object resolveVariable(QName variableName) {
+            Map<QName,Object> map=xPathVariableData.get();
+            if (map==null) return null;
+            else return map.get(variableName);
+        }
+    };
+
     public Schema schema=null;
     public boolean haltOnSchemaError=false;
     /*public Templates xsltBeforeXPath=null;*/
@@ -298,6 +325,7 @@ public class Config {
                 if ("".equals(xpath)) return; // Exception throws the Config.addField() method
                 XPath x=StaticFactories.xpathFactory.newXPath();
                 if (Config.xPathResolv!=null) x.setXPathFunctionResolver(Config.xPathResolv);
+                x.setXPathVariableResolver(((Config)dig.getRoot()).xPathVariableResolv);
                 // current namespace context with strict=true (display errors when namespace declaration is missing [non-standard!])
                 // and with possibly declared default namespace is redefined/deleted to "" (according to XSLT specification,
                 // where this is also mandatory).
@@ -326,6 +354,51 @@ public class Config {
         public DataType datatype=DataType.tokenizedText;
         public boolean lucenestorage=true;
         public boolean luceneindexed=true;
+        public XPathExpression xPathExpr=null;
+    }
+
+    public static final class Config_XPathVariable extends Object {
+
+        public void setXPath(ExtendedDigester dig, String xpath) throws XPathExpressionException {
+            synchronized(Config.class) {
+                if ("".equals(xpath)) return; // Exception throws the Config.addVariable() method
+                XPath x=StaticFactories.xpathFactory.newXPath();
+                if (Config.xPathResolv!=null) x.setXPathFunctionResolver(Config.xPathResolv);
+                x.setXPathVariableResolver(((Config)dig.getRoot()).xPathVariableResolv);
+                // current namespace context with strict=true (display errors when namespace declaration is missing [non-standard!])
+                // and with possibly declared default namespace is redefined/deleted to "" (according to XSLT specification,
+                // where this is also mandatory).
+                x.setNamespaceContext(dig.getCurrentNamespaceContext(true,true));
+                xPathExpr=x.compile(xpath);
+            }
+        }
+
+        public void setName(ExtendedDigester dig, String nameStr) {
+            synchronized(Config.class) {
+                if ("".equals(nameStr)) return; // Exception throws the Config.addVariable() method
+                String prefix,localPart;
+                String[] parts=nameStr.split(":");
+                switch (parts.length) {
+                    case 1:
+                        prefix=XMLConstants.DEFAULT_NS_PREFIX;
+                        localPart=parts[0];
+                        break;
+                    case 2:
+                        prefix=parts[0];
+                        localPart=parts[1];
+                        break;
+                    default:
+                        throw new IllegalArgumentException("Invalid formatted QName given in XPath variable name: "+nameStr);
+                }
+                // current namespace context with strict=true (display errors when namespace declaration is missing [non-standard!])
+                // and with possibly declared default namespace is redefined/deleted to "" (according to XSLT specification,
+                // where this is also mandatory).
+                this.name=new QName(dig.getCurrentNamespaceContext(true,true).getNamespaceURI(prefix), localPart, prefix);
+            }
+        }
+
+        // members "the configuration"
+        public QName name=null;
         public XPathExpression xPathExpr=null;
     }
 
