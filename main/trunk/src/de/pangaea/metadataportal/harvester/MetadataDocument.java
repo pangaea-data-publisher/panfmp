@@ -20,9 +20,11 @@ import de.pangaea.metadataportal.utils.*;
 import de.pangaea.metadataportal.config.*;
 import java.io.StringWriter;
 import java.util.HashSet;
+import java.util.HashMap;
 import javax.xml.transform.*;
 import javax.xml.transform.dom.*;
 import javax.xml.transform.stream.*;
+import javax.xml.namespace.QName;
 import org.apache.lucene.document.*;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.Node;
@@ -79,7 +81,7 @@ public class MetadataDocument {
         }
     }
 
-    protected void addDefaultField(IndexConfig iconfig, Document ldoc) throws Exception {
+    protected void addDefaultField(SingleIndexConfig iconfig, Document ldoc) throws Exception {
         StringBuilder sb=new StringBuilder();
         if (iconfig.parent.defaultField==null) {
             walkNodeTexts(sb, dom.getDocumentElement(),true);
@@ -94,7 +96,7 @@ public class MetadataDocument {
         ldoc.add(new Field(IndexConstants.FIELDNAME_CONTENT, sb.toString(), Field.Store.NO, Field.Index.TOKENIZED));
     }
 
-    protected void addFields(IndexConfig iconfig, Document ldoc) throws Exception {
+    protected void addFields(SingleIndexConfig iconfig, Document ldoc) throws Exception {
         for (Config.Config_Field f : iconfig.parent.fields.values()) {
             boolean needDefault=true;
             try {
@@ -122,14 +124,45 @@ public class MetadataDocument {
         }
     }
 
-    public Document getLuceneDocument(IndexConfig iconfig) throws Exception {
+    protected void processXPathVariables(SingleIndexConfig iconfig) throws Exception {
+        // put map of variables in thread local storage of index config
+        HashMap<QName,Object> data=new HashMap<QName,Object>();
+        iconfig.parent.xPathVariableData.set(data);
+
+        // TODO: default variables
+        data.put(new QName("index"),iconfig.id);
+        data.put(new QName("indexDisplayName"),iconfig.displayName);
+
+        // variables in config file
+        for (Config.Config_XPathVariable f : iconfig.parent.xPathVariables) {
+            Object value=null;
+            try {
+                // First: try to get XPath result as Nodelist if that fails (because result is #STRING): fallback
+                // TODO: Looking for a better system to detect return type of XPath :-( [slowdown by this?]
+                value=f.xPathExpr.evaluate(dom, javax.xml.xpath.XPathConstants.NODESET);
+            } catch (javax.xml.xpath.XPathExpressionException ex) {
+                // Fallback: if return type of XPath is a #STRING (for example from a substring() routine)
+                value=f.xPathExpr.evaluate(dom, javax.xml.xpath.XPathConstants.STRING);
+            }
+            data.put(f.name,value);
+        }
+    }
+
+    protected void unsetXPathVariables(SingleIndexConfig iconfig) {
+        // unset the map from the local thread storage of index config
+        iconfig.parent.xPathVariableData.set(null); // unset variables
+    }
+
+    public Document getLuceneDocument(SingleIndexConfig iconfig) throws Exception {
         Document ldoc = createEmptyDocument();
         if (!deleted) {
             if (dom==null) throw new NullPointerException("The DOM-Tree of document may not be 'null'!");
             ldoc.add(new Field(IndexConstants.FIELDNAME_XML, this.getXML(), Field.Store.COMPRESS, Field.Index.NO));
 
+            processXPathVariables(iconfig);
             addDefaultField(iconfig,ldoc);
             addFields(iconfig,ldoc);
+            unsetXPathVariables(iconfig);
         }
         return ldoc;
     }
