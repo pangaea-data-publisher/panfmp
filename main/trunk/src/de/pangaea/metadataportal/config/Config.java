@@ -200,23 +200,18 @@ public class Config {
     }
 
     public void setAnalyzer(String v) throws Exception {
-        setAnalyzerClass(Class.forName(v.trim()));
+        Class<?> c=Class.forName(v.trim());
+        setAnalyzerClass(c.asSubclass(org.apache.lucene.analysis.Analyzer.class));
     }
 
-    public void setAnalyzerClass(Class c) throws Exception {
+    public void setAnalyzerClass(Class<? extends org.apache.lucene.analysis.Analyzer> c) throws Exception {
         analyzerClass=c;
-        do {
-            if (org.apache.lucene.analysis.Analyzer.class.equals(c)) {
-                try {
-                    analyzerConstructor=analyzerClass.getConstructor(String[].class);
-                } catch (NoSuchMethodException nsm) {
-                    analyzerConstructor=null;
-                    log.warn("The given analyzer class is not capable of assigning stop words - <stopWords> discarded!");
-                }
-                return;
-            }
-        } while ((c=c.getSuperclass())!=null);
-        throw new IllegalArgumentException("The given analyzer class does not extend org.apache.lucene.analysis.Analyzer!");
+        try {
+            analyzerConstructor=analyzerClass.getConstructor(String[].class);
+        } catch (NoSuchMethodException nsm) {
+            analyzerConstructor=null;
+            log.warn("The given analyzer class is not capable of assigning stop words - <stopWords> discarded!");
+        }
     }
 
     public void addSearchProperty(ExtendedDigester dig, String value) {
@@ -292,8 +287,8 @@ public class Config {
     public Properties searchProperties=new Properties();
 
     public Set<String> luceneStopWords=new HashSet<String>();
-    protected Class analyzerClass=null;
-    protected java.lang.reflect.Constructor analyzerConstructor=null;
+    protected Class<? extends org.apache.lucene.analysis.Analyzer> analyzerClass=null;
+    protected java.lang.reflect.Constructor<? extends org.apache.lucene.analysis.Analyzer> analyzerConstructor=null;
 
     public String file;
     private ConfigMode configMode;
