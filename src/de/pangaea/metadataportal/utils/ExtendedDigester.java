@@ -194,8 +194,8 @@ public class ExtendedDigester extends Digester {
             }
 
             public String getPrefix(String namespaceURI) {
-                Iterator<String> i=getPrefixes(namespaceURI);
-                return i.hasNext() ? i.next() : null;
+                Iterator i=getPrefixes(namespaceURI);
+                return i.hasNext() ? (String)i.next() : null;
             }
 
             public Iterator getPrefixes(String namespaceURI) {

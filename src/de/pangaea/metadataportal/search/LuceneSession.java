@@ -133,8 +133,13 @@ public class LuceneSession {
             this.field=field.intern();
         }
 
-        public int size() { return 0; }
-        public Iterator<E> iterator() { return Collections.EMPTY_SET.iterator(); }
+        public int size() {
+            return 0;
+        }
+
+        public Iterator<E> iterator() {
+            return Collections.<E>emptySet().iterator();
+        }
 
         public boolean add(E t) {
             if (((Term)t).field()!=field) throw new IllegalArgumentException("A query on a specific field may not reference other fields by prefixing with 'fieldname:'!");
