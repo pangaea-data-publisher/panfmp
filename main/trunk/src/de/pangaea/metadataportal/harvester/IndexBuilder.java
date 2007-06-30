@@ -49,7 +49,7 @@ public class IndexBuilder implements Runnable {
 
     public IndexBuilder(boolean create, SingleIndexConfig iconfig) throws IOException {
         if (!IndexReader.indexExists(iconfig.getFullIndexPath())) create=true;
-        this.dir=FSDirectory.getDirectory(iconfig.getFullIndexPath(),create);
+        this.dir=FSDirectory.getDirectory(iconfig.getFullIndexPath());
         this.create=create;
         this.iconfig=iconfig;
         if (create) try {

@@ -30,7 +30,7 @@ Whenever this element occurs in digester, begin/end will be called, that then pu
 public class SaxRule extends org.apache.commons.digester.Rule {
 
     protected SaxFilter filter=null;
-    protected Set<String> excludeNamespaces=Collections.EMPTY_SET;
+    protected Set<String> excludeNamespaces=Collections.emptySet();
     private org.xml.sax.ContentHandler lastContentHandler=null;
 
     public SaxRule() {

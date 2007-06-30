@@ -40,7 +40,8 @@ public class SingleIndexConfig extends IndexConfig {
     }
 
     public void setHarvesterClass(String v) throws ClassNotFoundException {
-        harvesterClass=(Class<de.pangaea.metadataportal.harvester.AbstractHarvester>)Class.forName(v);
+        Class<?> c=Class.forName(v);
+        harvesterClass=c.asSubclass(de.pangaea.metadataportal.harvester.AbstractHarvester.class);
     }
 
     public void addHarvesterProperty(ExtendedDigester dig, String value) {
@@ -94,7 +95,7 @@ public class SingleIndexConfig extends IndexConfig {
     private String indexDir=null;
     public boolean autoOptimize=false;
     public boolean validate=true;
-    public Class<de.pangaea.metadataportal.harvester.AbstractHarvester> harvesterClass=null;
+    public Class<? extends de.pangaea.metadataportal.harvester.AbstractHarvester> harvesterClass=null;
     public Map<String,String> harvesterProperties=new HashMap<String,String>();
     public Templates xslt=null;
 }
