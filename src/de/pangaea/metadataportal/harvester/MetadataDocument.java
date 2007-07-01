@@ -86,7 +86,7 @@ public class MetadataDocument {
         if (iconfig.parent.defaultField==null) {
             walkNodeTexts(sb, dom.getDocumentElement(),true);
         } else {
-            NodeList nodes=(NodeList)iconfig.parent.defaultField.xPathExpr.evaluate(dom.getDocumentElement(), javax.xml.xpath.XPathConstants.NODESET);
+            NodeList nodes=(NodeList)iconfig.parent.defaultField.xPathExpr.evaluate(dom, javax.xml.xpath.XPathConstants.NODESET);
             for (int i=0,c=nodes.getLength(); i<c; i++) {
                 walkNodeTexts(sb,nodes.item(i),true);
                 sb.append('\n');
@@ -102,7 +102,7 @@ public class MetadataDocument {
             try {
                 // First: try to get XPath result as Nodelist if that fails (because result is #STRING): fallback
                 // TODO: Looking for a better system to detect return type of XPath :-( [slowdown by this?]
-                NodeList nodes=(NodeList)f.xPathExpr.evaluate(dom.getDocumentElement(), javax.xml.xpath.XPathConstants.NODESET);
+                NodeList nodes=(NodeList)f.xPathExpr.evaluate(dom, javax.xml.xpath.XPathConstants.NODESET);
                 for (int i=0,c=nodes.getLength(); i<c; i++) {
                     StringBuilder sb=new StringBuilder();
                     walkNodeTexts(sb,nodes.item(i),true);
@@ -114,7 +114,7 @@ public class MetadataDocument {
                 }
             } catch (javax.xml.xpath.XPathExpressionException ex) {
                 // Fallback: if return type of XPath is a #STRING (for example from a substring() routine)
-                String val=f.xPathExpr.evaluate(dom.getDocumentElement()).trim();
+                String val=f.xPathExpr.evaluate(dom).trim();
                 if (!"".equals(val)) {
                     internalAddField(ldoc,f,val);
                     needDefault=false;
@@ -127,7 +127,7 @@ public class MetadataDocument {
     protected boolean processFilters(SingleIndexConfig iconfig) throws Exception {
         boolean accept=(iconfig.parent.filterDefault==Config.FilterType.ACCEPT);
         for (Config.Config_XPathFilter f : iconfig.parent.filters) {
-            Boolean b=(Boolean)f.xPathExpr.evaluate(dom.getDocumentElement(), javax.xml.xpath.XPathConstants.BOOLEAN);
+            Boolean b=(Boolean)f.xPathExpr.evaluate(dom, javax.xml.xpath.XPathConstants.BOOLEAN);
             if (b==null) throw new javax.xml.xpath.XPathExpressionException("The filter XPath did not return a valid BOOLEAN value!");
             if (b && log.isTraceEnabled()) log.trace("FilterMatch: "+f);
             switch (f.type) {
@@ -159,10 +159,10 @@ public class MetadataDocument {
             try {
                 // First: try to get XPath result as Nodelist if that fails (because result is #STRING): fallback
                 // TODO: Looking for a better system to detect return type of XPath :-( [slowdown by this?]
-                value=f.xPathExpr.evaluate(dom.getDocumentElement(), javax.xml.xpath.XPathConstants.NODESET);
+                value=f.xPathExpr.evaluate(dom, javax.xml.xpath.XPathConstants.NODESET);
             } catch (javax.xml.xpath.XPathExpressionException ex) {
                 // Fallback: if return type of XPath is a #STRING (for example from a substring() routine)
-                value=f.xPathExpr.evaluate(dom.getDocumentElement(), javax.xml.xpath.XPathConstants.STRING);
+                value=f.xPathExpr.evaluate(dom, javax.xml.xpath.XPathConstants.STRING);
             }
             if (log.isTraceEnabled()) log.trace("Variable: "+f.name+"="+value);
             data.put(f.name,value);
