@@ -358,10 +358,16 @@ public class Config {
                 // where this is also mandatory).
                 x.setNamespaceContext(dig.getCurrentNamespaceContext(true,true));
                 xPathExpr=x.compile(xpath);
+                cachedXPath=xpath;
             }
         }
 
+        public String toString() {
+            return cachedXPath;
+        }
+
         public XPathExpression xPathExpr=null;
+        private String cachedXPath=null;
     }
 
     public static final class Config_Field extends Config_XPathExpression {
@@ -381,6 +387,10 @@ public class Config {
         public void setLucenestorage(String v) { lucenestorage=Boolean.parseBoolean(v); }
         public void setLuceneindexed(String v) { luceneindexed=Boolean.parseBoolean(v); }
         public void setDefault(String v) { defaultValue=v; }
+
+        public String toString() {
+            return name;
+        }
 
         // members "the configuration"
         public String name=null;
@@ -416,6 +426,10 @@ public class Config {
             }
         }
 
+        public String toString() {
+            return new StringBuilder(name.toString()).append('(').append(super.toString()).append(')').toString();
+        }
+
         // members "the configuration"
         public QName name=null;
     }
@@ -428,6 +442,10 @@ public class Config {
             } catch (IllegalArgumentException e) {
                 throw new IllegalArgumentException("Invalid filter type: '"+v+"'");
             }
+        }
+
+        public String toString() {
+            return new StringBuilder(type.toString()).append('(').append(super.toString()).append(')').toString();
         }
 
         // members "the configuration"

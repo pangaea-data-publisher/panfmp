@@ -129,6 +129,7 @@ public class MetadataDocument {
         for (Config.Config_XPathFilter f : iconfig.parent.filters) {
             Boolean b=(Boolean)f.xPathExpr.evaluate(dom.getDocumentElement(), javax.xml.xpath.XPathConstants.BOOLEAN);
             if (b==null) throw new javax.xml.xpath.XPathExpressionException("The filter XPath did not return a valid BOOLEAN value!");
+            if (b && log.isTraceEnabled()) log.trace("FilterMatch: "+f);
             switch (f.type) {
                 case ACCEPT:
                     if (b) accept=true;
@@ -163,6 +164,7 @@ public class MetadataDocument {
                 // Fallback: if return type of XPath is a #STRING (for example from a substring() routine)
                 value=f.xPathExpr.evaluate(dom.getDocumentElement(), javax.xml.xpath.XPathConstants.STRING);
             }
+            if (log.isTraceEnabled()) log.trace("Variable: "+f.name+"="+value);
             data.put(f.name,value);
         }
     }
@@ -179,7 +181,10 @@ public class MetadataDocument {
             processXPathVariables(iconfig);
             try {
                 boolean filterAccepted=processFilters(iconfig);
-                if (!filterAccepted) return null;
+                if (!filterAccepted) {
+                    log.debug("Document filtered: "+identifier);
+                    return null;
+                }
                 addDefaultField(iconfig,ldoc);
                 addFields(iconfig,ldoc);
             } finally {
