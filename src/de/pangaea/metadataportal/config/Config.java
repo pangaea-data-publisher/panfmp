@@ -67,6 +67,16 @@ public class Config {
             dig.addObjectParam("config/metadata/variables/variable", 0, dig);
             dig.addCallParam("config/metadata/variables/variable", 1, "name");
 
+            // filters
+            dig.addCallMethod("config/metadata/filters", "setFilterDefault", 1);
+            dig.addCallParam("config/metadata/filters", 0, "default");
+
+            dig.addObjectCreate("config/metadata/filters/*", Config_XPathFilter.class);
+            dig.addSetNext("config/metadata/filters/*", "addFilter");
+            dig.addCallMethod("config/metadata/filters/*","setXPath", 2, X_PATH_PARAMS);
+            dig.addObjectParam("config/metadata/filters/*", 0, dig);
+            dig.addCallParam("config/metadata/filters/*", 1);
+
             // fields
             dig.addDoNothing("config/metadata/fields");
             dig.addObjectCreate("config/metadata/fields/field", Config_Field.class);
@@ -165,12 +175,27 @@ public class Config {
         xPathVariables.add(f);
     }
 
+    public void addFilter(Config_XPathFilter f) {
+        if (f.xPathExpr==null) throw new IllegalArgumentException("The XPath itsself may not be empty");
+        String type=dig.getCurrentElementName();
+        f.setType(type);
+        filters.add(f);
+    }
+
     public void addIndex(IndexConfig i) {
         if (indices.containsKey(i.id))
             throw new IllegalArgumentException("There is already an index with id=\""+i.id+"\" added to configuration!");
         i.parent=this;
         i.check();
         indices.put(i.id,i);
+    }
+
+    public void setFilterDefault(String v) {
+        if (v==null) return; // no change
+        // a bit of hack, we use an empty filter to find out type :)
+        Config_XPathFilter f=new Config_XPathFilter();
+        f.setType(v);
+        filterDefault=f.type;
     }
 
     public void setDefaultField(String v) throws Exception {
@@ -280,8 +305,14 @@ public class Config {
         }
     };
 
+    // filters
+    public FilterType filterDefault=FilterType.ACCEPT;
+    public List<Config_XPathFilter> filters=new ArrayList<Config_XPathFilter>();
+
+    // schema etc
     public Schema schema=null;
     public boolean haltOnSchemaError=false;
+
     /*public Templates xsltBeforeXPath=null;*/
 
     public Properties searchProperties=new Properties();
@@ -300,6 +331,7 @@ public class Config {
     // internal classes
 
     public static enum ConfigMode { HARVESTING,SEARCH };
+    public static enum FilterType { ACCEPT,DENY };
     public static enum DataType { tokenizedText,string,number,dateTime };
 
     protected static XPathFunctionResolver xPathResolv=null;
@@ -313,7 +345,7 @@ public class Config {
         }
     }
 
-    public static final class Config_Field extends Object {
+    public static class Config_XPathExpression extends Object {
 
         public void setXPath(ExtendedDigester dig, String xpath) throws XPathExpressionException {
             synchronized(Config.class) {
@@ -329,7 +361,14 @@ public class Config {
             }
         }
 
-        public void setName(String v) { name=v; }
+        public XPathExpression xPathExpr=null;
+    }
+
+    public static final class Config_Field extends Config_XPathExpression {
+
+        public void setName(String v) {
+            name=v;
+        }
 
         public void setDatatype(String v) {
             try {
@@ -349,24 +388,9 @@ public class Config {
         public DataType datatype=DataType.tokenizedText;
         public boolean lucenestorage=true;
         public boolean luceneindexed=true;
-        public XPathExpression xPathExpr=null;
     }
 
-    public static final class Config_XPathVariable extends Object {
-
-        public void setXPath(ExtendedDigester dig, String xpath) throws XPathExpressionException {
-            synchronized(Config.class) {
-                if ("".equals(xpath)) return; // Exception throws the Config.addVariable() method
-                XPath x=StaticFactories.xpathFactory.newXPath();
-                if (Config.xPathResolv!=null) x.setXPathFunctionResolver(Config.xPathResolv);
-                x.setXPathVariableResolver(((Config)dig.getRoot()).xPathVariableResolv);
-                // current namespace context with strict=true (display errors when namespace declaration is missing [non-standard!])
-                // and with possibly declared default namespace is redefined/deleted to "" (according to XSLT specification,
-                // where this is also mandatory).
-                x.setNamespaceContext(dig.getCurrentNamespaceContext(true,true));
-                xPathExpr=x.compile(xpath);
-            }
-        }
+    public static final class Config_XPathVariable extends Config_XPathExpression {
 
         public void setName(ExtendedDigester dig, String nameStr) {
             synchronized(Config.class) {
@@ -394,7 +418,20 @@ public class Config {
 
         // members "the configuration"
         public QName name=null;
-        public XPathExpression xPathExpr=null;
+    }
+
+    public static final class Config_XPathFilter extends Config_XPathExpression {
+
+        public void setType(String v) {
+            try {
+                type=Enum.valueOf(FilterType.class,v.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("Invalid filter type: '"+v+"'");
+            }
+        }
+
+        // members "the configuration"
+        public FilterType type=null;
     }
 
     private static final class TransformerSaxRule extends SaxRule {
