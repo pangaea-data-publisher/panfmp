@@ -42,6 +42,8 @@ public class Config {
         org.apache.lucene.search.BooleanQuery.setMaxClauseCount(DEFAULT_MAX_CLAUSE_COUNT);
         org.apache.lucene.search.BooleanQuery.setAllowDocsOutOfOrder(true);
         try {
+            final Class[] X_PATH_PARAMS=new Class[]{ExtendedDigester.class,String.class};
+
             dig=new ExtendedDigester(StaticFactories.xinclSaxFactory.newSAXParser());
             dig.setLogger(log.isDebugEnabled()?log:new org.apache.commons.logging.impl.NoOpLog());
             dig.setNamespaceAware(true);
@@ -54,11 +56,19 @@ public class Config {
             // *** METADATA definition ***
             dig.addDoNothing("config/metadata");
 
+            // variables
+            dig.addDoNothing("config/metadata/variables");
+            dig.addObjectCreate("config/metadata/variables/variable", Config_XPathVariable.class);
+            dig.addSetNext("config/metadata/variables/variable", "addVariable");
+            dig.addCallMethod("config/metadata/variables/variable","setXPath", 2, X_PATH_PARAMS);
+            dig.addObjectParam("config/metadata/variables/variable", 0, dig);
+            dig.addCallParam("config/metadata/variables/variable", 1);
+            dig.addCallMethod("config/metadata/variables/variable","setName", 2, X_PATH_PARAMS);
+            dig.addObjectParam("config/metadata/variables/variable", 0, dig);
+            dig.addCallParam("config/metadata/variables/variable", 1, "name");
+
             // fields
             dig.addDoNothing("config/metadata/fields");
-
-            final Class[] X_PATH_PARAMS=new Class[]{ExtendedDigester.class,String.class};
-
             dig.addObjectCreate("config/metadata/fields/field", Config_Field.class);
             dig.addSetNext("config/metadata/fields/field", "addField");
             SetPropertiesRule r=new SetPropertiesRule();
@@ -67,15 +77,6 @@ public class Config {
             dig.addCallMethod("config/metadata/fields/field","setXPath", 2, X_PATH_PARAMS);
             dig.addObjectParam("config/metadata/fields/field", 0, dig);
             dig.addCallParam("config/metadata/fields/field", 1);
-
-            dig.addObjectCreate("config/metadata/fields/variable", Config_XPathVariable.class);
-            dig.addSetNext("config/metadata/fields/variable", "addVariable");
-            dig.addCallMethod("config/metadata/fields/variable","setXPath", 2, X_PATH_PARAMS);
-            dig.addObjectParam("config/metadata/fields/variable", 0, dig);
-            dig.addCallParam("config/metadata/fields/variable", 1);
-            dig.addCallMethod("config/metadata/fields/variable","setName", 2, X_PATH_PARAMS);
-            dig.addObjectParam("config/metadata/fields/variable", 0, dig);
-            dig.addCallParam("config/metadata/fields/variable", 1, "name");
 
             dig.addCallMethod("config/metadata/fields/default", "setDefaultField", 0);
 
@@ -159,7 +160,6 @@ public class Config {
     }
 
     public void addVariable(Config_XPathVariable f) {
-        if (fields.size()>0 || defaultField!=null) throw new IllegalStateException("All XPath variables must be declared before any fields because values are assigned on harvesting in config order before any field's XPath is executed!");
         if (f.name==null) throw new IllegalArgumentException("The XPath variable name is mandatory");
         if (f.xPathExpr==null) throw new IllegalArgumentException("The XPath itsself may not be empty");
         xPathVariables.add(f);

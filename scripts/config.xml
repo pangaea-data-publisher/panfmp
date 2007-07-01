@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="ISO-8859-1" ?>
 <config xmlns="urn:java:de.pangaea.metadataportal.config.Config" xmlns:cfg="urn:java:de.pangaea.metadataportal.config.Config">
-	<metadata>
-		<fields xmlns:dif="http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/">
+	<metadata xmlns:dif="http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/">
+		<variables>
 			<variable name="startdate">/dif:DIF/dif:Temporal_Coverage/dif:Start_Date</variable>
 			<variable name="enddate">/dif:DIF/dif:Temporal_Coverage/dif:Stop_Date</variable>
+		</variables>
+		<fields>
 			<field name="citation" datatype="tokenizedText" lucenestorage="false" luceneindexed="true">/dif:DIF/dif:Data_Set_Citation|/dif:DIF/dif:Entry_Title|/dif:DIF/dif:Entry_ID</field>
 			<field name="investigator" datatype="tokenizedText" lucenestorage="false" luceneindexed="true">/dif:DIF/dif:Personnel[contains(dif:Role,'nvestigat')]</field>
 			<field name="parameter" datatype="tokenizedText" lucenestorage="false" luceneindexed="true">/dif:DIF/dif:Parameters</field>
