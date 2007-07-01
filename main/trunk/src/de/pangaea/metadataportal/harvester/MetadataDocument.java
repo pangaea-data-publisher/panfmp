@@ -124,6 +124,25 @@ public class MetadataDocument {
         }
     }
 
+    protected boolean processFilters(SingleIndexConfig iconfig) throws Exception {
+        boolean accept=(iconfig.parent.filterDefault==Config.FilterType.ACCEPT);
+        for (Config.Config_XPathFilter f : iconfig.parent.filters) {
+            Boolean b=(Boolean)f.xPathExpr.evaluate(dom, javax.xml.xpath.XPathConstants.BOOLEAN);
+            if (b==null) throw new javax.xml.xpath.XPathExpressionException("The filter XPath did not return a valid BOOLEAN value!");
+            switch (f.type) {
+                case ACCEPT:
+                    if (b) accept=true;
+                    break;
+                case DENY:
+                    if (b) accept=false;
+                    break;
+                default:
+                    throw new IllegalArgumentException("Invalid filter type (should never happen!)");
+            }
+        }
+        return accept;
+    }
+
     protected void processXPathVariables(SingleIndexConfig iconfig) throws Exception {
         // put map of variables in thread local storage of index config
         HashMap<QName,Object> data=new HashMap<QName,Object>();
@@ -157,12 +176,16 @@ public class MetadataDocument {
         Document ldoc = createEmptyDocument();
         if (!deleted) {
             if (dom==null) throw new NullPointerException("The DOM-Tree of document may not be 'null'!");
-            ldoc.add(new Field(IndexConstants.FIELDNAME_XML, this.getXML(), Field.Store.COMPRESS, Field.Index.NO));
-
             processXPathVariables(iconfig);
-            addDefaultField(iconfig,ldoc);
-            addFields(iconfig,ldoc);
-            unsetXPathVariables(iconfig);
+            try {
+                boolean filterAccepted=processFilters(iconfig);
+                if (!filterAccepted) return null;
+                addDefaultField(iconfig,ldoc);
+                addFields(iconfig,ldoc);
+            } finally {
+                unsetXPathVariables(iconfig);
+            }
+            ldoc.add(new Field(IndexConstants.FIELDNAME_XML, this.getXML(), Field.Store.COMPRESS, Field.Index.NO));
         }
         return ldoc;
     }

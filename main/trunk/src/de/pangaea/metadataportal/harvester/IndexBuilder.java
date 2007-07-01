@@ -126,7 +126,7 @@ public class IndexBuilder implements Runnable {
                     // only flush if commitEvent interface registered
                     if (commitEvent!=null) writer.flush();
 
-                    log.info(deleted+" documents deleted and "+updated+" documents indexed.");
+                    log.info(deleted+" docs presumably deleted (only if existent) and "+updated+" docs (re-)indexed.");
 
                     // notify Harvester of index commit
                     if (commitEvent!=null) commitEvent.harvesterCommitted(Collections.unmodifiableMap(docs).keySet().iterator());

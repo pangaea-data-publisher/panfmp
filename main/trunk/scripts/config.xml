@@ -5,6 +5,10 @@
 			<variable name="startdate">/dif:DIF/dif:Temporal_Coverage/dif:Start_Date</variable>
 			<variable name="enddate">/dif:DIF/dif:Temporal_Coverage/dif:Stop_Date</variable>
 		</variables>
+		<filters default="accept">
+			<!-- we want to remove all documents harvested into index 'pangaea-carboocean' that are from project 'JGOFS' -->
+			<deny>$index='pangaea-carboocean' and contains(/dif:DIF/dif:Project/dif:Short_Name,'JGOFS')</deny>
+		</filters>
 		<fields>
 			<field name="citation" datatype="tokenizedText" lucenestorage="false" luceneindexed="true">/dif:DIF/dif:Data_Set_Citation|/dif:DIF/dif:Entry_Title|/dif:DIF/dif:Entry_ID</field>
 			<field name="investigator" datatype="tokenizedText" lucenestorage="false" luceneindexed="true">/dif:DIF/dif:Personnel[contains(dif:Role,'nvestigat')]</field>
