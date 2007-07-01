@@ -127,7 +127,7 @@ public class LuceneSession {
 
     // this class is a helper for checking a query for invalid (wrong field) Terms. It implements a set but only tests
     // in the add() method for invalid Terms. Nothing more is done, the Set is always empty!
-    private final class TermCheckerSet<E> extends AbstractSet<E> {
+    private final class TermCheckerSet<E extends Term> extends AbstractSet<E> {
 
         public TermCheckerSet(String field) {
             this.field=field.intern();
@@ -142,7 +142,7 @@ public class LuceneSession {
         }
 
         public boolean add(E t) {
-            if (((Term)t).field()!=field) throw new IllegalArgumentException("A query on a specific field may not reference other fields by prefixing with 'fieldname:'!");
+            if (t.field()!=field) throw new IllegalArgumentException("A query on a specific field may not reference other fields by prefixing with 'fieldname:'!");
             return false;
         }
 
