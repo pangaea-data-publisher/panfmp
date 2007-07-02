@@ -77,11 +77,25 @@ public class VirtualIndexConfig extends IndexConfig {
         return new org.apache.lucene.index.MultiReader(l);
     }
 
+    public org.apache.lucene.index.IndexReader getUncachedIndexReader() throws java.io.IOException {
+        if (indices==null) throw new IllegalStateException("Virtual index configuration with id=\""+id+"\" not yet checked and initialized!");
+        org.apache.lucene.index.IndexReader[] l=new org.apache.lucene.index.IndexReader[indices.length];
+        for (int i=0, c=indices.length; i<c; i++) l[i]=indices[i].getUncachedIndexReader();
+        return new org.apache.lucene.index.MultiReader(l);
+    }
+
     // check if current opened reader is current
     public synchronized boolean isIndexCurrent() throws java.io.IOException {
         if (indices==null) throw new IllegalStateException("Virtual index configuration with id=\""+id+"\" not yet checked and initialized!");
         boolean ok=true;
         for (int i=0, c=indices.length; i<c; i++) ok&=indices[i].isIndexCurrent();
+        return ok;
+    }
+
+    public boolean isIndexAvailable() throws java.io.IOException {
+        if (indices==null) throw new IllegalStateException("Virtual index configuration with id=\""+id+"\" not yet checked and initialized!");
+        boolean ok=true;
+        for (int i=0, c=indices.length; i<c; i++) ok&=indices[i].isIndexAvailable();
         return ok;
     }
 

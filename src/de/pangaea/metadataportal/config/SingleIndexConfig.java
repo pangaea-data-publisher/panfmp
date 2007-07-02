@@ -66,6 +66,14 @@ public class SingleIndexConfig extends IndexConfig {
         return indexReader;
     }
 
+    public org.apache.lucene.index.IndexReader getUncachedIndexReader() throws java.io.IOException {
+        return org.apache.lucene.index.IndexReader.open(getFullIndexPath());
+    }
+
+    public boolean isIndexAvailable() throws java.io.IOException {
+        return org.apache.lucene.index.IndexReader.indexExists(getFullIndexPath());
+    }
+
     public String getFullIndexPath() throws java.io.IOException {
         return parent.makePathAbsolute(indexDir);
     }

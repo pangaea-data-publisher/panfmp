@@ -31,10 +31,14 @@ public class RemoveDuplicates {
     protected static int removeDuplicates(IndexReader reader, Term t) throws java.io.IOException {
         ArrayList<Integer> list=new ArrayList<Integer>();
         TermDocs td=reader.termDocs(t);
-        while (td.next()) {
-            int docid=td.doc();
-            log.debug("Found docid="+docid+" for identifier='"+t.text()+"'.");
-            list.add(docid);
+        try {
+            while (td.next()) {
+                int docid=td.doc();
+                log.debug("Found docid="+docid+" for identifier='"+t.text()+"'.");
+                list.add(docid);
+            }
+        } finally {
+            td.close();
         }
 
         int removed=0;
@@ -79,24 +83,27 @@ public class RemoveDuplicates {
                 try {
                     // und los gehts
                     log.info("Opening index \""+iconf.id+"\" for removing duplicate documents...");
-                    reader = siconf.getIndexReader();
+                    reader = siconf.getUncachedIndexReader();
 
                     Term base=new Term(IndexConstants.FIELDNAME_IDENTIFIER,"");
                     TermEnum terms=reader.terms(base);
-                    do {
-                        Term t=terms.term();
-                        if (t!=null && base.field()==t.field()) {
-                            // check frequency
-                            String identifier=t.text();
-                            int count=terms.docFreq();
-                            if (count>1) {
-                                int c=removeDuplicates(reader,t);
-                                foundDupl+=c;
-                                if (c>0) foundDocs++;
-                            }
-                        } else break;
-                    } while (terms.next());
-                    terms.close();
+                    try {
+                        do {
+                            Term t=terms.term();
+                            if (t!=null && base.field()==t.field()) {
+                                // check frequency
+                                String identifier=t.text();
+                                int count=terms.docFreq();
+                                if (count>1) {
+                                    int c=removeDuplicates(reader,t);
+                                    foundDupl+=c;
+                                    if (c>0) foundDocs++;
+                                }
+                            } else break;
+                        } while (terms.next());
+                    } finally {
+                        terms.close();
+                    }
                 } finally {
                     if (reader!=null) reader.close();
                 }

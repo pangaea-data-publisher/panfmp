@@ -160,9 +160,9 @@ public class Config {
     }
 
     public void addField(Config_Field f) {
-        if (f.name==null) throw new IllegalArgumentException("The field name is mandatory");
+        if (f.name==null) throw new IllegalArgumentException("A field name is mandatory");
         if (fields.containsKey(f.name)) throw new IllegalArgumentException("A field with name '"+f.name+"' already exists!");
-        if (f.xPathExpr==null) throw new IllegalArgumentException("The XPath itsself may not be empty");
+        if (f.xPathExpr==null) throw new IllegalArgumentException("A XPath itsself may not be empty");
         if (!f.lucenestorage && !f.luceneindexed) throw new IllegalArgumentException("A field must be at least indexed and/or stored");
         if (f.defaultValue!=null && f.datatype!=DataType.number && f.datatype!=DataType.dateTime)
             throw new IllegalArgumentException("A default value can only be given for number or dateTime fields");
@@ -170,13 +170,15 @@ public class Config {
     }
 
     public void addVariable(Config_XPathVariable f) {
-        if (f.name==null) throw new IllegalArgumentException("The XPath variable name is mandatory");
-        if (f.xPathExpr==null) throw new IllegalArgumentException("The XPath itsself may not be empty");
+        if (f.name==null) throw new IllegalArgumentException("A XPath variable name is mandatory");
+        if (de.pangaea.metadataportal.harvester.XPathResolverImpl.INDEX_BUILDER_NAMESPACE.equals(f.name.getNamespaceURI()))
+            throw new IllegalArgumentException("A XPath variable name may not be in the namespace for internal variables ('"+de.pangaea.metadataportal.harvester.XPathResolverImpl.INDEX_BUILDER_NAMESPACE+"')");
+        if (f.xPathExpr==null) throw new IllegalArgumentException("A XPath itsself may not be empty");
         xPathVariables.add(f);
     }
 
     public void addFilter(Config_XPathFilter f) {
-        if (f.xPathExpr==null) throw new IllegalArgumentException("The XPath itsself may not be empty");
+        if (f.xPathExpr==null) throw new IllegalArgumentException("A XPath itsself may not be empty");
         String type=dig.getCurrentElementName();
         f.setType(type);
         filters.add(f);
@@ -294,20 +296,12 @@ public class Config {
     public Map<String,Config_Field> fields=new HashMap<String,Config_Field>();
     public Config_Field defaultField=null;
 
-    // variables and resolver
-    public List<Config_XPathVariable> xPathVariables=new ArrayList<Config_XPathVariable>();
-    public ThreadLocal<Map<QName,Object>> xPathVariableData=new ThreadLocal<Map<QName,Object>>();
-    protected XPathVariableResolver xPathVariableResolv=new XPathVariableResolver() {
-        public Object resolveVariable(QName variableName) {
-            Map<QName,Object> map=xPathVariableData.get();
-            if (map==null) return null;
-            else return map.get(variableName);
-        }
-    };
-
     // filters
     public FilterType filterDefault=FilterType.ACCEPT;
     public List<Config_XPathFilter> filters=new ArrayList<Config_XPathFilter>();
+
+    // variables
+    public List<Config_XPathVariable> xPathVariables=new ArrayList<Config_XPathVariable>();
 
     // schema etc
     public Schema schema=null;
@@ -334,25 +328,14 @@ public class Config {
     public static enum FilterType { ACCEPT,DENY };
     public static enum DataType { tokenizedText,string,number,dateTime };
 
-    protected static XPathFunctionResolver xPathResolv=null;
-    static {
-        try {
-            xPathResolv=(XPathFunctionResolver)Class.forName("org.apache.xalan.extensions.XPathFunctionResolverImpl").newInstance();
-        } catch (ClassNotFoundException ce) {
-            Config.log.warn("org.apache.xalan.extensions.XPathFunctionResolverImpl not found, extensions to XPath disabled!");
-        } catch (Exception oe) {
-            Config.log.warn("org.apache.xalan.extensions.XPathFunctionResolverImpl not working, extensions to XPath disabled!");
-        }
-    }
-
     public static class Config_XPathExpression extends Object {
 
         public void setXPath(ExtendedDigester dig, String xpath) throws XPathExpressionException {
             synchronized(Config.class) {
                 if ("".equals(xpath)) return; // Exception throws the Config.addField() method
                 XPath x=StaticFactories.xpathFactory.newXPath();
-                if (Config.xPathResolv!=null) x.setXPathFunctionResolver(Config.xPathResolv);
-                x.setXPathVariableResolver(((Config)dig.getRoot()).xPathVariableResolv);
+                x.setXPathFunctionResolver(de.pangaea.metadataportal.harvester.XPathResolverImpl.getInstance());
+                x.setXPathVariableResolver(de.pangaea.metadataportal.harvester.XPathResolverImpl.getInstance());
                 // current namespace context with strict=true (display errors when namespace declaration is missing [non-standard!])
                 // and with possibly declared default namespace is redefined/deleted to "" (according to XSLT specification,
                 // where this is also mandatory).

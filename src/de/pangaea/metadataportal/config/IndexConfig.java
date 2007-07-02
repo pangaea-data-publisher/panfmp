@@ -38,7 +38,9 @@ public abstract class IndexConfig {
     public abstract org.apache.lucene.search.Searcher newSearcher() throws java.io.IOException;
     // Reader
     public abstract org.apache.lucene.index.IndexReader getIndexReader() throws java.io.IOException;
+    public abstract org.apache.lucene.index.IndexReader getUncachedIndexReader() throws java.io.IOException;
     // check if current opened reader is current
+    public abstract boolean isIndexAvailable() throws java.io.IOException;
     public abstract boolean isIndexCurrent() throws java.io.IOException;
     public abstract void reopenIndex() throws java.io.IOException;
 

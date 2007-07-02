@@ -55,7 +55,7 @@ public class Rebuilder {
                 try {
                     // und los gehts
                     log.info("Opening index \""+iconf.id+"\" for harvesting all documents...");
-                    reader = siconf.getIndexReader();
+                    reader = siconf.getUncachedIndexReader();
                     builder = new IndexBuilder(false,siconf);
                     log.info("Harvesting documents...");
                     for (int i=0, c=reader.maxDoc(); i<c; i++) {
