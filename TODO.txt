@@ -2,8 +2,8 @@ Harvester:
 * Configureable IndexBuilder stack size (config.xml and/or real memory usage)
 * Completely rebuilding index from source without deleting old one having readers online (new commit lock-less usage!)
 * Compression on/off for XML stored
-* Lucene extraction of XML/control info directly in MetadataDocument code (no inner class in Rebuilder)
-  to make it possible to use Rebuilder with other MetadataDocument classes (PANGAEA search)
+* Assigning of document boosts by number datatype XPath (complicated XPathes?) or some other combination
+  (assigning values to boolean type XPath, go through XPath list until one matches)
 
 Search:
 * New Search API:

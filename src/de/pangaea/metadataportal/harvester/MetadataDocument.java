@@ -19,6 +19,7 @@ package de.pangaea.metadataportal.harvester;
 import de.pangaea.metadataportal.utils.*;
 import de.pangaea.metadataportal.config.*;
 import java.io.StringWriter;
+import java.io.StringReader;
 import java.util.HashSet;
 import java.util.HashMap;
 import javax.xml.transform.*;
@@ -32,6 +33,29 @@ import org.w3c.dom.Node;
 public class MetadataDocument {
     private static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(MetadataDocument.class);
 
+    public MetadataDocument() {
+    }
+
+    public void loadFromLucene(Document ldoc) throws Exception {
+        deleted=false; datestamp=null; sets.clear();
+        xmlCache=ldoc.get(IndexConstants.FIELDNAME_XML);
+        identifier=ldoc.get(IndexConstants.FIELDNAME_IDENTIFIER);
+        try {
+            String d=ldoc.get(IndexConstants.FIELDNAME_DATESTAMP);
+            if (d!=null) datestamp=LuceneConversions.luceneToDate(d);
+        } catch (NumberFormatException ne) {
+            log.warn("Datestamp of document '"+identifier+"' is invalid. Deleting datestamp!",ne);
+        }
+        String[] sets=ldoc.getValues(IndexConstants.FIELDNAME_SET);
+        if (sets!=null) for (String set : sets) if (set!=null) addSet(set);
+
+        // build DOM tree for XPath
+        dom=StaticFactories.dombuilder.newDocument();
+        StreamSource s=new StreamSource(new StringReader(xmlCache),identifier);
+        DOMResult r=new DOMResult(dom,identifier);
+        StaticFactories.transFactory.newTransformer().transform(s,r);
+    }
+
     public void setHeaderInfo(String status, String identifier, String datestampStr) throws java.text.ParseException {
         this.deleted=(status!=null && status.equals("deleted"));
         this.identifier=identifier;
@@ -42,8 +66,13 @@ public class MetadataDocument {
         sets.add(set);
     }
 
+    public void invalidateXMLCache() {
+        xmlCache=null;
+    }
+
     public String getXML() throws Exception {
         if (deleted || dom==null) return null;
+        if (xmlCache!=null) return xmlCache;
 
         // convert DOM
         StringWriter xmlWriter=new StringWriter();
@@ -54,7 +83,7 @@ public class MetadataDocument {
         StreamResult out=new StreamResult(xmlWriter);
         trans.transform(in,out);
         xmlWriter.close();
-        return xmlWriter.toString();
+        return xmlCache=xmlWriter.toString();
     }
 
     public String toString() {
@@ -251,6 +280,8 @@ public class MetadataDocument {
     public boolean deleted=false;
     public java.util.Date datestamp=null;
     public String identifier=null;
-    public org.w3c.dom.Document dom=null;
     public HashSet<String> sets=new HashSet<String>();
+
+    public org.w3c.dom.Document dom=null;
+    private String xmlCache=null;
 }

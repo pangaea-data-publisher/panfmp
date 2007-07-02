@@ -21,9 +21,6 @@ import de.pangaea.metadataportal.utils.*;
 import org.apache.lucene.document.*;
 import org.apache.lucene.index.*;
 import org.apache.lucene.store.FSDirectory;
-import javax.xml.transform.stream.StreamSource;
-import javax.xml.transform.dom.DOMResult;
-import java.io.StringReader;
 import java.util.*;
 
 public class Rebuilder {
@@ -63,7 +60,8 @@ public class Rebuilder {
                     log.info("Harvesting documents...");
                     for (int i=0, c=reader.maxDoc(); i<c; i++) {
                         if (!reader.isDeleted(i)) {
-                            MetadataDocument mdoc=new RebuilderMetadataDocument(reader.document(i));
+                            MetadataDocument mdoc=new MetadataDocument();
+                            mdoc.loadFromLucene(reader.document(i));
                             builder.addDocument(mdoc);
                             count++;
                             if (count%1000==0) log.info(count+" documents harvested from index so far.");
@@ -79,36 +77,6 @@ public class Rebuilder {
         } catch (Exception e) {
             log.fatal("Exception during index rebuild.",e);
         }
-    }
-
-    public static final class RebuilderMetadataDocument extends MetadataDocument {
-
-        public RebuilderMetadataDocument(Document ldoc) throws Exception {
-            xml=ldoc.get(IndexConstants.FIELDNAME_XML);
-            identifier=ldoc.get(IndexConstants.FIELDNAME_IDENTIFIER);
-            try {
-                String d=ldoc.get(IndexConstants.FIELDNAME_DATESTAMP);
-                if (d!=null) datestamp=LuceneConversions.luceneToDate(d);
-            } catch (NumberFormatException ne) {
-                log.warn("Datestamp of document '"+identifier+"' is invalid. Deleting datestamp!",ne);
-            }
-            String[] sets=ldoc.getValues(IndexConstants.FIELDNAME_SET);
-            if (sets!=null) for (String set : sets) if (set!=null) addSet(set);
-
-            // build DOM tree for XPath
-            dom=StaticFactories.dombuilder.newDocument();
-            StreamSource s=new StreamSource(new StringReader(xml),identifier);
-            DOMResult r=new DOMResult(dom,identifier);
-            StaticFactories.transFactory.newTransformer().transform(s,r);
-        }
-
-        public String getXML() {
-            return xml;
-        }
-
-        // cache!
-        private String xml=null;
-
     }
 
 }
