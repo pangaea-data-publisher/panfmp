@@ -22,6 +22,7 @@ import java.io.StringWriter;
 import java.io.StringReader;
 import java.util.HashSet;
 import java.util.HashMap;
+import java.util.Map;
 import javax.xml.transform.*;
 import javax.xml.transform.dom.*;
 import javax.xml.transform.stream.*;
@@ -173,28 +174,39 @@ public class MetadataDocument {
         return accept;
     }
 
+    protected void addSystemVariables(SingleIndexConfig iconfig, Map<QName,Object> vars) {
+        // TODO: more default variables
+        vars.put(new QName("index"),iconfig.id);
+        vars.put(new QName("indexDisplayName"),iconfig.displayName);
+    }
+
     protected void processXPathVariables(SingleIndexConfig iconfig) throws Exception {
         // put map of variables in thread local storage of index config
         HashMap<QName,Object> data=new HashMap<QName,Object>();
+        boolean needCleanup=true;
         iconfig.parent.xPathVariableData.set(data);
+        try {
+            addSystemVariables(iconfig,data);
 
-        // TODO: default variables
-        data.put(new QName("index"),iconfig.id);
-        data.put(new QName("indexDisplayName"),iconfig.displayName);
-
-        // variables in config file
-        for (Config.Config_XPathVariable f : iconfig.parent.xPathVariables) {
-            Object value=null;
-            try {
-                // First: try to get XPath result as Nodelist if that fails (because result is #STRING): fallback
-                // TODO: Looking for a better system to detect return type of XPath :-( [slowdown by this?]
-                value=f.xPathExpr.evaluate(dom, javax.xml.xpath.XPathConstants.NODESET);
-            } catch (javax.xml.xpath.XPathExpressionException ex) {
-                // Fallback: if return type of XPath is a #STRING (for example from a substring() routine)
-                value=f.xPathExpr.evaluate(dom, javax.xml.xpath.XPathConstants.STRING);
+            // variables in config
+            for (Config.Config_XPathVariable f : iconfig.parent.xPathVariables) {
+                Object value=null;
+                try {
+                    // First: try to get XPath result as Nodelist if that fails (because result is #STRING): fallback
+                    // TODO: Looking for a better system to detect return type of XPath :-( [slowdown by this?]
+                    value=f.xPathExpr.evaluate(dom, javax.xml.xpath.XPathConstants.NODESET);
+                } catch (javax.xml.xpath.XPathExpressionException ex) {
+                    // Fallback: if return type of XPath is a #STRING (for example from a substring() routine)
+                    value=f.xPathExpr.evaluate(dom, javax.xml.xpath.XPathConstants.STRING);
+                }
+                if (log.isTraceEnabled()) log.trace("Variable: "+f.name+"="+value);
+                data.put(f.name,value);
             }
-            if (log.isTraceEnabled()) log.trace("Variable: "+f.name+"="+value);
-            data.put(f.name,value);
+
+            needCleanup=false;
+        } finally {
+            // we need to cleanup on any Exception to keep config in consistent state
+            if (needCleanup) unsetXPathVariables(iconfig);
         }
     }
 
