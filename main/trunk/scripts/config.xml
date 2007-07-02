@@ -1,15 +1,23 @@
 <?xml version="1.0" encoding="ISO-8859-1" ?>
 <config xmlns="urn:java:de.pangaea.metadataportal.config.Config" xmlns:cfg="urn:java:de.pangaea.metadataportal.config.Config">
-	<metadata xmlns:dif="http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/">
+	<metadata xmlns:dif="http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/" xmlns:ib="urn:java:de.pangaea.metadataportal.harvester.IndexBuilder">
 		<variables>
 			<variable name="startdate">/dif:DIF/dif:Temporal_Coverage/dif:Start_Date</variable>
 			<variable name="enddate">/dif:DIF/dif:Temporal_Coverage/dif:Stop_Date</variable>
 		</variables>
 		<filters default="accept">
 			<!-- we want to remove all documents harvested into index 'pangaea-carboocean' that are from project 'JGOFS' -->
-			<deny>$index='pangaea-carboocean' and /dif:DIF/dif:Project/dif:Short_Name[contains(.,'JGOFS')]</deny>
+			<deny>$ib:index='pangaea-carboocean' and /dif:DIF/dif:Project/dif:Short_Name[contains(.,'JGOFS')]</deny>
 			<!-- we want to remove all documents with wrong namespace -->
 			<deny>namespace-uri(/*)!='http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/'</deny>
+			<!--
+				We want to remove all duplicates; this is the simple approach: it checks if every harvested
+				identifier is in no other currently existing index.
+				Because of this every NEW document will stay in the index that was harvested first.
+				You can create more complicated dependencies by using the $ib:index variable and also IDs
+				as string parameters given to the ib:isDocIdentifierUnique() function.
+			-->
+			<deny>not(ib:isDocIdentifierUnique())</deny>
 		</filters>
 		<fields>
 			<field name="citation" datatype="tokenizedText" lucenestorage="false" luceneindexed="true">/dif:DIF/dif:Data_Set_Citation|/dif:DIF/dif:Entry_Title|/dif:DIF/dif:Entry_ID</field>

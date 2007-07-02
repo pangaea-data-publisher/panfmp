@@ -53,7 +53,7 @@ public class Optimizer {
                     // und los gehts
                     log.info("Opening index \""+iconf.id+"\" for optimizing...");
                     FSDirectory dir=FSDirectory.getDirectory(siconf.getFullIndexPath());
-                    if (!IndexReader.indexExists(dir)) throw new java.io.FileNotFoundException("Index directory with segments file does not exist: "+dir.toString());
+                    if (!siconf.isIndexAvailable()) throw new java.io.FileNotFoundException("Index directory with segments file does not exist: "+dir.toString());
                     writer = new IndexWriter(dir, conf.getAnalyzer(), false);
                     log.info("Optimizing...");
                     writer.optimize();

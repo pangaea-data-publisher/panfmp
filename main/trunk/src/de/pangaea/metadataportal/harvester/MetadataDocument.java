@@ -175,16 +175,16 @@ public class MetadataDocument {
     }
 
     protected void addSystemVariables(SingleIndexConfig iconfig, Map<QName,Object> vars) {
-        // TODO: more default variables
-        vars.put(new QName("index"),iconfig.id);
-        vars.put(new QName("indexDisplayName"),iconfig.displayName);
+        vars.put(XPathResolverImpl.VARIABLE_INDEX_ID,iconfig.id);
+        vars.put(XPathResolverImpl.VARIABLE_INDEX_DISPLAYNAME,iconfig.displayName);
+        vars.put(XPathResolverImpl.VARIABLE_DOC_IDENTIFIER,identifier);
+        vars.put(XPathResolverImpl.VARIABLE_DOC_DATESTAMP,(datestamp==null)?"":ISODateFormatter.formatLong(datestamp));
     }
 
-    protected void processXPathVariables(SingleIndexConfig iconfig) throws Exception {
+    protected final void processXPathVariables(SingleIndexConfig iconfig) throws Exception {
         // put map of variables in thread local storage of index config
-        HashMap<QName,Object> data=new HashMap<QName,Object>();
         boolean needCleanup=true;
-        iconfig.parent.xPathVariableData.set(data);
+        Map<QName,Object> data=XPathResolverImpl.getInstance().createVariableMap();
         try {
             addSystemVariables(iconfig,data);
 
@@ -206,13 +206,8 @@ public class MetadataDocument {
             needCleanup=false;
         } finally {
             // we need to cleanup on any Exception to keep config in consistent state
-            if (needCleanup) unsetXPathVariables(iconfig);
+            if (needCleanup) XPathResolverImpl.getInstance().unsetVariables();
         }
-    }
-
-    protected void unsetXPathVariables(SingleIndexConfig iconfig) {
-        // unset the map from the local thread storage of index config
-        iconfig.parent.xPathVariableData.set(null); // unset variables
     }
 
     public Document getLuceneDocument(SingleIndexConfig iconfig) throws Exception {
@@ -229,7 +224,7 @@ public class MetadataDocument {
                 addDefaultField(iconfig,ldoc);
                 addFields(iconfig,ldoc);
             } finally {
-                unsetXPathVariables(iconfig);
+                XPathResolverImpl.getInstance().unsetVariables();
             }
             ldoc.add(new Field(IndexConstants.FIELDNAME_XML, this.getXML(), Field.Store.COMPRESS, Field.Index.NO));
         }

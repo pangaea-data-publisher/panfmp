@@ -28,13 +28,14 @@ import org.apache.lucene.store.*;
 public class IndexBuilder implements Runnable {
     private static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(IndexBuilder.class);
 
+    protected SingleIndexConfig iconfig;
+
     private int minChangesBeforeCommit = 1000;
     private int maxChangesBeforeCommit = 2000;
 
     private boolean create;
     private FSDirectory dir=null;
     private Date lastHarvested=null;
-    private SingleIndexConfig iconfig;
 
     private Thread th;
     private volatile boolean finished=false;
@@ -55,6 +56,7 @@ public class IndexBuilder implements Runnable {
         if (create) try {
             dir.deleteFile(IndexConstants.FILENAME_LASTHARVESTED);
         } catch (IOException e) {}
+        XPathResolverImpl.getInstance().setIndexBuilder(this);
         th=new Thread(this);
     }
 
@@ -165,27 +167,30 @@ public class IndexBuilder implements Runnable {
     public void close() throws IOException {
         if (th==null) throw new IllegalStateException("IndexBuilder already closed");
 
-        if (failure!=null) throw failure;
-        else {
-            if (!th.isAlive()) th.start(); // start thread to make sure index is created if nothing was added before
-            finished=true;
-            synchronized(this) {
-                this.notify();
+        try {
+            if (failure!=null) throw failure;
+            else {
+                if (!th.isAlive()) th.start(); // start thread to make sure index is created if nothing was added before
+                finished=true;
+                synchronized(this) {
+                    this.notify();
+                }
+                try {
+                    th.join();
+                } catch (InterruptedException e) {}
             }
-            try {
-                th.join();
-            } catch (InterruptedException e) {}
-        }
-        if (failure!=null) throw failure;
+            if (failure!=null) throw failure;
 
-        if (lastHarvested!=null) {
-            org.apache.lucene.store.IndexOutput out=dir.createOutput(IndexConstants.FILENAME_LASTHARVESTED);
-            out.writeLong(lastHarvested.getTime());
-            out.close();
-            lastHarvested=null;
+            if (lastHarvested!=null) {
+                org.apache.lucene.store.IndexOutput out=dir.createOutput(IndexConstants.FILENAME_LASTHARVESTED);
+                out.writeLong(lastHarvested.getTime());
+                out.close();
+                lastHarvested=null;
+            }
+        } finally {
+            th=null;
+            XPathResolverImpl.getInstance().unsetIndexBuilder();
         }
-
-        th=null;
     }
 
     private synchronized void internalWaitIndexer() {
