@@ -8,6 +8,8 @@
 		<filters default="accept">
 			<!-- we want to remove all documents harvested into index 'pangaea-carboocean' that are from project 'JGOFS' -->
 			<deny>$index='pangaea-carboocean' and contains(/dif:DIF/dif:Project/dif:Short_Name,'JGOFS')</deny>
+			<!-- we want to remove all documents with wrong namespace -->
+			<deny>namespace-uri(/*)!='http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/'</deny>
 		</filters>
 		<fields>
 			<field name="citation" datatype="tokenizedText" lucenestorage="false" luceneindexed="true">/dif:DIF/dif:Data_Set_Citation|/dif:DIF/dif:Entry_Title|/dif:DIF/dif:Entry_ID</field>
