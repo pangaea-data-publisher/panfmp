@@ -46,7 +46,7 @@ public final class XPathResolverImpl implements XPathFunctionResolver,XPathVaria
     // XPathFunctionResolver
     public XPathFunction resolveFunction(QName functionName, int arity) {
         if (FUNCTION_DOC_UNIQUE.equals(functionName)) {
-            // FUNCTION: test if identifier of current document is unique
+            // FUNCTION: isDocIdentifierUnique() -- test if identifier of current document is unique
             return new XPathFunction() {
                 public Object evaluate(List args) throws XPathFunctionException {
                     return isDocIdentifierUnique(args);
@@ -150,7 +150,7 @@ public final class XPathResolverImpl implements XPathFunctionResolver,XPathVaria
         for (IndexReader v : cachedIndexes.get().values()) try {
             v.close();
         } catch (java.io.IOException ioe) {
-            log.warn("Could not close one of the opened foreign indexes.");
+            log.warn("Could not close one of the opened foreign indexes: "+ioe);
         }
         cachedIndexes.set(null);
     }
