@@ -48,7 +48,7 @@ public class SearchRequest implements java.io.Serializable {
             Config.Config_Field f=config.fields.get(sortFieldName);
             if (f==null) throw new IllegalArgumentException("Field name '"+sortFieldName+"' is unknown!");
             if (!f.luceneindexed) throw new IllegalArgumentException("Field '"+sortFieldName+"' is not searchable!");
-            if (f.datatype==Config.DataType.tokenizedText) throw new IllegalArgumentException("Field '"+sortFieldName+"' is tokenized which prevents sorting!");
+            if (f.datatype==Config.DataType.TOKENIZEDTEXT) throw new IllegalArgumentException("Field '"+sortFieldName+"' is tokenized which prevents sorting!");
         }
     }
 

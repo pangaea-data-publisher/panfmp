@@ -53,9 +53,9 @@ public class SearchRequestQuery implements java.io.Serializable {
             Config_Field f=config.fields.get(fieldName);
             if (f==null) throw new IllegalArgumentException("Field name '"+fieldName+"' is unknown!");
             if (!f.luceneindexed) throw new IllegalArgumentException("Field '"+fieldName+"' is not searchable!");
-            if (f.datatype!=Config.DataType.tokenizedText && f.datatype!=Config.DataType.string)
+            if (f.datatype!=Config.DataType.TOKENIZEDTEXT && f.datatype!=Config.DataType.STRING)
                 throw new IllegalArgumentException("Field '"+fieldName+"' is not of type string or tokenizedText!");
-            isStringField=new Boolean(f.datatype==Config.DataType.string);
+            isStringField=new Boolean(f.datatype==Config.DataType.STRING);
             if (query==null) throw new IllegalArgumentException("A query string must be given for field '"+fieldName+"'!");
         }
     }

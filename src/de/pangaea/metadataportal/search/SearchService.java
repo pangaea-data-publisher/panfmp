@@ -49,12 +49,12 @@ public class SearchService {
                     java.util.ArrayList<Object> vals=new java.util.ArrayList<Object>();
                     for (String val : data) try {
                         switch(f.datatype) {
-                            case tokenizedText:
-                            case string:
+                            case TOKENIZEDTEXT:
+                            case STRING:
                                 vals.add(val); break;
-                            case number:
+                            case NUMBER:
                                 vals.add(new Double(LuceneConversions.luceneToDouble(val))); break;
-                            case dateTime:
+                            case DATETIME:
                                 vals.add(LuceneConversions.luceneToDate(val)); break;
                         }
                     } catch (NumberFormatException ex) {
@@ -146,7 +146,7 @@ public class SearchService {
         Config.Config_Field f=cache.config.fields.get(fieldName);
         if (f==null) throw new IllegalArgumentException("Field name '"+fieldName+"' is unknown!");
         if (!f.luceneindexed) throw new IllegalArgumentException("Field '"+fieldName+"' is not searchable!");
-        if (f.datatype!=Config.DataType.tokenizedText && f.datatype!=Config.DataType.string)
+        if (f.datatype!=Config.DataType.TOKENIZEDTEXT && f.datatype!=Config.DataType.STRING)
             throw new IllegalArgumentException("Field '"+fieldName+"' is not of type string or tokenizedText!");
 
         // scan

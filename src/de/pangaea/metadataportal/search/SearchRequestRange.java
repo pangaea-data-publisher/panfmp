@@ -45,7 +45,7 @@ public class SearchRequestRange implements java.io.Serializable {
         if (!f.luceneindexed) throw new IllegalArgumentException("Field '"+fieldName+"' is not searchable!");
         if (min==null && max==null) throw new IllegalArgumentException("A min or max value must be given for field '"+fieldName+"'!");
         switch (f.datatype) {
-            case number:
+            case NUMBER:
                 try {
                     if (min!=null && !(min instanceof Number)) min=new Double(min.toString());
                     if (max!=null && !(max instanceof Number)) max=new Double(max.toString());
@@ -53,7 +53,7 @@ public class SearchRequestRange implements java.io.Serializable {
                     throw new IllegalArgumentException("Field '"+fieldName+"' is not a correct number!");
                 }
                 break;
-            case dateTime:
+            case DATETIME:
                 try {
                     if (min!=null) {
                         if (min instanceof java.util.Calendar) min=((java.util.Calendar)min).getTime();
