@@ -273,14 +273,14 @@ public class MetadataDocument {
         if (log.isTraceEnabled()) log.trace("AddField: "+f.name+'='+val);
         boolean token=false;
         switch(f.datatype) {
-            case number: val=LuceneConversions.doubleToLucene(Double.parseDouble(val));break;
-            case dateTime: val=LuceneConversions.dateToLucene(LenientDateParser.parseDate(val));break;
-            case tokenizedText: token=true;
+            case NUMBER: val=LuceneConversions.doubleToLucene(Double.parseDouble(val));break;
+            case DATETIME: val=LuceneConversions.dateToLucene(LenientDateParser.parseDate(val));break;
+            case TOKENIZEDTEXT: token=true;
         }
         Field.Index in=Field.Index.NO;
         if (f.luceneindexed) in=token?Field.Index.TOKENIZED:Field.Index.UN_TOKENIZED;
         ldoc.add(new Field(f.name, val, f.lucenestorage?Field.Store.YES:Field.Store.NO, in));
-        if (f.luceneindexed && (f.datatype==Config.DataType.number || f.datatype==Config.DataType.dateTime))
+        if (f.luceneindexed && (f.datatype==Config.DataType.NUMBER || f.datatype==Config.DataType.DATETIME))
             LuceneConversions.addTrieIndexEntries(ldoc,f.name,val);
     }
 

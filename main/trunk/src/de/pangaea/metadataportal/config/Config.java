@@ -164,7 +164,7 @@ public class Config {
         if (fields.containsKey(f.name)) throw new IllegalArgumentException("A field with name '"+f.name+"' already exists!");
         if (f.xPathExpr==null) throw new IllegalArgumentException("A XPath itsself may not be empty");
         if (!f.lucenestorage && !f.luceneindexed) throw new IllegalArgumentException("A field must be at least indexed and/or stored");
-        if (f.defaultValue!=null && f.datatype!=DataType.number && f.datatype!=DataType.dateTime)
+        if (f.defaultValue!=null && f.datatype!=DataType.NUMBER && f.datatype!=DataType.DATETIME)
             throw new IllegalArgumentException("A default value can only be given for number or dateTime fields");
         fields.put(f.name,f);
     }
@@ -210,7 +210,7 @@ public class Config {
             // dummy settings not yet used for default field, to change this, change logic in IndexBuilder.addDocument() !!!
             defaultField.lucenestorage=false;
             defaultField.luceneindexed=true;
-            defaultField.datatype=DataType.tokenizedText;
+            defaultField.datatype=DataType.TOKENIZEDTEXT;
             defaultField.name=IndexConstants.FIELDNAME_CONTENT;
         }
     }
@@ -326,7 +326,7 @@ public class Config {
 
     public static enum ConfigMode { HARVESTING,SEARCH };
     public static enum FilterType { ACCEPT,DENY };
-    public static enum DataType { tokenizedText,string,number,dateTime };
+    public static enum DataType { TOKENIZEDTEXT,STRING,NUMBER,DATETIME };
 
     public static class Config_XPathExpression extends Object {
 
@@ -359,7 +359,7 @@ public class Config {
 
         public void setDatatype(String v) {
             try {
-                datatype=Enum.valueOf(DataType.class,v);
+                datatype=Enum.valueOf(DataType.class,v.toUpperCase());
             } catch (IllegalArgumentException e) {
                 throw new IllegalArgumentException("Invalid value '"+v+"' for attribute datatype!");
             }
@@ -376,7 +376,7 @@ public class Config {
         // members "the configuration"
         public String name=null;
         public String defaultValue=null;
-        public DataType datatype=DataType.tokenizedText;
+        public DataType datatype=DataType.TOKENIZEDTEXT;
         public boolean lucenestorage=true;
         public boolean luceneindexed=true;
     }
