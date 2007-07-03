@@ -23,9 +23,9 @@ import java.text.*;
 
 // TODO !!!!!!!!!!!!!!!!!
 
-public class LenientDateParser {
+public final class LenientDateParser {
 
-    private LenientDateParser() {}
+    private LenientDateParser() {} // no instance
 
     public static synchronized Date parseDate(String date) throws ParseException {
         if (date==null) return null;

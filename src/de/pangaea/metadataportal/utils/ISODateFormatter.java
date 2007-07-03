@@ -21,9 +21,9 @@ import java.util.TimeZone;
 import java.util.Locale;
 import java.text.*;
 
-public class ISODateFormatter {
+public final class ISODateFormatter {
 
-    private ISODateFormatter() {}
+    private ISODateFormatter() {} // no instance
 
     public static synchronized Date parseDate(String date) throws ParseException {
         if (date==null) return null;

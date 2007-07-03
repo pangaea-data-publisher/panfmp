@@ -388,24 +388,10 @@ public class Config {
         public void setName(ExtendedDigester dig, String nameStr) {
             synchronized(Config.class) {
                 if ("".equals(nameStr)) return; // Exception throws the Config.addVariable() method
-                String prefix,localPart;
-                String[] parts=nameStr.split(":");
-                switch (parts.length) {
-                    case 1:
-                        prefix=XMLConstants.DEFAULT_NS_PREFIX;
-                        localPart=parts[0];
-                        break;
-                    case 2:
-                        prefix=parts[0];
-                        localPart=parts[1];
-                        break;
-                    default:
-                        throw new IllegalArgumentException("Invalid formatted QName given in XPath variable name: "+nameStr);
-                }
                 // current namespace context with strict=true (display errors when namespace declaration is missing [non-standard!])
                 // and with possibly declared default namespace is redefined/deleted to "" (according to XSLT specification,
                 // where this is also mandatory).
-                this.name=new QName(dig.getCurrentNamespaceContext(true,true).getNamespaceURI(prefix), localPart, prefix);
+                this.name=QNameParser.parseLexicalQName(nameStr,dig.getCurrentNamespaceContext(true,true));
             }
         }
 

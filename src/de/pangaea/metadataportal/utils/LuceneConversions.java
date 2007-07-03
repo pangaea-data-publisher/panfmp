@@ -20,7 +20,7 @@ import java.util.Date;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 
-public class LuceneConversions {
+public final class LuceneConversions {
 
     public static final char LUCENE_LOOSE_PADDING_START='0';
     public static final char LUCENE_SYMBOL_MIN='a';
@@ -30,6 +30,8 @@ public class LuceneConversions {
     public static String LUCENE_NUMERIC_MAX=longToLucene(Long.MAX_VALUE);
 
     private static final String ERR_STRING = "Invalid Lucene numerical value representation: ";
+
+    private LuceneConversions() {} // no instance
 
     // internal conversion to/from strings
 
