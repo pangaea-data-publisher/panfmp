@@ -20,9 +20,11 @@ import javax.xml.transform.sax.*;
 import javax.xml.parsers.*;
 import javax.xml.xpath.*;
 
-public class StaticFactories {
+public final class StaticFactories {
 
     private static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(StaticFactories.class);
+
+    private StaticFactories() {} // no instance
 
     public static XPathFactory xpathFactory;
     public static SAXTransformerFactory transFactory;

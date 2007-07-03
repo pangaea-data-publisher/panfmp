@@ -16,9 +16,9 @@
 
 package de.pangaea.metadataportal.utils;
 
-public class IndexConstants {
+public final class IndexConstants {
 
-    private IndexConstants() {}
+    private IndexConstants() {} // no instance
 
     public static final String FIELD_PREFIX = "internal-";
 
