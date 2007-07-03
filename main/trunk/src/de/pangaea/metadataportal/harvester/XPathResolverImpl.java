@@ -16,12 +16,11 @@
 
 package de.pangaea.metadataportal.harvester;
 
-//import org.apache.lucene.index.IndexReader;
 import java.util.*;
 import javax.xml.namespace.QName;
 import javax.xml.xpath.*;
 import de.pangaea.metadataportal.config.*;
-import de.pangaea.metadataportal.utils.*;
+import de.pangaea.metadataportal.utils.IndexConstants;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.TermDocs;
 import org.apache.lucene.index.Term;
@@ -50,49 +49,7 @@ public final class XPathResolverImpl implements XPathFunctionResolver,XPathVaria
             // FUNCTION: test if identifier of current document is unique
             return new XPathFunction() {
                 public Object evaluate(List args) throws XPathFunctionException {
-                    IndexBuilder index=currentIndexBuilder.get();
-                    if (index==null)
-                        throw new IllegalStateException("There is no IndexBuilder instance in thread local storage!");
-                    String identifier=(String)resolveVariable(VARIABLE_DOC_IDENTIFIER);
-                    if (identifier==null) throw new IllegalStateException("Missing variable "+VARIABLE_DOC_IDENTIFIER+" in thread local storage!");
-                    HashSet<String> indexIds=new HashSet<String>();
-                    try {
-                        if (args.size()==0) {
-                            // collect all indexes, excluding the current one
-                            for (IndexConfig iconfig : index.iconfig.parent.indices.values()) {
-                                if (iconfig==index.iconfig) continue;
-                                if (!(iconfig instanceof SingleIndexConfig)) continue;
-                                if (!((SingleIndexConfig)iconfig).isIndexAvailable()) continue;
-                                indexIds.add(iconfig.id);
-                            }
-                        } else {
-                            // collect indices by id, excluding the current one
-                            for (Object o : args) {
-                                if (!(o instanceof String))
-                                    throw new XPathFunctionException(FUNCTION_DOC_UNIQUE.toString()+" only allows type STRING as parameters (which are index ids, or empty for all indices)!");
-                                String s=(String)o;
-                                if (s.equals(index.iconfig.id)) continue;
-                                IndexConfig iconfig=index.iconfig.parent.indices.get(s);
-                                if (!(iconfig instanceof SingleIndexConfig))
-                                    throw new XPathFunctionException(FUNCTION_DOC_UNIQUE.toString()+" does not support index '"+s+"' (not defined or wrong type)!");
-                                if (!((SingleIndexConfig)iconfig).isIndexAvailable()) continue;
-                                indexIds.add(s);
-                            }
-                        }
-                        // if no other indexes present, identifier is unique!
-                        if (indexIds.isEmpty()) return new Boolean(true);
-                        // fetch a MultiReader from cache to search for identifiers
-                        IndexReader reader=openIndexReader(index.iconfig.parent,indexIds);
-                        Term t=new Term(IndexConstants.FIELDNAME_IDENTIFIER,identifier);
-                        TermDocs td=reader.termDocs(t);
-                        try {
-                            return new Boolean(!td.next());
-                        } finally {
-                            td.close();
-                        }
-                    } catch (java.io.IOException ioe) {
-                        throw new XPathFunctionException("Error accessing index: "+ioe);
-                    }
+                    return isDocIdentifierUnique(args);
                 }
             };
         }
@@ -124,6 +81,52 @@ public final class XPathResolverImpl implements XPathFunctionResolver,XPathVaria
             ci.put(ids,reader=new org.apache.lucene.index.MultiReader(l));
         }
         return reader;
+    }
+
+    private Boolean isDocIdentifierUnique(List args) throws XPathFunctionException {
+        IndexBuilder index=currentIndexBuilder.get();
+        if (index==null)
+            throw new IllegalStateException("There is no IndexBuilder instance in thread local storage!");
+        String identifier=(String)resolveVariable(VARIABLE_DOC_IDENTIFIER);
+        if (identifier==null) throw new IllegalStateException("Missing variable "+VARIABLE_DOC_IDENTIFIER+" in thread local storage!");
+        HashSet<String> indexIds=new HashSet<String>();
+        try {
+            if (args.size()==0) {
+                // collect all indexes, excluding the current one
+                for (IndexConfig iconfig : index.iconfig.parent.indices.values()) {
+                    if (iconfig==index.iconfig) continue;
+                    if (!(iconfig instanceof SingleIndexConfig)) continue;
+                    if (!((SingleIndexConfig)iconfig).isIndexAvailable()) continue;
+                    indexIds.add(iconfig.id);
+                }
+            } else {
+                // collect indices by id, excluding the current one
+                for (Object o : args) {
+                    if (!(o instanceof String))
+                        throw new XPathFunctionException(FUNCTION_DOC_UNIQUE.toString()+" only allows type STRING as parameters (which are index ids, or empty for all indices)!");
+                    String s=(String)o;
+                    if (s.equals(index.iconfig.id)) continue;
+                    IndexConfig iconfig=index.iconfig.parent.indices.get(s);
+                    if (!(iconfig instanceof SingleIndexConfig))
+                        throw new XPathFunctionException(FUNCTION_DOC_UNIQUE.toString()+" does not support index '"+s+"' (not defined or wrong type)!");
+                    if (!((SingleIndexConfig)iconfig).isIndexAvailable()) continue;
+                    indexIds.add(s);
+                }
+            }
+            // if no other indexes present, identifier is unique!
+            if (indexIds.isEmpty()) return new Boolean(true);
+            // fetch a MultiReader from cache to search for identifiers
+            IndexReader reader=openIndexReader(index.iconfig.parent,indexIds);
+            Term t=new Term(IndexConstants.FIELDNAME_IDENTIFIER,identifier);
+            TermDocs td=reader.termDocs(t);
+            try {
+                return new Boolean(!td.next());
+            } finally {
+                td.close();
+            }
+        } catch (java.io.IOException ioe) {
+            throw new XPathFunctionException("Error accessing index: "+ioe);
+        }
     }
 
     // API
