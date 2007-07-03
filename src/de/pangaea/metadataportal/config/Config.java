@@ -331,18 +331,16 @@ public class Config {
     public static class Config_XPathExpression extends Object {
 
         public void setXPath(ExtendedDigester dig, String xpath) throws XPathExpressionException {
-            synchronized(Config.class) {
-                if ("".equals(xpath)) return; // Exception throws the Config.addField() method
-                XPath x=StaticFactories.xpathFactory.newXPath();
-                x.setXPathFunctionResolver(de.pangaea.metadataportal.harvester.XPathResolverImpl.getInstance());
-                x.setXPathVariableResolver(de.pangaea.metadataportal.harvester.XPathResolverImpl.getInstance());
-                // current namespace context with strict=true (display errors when namespace declaration is missing [non-standard!])
-                // and with possibly declared default namespace is redefined/deleted to "" (according to XSLT specification,
-                // where this is also mandatory).
-                x.setNamespaceContext(dig.getCurrentNamespaceContext(true,true));
-                xPathExpr=x.compile(xpath);
-                cachedXPath=xpath;
-            }
+            if ("".equals(xpath)) return; // Exception throws the Config.addField() method
+            XPath x=StaticFactories.xpathFactory.newXPath();
+            x.setXPathFunctionResolver(de.pangaea.metadataportal.harvester.XPathResolverImpl.getInstance());
+            x.setXPathVariableResolver(de.pangaea.metadataportal.harvester.XPathResolverImpl.getInstance());
+            // current namespace context with strict=true (display errors when namespace declaration is missing [non-standard!])
+            // and with possibly declared default namespace is redefined/deleted to "" (according to XSLT specification,
+            // where this is also mandatory).
+            x.setNamespaceContext(dig.getCurrentNamespaceContext(true,true));
+            xPathExpr=x.compile(xpath);
+            cachedXPath=xpath;
         }
 
         public String toString() {
@@ -386,13 +384,11 @@ public class Config {
     public static final class Config_XPathVariable extends Config_XPathExpression {
 
         public void setName(ExtendedDigester dig, String nameStr) {
-            synchronized(Config.class) {
-                if ("".equals(nameStr)) return; // Exception throws the Config.addVariable() method
-                // current namespace context with strict=true (display errors when namespace declaration is missing [non-standard!])
-                // and with possibly declared default namespace is redefined/deleted to "" (according to XSLT specification,
-                // where this is also mandatory).
-                this.name=QNameParser.parseLexicalQName(nameStr,dig.getCurrentNamespaceContext(true,true));
-            }
+            if ("".equals(nameStr)) return; // Exception throws the Config.addVariable() method
+            // current namespace context with strict=true (display errors when namespace declaration is missing [non-standard!])
+            // and with possibly declared default namespace is redefined/deleted to "" (according to XSLT specification,
+            // where this is also mandatory).
+            this.name=QNameParser.parseLexicalQName(nameStr,dig.getCurrentNamespaceContext(true,true));
         }
 
         public String toString() {
