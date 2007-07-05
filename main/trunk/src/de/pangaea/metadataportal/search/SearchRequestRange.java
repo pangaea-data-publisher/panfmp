@@ -73,7 +73,7 @@ public class SearchRequestRange implements java.io.Serializable {
     }
 
     // hashing & compare & string representation
-    public boolean equals(Object o) {
+    public final boolean equals(Object o) {
         if (o!=null && o instanceof SearchRequestRange) {
             SearchRequestRange s=(SearchRequestRange)o;
             boolean ok=true;
@@ -84,11 +84,11 @@ public class SearchRequestRange implements java.io.Serializable {
         } else return false;
     }
 
-    public int hashCode() {
+    public final int hashCode() {
         int hashCode=0;
-        if (fieldName!=null) hashCode^=fieldName.hashCode();
-        if (min!=null) hashCode^=min.hashCode();
-        if (max!=null) hashCode^=max.hashCode();
+        if (fieldName!=null) hashCode^=fieldName.hashCode()^0x8774ab42;
+        if (min!=null) hashCode^=min.hashCode()^0x0a456ff33;
+        if (max!=null) hashCode^=max.hashCode()^0x0b5afd345;
         return hashCode;
     }
 

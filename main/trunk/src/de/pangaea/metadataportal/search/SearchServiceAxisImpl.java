@@ -30,7 +30,7 @@ public class SearchServiceAxisImpl {
     public SearchServiceAxisImpl() throws ConfigurationException {
         org.apache.axis.MessageContext mcontext=org.apache.axis.MessageContext.getCurrentContext();
         if (mcontext==null)
-            throw new ConfigurationException("The constructor "+getClass().getName()+"() only works inside an Apache Axis environment!");
+            throw new ConfigurationException("The constructor "+getClass().getName()+"() only works inside an Apache AXIS environment!");
         java.util.Map axisCfg=mcontext.getAxisEngine().getConfig().getGlobalOptions();
 
         String cfgFile=(String)axisCfg.get("de.pangaea.metadataportal.search.indexConfigFile");
@@ -38,7 +38,7 @@ public class SearchServiceAxisImpl {
             throw new ConfigurationException("The configuration file for the indices must be given as global configuration parameter 'de.pangaea.metadataportal.search.indexConfigFile' in the Apache AXIS configuration (WEB-INF/server-config.wsdd)!");
         HttpServlet servlet = (HttpServlet)mcontext.getProperty(HTTPConstants.MC_HTTP_SERVLET);
         if (servlet==null)
-            throw new ConfigurationException("Cannot get Axis servlet instance from MessageContext!");
+            throw new ConfigurationException("Cannot get AXIS servlet instance from MessageContext!");
         String webinf=servlet.getServletContext().getRealPath("/WEB-INF/");
         if (webinf==null)
             throw new ConfigurationException("Cannot resolve WEB-INF directory!");
@@ -87,6 +87,15 @@ public class SearchServiceAxisImpl {
     public String[] listTerms(String indexName, String fieldName, int count) throws RemoteException {
         try {
             return searchService.listTerms(indexName,fieldName,count);
+        } catch (Exception e) {
+            log.error("Error during Lucene query",e);
+            throw new RemoteException("Error during Lucene query",e);
+        }
+    }
+
+    public String[] listTermsWithPrefix(String indexName, String fieldName, String prefix, int count) throws RemoteException {
+        try {
+            return searchService.listTerms(indexName,fieldName,prefix,count);
         } catch (Exception e) {
             log.error("Error during Lucene query",e);
             throw new RemoteException("Error during Lucene query",e);
