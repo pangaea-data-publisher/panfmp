@@ -134,7 +134,13 @@ public class SearchService {
     }
 
     public String[] listTerms(String indexName, String fieldName, int count) throws Exception {
+        return listTerms(indexName,fieldName,"",count);
+    }
+
+    public String[] listTerms(String indexName, String fieldName, String prefix, int count) throws Exception {
         cache.cleanupCache();
+
+        if (count==0) return new String[0];
 
         // init Index
         IndexConfig index=cache.config.indices.get(indexName);
@@ -150,12 +156,12 @@ public class SearchService {
             throw new IllegalArgumentException("Field '"+fieldName+"' is not of type string or tokenizedText!");
 
         // scan
-        TermEnum terms=reader.terms(new Term(fieldName,new String()));
+        TermEnum terms=reader.terms(new Term(fieldName,prefix));
         try {
             ArrayList<String> termList=new ArrayList<String>();
             do {
                 Term t=terms.term();
-                if (t!=null && fieldName==t.field()) termList.add(t.text());
+                if (t!=null && fieldName==t.field() && t.text().startsWith(prefix) && terms.docFreq()>0) termList.add(t.text());
                 else break;
             } while (termList.size()<count && terms.next());
             return termList.toArray(new String[termList.size()]);

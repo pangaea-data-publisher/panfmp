@@ -61,7 +61,7 @@ public class SearchRequestQuery implements java.io.Serializable {
     }
 
     // hashing & compare & string representation
-    public boolean equals(Object o) {
+    public final boolean equals(Object o) {
         if (o!=null && o instanceof SearchRequestQuery) {
             SearchRequestQuery s=(SearchRequestQuery)o;
             boolean ok=true;
@@ -72,11 +72,11 @@ public class SearchRequestQuery implements java.io.Serializable {
         } else return false;
     }
 
-    public int hashCode() {
+    public final int hashCode() {
         int hashCode=0;
-        if (fieldName!=null) hashCode^=fieldName.hashCode();
-        if (query!=null) hashCode^=query.hashCode();
-        hashCode^=new Boolean(anyof).hashCode();
+        if (fieldName!=null) hashCode^=fieldName.hashCode()^0x1234abcd;
+        if (query!=null) hashCode^=query.hashCode()^0xa1b2c3d4;
+        hashCode^=new Boolean(anyof).hashCode()^0x98765432;
         return hashCode;
     }
 

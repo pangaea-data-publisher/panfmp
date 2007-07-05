@@ -53,7 +53,7 @@ public class SearchRequest implements java.io.Serializable {
     }
 
     // hashing & compare & string representation
-    public boolean equals(Object o) {
+    public final boolean equals(Object o) {
         if (o!=null && o instanceof SearchRequest) {
             SearchRequest s=(SearchRequest)o;
             boolean ok=true;
@@ -66,13 +66,13 @@ public class SearchRequest implements java.io.Serializable {
         } else return false;
     }
 
-    public int hashCode() {
+    public final int hashCode() {
         int hashCode=0;
         if (indexName!=null) hashCode^=indexName.hashCode();
-        if (queries!=null) hashCode^=Arrays.hashCode(queries);
-        if (ranges!=null) hashCode^=Arrays.hashCode(ranges);
-        if (sortFieldName!=null) hashCode^=sortFieldName.hashCode();
-        if (sortReverse!=null) hashCode^=sortReverse.hashCode();
+        if (queries!=null) hashCode^=Arrays.hashCode(queries)^0x1ab3456f;
+        if (ranges!=null) hashCode^=Arrays.hashCode(ranges)^0x4567abcd;
+        if (sortFieldName!=null) hashCode^=sortFieldName.hashCode()^0x984af32a;
+        if (sortReverse!=null) hashCode^=sortReverse.hashCode()^0x1aabb245;
         return hashCode;
     }
 

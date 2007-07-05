@@ -67,14 +67,14 @@ public class TrieRangeQuery extends Query {
         return sb.toString();
     }
 
-    public boolean equals(Object o) {
+    public final boolean equals(Object o) {
         if (o instanceof TrieRangeQuery) {
             TrieRangeQuery q=(TrieRangeQuery)o;
             return (field==q.field && min.equals(q.min) && max.equals(q.max));
         } else return false;
     }
 
-    public int hashCode() {
+    public final int hashCode() {
         return field.hashCode()+(min.hashCode()^0x14fa55fb)+(max.hashCode()^0x733fa5fe);
     }
 

@@ -56,11 +56,9 @@ public class Suggest {
                 int c=0;
                 do {
                     Term t=terms.term();
-                    if (t!=null && base.field()==t.field()) {
-                        if (t.text().startsWith(base.text())) {
-                            termList.add(t);
-                            c++;
-                        } else break;
+                    if (t!=null && base.field()==t.field() && t.text().startsWith(base.text()) && terms.docFreq()>0) {
+                        termList.add(t);
+                        c++;
                     } else break;
                 } while (c<count && terms.next());
                 String[] suggests=new String[c];
