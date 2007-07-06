@@ -196,17 +196,17 @@ public class Config {
     }
 
     public void addVariable(Config_Variable f) {
+        if (configMode==ConfigMode.SEARCH) return;
         if (f.name==null) throw new IllegalArgumentException("A XPath variable name is mandatory");
         if (de.pangaea.metadataportal.harvester.XPathResolverImpl.INDEX_BUILDER_NAMESPACE.equals(f.name.getNamespaceURI()))
             throw new IllegalArgumentException("A XPath variable name may not be in the namespace for internal variables ('"+de.pangaea.metadataportal.harvester.XPathResolverImpl.INDEX_BUILDER_NAMESPACE+"')");
-        if (configMode==ConfigMode.HARVESTING) {
-            if (f.xPathExpr==null && f.xslt==null) throw new IllegalArgumentException("A XPath or template itsself may not be empty");
-            if (f.xPathExpr!=null && f.xslt!=null) throw new IllegalArgumentException("It may not both XPath and template be defined");
-        }
+        if (f.xPathExpr==null && f.xslt==null) throw new IllegalArgumentException("A XPath or template itsself may not be empty");
+        if (f.xPathExpr!=null && f.xslt!=null) throw new IllegalArgumentException("It may not both XPath and template be defined");
         xPathVariables.add(f);
     }
 
     public void addFilter(Config_XPathFilter f) {
+        if (configMode==ConfigMode.SEARCH) return;
         if (f.xPathExpr==null) throw new IllegalArgumentException("A XPath itsself may not be empty");
         if (f.xslt!=null) throw new IllegalArgumentException("A filter may not contain a template");
         String type=dig.getCurrentElementName();
