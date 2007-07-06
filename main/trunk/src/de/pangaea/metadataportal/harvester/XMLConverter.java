@@ -86,6 +86,7 @@ public class XMLConverter  {
         } else {
             if (log.isDebugEnabled()) log.debug("XSL-Transforming '"+s.getSystemId()+"'...");
             Transformer trans=(iconfig.xslt==null) ? StaticFactories.transFactory.newTransformer() : iconfig.xslt.newTransformer();
+            trans.setErrorListener(new LoggingErrorListener(getClass()));
             dr=emptyDOMResult(s.getSystemId());
             trans.transform(s,dr);
         }
@@ -103,6 +104,7 @@ public class XMLConverter  {
         if (iconfig.xslt!=null && log.isDebugEnabled()) log.debug("XSL-Transforming '"+systemId+"'...");
 
         TransformerHandler handler=(iconfig.xslt==null)?StaticFactories.transFactory.newTransformerHandler():StaticFactories.transFactory.newTransformerHandler(iconfig.xslt);
+        handler.getTransformer().setErrorListener(new LoggingErrorListener(getClass()));
         dr=emptyDOMResult(systemId);
         handler.setResult(dr);
         return handler;

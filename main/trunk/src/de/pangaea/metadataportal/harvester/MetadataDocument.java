@@ -30,6 +30,7 @@ import javax.xml.namespace.QName;
 import org.apache.lucene.document.*;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.Node;
+import org.w3c.dom.DocumentFragment;
 
 public class MetadataDocument {
     private static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(MetadataDocument.class);
@@ -54,7 +55,9 @@ public class MetadataDocument {
         dom=StaticFactories.dombuilder.newDocument();
         StreamSource s=new StreamSource(new StringReader(xmlCache),identifier);
         DOMResult r=new DOMResult(dom,identifier);
-        StaticFactories.transFactory.newTransformer().transform(s,r);
+        Transformer trans=StaticFactories.transFactory.newTransformer();
+        trans.setErrorListener(new LoggingErrorListener(getClass()));
+        trans.transform(s,r);
     }
 
     public void setHeaderInfo(String status, String identifier, String datestampStr) throws java.text.ParseException {
@@ -78,6 +81,7 @@ public class MetadataDocument {
         // convert DOM
         StringWriter xmlWriter=new StringWriter();
         Transformer trans=StaticFactories.transFactory.newTransformer();
+        trans.setErrorListener(new LoggingErrorListener(getClass()));
         trans.setOutputProperty(OutputKeys.INDENT,"no");
         trans.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION,"yes");
         DOMSource in=new DOMSource(dom,identifier);
@@ -129,10 +133,23 @@ public class MetadataDocument {
     protected void addFields(SingleIndexConfig iconfig, Document ldoc) throws Exception {
         for (Config.Config_Field f : iconfig.parent.fields.values()) {
             boolean needDefault=true;
-            try {
-                // First: try to get XPath result as Nodelist if that fails (because result is #STRING): fallback
-                // TODO: Looking for a better system to detect return type of XPath :-( [slowdown by this?]
-                NodeList nodes=(NodeList)f.xPathExpr.evaluate(dom, javax.xml.xpath.XPathConstants.NODESET);
+            Object value=null;
+            if (f.xPathExpr!=null) {
+                try {
+                    // First: try to get XPath result as Nodelist if that fails (because result is #STRING): fallback
+                    // TODO: Looking for a better system to detect return type of XPath :-( [slowdown by this?]
+                    value=f.xPathExpr.evaluate(dom, javax.xml.xpath.XPathConstants.NODESET);
+                } catch (javax.xml.xpath.XPathExpressionException ex) {
+                    // Fallback: if return type of XPath is a #STRING (for example from a substring() routine)
+                    value=f.xPathExpr.evaluate(dom, javax.xml.xpath.XPathConstants.STRING);
+                }
+            } else if (f.xslt!=null) {
+                value=evaluateTemplate(f);
+            } else throw new NullPointerException("Both XPath and template are NULL for field "+f.name);
+
+            // interpret result
+            if (value instanceof NodeList) {
+                NodeList nodes=(NodeList)value;
                 for (int i=0,c=nodes.getLength(); i<c; i++) {
                     StringBuilder sb=new StringBuilder();
                     walkNodeTexts(sb,nodes.item(i),true);
@@ -142,14 +159,15 @@ public class MetadataDocument {
                         needDefault=false;
                     }
                 }
-            } catch (javax.xml.xpath.XPathExpressionException ex) {
-                // Fallback: if return type of XPath is a #STRING (for example from a substring() routine)
-                String val=f.xPathExpr.evaluate(dom).trim();
-                if (!"".equals(val)) {
-                    internalAddField(ldoc,f,val);
+            } else if (value instanceof String) {
+                String s=(String)value;
+                s=s.trim();
+                if (!"".equals(s)) {
+                    internalAddField(ldoc,f,s);
                     needDefault=false;
                 }
-            }
+            } else throw new UnsupportedOperationException("Invalid Java data type of expression result: "+value.getClass().getName());
+
             if (needDefault && f.defaultValue!=null) internalAddField(ldoc,f,f.defaultValue);
         }
     }
@@ -157,6 +175,7 @@ public class MetadataDocument {
     protected boolean processFilters(SingleIndexConfig iconfig) throws Exception {
         boolean accept=(iconfig.parent.filterDefault==Config.FilterType.ACCEPT);
         for (Config.Config_XPathFilter f : iconfig.parent.filters) {
+            if (f.xPathExpr==null) throw new NullPointerException("Filters need to contain a XPath expression, which is NULL!");
             Boolean b=(Boolean)f.xPathExpr.evaluate(dom, javax.xml.xpath.XPathConstants.BOOLEAN);
             if (b==null) throw new javax.xml.xpath.XPathExpressionException("The filter XPath did not return a valid BOOLEAN value!");
             if (b && log.isTraceEnabled()) log.trace("FilterMatch: "+f);
@@ -189,18 +208,25 @@ public class MetadataDocument {
             addSystemVariables(iconfig,data);
 
             // variables in config
-            for (Config.Config_XPathVariable f : iconfig.parent.xPathVariables) {
+            for (Config.Config_Variable f : iconfig.parent.xPathVariables) {
                 Object value=null;
-                try {
-                    // First: try to get XPath result as Nodelist if that fails (because result is #STRING): fallback
-                    // TODO: Looking for a better system to detect return type of XPath :-( [slowdown by this?]
-                    value=f.xPathExpr.evaluate(dom, javax.xml.xpath.XPathConstants.NODESET);
-                } catch (javax.xml.xpath.XPathExpressionException ex) {
-                    // Fallback: if return type of XPath is a #STRING (for example from a substring() routine)
-                    value=f.xPathExpr.evaluate(dom, javax.xml.xpath.XPathConstants.STRING);
+                if (f.xPathExpr!=null) {
+                    try {
+                        // First: try to get XPath result as Nodelist if that fails (because result is #STRING): fallback
+                        // TODO: Looking for a better system to detect return type of XPath :-( [slowdown by this?]
+                        value=f.xPathExpr.evaluate(dom, javax.xml.xpath.XPathConstants.NODESET);
+                    } catch (javax.xml.xpath.XPathExpressionException ex) {
+                        // Fallback: if return type of XPath is a #STRING (for example from a substring() routine)
+                        value=f.xPathExpr.evaluate(dom, javax.xml.xpath.XPathConstants.STRING);
+                    }
+                } else if (f.xslt!=null) {
+                    value=evaluateTemplate(f);
+                } else throw new NullPointerException("Both XPath and template are NULL for variable "+f.name);
+
+                if (value!=null) {
+                    if (log.isTraceEnabled()) log.trace("Variable: "+f.name+"="+value);
+                    data.put(f.name,value);
                 }
-                if (log.isTraceEnabled()) log.trace("Variable: "+f.name+"="+value);
-                data.put(f.name,value);
             }
 
             needCleanup=false;
@@ -231,20 +257,21 @@ public class MetadataDocument {
         return ldoc;
     }
 
-/*
+    protected NodeList evaluateTemplate(Config.Config_AnyExpression expr) throws TransformerException {
+        Transformer trans=expr.xslt.newTransformer();
+        trans.setErrorListener(new LoggingErrorListener(getClass()));
 
-    // this transforms a validated document (that is also stored in index) to the final doc to be used by xPath)
-    public DOMResult transform4XPath(DOMSource ds) throws TransformerException {
-        if (iconfig.parent.xslt==null) return DOMSource2Result(ds);
-        else {
-            Transformer trans=iconfig.parent.xslt.newTransformer();
-            DOMResult dr=emptyDOMResult(ds.getSystemId());
-            trans.transform(ds,dr);
-            return dr;
+        // set variables in transformer
+        Map<QName,Object> vars=XPathResolverImpl.getInstance().getCurrentVariableMap();
+        for (Map.Entry<QName,Object> entry : vars.entrySet()) {
+            trans.setParameter(entry.getKey().toString(),entry.getValue());
         }
-    }
 
-*/
+        // transform
+        DocumentFragment df=dom.createDocumentFragment();
+        trans.transform(new DOMSource(dom,identifier),new DOMResult(df));
+        return df.getChildNodes();
+    }
 
     protected void walkNodeTexts(StringBuilder sb, Node n, boolean topLevel) {
         if (n==null) return;

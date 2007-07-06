@@ -26,11 +26,11 @@ public final class StaticFactories {
 
     private StaticFactories() {} // no instance
 
-    public static XPathFactory xpathFactory;
-    public static SAXTransformerFactory transFactory;
-    public static SAXParserFactory xinclSaxFactory;
-    public static DocumentBuilderFactory dbf;
-    public static DocumentBuilder dombuilder;
+    public static final XPathFactory xpathFactory;
+    public static final SAXTransformerFactory transFactory;
+    public static final SAXParserFactory xinclSaxFactory;
+    public static final DocumentBuilderFactory dbf;
+    public static final DocumentBuilder dombuilder;
     static {
         try {
             xpathFactory=XPathFactory.newInstance();
@@ -45,6 +45,7 @@ public final class StaticFactories {
             }
 
             transFactory=(SAXTransformerFactory)SAXTransformerFactory.newInstance();
+            transFactory.setErrorListener(new LoggingErrorListener(transFactory.getClass()));
 
             dbf=DocumentBuilderFactory.newInstance();
             dbf.setNamespaceAware(true);
