@@ -172,9 +172,22 @@ public class MetadataDocument {
         }
     }
 
+    protected void processDocumentBoost(SingleIndexConfig iconfig, Document ldoc) throws Exception {
+        float boost=1.0f;
+        if (iconfig.parent.documentBoost!=null && iconfig.parent.documentBoost.xPathExpr!=null) {
+            Number n=(Number)iconfig.parent.documentBoost.xPathExpr.evaluate(dom, javax.xml.xpath.XPathConstants.NUMBER);
+            if (n==null) throw new javax.xml.xpath.XPathExpressionException("The XPath for document boost did not return a valid NUMBER value!");
+            boost=n.floatValue();
+            if (Float.isNaN(boost) || boost<=0.0f || Float.isInfinite(boost))
+                throw new javax.xml.xpath.XPathExpressionException("The XPath for document boost did not return a positive, finite NUMBER (default=1.0)!");
+        }
+        if (log.isTraceEnabled()) log.trace("DocumentBoost: "+boost);
+        ldoc.setBoost(boost);
+    }
+
     protected boolean processFilters(SingleIndexConfig iconfig) throws Exception {
         boolean accept=(iconfig.parent.filterDefault==Config.FilterType.ACCEPT);
-        for (Config.Config_XPathFilter f : iconfig.parent.filters) {
+        for (Config.Config_Filter f : iconfig.parent.filters) {
             if (f.xPathExpr==null) throw new NullPointerException("Filters need to contain a XPath expression, which is NULL!");
             Boolean b=(Boolean)f.xPathExpr.evaluate(dom, javax.xml.xpath.XPathConstants.BOOLEAN);
             if (b==null) throw new javax.xml.xpath.XPathExpressionException("The filter XPath did not return a valid BOOLEAN value!");
@@ -249,6 +262,7 @@ public class MetadataDocument {
                 }
                 addDefaultField(iconfig,ldoc);
                 addFields(iconfig,ldoc);
+                processDocumentBoost(iconfig,ldoc);
             } finally {
                 XPathResolverImpl.getInstance().unsetVariables();
             }

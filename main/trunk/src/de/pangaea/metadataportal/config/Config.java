@@ -82,7 +82,7 @@ public class Config {
             dig.addCallMethod("config/metadata/filters", "setFilterDefault", 1);
             dig.addCallParam("config/metadata/filters", 0, "default");
 
-            dig.addObjectCreate("config/metadata/filters/*", Config_XPathFilter.class);
+            dig.addObjectCreate("config/metadata/filters/*", Config_Filter.class);
             dig.addSetNext("config/metadata/filters/*", "addFilter");
             if (configMode==ConfigMode.HARVESTING) {
                 dig.addCallMethod("config/metadata/filters/*","setXPath", 2, X_PATH_PARAMS);
@@ -112,6 +112,9 @@ public class Config {
             dig.addRule("config/metadata/fields/field-template", (configMode==ConfigMode.HARVESTING) ? new TemplateSaxRule(this,file) : SaxRule.emptyRule());
 
             dig.addCallMethod("config/metadata/fields/default", "setDefaultField", 0);
+
+            // document boost
+            dig.addCallMethod("config/metadata/documentBoost", "setDocumentBoost", 0);
 
             // transform
             /*dig.addRule("config/metadata/transformBeforeXPath", (configMode==ConfigMode.HARVESTING) ? new IndexConfigTransformerSaxRule(this,file) : SaxRule.emptyRule());*/
@@ -205,7 +208,7 @@ public class Config {
         xPathVariables.add(f);
     }
 
-    public void addFilter(Config_XPathFilter f) {
+    public void addFilter(Config_Filter f) {
         if (configMode==ConfigMode.SEARCH) return;
         if (f.xPathExpr==null) throw new IllegalArgumentException("A XPath itsself may not be empty");
         if (f.xslt!=null) throw new IllegalArgumentException("A filter may not contain a template");
@@ -225,24 +228,33 @@ public class Config {
     public void setFilterDefault(String v) {
         if (v==null) return; // no change
         // a bit of hack, we use an empty filter to find out type :)
-        Config_XPathFilter f=new Config_XPathFilter();
+        Config_Filter f=new Config_Filter();
         f.setType(v);
         filterDefault=f.type;
     }
 
     public void setDefaultField(String v) throws Exception {
+        if (v==null) {
+            defaultField=null;
+            return;
+        }
         v=v.trim();
         if (".".equals(v) || "/".equals(v) || "/*".equals(v)) {
             defaultField=null; // all fields from SAX parser
         } else {
-            defaultField=new Config_Field();
+            defaultField=new Config_AnyExpression();
             defaultField.setXPath(dig,v);
-            // dummy settings not yet used for default field, to change this, change logic in IndexBuilder.addDocument() !!!
-            defaultField.lucenestorage=false;
-            defaultField.luceneindexed=true;
-            defaultField.datatype=DataType.TOKENIZEDTEXT;
-            defaultField.name=IndexConstants.FIELDNAME_CONTENT;
         }
+    }
+
+    public void setDocumentBoost(String v) throws Exception {
+        if (v==null) {
+            documentBoost=null;
+            return;
+        }
+        v=v.trim();
+        documentBoost=new Config_AnyExpression();
+        documentBoost.setXPath(dig,v);
     }
 
     public void addStopWords(String stopWords) {
@@ -324,11 +336,11 @@ public class Config {
     public Map<String,IndexConfig> indices=new HashMap<String,IndexConfig>();
 
     public Map<String,Config_Field> fields=new HashMap<String,Config_Field>();
-    public Config_Field defaultField=null;
+    public Config_AnyExpression defaultField=null;
 
     // filters
     public FilterType filterDefault=FilterType.ACCEPT;
-    public List<Config_XPathFilter> filters=new ArrayList<Config_XPathFilter>();
+    public List<Config_Filter> filters=new ArrayList<Config_Filter>();
 
     // variables
     public List<Config_Variable> xPathVariables=new ArrayList<Config_Variable>();
@@ -336,6 +348,9 @@ public class Config {
     // schema etc
     public Schema schema=null;
     public boolean haltOnSchemaError=false;
+
+    // document boost
+    public Config_AnyExpression documentBoost=null;
 
     /*public Templates xsltBeforeXPath=null;*/
 
@@ -378,7 +393,7 @@ public class Config {
         }
 
         public String toString() {
-            return cachedXPath;
+            return (xPathExpr==null) ? "?template?" : cachedXPath;
         }
 
         public XPathExpression xPathExpr=null;
@@ -427,14 +442,14 @@ public class Config {
         }
 
         public String toString() {
-            return new StringBuilder(name.toString()).append('(').append(super.toString()).append(')').toString();
+            return new StringBuilder(name.toString()).append(" (").append(super.toString()).append(')').toString();
         }
 
         // members "the configuration"
         public QName name=null;
     }
 
-    public static final class Config_XPathFilter extends Config_AnyExpression {
+    public static final class Config_Filter extends Config_AnyExpression {
 
         public void setType(String v) {
             try {
@@ -445,7 +460,7 @@ public class Config {
         }
 
         public void setTemplate(Templates xslt) {
-            throw new UnsupportedOperationException("Cannot assign a template to a XPathFilter!");
+            throw new UnsupportedOperationException("Cannot assign a template to a filter!");
         }
 
         public String toString() {
@@ -456,7 +471,7 @@ public class Config {
         public FilterType type=null;
     }
 
-    protected abstract static class TransformerSaxRule extends SaxRule {
+    private abstract static class TransformerSaxRule extends SaxRule {
 
         protected Config owner;
         private TemplatesHandler th=null;
@@ -485,7 +500,7 @@ public class Config {
 
     }
 
-    protected static class IndexConfigTransformerSaxRule extends TransformerSaxRule {
+    private static final class IndexConfigTransformerSaxRule extends TransformerSaxRule {
 
         public IndexConfigTransformerSaxRule(Config owner, String file) {
             super(owner,file);
@@ -500,7 +515,7 @@ public class Config {
 
     }
 
-    protected static class TemplateSaxRule extends TransformerSaxRule {
+    private static final class TemplateSaxRule extends TransformerSaxRule {
 
         public TemplateSaxRule(Config owner, String file) {
             super(owner,file);
