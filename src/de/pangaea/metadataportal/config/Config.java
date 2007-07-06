@@ -22,6 +22,7 @@ import java.net.*;
 import de.pangaea.metadataportal.utils.*;
 import org.apache.commons.digester.*;
 import org.xml.sax.*;
+import org.xml.sax.helpers.AttributesImpl;
 import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
 import javax.xml.transform.*;
@@ -58,14 +59,24 @@ public class Config {
 
             // variables
             dig.addDoNothing("config/metadata/variables");
-            dig.addObjectCreate("config/metadata/variables/variable", Config_XPathVariable.class);
+
+            dig.addObjectCreate("config/metadata/variables/variable", Config_Variable.class);
             dig.addSetNext("config/metadata/variables/variable", "addVariable");
-            dig.addCallMethod("config/metadata/variables/variable","setXPath", 2, X_PATH_PARAMS);
-            dig.addObjectParam("config/metadata/variables/variable", 0, dig);
-            dig.addCallParam("config/metadata/variables/variable", 1);
             dig.addCallMethod("config/metadata/variables/variable","setName", 2, X_PATH_PARAMS);
             dig.addObjectParam("config/metadata/variables/variable", 0, dig);
             dig.addCallParam("config/metadata/variables/variable", 1, "name");
+            if (configMode==ConfigMode.HARVESTING) {
+                dig.addCallMethod("config/metadata/variables/variable","setXPath", 2, X_PATH_PARAMS);
+                dig.addObjectParam("config/metadata/variables/variable", 0, dig);
+                dig.addCallParam("config/metadata/variables/variable", 1);
+            }
+
+            dig.addObjectCreate("config/metadata/variables/variable-template", Config_Variable.class);
+            dig.addSetNext("config/metadata/variables/variable-template", "addVariable");
+            dig.addCallMethod("config/metadata/variables/variable-template","setName", 2, X_PATH_PARAMS);
+            dig.addObjectParam("config/metadata/variables/variable-template", 0, dig);
+            dig.addCallParam("config/metadata/variables/variable-template", 1, "name");
+            dig.addRule("config/metadata/variables/variable-template", (configMode==ConfigMode.HARVESTING) ? new TemplateSaxRule(this,file) : SaxRule.emptyRule());
 
             // filters
             dig.addCallMethod("config/metadata/filters", "setFilterDefault", 1);
@@ -73,25 +84,37 @@ public class Config {
 
             dig.addObjectCreate("config/metadata/filters/*", Config_XPathFilter.class);
             dig.addSetNext("config/metadata/filters/*", "addFilter");
-            dig.addCallMethod("config/metadata/filters/*","setXPath", 2, X_PATH_PARAMS);
-            dig.addObjectParam("config/metadata/filters/*", 0, dig);
-            dig.addCallParam("config/metadata/filters/*", 1);
+            if (configMode==ConfigMode.HARVESTING) {
+                dig.addCallMethod("config/metadata/filters/*","setXPath", 2, X_PATH_PARAMS);
+                dig.addObjectParam("config/metadata/filters/*", 0, dig);
+                dig.addCallParam("config/metadata/filters/*", 1);
+            }
 
             // fields
             dig.addDoNothing("config/metadata/fields");
+
             dig.addObjectCreate("config/metadata/fields/field", Config_Field.class);
             dig.addSetNext("config/metadata/fields/field", "addField");
             SetPropertiesRule r=new SetPropertiesRule();
             r.setIgnoreMissingProperty(false);
             dig.addRule("config/metadata/fields/field",r);
-            dig.addCallMethod("config/metadata/fields/field","setXPath", 2, X_PATH_PARAMS);
-            dig.addObjectParam("config/metadata/fields/field", 0, dig);
-            dig.addCallParam("config/metadata/fields/field", 1);
+            if (configMode==ConfigMode.HARVESTING) {
+                dig.addCallMethod("config/metadata/fields/field","setXPath", 2, X_PATH_PARAMS);
+                dig.addObjectParam("config/metadata/fields/field", 0, dig);
+                dig.addCallParam("config/metadata/fields/field", 1);
+            }
+
+            dig.addObjectCreate("config/metadata/fields/field-template", Config_Field.class);
+            dig.addSetNext("config/metadata/fields/field-template", "addField");
+            r=new SetPropertiesRule();
+            r.setIgnoreMissingProperty(false);
+            dig.addRule("config/metadata/fields/field-template",r);
+            dig.addRule("config/metadata/fields/field-template", (configMode==ConfigMode.HARVESTING) ? new TemplateSaxRule(this,file) : SaxRule.emptyRule());
 
             dig.addCallMethod("config/metadata/fields/default", "setDefaultField", 0);
 
             // transform
-            /*dig.addRule("config/metadata/transformBeforeXPath", (configMode==ConfigMode.HARVESTING) ? new TransformerSaxRule(this,file) : SaxRule.emptyRule());*/
+            /*dig.addRule("config/metadata/transformBeforeXPath", (configMode==ConfigMode.HARVESTING) ? new IndexConfigTransformerSaxRule(this,file) : SaxRule.emptyRule());*/
 
             // schema
             dig.addDoNothing("config/metadata/schema");
@@ -121,7 +144,7 @@ public class Config {
             dig.addCallMethod("config/indices/index/autoOptimize","setAutoOptimize",0);
             dig.addCallMethod("config/indices/index/validate","setValidate",0);
 
-            dig.addRule("config/indices/index/transform", (configMode==ConfigMode.HARVESTING) ? new TransformerSaxRule(this,file) : SaxRule.emptyRule());
+            dig.addRule("config/indices/index/transform", (configMode==ConfigMode.HARVESTING) ? new IndexConfigTransformerSaxRule(this,file) : SaxRule.emptyRule());
 
             dig.addDoNothing("config/indices/index/harvesterProperties");
             dig.addCallMethod("config/indices/index/harvesterProperties/*","addHarvesterProperty",2, X_PATH_PARAMS);
@@ -162,23 +185,30 @@ public class Config {
     public void addField(Config_Field f) {
         if (f.name==null) throw new IllegalArgumentException("A field name is mandatory");
         if (fields.containsKey(f.name)) throw new IllegalArgumentException("A field with name '"+f.name+"' already exists!");
-        if (f.xPathExpr==null) throw new IllegalArgumentException("A XPath itsself may not be empty");
+        if (configMode==ConfigMode.HARVESTING) {
+            if (f.xPathExpr==null && f.xslt==null) throw new IllegalArgumentException("A XPath or template itsself may not be empty");
+            if (f.xPathExpr!=null && f.xslt!=null) throw new IllegalArgumentException("It may not both XPath and template be defined");
+        }
         if (!f.lucenestorage && !f.luceneindexed) throw new IllegalArgumentException("A field must be at least indexed and/or stored");
         if (f.defaultValue!=null && f.datatype!=DataType.NUMBER && f.datatype!=DataType.DATETIME)
             throw new IllegalArgumentException("A default value can only be given for number or dateTime fields");
         fields.put(f.name,f);
     }
 
-    public void addVariable(Config_XPathVariable f) {
+    public void addVariable(Config_Variable f) {
         if (f.name==null) throw new IllegalArgumentException("A XPath variable name is mandatory");
         if (de.pangaea.metadataportal.harvester.XPathResolverImpl.INDEX_BUILDER_NAMESPACE.equals(f.name.getNamespaceURI()))
             throw new IllegalArgumentException("A XPath variable name may not be in the namespace for internal variables ('"+de.pangaea.metadataportal.harvester.XPathResolverImpl.INDEX_BUILDER_NAMESPACE+"')");
-        if (f.xPathExpr==null) throw new IllegalArgumentException("A XPath itsself may not be empty");
+        if (configMode==ConfigMode.HARVESTING) {
+            if (f.xPathExpr==null && f.xslt==null) throw new IllegalArgumentException("A XPath or template itsself may not be empty");
+            if (f.xPathExpr!=null && f.xslt!=null) throw new IllegalArgumentException("It may not both XPath and template be defined");
+        }
         xPathVariables.add(f);
     }
 
     public void addFilter(Config_XPathFilter f) {
         if (f.xPathExpr==null) throw new IllegalArgumentException("A XPath itsself may not be empty");
+        if (f.xslt!=null) throw new IllegalArgumentException("A filter may not contain a template");
         String type=dig.getCurrentElementName();
         f.setType(type);
         filters.add(f);
@@ -301,7 +331,7 @@ public class Config {
     public List<Config_XPathFilter> filters=new ArrayList<Config_XPathFilter>();
 
     // variables
-    public List<Config_XPathVariable> xPathVariables=new ArrayList<Config_XPathVariable>();
+    public List<Config_Variable> xPathVariables=new ArrayList<Config_Variable>();
 
     // schema etc
     public Schema schema=null;
@@ -328,7 +358,7 @@ public class Config {
     public static enum FilterType { ACCEPT,DENY };
     public static enum DataType { TOKENIZEDTEXT,STRING,NUMBER,DATETIME };
 
-    public static class Config_XPathExpression extends Object {
+    public static class Config_AnyExpression {
 
         public void setXPath(ExtendedDigester dig, String xpath) throws XPathExpressionException {
             if ("".equals(xpath)) return; // Exception throws the Config.addField() method
@@ -343,15 +373,20 @@ public class Config {
             cachedXPath=xpath;
         }
 
+        public void setTemplate(Templates xslt) {
+            this.xslt=xslt;
+        }
+
         public String toString() {
             return cachedXPath;
         }
 
         public XPathExpression xPathExpr=null;
+        public Templates xslt=null;
         private String cachedXPath=null;
     }
 
-    public static final class Config_Field extends Config_XPathExpression {
+    public static final class Config_Field extends Config_AnyExpression {
 
         public void setName(String v) {
             name=v;
@@ -381,7 +416,7 @@ public class Config {
         public boolean luceneindexed=true;
     }
 
-    public static final class Config_XPathVariable extends Config_XPathExpression {
+    public static final class Config_Variable extends Config_AnyExpression {
 
         public void setName(ExtendedDigester dig, String nameStr) {
             if ("".equals(nameStr)) return; // Exception throws the Config.addVariable() method
@@ -399,7 +434,7 @@ public class Config {
         public QName name=null;
     }
 
-    public static final class Config_XPathFilter extends Config_XPathExpression {
+    public static final class Config_XPathFilter extends Config_AnyExpression {
 
         public void setType(String v) {
             try {
@@ -407,6 +442,10 @@ public class Config {
             } catch (IllegalArgumentException e) {
                 throw new IllegalArgumentException("Invalid filter type: '"+v+"'");
             }
+        }
+
+        public void setTemplate(Templates xslt) {
+            throw new UnsupportedOperationException("Cannot assign a template to a XPathFilter!");
         }
 
         public String toString() {
@@ -417,9 +456,9 @@ public class Config {
         public FilterType type=null;
     }
 
-    private static final class TransformerSaxRule extends SaxRule {
+    protected abstract static class TransformerSaxRule extends SaxRule {
 
-        private Config owner;
+        protected Config owner;
         private TemplatesHandler th=null;
         private String file;
 
@@ -436,13 +475,82 @@ public class Config {
             super.begin(namespace,name,attributes);
         }
 
+        protected abstract void setResult(Templates t);
+
         public void end(java.lang.String namespace, java.lang.String name) throws Exception {
             super.end(namespace,name);
-            Object o=owner.dig.peek();
-            if (o instanceof SingleIndexConfig) ((SingleIndexConfig)o).xslt=th.getTemplates(); // a index config
-            /*else if (o instanceof Config) ((Config)o).xsltBeforeXPath=th.getTemplates(); // the config itsself*/
-            else throw new RuntimeException("A XSLT tree is not allowed here!");
+            setResult(th.getTemplates());
             th=null;
         }
+
     }
+
+    protected static class IndexConfigTransformerSaxRule extends TransformerSaxRule {
+
+        public IndexConfigTransformerSaxRule(Config owner, String file) {
+            super(owner,file);
+        }
+
+        protected void setResult(Templates t) {
+            Object o=owner.dig.peek();
+            if (o instanceof SingleIndexConfig) ((SingleIndexConfig)o).xslt=t;
+            /*else if (o instanceof Config) ((Config)o).xsltBeforeXPath=t; // the config itsself*/
+            else throw new RuntimeException("A XSLT tree is not allowed here!");
+        }
+
+    }
+
+    protected static class TemplateSaxRule extends TransformerSaxRule {
+
+        public TemplateSaxRule(Config owner, String file) {
+            super(owner,file);
+        }
+
+        protected void initDocument() throws SAXException {
+            AttributesImpl atts=new AttributesImpl();
+
+            atts.addAttribute(XMLConstants.NULL_NS_URI,"version","",CNAME,"1.0");
+            destContentHandler.startElement(XSL_NAMESPACE,"stylesheet","",atts);
+            atts.clear();
+
+            // register variables as params for template
+            HashSet<QName> vars=new HashSet<QName>(de.pangaea.metadataportal.harvester.XPathResolverImpl.BASE_VARIABLES);
+            for (Config_Variable v : owner.xPathVariables) vars.add(v.name);
+            for (QName name : vars) {
+                // it is not clear why xalan does not allow a variable with no namespace declared by a prefix that points to the empty namespace
+                boolean nullNS=XMLConstants.NULL_NS_URI.equals(name.getNamespaceURI());
+                if (nullNS) {
+                    atts.addAttribute(XMLConstants.NULL_NS_URI,"name","",CNAME,name.getLocalPart());
+                } else {
+                    destContentHandler.startPrefixMapping("var",name.getNamespaceURI());
+                    atts.addAttribute(XMLConstants.NULL_NS_URI,"name","",CNAME,"var:"+name.getLocalPart());
+                }
+                destContentHandler.startElement(XSL_NAMESPACE,"param","",atts);
+                atts.clear();
+                destContentHandler.endElement(XSL_NAMESPACE,"param","");
+                if (!nullNS) destContentHandler.endPrefixMapping("var");
+            }
+
+            // start a template
+            atts.addAttribute(XMLConstants.NULL_NS_URI,"match","",CNAME,"/");
+            destContentHandler.startElement(XSL_NAMESPACE,"template","",atts);
+            //atts.clear();
+        }
+
+        protected void finishDocument() throws SAXException {
+            destContentHandler.endElement(XSL_NAMESPACE,"template","");
+            destContentHandler.endElement(XSL_NAMESPACE,"stylesheet","");
+        }
+
+        protected void setResult(Templates t) {
+            Object o=owner.dig.peek();
+            if (o instanceof Config_AnyExpression) ((Config_AnyExpression)o).setTemplate(t);
+            else throw new RuntimeException("A XSLT template is not allowed here!");
+        }
+
+        private static final String XSL_NAMESPACE="http://www.w3.org/1999/XSL/Transform";
+        private static final String CNAME="CNAME";
+
+    }
+
 }

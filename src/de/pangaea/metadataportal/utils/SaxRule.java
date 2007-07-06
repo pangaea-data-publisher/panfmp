@@ -29,13 +29,9 @@ Whenever this element occurs in digester, begin/end will be called, that then pu
 
 public class SaxRule extends org.apache.commons.digester.Rule {
 
-    protected SaxFilter filter=null;
-    protected Set<String> excludeNamespaces=Collections.emptySet();
+    protected ContentHandler destContentHandler=null;
+    protected Set<String> excludeNamespaces=Collections.<String>emptySet();
     private org.xml.sax.ContentHandler lastContentHandler=null;
-
-    public SaxRule() {
-        super();
-    }
 
     public static SaxRule emptyRule() {
         SaxRule sr=new SaxRule();
@@ -49,54 +45,65 @@ public class SaxRule extends org.apache.commons.digester.Rule {
     }
 
     public void setContentHandler(ContentHandler ch) {
-        filter=new SaxFilter(this,ch);
+        this.destContentHandler=ch;
     }
 
     public void setExcludeNamespaces(Set<String> excludeNamespaces) {
         this.excludeNamespaces=excludeNamespaces;
     }
 
-    protected void release() throws SAXException {
-        // un-register namespace prefixes
-        for (Map.Entry<String,ArrayStack> e : ((ExtendedDigester)digester).getCurrentPrefixMappings().entrySet()) {
-            if (!excludeNamespaces.contains((String)e.getValue().peek())) filter.endPrefixMapping(e.getKey());
-        }
+    // add some tags when document started
+    protected void initDocument() throws SAXException {
+    }
 
-        // end document and restore ContentHandler
-        filter.endDocument();
-        digester.setCustomContentHandler(lastContentHandler);
-        lastContentHandler=null;
+    // close tags added in initDocument()
+    protected void finishDocument() throws SAXException {
     }
 
     // Digester rule part
     public void begin(java.lang.String namespace, java.lang.String name, Attributes attributes) throws Exception {
-        if (filter==null) throw new IllegalStateException("You must set a target ContentHandler instance before processing this rule!");
+        if (destContentHandler==null) throw new IllegalStateException("You must set a target ContentHandler instance before processing this rule!");
 
         // initialize target ContentHandler
+        SaxFilter filter=new SaxFilter(this,destContentHandler);
         filter.setDocumentLocator(digester.getDocumentLocator());
         lastContentHandler=digester.getCustomContentHandler();
         digester.setCustomContentHandler(filter);
-        filter.startDocument();
+
+        destContentHandler.startDocument();
 
         // register namespace prefixes
         for (Map.Entry<String,ArrayStack> e : ((ExtendedDigester)digester).getCurrentPrefixMappings().entrySet()) {
             String ns=(String)e.getValue().peek();
-            if (!excludeNamespaces.contains(ns)) filter.startPrefixMapping(e.getKey(),ns);
+            if (!excludeNamespaces.contains(ns)) destContentHandler.startPrefixMapping(e.getKey(),ns);
         }
+
+        initDocument();
+    }
+
+    private void release() throws SAXException {
+        finishDocument();
+
+        // un-register namespace prefixes
+        for (Map.Entry<String,ArrayStack> e : ((ExtendedDigester)digester).getCurrentPrefixMappings().entrySet()) {
+            if (!excludeNamespaces.contains((String)e.getValue().peek())) destContentHandler.endPrefixMapping(e.getKey());
+        }
+
+        // end document and restore ContentHandler
+        destContentHandler.endDocument();
+        digester.setCustomContentHandler(lastContentHandler);
+        lastContentHandler=null;
     }
 
     // the XMLFilter
-    private static final class SaxFilter extends XMLFilterImpl {
+    protected static final class SaxFilter extends XMLFilterImpl {
 
         private int elementCounter=0;
         private SaxRule owner=null;
-        private org.apache.commons.logging.Log log=null;
 
         private SaxFilter(SaxRule owner, ContentHandler ch) {
             super();
             this.owner=owner;
-            if (owner.digester!=null) log=owner.digester.getLogger();
-            if (log!=null && !log.isTraceEnabled()) log=null;
             setContentHandler(ch);
             if (ch instanceof EntityResolver) setEntityResolver((EntityResolver)ch);
             if (ch instanceof DTDHandler) setDTDHandler((DTDHandler)ch);
@@ -106,15 +113,11 @@ public class SaxRule extends org.apache.commons.digester.Rule {
         /* SAX part */
         public void endElement(String namespaceURI, String localName, String qName) throws SAXException {
             if (elementCounter==0) {
-                // root element for this Rule was empty
-                // ==> stop all further processing, restore original ContentHandler in owner's digester and call recall endElement() to correctly process this event
                 owner.release();
                 owner.digester.endElement(namespaceURI,localName,qName); // this should implicitly call owner.end(namespace,name);
             } else {
                 super.endElement(namespaceURI,localName,qName);
                 elementCounter--;
-                // all elements were closed ==> restore original ContentHandler in owner's digester
-                if (elementCounter==0) owner.release();
             }
         }
 
@@ -123,18 +126,12 @@ public class SaxRule extends org.apache.commons.digester.Rule {
             super.startElement(namespaceURI,localName,qName,atts);
         }
 
-        public void characters(char[] ch, int start, int length) throws SAXException {
-            if (elementCounter>0) super.characters(ch,start,length);
+        public void startDocument() throws SAXException {
+            throw new SAXException("Cannot start a new XML document in middle of another document!");
         }
 
-        public void startPrefixMapping(String prefix, String uri) throws SAXException {
-            if (log!=null) log.trace("startPrefixMapping(SaxRule/SaxFilter): "+prefix+"="+uri);
-            super.startPrefixMapping(prefix,uri);
-        }
-
-        public void endPrefixMapping(String prefix) throws SAXException {
-            super.endPrefixMapping(prefix);
-            if (log!=null) log.trace("endPrefixMapping(SaxRule/SaxFilter): "+prefix);
+        public void endDocument() throws SAXException {
+            throw new SAXException("Cannot end current XML document here!");
         }
 
     }
