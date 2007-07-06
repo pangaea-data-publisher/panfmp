@@ -4,6 +4,12 @@
 		<variables>
 			<variable name="startdate">/dif:DIF/dif:Temporal_Coverage/dif:Start_Date</variable>
 			<variable name="enddate">/dif:DIF/dif:Temporal_Coverage/dif:Stop_Date</variable>
+			<variable-template name="boost" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+				<xsl:choose>
+					<xsl:when test="/dif:DIF/dif:Parent_DIF">1.0</xsl:when>
+					<xsl:otherwise>5.0</xsl:otherwise>
+				</xsl:choose>
+			</variable-template>
 		</variables>
 		<filters default="accept">
 			<!-- we want to remove all documents harvested into index 'pangaea-carboocean' that are from project 'JGOFS' -->
@@ -38,6 +44,7 @@
 			<field name="dataCenterFull" datatype="string" lucenestorage="true" luceneindexed="true">/dif:DIF/dif:Data_Center/dif:Data_Center_Name/dif:Short_Name</field>
 			<default>.</default>
 		</fields>
+		<documentBoost>number($boost)</documentBoost>
 		<schema>
 			<url>http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/dif_v9.4.xsd</url>
 			<haltOnError>false</haltOnError>
