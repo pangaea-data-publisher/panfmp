@@ -96,7 +96,7 @@ public class SaxRule extends org.apache.commons.digester.Rule {
     }
 
     // the XMLFilter
-    protected static final class SaxFilter extends XMLFilterImpl {
+    private static final class SaxFilter extends XMLFilterImpl {
 
         private int elementCounter=0;
         private SaxRule owner=null;
