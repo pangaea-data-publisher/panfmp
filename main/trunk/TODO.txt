@@ -1,8 +1,6 @@
 Harvester:
 * Completely rebuilding index from source without deleting old one having readers online (new commit lock-less usage!)
 * Compression on/off for XML stored
-* Assigning of document boosts by number datatype XPath (complicated XPathes?) or some other combination
-  (assigning values to boolean type XPath, go through XPath list until one matches)
 
 Search:
 * New Search API:
