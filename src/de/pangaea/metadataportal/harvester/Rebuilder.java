@@ -23,11 +23,37 @@ import org.apache.lucene.index.*;
 import org.apache.lucene.store.FSDirectory;
 import java.util.*;
 
-public class Rebuilder {
+public class Rebuilder extends AbstractHarvester {
 
-    protected static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(Rebuilder.class);
+    private static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(Rebuilder.class);
 
-    private Rebuilder() {}
+    // harvester interface
+    private IndexReader reader=null;
+
+    public void open(SingleIndexConfig iconfig) throws Exception {
+        log.info("Opening index \""+iconfig.id+"\" for harvesting all documents...");
+        reader = iconfig.getUncachedIndexReader();
+        super.open(iconfig);
+    }
+
+    public void close() throws Exception {
+        if (reader!=null) reader.close();
+        reader=null;
+        super.close();
+    }
+
+    public void harvest() throws Exception {
+        if (reader==null) throw new IllegalStateException("Rebuilder was not opened!");
+        for (int i=0, c=reader.maxDoc(); i<c; i++) {
+            if (!reader.isDeleted(i)) {
+                MetadataDocument mdoc=new MetadataDocument();
+                mdoc.loadFromLucene(reader.document(i));
+                addDocument(mdoc);
+                if (harvestCount%1000==0) log.info(harvestCount+" documents harvested from index so far.");
+            }
+        }
+        log.info(harvestCount+" documents harvested from index and queued for reindexing.");
+    }
 
     // main-Methode
     public static void main (String[] args) {
@@ -48,35 +74,27 @@ public class Rebuilder {
             }
 
             for (IndexConfig iconf : indexList) if (iconf instanceof SingleIndexConfig) {
-                IndexBuilder builder=null;
-                IndexReader reader=null;
-                int count=0;
                 SingleIndexConfig siconf=(SingleIndexConfig)iconf;
+
+                log.info("Rebuilding index \""+siconf.id+"\"...");
+                AbstractHarvester h=new Rebuilder();
                 try {
-                    // und los gehts
-                    log.info("Opening index \""+iconf.id+"\" for harvesting all documents...");
-                    reader = siconf.getUncachedIndexReader();
-                    builder = new IndexBuilder(false,siconf);
-                    log.info("Harvesting documents...");
-                    for (int i=0, c=reader.maxDoc(); i<c; i++) {
-                        if (!reader.isDeleted(i)) {
-                            MetadataDocument mdoc=new MetadataDocument();
-                            mdoc.loadFromLucene(reader.document(i));
-                            builder.addDocument(mdoc);
-                            count++;
-                            if (count%1000==0) log.info(count+" documents harvested from index so far.");
-                        }
-                    }
-                    log.info(count+" documents harvested from index and queued for reindexing.");
+                    h.open(siconf);
+                    h.harvest();
+                } catch (org.xml.sax.SAXParseException saxe) {
+                    log.fatal("Harvesting documents into index \""+siconf.id+"\" failed due to SAX parse error in \""+saxe.getSystemId()+"\", line "+saxe.getLineNumber()+", column "+saxe.getColumnNumber()+".",saxe);
+                } catch (Exception e) {
+                    if (e.getCause() instanceof org.xml.sax.SAXParseException) {
+                        org.xml.sax.SAXParseException saxe=(org.xml.sax.SAXParseException)e.getCause();
+                        log.fatal("Harvesting documents into index \""+siconf.id+"\" failed due to SAX parse error in \""+saxe.getSystemId()+"\", line "+saxe.getLineNumber()+", column "+saxe.getColumnNumber()+".",saxe);
+                    } else log.fatal("Harvesting documents into index \""+siconf.id+"\" failed!",e);
                 } finally {
-                    if (reader!=null) reader.close();
-                    if (builder!=null) builder.close();
+                    h.close();
                 }
-                log.info("Finished index rebuilding.");
+                log.info("Finished rebuilding of index \""+siconf.id+"\".");
             }
         } catch (Exception e) {
             log.fatal("Exception during index rebuild.",e);
         }
     }
-
 }
