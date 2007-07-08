@@ -27,6 +27,7 @@ public abstract class AbstractHarvester {
     public IndexBuilder index=null;
     public SingleIndexConfig iconfig=null;
     protected int harvestCount=0;
+    protected int harvestMessageStep=100;
 
     // construtors
     public AbstractHarvester() {}
@@ -34,6 +35,8 @@ public abstract class AbstractHarvester {
     public void open(SingleIndexConfig iconfig) throws Exception {
         if (iconfig==null) throw new IllegalArgumentException("Missing index configuration");
         this.iconfig=iconfig;
+        harvestMessageStep=Integer.parseInt(iconfig.harvesterProperties.getProperty("harvestMessageStep","100"));
+        if (harvestMessageStep<=0) throw new IllegalArgumentException("Invalid value for harvestMessageStep: "+harvestMessageStep);
         index = new IndexBuilder(false,iconfig);
     }
 
@@ -41,12 +44,15 @@ public abstract class AbstractHarvester {
         if (index==null) throw new IllegalStateException("Harvester must be opened before using");
         if (!index.isClosed()) index.close();
         index=null;
+
+        log.info("Harvested "+harvestCount+" documents - finished.");
     }
 
     public void addDocument(MetadataDocument mdoc) throws Exception {
         if (index==null) throw new IllegalStateException("Harvester must be opened before using");
         index.addDocument(mdoc);
         harvestCount++;
+        if (harvestCount%harvestMessageStep==0) log.info("Harvested "+harvestCount+" documents so far.");
     }
 
     public abstract void harvest() throws Exception;

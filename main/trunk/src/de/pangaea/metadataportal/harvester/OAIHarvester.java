@@ -214,7 +214,6 @@ public class OAIHarvester extends AbstractHarvester {
     protected void readStream(String url) throws Exception {
         log.info("Harvesting \""+url+"\"...");
         doParse(listRecordsDig,url,retryCount);
-        log.info("Harvested "+harvestCount+" documents so far.");
     }
 
     public void checkIdentify(String baseURL) throws Exception {

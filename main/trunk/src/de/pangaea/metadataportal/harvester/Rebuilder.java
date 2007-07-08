@@ -49,10 +49,8 @@ public class Rebuilder extends AbstractHarvester {
                 MetadataDocument mdoc=new MetadataDocument();
                 mdoc.loadFromLucene(reader.document(i));
                 addDocument(mdoc);
-                if (harvestCount%1000==0) log.info(harvestCount+" documents harvested from index so far.");
             }
         }
-        log.info(harvestCount+" documents harvested from index and queued for reindexing.");
     }
 
     // main-Methode
