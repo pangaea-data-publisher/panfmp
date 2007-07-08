@@ -207,6 +207,7 @@ public class IndexBuilder {
     }
 
     private void checkMemoryConsumption() {
+        /* DISABLED, consumes too much CPU, needs further investigation
         if (!enableMemoryChecking) return;
         Runtime r=Runtime.getRuntime();
         long max=r.maxMemory();
@@ -238,6 +239,7 @@ public class IndexBuilder {
             }
         }
         lastMemoryUsage=currMemory;
+        */
     }
 
     private void converterThreadRun() {
@@ -270,7 +272,6 @@ public class IndexBuilder {
                         if (ldocBuffer.size()>=maxChangesBeforeCommit) internalWaitIndexer();
                         ldocBuffer.put(mdoc.identifier,ldoc);
                         if (ldocBuffer.size()>=minChangesBeforeCommit) indexerThread.notify();
-                        checkMemoryConsumption();
                     }
                 }
                 converterLog.debug("Converting files stopped.");
