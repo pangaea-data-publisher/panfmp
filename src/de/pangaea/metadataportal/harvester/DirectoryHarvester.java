@@ -26,8 +26,6 @@ import javax.xml.parsers.*;
 
 public class DirectoryHarvester extends AbstractHarvester implements FilenameFilter {
 
-    protected static final int LOGINFO_COUNT=1000;
-
     // Class members
     protected File directory=null;
     protected boolean recursive=false;
@@ -64,8 +62,6 @@ public class DirectoryHarvester extends AbstractHarvester implements FilenameFil
         mdoc.dom=(new XMLConverter(iconfig)).transform(new StreamSource(file));
 
         addDocument(mdoc);
-
-        if (harvestCount%LOGINFO_COUNT==0) log.info("Harvested "+harvestCount+" documents so far.");
     }
 
     protected void processDirectory(File dir) throws Exception {
@@ -87,8 +83,6 @@ public class DirectoryHarvester extends AbstractHarvester implements FilenameFil
         from=null;
 
         index.setLastHarvested(new java.util.Date());
-
-        log.info("Harvested "+harvestCount+" documents.");
     }
 
 }
