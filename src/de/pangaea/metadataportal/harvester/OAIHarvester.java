@@ -240,6 +240,7 @@ public class OAIHarvester extends AbstractHarvester {
         reset();
 
         index.setChangesBeforeCommit(1000,2000);
+        index.setMaxConverterQueue(1000);
         Date from=index.getLastHarvestedFromDisk();
         StringBuilder url=new StringBuilder(baseUrl);
         url.append("?verb=ListRecords&metadataPrefix=");
@@ -258,7 +259,10 @@ public class OAIHarvester extends AbstractHarvester {
         Date lastHarvested=currResponseDate;
         if (currResumptionToken!=null) {
             // resize the maximum number for commits to index not to break HTTP downloads!
-            if (harvestCount>500) index.setChangesBeforeCommit(harvestCount*2,harvestCount*4);
+            if (harvestCount>500) {
+                index.setChangesBeforeCommit(harvestCount*2,harvestCount*4);
+                index.setMaxConverterQueue(harvestCount*2);
+            }
         }
 
         while (currResumptionToken!=null) {
