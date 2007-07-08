@@ -56,16 +56,16 @@ public class OAIHarvester extends AbstractHarvester {
     public void open(SingleIndexConfig iconfig) throws Exception {
         super.open(iconfig);
 
-        String setSpec=iconfig.harvesterProperties.get("setSpec");
+        String setSpec=iconfig.harvesterProperties.getProperty("setSpec");
         if (setSpec!=null) {
             sets=new HashSet<String>();
             Collections.addAll(sets,setSpec.split("[\\,\\;\\s]+"));
             if (sets.size()==0) sets=null;
         }
 
-        String retryCountStr=iconfig.harvesterProperties.get("retryCount");
+        String retryCountStr=iconfig.harvesterProperties.getProperty("retryCount");
         if (retryCountStr!=null) retryCount=Integer.parseInt(retryCountStr);
-        String retryTimeStr=iconfig.harvesterProperties.get("retryAfterSeconds");
+        String retryTimeStr=iconfig.harvesterProperties.getProperty("retryAfterSeconds");
         if (retryTimeStr!=null) retryTime=Integer.parseInt(retryTimeStr);
 
         //*** ListRecords ***
@@ -235,7 +235,8 @@ public class OAIHarvester extends AbstractHarvester {
     public void harvest() throws Exception {
         if (index==null) throw new IllegalStateException("Index not yet opened");
 
-        String baseUrl=iconfig.harvesterProperties.get("baseUrl");
+        String baseUrl=iconfig.harvesterProperties.getProperty("baseUrl");
+        if (baseUrl==null) throw new NullPointerException("No baseUrl of the OAI repository was given!");
         checkIdentify(baseUrl);
         reset();
 
@@ -243,8 +244,10 @@ public class OAIHarvester extends AbstractHarvester {
         index.setMaxConverterQueue(1000);
         Date from=index.getLastHarvestedFromDisk();
         StringBuilder url=new StringBuilder(baseUrl);
+        String prefix=iconfig.harvesterProperties.getProperty("metadataPrefix");
+        if (prefix==null) throw new NullPointerException("No metadataPrefix for the OAI repository was given!");
         url.append("?verb=ListRecords&metadataPrefix=");
-        url.append(URLEncoder.encode(iconfig.harvesterProperties.get("metadataPrefix"),"UTF-8"));
+        url.append(URLEncoder.encode(prefix,"UTF-8"));
         if (sets!=null) {
             if (sets.size()==1) {
                 url.append("&set=");
@@ -259,7 +262,7 @@ public class OAIHarvester extends AbstractHarvester {
         Date lastHarvested=currResponseDate;
         if (currResumptionToken!=null) {
             // resize the maximum number for commits to index not to break HTTP downloads!
-            if (harvestCount>500) {
+            if (harvestCount>500 && !index.memoryWasLimited()) {
                 index.setChangesBeforeCommit(harvestCount*2,harvestCount*4);
                 index.setMaxConverterQueue(harvestCount*2);
             }

@@ -49,14 +49,16 @@ public class IndexBuilder {
     private Object commitEventLock=new Object();
     private volatile HarvesterCommitEvent commitEvent=null;
 
-    // construtor
-    private IndexBuilder() {}
+    private boolean enableMemoryChecking=false;
+    private boolean memoryWasLimited=false;
+    private long lastMemoryUsage=0L;
 
     public IndexBuilder(boolean create, SingleIndexConfig iconfig) throws IOException {
         if (!IndexReader.indexExists(iconfig.getFullIndexPath())) create=true;
         this.dir=FSDirectory.getDirectory(iconfig.getFullIndexPath());
         this.create=create;
         this.iconfig=iconfig;
+        enableMemoryChecking(Boolean.parseBoolean(iconfig.harvesterProperties.getProperty("enableMemoryChecking","true")));
         if (create) try {
             dir.deleteFile(IndexConstants.FILENAME_LASTHARVESTED);
         } catch (IOException e) {}
@@ -68,11 +70,17 @@ public class IndexBuilder {
         },getClass().getName()+"#Indexer Thread");
     }
 
+    public void enableMemoryChecking(boolean enable) {
+        this.enableMemoryChecking=enable;
+    }
+
     public boolean isCreatingNew() {
         return create;
     }
 
     public void setChangesBeforeCommit(int min, int max) {
+        if (min<1) min=1;
+        if (max<1) max=1;
         synchronized(indexerThread) {
             this.minChangesBeforeCommit=min;
             this.maxChangesBeforeCommit=max;
@@ -81,6 +89,7 @@ public class IndexBuilder {
     }
 
     public void setMaxConverterQueue(int max) {
+        if (max<1) max=1;
         synchronized(converterThread) {
             this.maxConverterQueue=max;
             converterThread.notify();
@@ -158,6 +167,8 @@ public class IndexBuilder {
             mdocBuffer.add(mdoc);
             converterThread.notify();
         }
+
+        checkMemoryConsumption();
     }
 
     // call this between harvest resumptions to give the indexer a chance NOW to set this thread to wait not while HTTP transfers
@@ -191,6 +202,44 @@ public class IndexBuilder {
         return d;
     }
 
+    public boolean memoryWasLimited() {
+        return this.memoryWasLimited;
+    }
+
+    private void checkMemoryConsumption() {
+        if (!enableMemoryChecking) return;
+        Runtime r=Runtime.getRuntime();
+        long max=r.maxMemory();
+        long currMemory=r.totalMemory()-r.freeMemory();
+        double factor=(double)max/(double)currMemory;
+        if (lastMemoryUsage>0L) {
+            if (factor<1.8) {
+                r.runFinalization();
+                r.gc();
+                max=r.maxMemory();
+                currMemory=r.totalMemory()-r.freeMemory();
+                factor=(double)max/(double)currMemory;
+            }
+            if (factor<1.8) {
+                boolean limited=false;
+                if (minChangesBeforeCommit>10 && maxChangesBeforeCommit>20) {
+                    setChangesBeforeCommit(minChangesBeforeCommit*2/3, maxChangesBeforeCommit*2/3);
+                    limited=true;
+                }
+                if (maxConverterQueue>2) {
+                    setMaxConverterQueue(maxConverterQueue*2/3);
+                    limited=true;
+                }
+                if (limited) {
+                    log.warn("Memory usage of IndexBuilder is very high, decreasing buffers!");
+                    log.info("For optimal performance increase the maximum memory assigned to the virtual machine running the Harvester/IndexBuilder!");
+                }
+                this.memoryWasLimited=true;
+            }
+        }
+        lastMemoryUsage=currMemory;
+    }
+
     private void converterThreadRun() {
         XPathResolverImpl.getInstance().setIndexBuilder(this);
         try {
@@ -221,6 +270,7 @@ public class IndexBuilder {
                         if (ldocBuffer.size()>=maxChangesBeforeCommit) internalWaitIndexer();
                         ldocBuffer.put(mdoc.identifier,ldoc);
                         if (ldocBuffer.size()>=minChangesBeforeCommit) indexerThread.notify();
+                        checkMemoryConsumption();
                     }
                 }
                 converterLog.debug("Converting files stopped.");
