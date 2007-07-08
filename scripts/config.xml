@@ -92,6 +92,9 @@
             <index ref="ifremer"/>
         </virtualIndex>
     </indices>
+    <globalHarvesterProperties>
+    	<enableMemoryChecking>true</enableMemoryChecking>
+    </globalHarvesterProperties>
     <search>
         <returnXML>true</returnXML>
         <returnStoredFields>true</returnStoredFields>

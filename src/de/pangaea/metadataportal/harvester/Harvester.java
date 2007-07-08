@@ -27,11 +27,12 @@ public class Harvester {
 
     // main-Methode
     public static void main (String[] args) {
+        if (args.length!=2) {
+            System.err.println("Command line: java "+Harvester.class.getName()+" config.xml index-name|*");
+            return;
+        }
+
         try {
-            if (args.length!=2) {
-                System.err.println("Command line: java "+Harvester.class.getName()+" config.xml index-name|*");
-                return;
-            }
             Config conf=new Config(args[0],Config.ConfigMode.HARVESTING);
             Collection<IndexConfig> indexList=null;
             if ("*".equals(args[1])) {

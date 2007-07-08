@@ -45,7 +45,7 @@ public class SingleIndexConfig extends IndexConfig {
     }
 
     public void addHarvesterProperty(ExtendedDigester dig, String value) {
-        harvesterProperties.put(dig.getCurrentElementName(),value);
+        harvesterProperties.setProperty(dig.getCurrentElementName(),value);
     }
 
     public void check() {
@@ -104,6 +104,6 @@ public class SingleIndexConfig extends IndexConfig {
     public boolean autoOptimize=false;
     public boolean validate=true;
     public Class<? extends de.pangaea.metadataportal.harvester.AbstractHarvester> harvesterClass=null;
-    public Map<String,String> harvesterProperties=new HashMap<String,String>();
+    public InheritedProperties harvesterProperties=new InheritedProperties();
     public Templates xslt=null;
 }

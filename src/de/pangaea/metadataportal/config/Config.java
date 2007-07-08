@@ -171,6 +171,12 @@ public class Config {
             dig.addObjectParam("config/search/*", 0, dig);
             dig.addCallParam("config/search/*", 1);
 
+            // *** GLOBAL HARVESTER PROPERTIES ***
+            dig.addDoNothing("config/globalHarvesterProperties");
+            dig.addCallMethod("config/globalHarvesterProperties/*","addGlobalHarvesterProperty",2, X_PATH_PARAMS);
+            dig.addObjectParam("config/globalHarvesterProperties/*", 0, dig);
+            dig.addCallParam("config/globalHarvesterProperties/*", 1);
+
             // parse config
             dig.push(this);
             dig.parse(file);
@@ -221,6 +227,7 @@ public class Config {
         if (indices.containsKey(i.id))
             throw new IllegalArgumentException("There is already an index with id=\""+i.id+"\" added to configuration!");
         i.parent=this;
+        if (i instanceof SingleIndexConfig) ((SingleIndexConfig)i).harvesterProperties.setParentProperties(globalHarvesterProperties);
         i.check();
         indices.put(i.id,i);
     }
@@ -296,6 +303,11 @@ public class Config {
         }
     }
 
+    public void addGlobalHarvesterProperty(ExtendedDigester dig, String value) {
+        String name=dig.getCurrentElementName();
+        globalHarvesterProperties.setProperty(name,value);
+    }
+
     public void setSchema(String namespace, String url) throws Exception {
         if (configMode==ConfigMode.SEARCH) return; // no schema support when search engine
         if (schema!=null) throw new SAXException("Schema URL already defined!");
@@ -355,6 +367,7 @@ public class Config {
     /*public Templates xsltBeforeXPath=null;*/
 
     public Properties searchProperties=new Properties();
+    public Properties globalHarvesterProperties=new Properties();
 
     public Set<String> luceneStopWords=new HashSet<String>();
     protected Class<? extends org.apache.lucene.analysis.Analyzer> analyzerClass=null;

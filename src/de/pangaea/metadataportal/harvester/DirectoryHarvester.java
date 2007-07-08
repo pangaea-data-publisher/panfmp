@@ -38,11 +38,11 @@ public class DirectoryHarvester extends AbstractHarvester implements FilenameFil
         // TODO: we want to regenerate the index every time
         super.open(iconfig);
 
-        String s=iconfig.harvesterProperties.get("directory");
+        String s=iconfig.harvesterProperties.getProperty("directory");
         if (s==null) throw new IllegalArgumentException("Missing directory name to start harvesting (property \"directory\")");
         directory=new File(iconfig.parent.makePathAbsolute(s));
-        recursive=Boolean.parseBoolean(iconfig.harvesterProperties.get("recursive"));
-        s=iconfig.harvesterProperties.get("filenameFilter");
+        recursive=Boolean.parseBoolean(iconfig.harvesterProperties.getProperty("recursive","false"));
+        s=iconfig.harvesterProperties.getProperty("filenameFilter");
         filenameFilter=(s==null) ? null : Pattern.compile(s);
     }
 
