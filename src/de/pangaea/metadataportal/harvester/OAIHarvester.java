@@ -262,9 +262,8 @@ public class OAIHarvester extends AbstractHarvester {
         Date lastHarvested=currResponseDate;
         if (currResumptionToken!=null) {
             // resize the maximum number for commits to index not to break HTTP downloads!
-            if (harvestCount>500 && !index.memoryWasLimited()) {
+            if (harvestCount>500) {
                 index.setChangesBeforeCommit(harvestCount*2,harvestCount*4);
-                index.setMaxConverterQueue(harvestCount*2);
             }
         }
 
