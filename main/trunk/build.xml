@@ -7,6 +7,8 @@
 	<property name="docs" location="apidocs"/>
 	<property name="libs" location="libs"/>
 	
+	<property name="debug" value="on"/>
+	
 	<property name="version" value="0.0-dev"/>
 	<property name="versionsuffix" value="-${version}"/>
 	<property name="pkgname" value="${ant.project.name}${versionsuffix}"/>
@@ -26,7 +28,7 @@
 	
 	<target name="compile" depends="init">
 		<mkdir dir="${build}"/>
-		<javac srcdir="${src}" destdir="${build}" source="1.5" target="1.5" classpathref="classpath" deprecation="on">
+		<javac srcdir="${src}" destdir="${build}" source="1.5" target="1.5" classpathref="classpath" deprecation="on" debug="${debug}">
 			<compilerarg line="-Xlint:unchecked"/>
 		</javac>
 	</target>
