@@ -1,5 +1,4 @@
 Harvester:
-* Configureable IndexBuilder stack size (config.xml and/or real memory usage)
 * Completely rebuilding index from source without deleting old one having readers online (new commit lock-less usage!)
 * Compression on/off for XML stored
 * Assigning of document boosts by number datatype XPath (complicated XPathes?) or some other combination
