@@ -18,10 +18,21 @@ package de.pangaea.metadataportal;
 
 public final class Package {
 
-  private Package() {}
+    private Package() {}
 
-  public static java.lang.Package get() {
-    return Package.class.getPackage();
-  }
+    public static java.lang.Package get() {
+        return Package.class.getPackage();
+    }
+
+    public static String getVersion() {
+        java.lang.Package pkg=get();
+        return (pkg==null) ? null : pkg.getImplementationVersion();
+    }
+
+    public static void checkMinimumRequirements() {
+        java.lang.Package lpkg=org.apache.lucene.LucenePackage.get();
+        if (lpkg==null || !lpkg.isCompatibleWith("2.2.0"))
+            throw new RuntimeException("panFMP only runs with Apache Lucene 2.2.0 as a minimum requirement!");
+    }
 
 }
