@@ -22,45 +22,82 @@ import de.pangaea.metadataportal.utils.*;
 import org.xml.sax.helpers.XMLFilterImpl;
 import org.xml.sax.*;
 
-/***
-This class is used as a rule for included documents inside a Digester-Input
-Whenever this element occurs in digester, begin/end will be called, that then puts all further SAX events to the specified ContentHandler
-***/
-
+/**
+ * This class is used as a rule for included documents during <code>Digester</code> parsing.
+ * Whenever this element matches in <code>Digester</code>, <code>begin</code>/<code>end</code> will be called,
+ * that then puts all further SAX events to the specified SAX <code>ContentHandler</code>.
+ */
 public class SaxRule extends org.apache.commons.digester.Rule {
 
+    /**
+     * @see #setContentHandler
+     */
     protected ContentHandler destContentHandler=null;
+
+    /**
+     * @see #setExcludeNamespaces
+     */
     protected Set<String> excludeNamespaces=Collections.<String>emptySet();
+
     private org.xml.sax.ContentHandler lastContentHandler=null;
 
+    /**
+     * Default constructor
+     */
+    public SaxRule() {
+    }
+
+    /**
+     * Creates an empty "useless" SaxRule. The pupose is to not throw an exception on known but ignored tags (optional with contents).
+     * @return an instance that does nothing by feeding all SAX events to an SAX {@link org.xml.sax.helpers.DefaultHandler}
+     */
     public static SaxRule emptyRule() {
         SaxRule sr=new SaxRule();
         sr.setContentHandler(new org.xml.sax.helpers.DefaultHandler());
         return sr;
     }
 
+    /**
+     * Set the <code>Digester</code> with which this <code>Rule</code> is associated.
+     * @throws IllegalArgumentException if <code>digester</code> is not an {@link ExtendedDigester} instance.
+     */
     public void setDigester(org.apache.commons.digester.Digester digester) {
         if (digester instanceof ExtendedDigester) super.setDigester(digester);
         else throw new IllegalArgumentException("You can only use this rule in a "+ExtendedDigester.class.getName()+" instance!");
     }
 
+    /**
+     * Sets the SAX <code>ContentHandler</code> that gets all SAX Events after the <code>startElement</code> event.
+     */
     public void setContentHandler(ContentHandler ch) {
         this.destContentHandler=ch;
     }
 
+    /**
+     * Sets a {@code Set<String>} containing all Namespace URIs that should not be feed to the target {@code ContentHandler} on match.
+     * Default (or setting to {@code null}) means no restriction: All namespace prefixes visible in the current context will be reported.
+     * @param ch the SAX ContentHandler
+     */
     public void setExcludeNamespaces(Set<String> excludeNamespaces) {
         this.excludeNamespaces=excludeNamespaces;
     }
 
-    // add some tags when document started
+    /**
+     * Add some tags when document started. The default implementation does nothing.
+     * This method should be overwritten to feed some additional tags after the <code>startDocument</code> SAX event.
+     * @throws SAXException
+     */
     protected void initDocument() throws SAXException {
     }
 
-    // close tags added in initDocument()
+    /**
+     * Closes the tags created in <code>initDocument()</code>. The default implementation does nothing.
+     * This method should be overwritten to feed some ending tags before the <code>endDocument</code> SAX event.
+     * @throws SAXException
+     */
     protected void finishDocument() throws SAXException {
     }
 
-    // Digester rule part
     public void begin(java.lang.String namespace, java.lang.String name, Attributes attributes) throws Exception {
         if (destContentHandler==null) throw new IllegalStateException("You must set a target ContentHandler instance before processing this rule!");
 
