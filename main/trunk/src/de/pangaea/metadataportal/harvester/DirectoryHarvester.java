@@ -78,11 +78,13 @@ public class DirectoryHarvester extends AbstractHarvester implements FilenameFil
     public void harvest() throws Exception {
         if (index==null) throw new IllegalStateException("Index not yet opened");
 
+        java.util.Date startDate=new java.util.Date();
+
         from=index.getLastHarvestedFromDisk();
         processDirectory(directory);
         from=null;
 
-        index.setLastHarvested(new java.util.Date());
+        index.setLastHarvested(startDate);
     }
 
 }
