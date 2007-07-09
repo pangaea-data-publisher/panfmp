@@ -39,6 +39,11 @@ public class Config {
     public Config(String file, ConfigMode configMode) throws Exception {
         this.file=file;
         this.configMode=configMode;
+
+        Package lpkg=org.apache.lucene.LucenePackage.get();
+        if (!lpkg.isCompatibleWith("2.2.0"))
+            throw new RuntimeException("panFMP only runs with Apache Lucene 2.2.0 as a minimum requirement!");
+
         setAnalyzerClass(org.apache.lucene.analysis.standard.StandardAnalyzer.class);
         org.apache.lucene.search.BooleanQuery.setMaxClauseCount(DEFAULT_MAX_CLAUSE_COUNT);
         org.apache.lucene.search.BooleanQuery.setAllowDocsOutOfOrder(true);
