@@ -342,9 +342,10 @@ public class IndexBuilder {
     }
 
     private void startThreads() {
-        if (!threadsStarted) {
+        if (!threadsStarted) try {
             converterThread.start();
             indexerThread.start();
+        } finally {
             threadsStarted=true;
         }
     }
