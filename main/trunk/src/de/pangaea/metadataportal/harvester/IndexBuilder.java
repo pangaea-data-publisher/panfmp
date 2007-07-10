@@ -31,23 +31,22 @@ public class IndexBuilder {
     private static org.apache.commons.logging.Log indexerLog = org.apache.commons.logging.LogFactory.getLog(IndexBuilder.class.getName()+"#Indexer");
 
     protected SingleIndexConfig iconfig;
-
-    private int maxConverterQueue = 250;
-    private int minChangesBeforeCommit = 1000;
-    private int maxChangesBeforeCommit = 2000;
-
-    private boolean create;
-    private FSDirectory dir=null;
+    private FSDirectory dir;
     private Date lastHarvested=null;
+    private boolean create;
 
     private Thread indexerThread,converterThread;
+    private boolean threadsStarted=false;
     private volatile boolean indexerFinished=false,converterFinished=false;
     private volatile TreeMap<String,Document> ldocBuffer=new TreeMap<String,Document>();
-    private volatile ArrayList<MetadataDocument> mdocBuffer=new ArrayList<MetadataDocument>(maxConverterQueue);
+    private volatile ArrayList<MetadataDocument> mdocBuffer=new ArrayList<MetadataDocument>();
     private volatile Exception failure=null;
     private volatile long maxWaitForIndexer=-1L;
     private Object commitEventLock=new Object();
     private volatile HarvesterCommitEvent commitEvent=null;
+    private int maxConverterQueue;
+    private int minChangesBeforeCommit;
+    private int maxChangesBeforeCommit;
 
     public IndexBuilder(boolean create, SingleIndexConfig iconfig) throws IOException {
         if (!IndexReader.indexExists(iconfig.getFullIndexPath())) create=true;
@@ -88,7 +87,7 @@ public class IndexBuilder {
     }
 
     public void setMaxConverterQueue(int max) {
-        if (max<1) throw new IllegalArgumentException("Invalid values for maxConverterQueue.");
+        if (max<1) throw new IllegalArgumentException("Invalid value for maxConverterQueue.");
         synchronized(converterThread) {
             this.maxConverterQueue=max;
             converterThread.notify();
@@ -96,10 +95,8 @@ public class IndexBuilder {
     }
 
     public void setMaxWaitForIndexer(long maxWaitForIndexer) {
-        synchronized(converterThread) {
-            synchronized(indexerThread) {
-                this.maxWaitForIndexer=maxWaitForIndexer;
-            }
+        synchronized(indexerThread) {
+            this.maxWaitForIndexer=maxWaitForIndexer;
         }
     }
 
@@ -119,24 +116,22 @@ public class IndexBuilder {
         if (failure!=null) {
             throwFailure();
         } else {
-            // wait for converter
-            if (!converterThread.isAlive()) converterThread.start(); // be sure that thread was running at least once
-            if (!indexerThread.isAlive()) indexerThread.start(); // be sure that thread was running at least once
+            startThreads();
 
             synchronized(converterThread) {
                 converterFinished=true;
                 converterThread.notify();
             }
-            try {
+            if (converterThread.isAlive()) try {
                 converterThread.join();
             } catch (InterruptedException e) {}
 
             // wait for indexer
             synchronized(indexerThread) {
-                //done by converterThread: indexerFinished=true;
+                indexerFinished=true;
                 indexerThread.notify();
             }
-            try {
+            if (indexerThread.isAlive()) try {
                 indexerThread.join();
             } catch (InterruptedException e) {}
 
@@ -158,8 +153,7 @@ public class IndexBuilder {
         if (isClosed()) throw new IllegalStateException("IndexBuilder already closed");
         throwFailure();
 
-        if (!converterThread.isAlive()) converterThread.start();
-        if (!indexerThread.isAlive()) indexerThread.start();
+        startThreads();
 
         synchronized(converterThread) {
             if (mdocBuffer.size()>=maxConverterQueue) internalWaitConverter();
@@ -173,8 +167,7 @@ public class IndexBuilder {
         if (isClosed()) throw new IllegalStateException("IndexBuilder already closed");
         throwFailure();
 
-        if (!converterThread.isAlive()) converterThread.start();
-        if (!indexerThread.isAlive()) indexerThread.start();
+        startThreads();
 
         synchronized(indexerThread) {
             if (ldocBuffer.size()>=(minChangesBeforeCommit+maxChangesBeforeCommit)/2) internalWaitIndexer();
@@ -342,11 +335,27 @@ public class IndexBuilder {
         if (failure!=null) {
             if (converterThread!=null) converterThread.interrupt();
             if (indexerThread!=null) indexerThread.interrupt();
-            throw failure;
+            Exception f=failure;
+            failure=null;
+            throw f;
         }
     }
 
+    private void startThreads() {
+        if (!threadsStarted) {
+            converterThread.start();
+            indexerThread.start();
+            threadsStarted=true;
+        }
+    }
+
+    private void checkThreads() {
+        if (!converterThread.isAlive() || !indexerThread.isAlive())
+            throw new IllegalStateException("IndexBuilder threads died unexspected!");
+    }
+
     private void internalWaitConverter() {
+        checkThreads();
         synchronized (converterThread) {
             try {
                 log.info("Harvester is too fast for converter thread, waiting...");
@@ -356,6 +365,7 @@ public class IndexBuilder {
     }
 
     private void internalWaitIndexer() {
+        checkThreads();
         synchronized (indexerThread) {
             try {
                 log.info("Converter is too fast for indexer thread, waiting...");
