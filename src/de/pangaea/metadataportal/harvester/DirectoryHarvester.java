@@ -31,6 +31,7 @@ public class DirectoryHarvester extends AbstractHarvester implements FilenameFil
     protected boolean recursive=false;
     protected Pattern filenameFilter=null;
     protected java.util.Date from=null;
+    protected String identifierPrefix="";
 
     public void open(SingleIndexConfig iconfig) throws Exception {
         // TODO: we want to regenerate the index every time
@@ -40,6 +41,7 @@ public class DirectoryHarvester extends AbstractHarvester implements FilenameFil
         if (s==null) throw new IllegalArgumentException("Missing directory name to start harvesting (property \"directory\")");
         directory=new File(iconfig.parent.makePathAbsolute(s));
         recursive=Boolean.parseBoolean(iconfig.harvesterProperties.getProperty("recursive","false"));
+        identifierPrefix=iconfig.harvesterProperties.getProperty("identifierPrefix","").trim();
         s=iconfig.harvesterProperties.getProperty("filenameFilter");
         filenameFilter=(s==null) ? null : Pattern.compile(s);
     }
@@ -57,7 +59,7 @@ public class DirectoryHarvester extends AbstractHarvester implements FilenameFil
 
     protected void processFile(File file) throws Exception {
         MetadataDocument mdoc=new MetadataDocument();
-        mdoc.identifier="file:"+directory.toURI().normalize().relativize(file.toURI().normalize()).toString();
+        mdoc.identifier="file:"+identifierPrefix+directory.toURI().normalize().relativize(file.toURI().normalize()).toString();
         mdoc.datestamp=new java.util.Date(file.lastModified());
         mdoc.dom=(new XMLConverter(iconfig)).transform(new StreamSource(file));
 
