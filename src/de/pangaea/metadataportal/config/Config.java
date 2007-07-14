@@ -18,7 +18,6 @@ package de.pangaea.metadataportal.config;
 
 import java.util.*;
 import java.io.*;
-import java.net.*;
 import de.pangaea.metadataportal.utils.*;
 import org.apache.commons.digester.*;
 import org.xml.sax.*;
@@ -29,7 +28,6 @@ import javax.xml.transform.*;
 import javax.xml.transform.sax.*;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.*;
-import javax.xml.xpath.*;
 
 public class Config {
 
