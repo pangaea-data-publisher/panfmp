@@ -60,12 +60,6 @@ public class MetadataDocument {
         trans.transform(s,r);
     }
 
-    public void setHeaderInfo(String status, String identifier, String datestampStr) throws java.text.ParseException {
-        this.deleted=(status!=null && status.equals("deleted"));
-        this.identifier=identifier;
-        this.datestamp=ISODateFormatter.parseDate(datestampStr);
-    }
-
     public void addSet(String set) {
         sets.add(set);
     }
@@ -131,7 +125,7 @@ public class MetadataDocument {
     }
 
     protected void addFields(SingleIndexConfig iconfig, Document ldoc) throws Exception {
-        for (Config.Config_Field f : iconfig.parent.fields.values()) {
+        for (FieldConfig f : iconfig.parent.fields.values()) {
             boolean needDefault=true;
             Object value=null;
             if (f.xPathExpr!=null) {
@@ -186,8 +180,8 @@ public class MetadataDocument {
     }
 
     protected boolean processFilters(SingleIndexConfig iconfig) throws Exception {
-        boolean accept=(iconfig.parent.filterDefault==Config.FilterType.ACCEPT);
-        for (Config.Config_Filter f : iconfig.parent.filters) {
+        boolean accept=(iconfig.parent.filterDefault==FilterConfig.FilterType.ACCEPT);
+        for (FilterConfig f : iconfig.parent.filters) {
             if (f.xPathExpr==null) throw new NullPointerException("Filters need to contain a XPath expression, which is NULL!");
             Boolean b=(Boolean)f.xPathExpr.evaluate(dom, javax.xml.xpath.XPathConstants.BOOLEAN);
             if (b==null) throw new javax.xml.xpath.XPathExpressionException("The filter XPath did not return a valid BOOLEAN value!");
@@ -221,7 +215,7 @@ public class MetadataDocument {
             addSystemVariables(iconfig,data);
 
             // variables in config
-            for (Config.Config_Variable f : iconfig.parent.xPathVariables) {
+            for (VariableConfig f : iconfig.parent.xPathVariables) {
                 Object value=null;
                 if (f.xPathExpr!=null) {
                     try {
@@ -271,7 +265,7 @@ public class MetadataDocument {
         return ldoc;
     }
 
-    protected NodeList evaluateTemplate(Config.Config_AnyExpression expr) throws TransformerException {
+    protected NodeList evaluateTemplate(AnyExpressionConfig expr) throws TransformerException {
         Transformer trans=expr.xslt.newTransformer();
         trans.setErrorListener(new LoggingErrorListener(getClass()));
 
@@ -310,7 +304,7 @@ public class MetadataDocument {
         }
     }
 
-    protected void internalAddField(Document ldoc, Config.Config_Field f, String val) throws Exception {
+    protected void internalAddField(Document ldoc, FieldConfig f, String val) throws Exception {
         if (log.isTraceEnabled()) log.trace("AddField: "+f.name+'='+val);
         boolean token=false;
         switch(f.datatype) {
@@ -321,7 +315,7 @@ public class MetadataDocument {
         Field.Index in=Field.Index.NO;
         if (f.luceneindexed) in=token?Field.Index.TOKENIZED:Field.Index.UN_TOKENIZED;
         ldoc.add(new Field(f.name, val, f.lucenestorage?Field.Store.YES:Field.Store.NO, in));
-        if (f.luceneindexed && (f.datatype==Config.DataType.NUMBER || f.datatype==Config.DataType.DATETIME))
+        if (f.luceneindexed && (f.datatype==FieldConfig.DataType.NUMBER || f.datatype==FieldConfig.DataType.DATETIME))
             LuceneConversions.addTrieIndexEntries(ldoc,f.name,val);
     }
 

@@ -63,7 +63,7 @@ public class Config {
             // variables
             dig.addDoNothing("config/metadata/variables");
 
-            dig.addObjectCreate("config/metadata/variables/variable", Config_Variable.class);
+            dig.addObjectCreate("config/metadata/variables/variable", VariableConfig.class);
             dig.addSetNext("config/metadata/variables/variable", "addVariable");
             dig.addCallMethod("config/metadata/variables/variable","setName", 2, X_PATH_PARAMS);
             dig.addObjectParam("config/metadata/variables/variable", 0, dig);
@@ -74,7 +74,7 @@ public class Config {
                 dig.addCallParam("config/metadata/variables/variable", 1);
             }
 
-            dig.addObjectCreate("config/metadata/variables/variable-template", Config_Variable.class);
+            dig.addObjectCreate("config/metadata/variables/variable-template", VariableConfig.class);
             dig.addSetNext("config/metadata/variables/variable-template", "addVariable");
             dig.addCallMethod("config/metadata/variables/variable-template","setName", 2, X_PATH_PARAMS);
             dig.addObjectParam("config/metadata/variables/variable-template", 0, dig);
@@ -85,7 +85,7 @@ public class Config {
             dig.addCallMethod("config/metadata/filters", "setFilterDefault", 1);
             dig.addCallParam("config/metadata/filters", 0, "default");
 
-            dig.addObjectCreate("config/metadata/filters/*", Config_Filter.class);
+            dig.addObjectCreate("config/metadata/filters/*", FilterConfig.class);
             dig.addSetNext("config/metadata/filters/*", "addFilter");
             if (configMode==ConfigMode.HARVESTING) {
                 dig.addCallMethod("config/metadata/filters/*","setXPath", 2, X_PATH_PARAMS);
@@ -96,7 +96,7 @@ public class Config {
             // fields
             dig.addDoNothing("config/metadata/fields");
 
-            dig.addObjectCreate("config/metadata/fields/field", Config_Field.class);
+            dig.addObjectCreate("config/metadata/fields/field", FieldConfig.class);
             dig.addSetNext("config/metadata/fields/field", "addField");
             SetPropertiesRule r=new SetPropertiesRule();
             r.setIgnoreMissingProperty(false);
@@ -107,7 +107,7 @@ public class Config {
                 dig.addCallParam("config/metadata/fields/field", 1);
             }
 
-            dig.addObjectCreate("config/metadata/fields/field-template", Config_Field.class);
+            dig.addObjectCreate("config/metadata/fields/field-template", FieldConfig.class);
             dig.addSetNext("config/metadata/fields/field-template", "addField");
             r=new SetPropertiesRule();
             r.setIgnoreMissingProperty(false);
@@ -194,7 +194,7 @@ public class Config {
         else return new File(new File(this.file).getAbsoluteFile().getParentFile(),file).getCanonicalPath();
     }
 
-    public void addField(Config_Field f) {
+    public void addField(FieldConfig f) {
         if (f.name==null) throw new IllegalArgumentException("A field name is mandatory");
         if (fields.containsKey(f.name)) throw new IllegalArgumentException("A field with name '"+f.name+"' already exists!");
         if (configMode==ConfigMode.HARVESTING) {
@@ -202,12 +202,12 @@ public class Config {
             if (f.xPathExpr!=null && f.xslt!=null) throw new IllegalArgumentException("It may not both XPath and template be defined");
         }
         if (!f.lucenestorage && !f.luceneindexed) throw new IllegalArgumentException("A field must be at least indexed and/or stored");
-        if (f.defaultValue!=null && f.datatype!=DataType.NUMBER && f.datatype!=DataType.DATETIME)
+        if (f.defaultValue!=null && f.datatype!=FieldConfig.DataType.NUMBER && f.datatype!=FieldConfig.DataType.DATETIME)
             throw new IllegalArgumentException("A default value can only be given for number or dateTime fields");
         fields.put(f.name,f);
     }
 
-    public void addVariable(Config_Variable f) {
+    public void addVariable(VariableConfig f) {
         if (configMode==ConfigMode.SEARCH) return;
         if (f.name==null) throw new IllegalArgumentException("A XPath variable name is mandatory");
         if (de.pangaea.metadataportal.harvester.XPathResolverImpl.INDEX_BUILDER_NAMESPACE.equals(f.name.getNamespaceURI()))
@@ -217,7 +217,7 @@ public class Config {
         xPathVariables.add(f);
     }
 
-    public void addFilter(Config_Filter f) {
+    public void addFilter(FilterConfig f) {
         if (configMode==ConfigMode.SEARCH) return;
         if (f.xPathExpr==null) throw new IllegalArgumentException("A XPath itsself may not be empty");
         if (f.xslt!=null) throw new IllegalArgumentException("A filter may not contain a template");
@@ -238,7 +238,7 @@ public class Config {
     public void setFilterDefault(String v) {
         if (v==null) return; // no change
         // a bit of hack, we use an empty filter to find out type :)
-        Config_Filter f=new Config_Filter();
+        FilterConfig f=new FilterConfig();
         f.setType(v);
         filterDefault=f.type;
     }
@@ -252,7 +252,7 @@ public class Config {
         if (".".equals(v) || "/".equals(v) || "/*".equals(v)) {
             defaultField=null; // all fields from SAX parser
         } else {
-            defaultField=new Config_AnyExpression();
+            defaultField=new AnyExpressionConfig();
             defaultField.setXPath(dig,v);
         }
     }
@@ -263,7 +263,7 @@ public class Config {
             return;
         }
         v=v.trim();
-        documentBoost=new Config_AnyExpression();
+        documentBoost=new AnyExpressionConfig();
         documentBoost.setXPath(dig,v);
     }
 
@@ -350,22 +350,22 @@ public class Config {
     // members "the configuration"
     public Map<String,IndexConfig> indices=new HashMap<String,IndexConfig>();
 
-    public Map<String,Config_Field> fields=new HashMap<String,Config_Field>();
-    public Config_AnyExpression defaultField=null;
+    public Map<String,FieldConfig> fields=new HashMap<String,FieldConfig>();
+    public AnyExpressionConfig defaultField=null;
 
     // filters
-    public FilterType filterDefault=FilterType.ACCEPT;
-    public List<Config_Filter> filters=new ArrayList<Config_Filter>();
+    public FilterConfig.FilterType filterDefault=FilterConfig.FilterType.ACCEPT;
+    public List<FilterConfig> filters=new ArrayList<FilterConfig>();
 
     // variables
-    public List<Config_Variable> xPathVariables=new ArrayList<Config_Variable>();
+    public List<VariableConfig> xPathVariables=new ArrayList<VariableConfig>();
 
     // schema etc
     public Schema schema=null;
     public boolean haltOnSchemaError=false;
 
     // document boost
-    public Config_AnyExpression documentBoost=null;
+    public AnyExpressionConfig documentBoost=null;
 
     /*public Templates xsltBeforeXPath=null;*/
 
@@ -383,110 +383,9 @@ public class Config {
 
     public static final int DEFAULT_MAX_CLAUSE_COUNT = 131072;
 
-    // internal classes
-
     public static enum ConfigMode { HARVESTING,SEARCH };
-    public static enum FilterType { ACCEPT,DENY };
-    public static enum DataType { TOKENIZEDTEXT,STRING,NUMBER,DATETIME };
 
-    public static class Config_AnyExpression {
-
-        public void setXPath(ExtendedDigester dig, String xpath) throws XPathExpressionException {
-            if ("".equals(xpath)) return; // Exception throws the Config.addField() method
-            XPath x=StaticFactories.xpathFactory.newXPath();
-            x.setXPathFunctionResolver(de.pangaea.metadataportal.harvester.XPathResolverImpl.getInstance());
-            x.setXPathVariableResolver(de.pangaea.metadataportal.harvester.XPathResolverImpl.getInstance());
-            // current namespace context with strict=true (display errors when namespace declaration is missing [non-standard!])
-            // and with possibly declared default namespace is redefined/deleted to "" (according to XSLT specification,
-            // where this is also mandatory).
-            x.setNamespaceContext(dig.getCurrentNamespaceContext(true,true));
-            xPathExpr=x.compile(xpath);
-            cachedXPath=xpath;
-        }
-
-        public void setTemplate(Templates xslt) {
-            this.xslt=xslt;
-        }
-
-        public String toString() {
-            return (xPathExpr==null) ? "?template?" : cachedXPath;
-        }
-
-        public XPathExpression xPathExpr=null;
-        public Templates xslt=null;
-        private String cachedXPath=null;
-    }
-
-    public static final class Config_Field extends Config_AnyExpression {
-
-        public void setName(String v) {
-            name=v;
-        }
-
-        public void setDatatype(String v) {
-            try {
-                datatype=Enum.valueOf(DataType.class,v.toUpperCase());
-            } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException("Invalid value '"+v+"' for attribute datatype!");
-            }
-        }
-
-        public void setLucenestorage(String v) { lucenestorage=Boolean.parseBoolean(v); }
-        public void setLuceneindexed(String v) { luceneindexed=Boolean.parseBoolean(v); }
-        public void setDefault(String v) { defaultValue=v; }
-
-        public String toString() {
-            return name;
-        }
-
-        // members "the configuration"
-        public String name=null;
-        public String defaultValue=null;
-        public DataType datatype=DataType.TOKENIZEDTEXT;
-        public boolean lucenestorage=true;
-        public boolean luceneindexed=true;
-    }
-
-    public static final class Config_Variable extends Config_AnyExpression {
-
-        public void setName(ExtendedDigester dig, String nameStr) {
-            if ("".equals(nameStr)) return; // Exception throws the Config.addVariable() method
-            // current namespace context with strict=true (display errors when namespace declaration is missing [non-standard!])
-            // and with possibly declared default namespace is redefined/deleted to "" (according to XSLT specification,
-            // where this is also mandatory).
-            this.name=QNameParser.parseLexicalQName(nameStr,dig.getCurrentNamespaceContext(true,true));
-        }
-
-        public String toString() {
-            return new StringBuilder(name.toString()).append(" (").append(super.toString()).append(')').toString();
-        }
-
-        // members "the configuration"
-        public QName name=null;
-    }
-
-    public static final class Config_Filter extends Config_AnyExpression {
-
-        public void setType(String v) {
-            try {
-                type=Enum.valueOf(FilterType.class,v.toUpperCase());
-            } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException("Invalid filter type: '"+v+"'");
-            }
-        }
-
-        public void setTemplate(Templates xslt) {
-            throw new UnsupportedOperationException("Cannot assign a template to a filter!");
-        }
-
-        public String toString() {
-            return new StringBuilder(type.toString()).append('(').append(super.toString()).append(')').toString();
-        }
-
-        // members "the configuration"
-        public FilterType type=null;
-    }
-
+    // internal classes
     private abstract static class TransformerSaxRule extends SaxRule {
 
         protected Config owner;
@@ -546,7 +445,7 @@ public class Config {
 
             // register variables as params for template
             HashSet<QName> vars=new HashSet<QName>(de.pangaea.metadataportal.harvester.XPathResolverImpl.BASE_VARIABLES);
-            for (Config_Variable v : owner.xPathVariables) vars.add(v.name);
+            for (VariableConfig v : owner.xPathVariables) vars.add(v.name);
             for (QName name : vars) {
                 // it is not clear why xalan does not allow a variable with no namespace declared by a prefix that points to the empty namespace
                 boolean nullNS=XMLConstants.NULL_NS_URI.equals(name.getNamespaceURI());
@@ -575,7 +474,7 @@ public class Config {
 
         protected void setResult(Templates t) {
             Object o=owner.dig.peek();
-            if (o instanceof Config_AnyExpression) ((Config_AnyExpression)o).setTemplate(t);
+            if (o instanceof AnyExpressionConfig) ((AnyExpressionConfig)o).setTemplate(t);
             else throw new RuntimeException("A XSLT template is not allowed here!");
         }
 

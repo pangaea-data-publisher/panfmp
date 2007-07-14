@@ -16,7 +16,7 @@
 
 package de.pangaea.metadataportal.search;
 
-import de.pangaea.metadataportal.config.Config;
+import de.pangaea.metadataportal.config.*;
 import java.util.Arrays;
 
 public class SearchRequest implements java.io.Serializable {
@@ -45,10 +45,10 @@ public class SearchRequest implements java.io.Serializable {
         if ((sortFieldName!=null) ^ (sortReverse!=null))
             throw new IllegalArgumentException("When defining a 'sortField', you must also define 'sortReverse' (and vice versa)!");
         if (sortFieldName!=null) {
-            Config.Config_Field f=config.fields.get(sortFieldName);
+            FieldConfig f=config.fields.get(sortFieldName);
             if (f==null) throw new IllegalArgumentException("Field name '"+sortFieldName+"' is unknown!");
             if (!f.luceneindexed) throw new IllegalArgumentException("Field '"+sortFieldName+"' is not searchable!");
-            if (f.datatype==Config.DataType.TOKENIZEDTEXT) throw new IllegalArgumentException("Field '"+sortFieldName+"' is tokenized which prevents sorting!");
+            if (f.datatype==FieldConfig.DataType.TOKENIZEDTEXT) throw new IllegalArgumentException("Field '"+sortFieldName+"' is tokenized which prevents sorting!");
         }
     }
 

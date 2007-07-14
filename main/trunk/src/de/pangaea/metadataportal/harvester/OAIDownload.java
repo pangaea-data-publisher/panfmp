@@ -21,7 +21,7 @@ import java.io.*;
 import java.util.zip.*;
 import org.xml.sax.*;
 
-public class OAIDownload {
+public final class OAIDownload {
 
     private static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(OAIDownload.class);
 
