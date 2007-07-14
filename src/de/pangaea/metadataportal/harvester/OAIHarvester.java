@@ -73,7 +73,7 @@ public class OAIHarvester extends AbstractHarvester {
         digesterAddGeneralOAIRules(listRecordsDig);
 
         listRecordsDig.addDoNothing("OAI-PMH/ListRecords");
-        listRecordsDig.addObjectCreate("OAI-PMH/ListRecords/record", MetadataDocument.class);
+        listRecordsDig.addObjectCreate("OAI-PMH/ListRecords/record", OAIMetadataDocument.class);
         listRecordsDig.addSetNext("OAI-PMH/ListRecords/record", "addDocument");
 
         // setHeaderInfo(boolean deleted, String identifier, String datestampStr)
@@ -282,4 +282,18 @@ public class OAIHarvester extends AbstractHarvester {
 
         index.setLastHarvested(lastHarvested);
     }
+
+    /**
+     * helper class
+     */
+    public static final class OAIMetadataDocument extends MetadataDocument {
+
+        public void setHeaderInfo(String status, String identifier, String datestampStr) throws java.text.ParseException {
+            this.deleted=(status!=null && status.equals("deleted"));
+            this.identifier=identifier;
+            this.datestamp=ISODateFormatter.parseDate(datestampStr);
+        }
+
+    }
+
 }

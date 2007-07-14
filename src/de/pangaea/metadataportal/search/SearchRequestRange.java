@@ -17,8 +17,7 @@
 package de.pangaea.metadataportal.search;
 
 import de.pangaea.metadataportal.utils.*;
-import de.pangaea.metadataportal.config.Config;
-import de.pangaea.metadataportal.config.Config.Config_Field;
+import de.pangaea.metadataportal.config.*;
 
 public class SearchRequestRange implements java.io.Serializable {
 
@@ -40,7 +39,7 @@ public class SearchRequestRange implements java.io.Serializable {
     // cast the min max values to correct types
     protected void normalize(Config config) {
         if (fieldName==null) throw new IllegalArgumentException("Field name is missing!");
-        Config_Field f=config.fields.get(fieldName);
+        FieldConfig f=config.fields.get(fieldName);
         if (f==null) throw new IllegalArgumentException("Field name '"+fieldName+"' is unknown!");
         if (!f.luceneindexed) throw new IllegalArgumentException("Field '"+fieldName+"' is not searchable!");
         if (min==null && max==null) throw new IllegalArgumentException("A min or max value must be given for field '"+fieldName+"'!");

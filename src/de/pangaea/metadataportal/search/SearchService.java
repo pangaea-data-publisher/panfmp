@@ -43,7 +43,7 @@ public class SearchService {
         item.identifier=doc.get(IndexConstants.FIELDNAME_IDENTIFIER);
 
         if (returnStoredFields) {
-            for (Config.Config_Field f : cache.config.fields.values()) if (f.lucenestorage) {
+            for (FieldConfig f : cache.config.fields.values()) if (f.lucenestorage) {
                 String[] data=doc.getValues(f.name);
                 if (data!=null) {
                     java.util.ArrayList<Object> vals=new java.util.ArrayList<Object>();
@@ -149,10 +149,10 @@ public class SearchService {
 
         // check field
         fieldName=fieldName.intern();
-        Config.Config_Field f=cache.config.fields.get(fieldName);
+        FieldConfig f=cache.config.fields.get(fieldName);
         if (f==null) throw new IllegalArgumentException("Field name '"+fieldName+"' is unknown!");
         if (!f.luceneindexed) throw new IllegalArgumentException("Field '"+fieldName+"' is not searchable!");
-        if (f.datatype!=Config.DataType.TOKENIZEDTEXT && f.datatype!=Config.DataType.STRING)
+        if (f.datatype!=FieldConfig.DataType.TOKENIZEDTEXT && f.datatype!=FieldConfig.DataType.STRING)
             throw new IllegalArgumentException("Field '"+fieldName+"' is not of type string or tokenizedText!");
 
         // scan

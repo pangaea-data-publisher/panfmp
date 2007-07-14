@@ -17,8 +17,7 @@
 package de.pangaea.metadataportal.search;
 
 import de.pangaea.metadataportal.utils.*;
-import de.pangaea.metadataportal.config.Config;
-import de.pangaea.metadataportal.config.Config.Config_Field;
+import de.pangaea.metadataportal.config.*;
 
 public class SearchRequestQuery implements java.io.Serializable {
 
@@ -50,12 +49,12 @@ public class SearchRequestQuery implements java.io.Serializable {
             isStringField=new Boolean(false);
             if (query==null) throw new IllegalArgumentException("A query string must be given for default field!");
         } else {
-            Config_Field f=config.fields.get(fieldName);
+            FieldConfig f=config.fields.get(fieldName);
             if (f==null) throw new IllegalArgumentException("Field name '"+fieldName+"' is unknown!");
             if (!f.luceneindexed) throw new IllegalArgumentException("Field '"+fieldName+"' is not searchable!");
-            if (f.datatype!=Config.DataType.TOKENIZEDTEXT && f.datatype!=Config.DataType.STRING)
+            if (f.datatype!=FieldConfig.DataType.TOKENIZEDTEXT && f.datatype!=FieldConfig.DataType.STRING)
                 throw new IllegalArgumentException("Field '"+fieldName+"' is not of type string or tokenizedText!");
-            isStringField=new Boolean(f.datatype==Config.DataType.STRING);
+            isStringField=new Boolean(f.datatype==FieldConfig.DataType.STRING);
             if (query==null) throw new IllegalArgumentException("A query string must be given for field '"+fieldName+"'!");
         }
     }
