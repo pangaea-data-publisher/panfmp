@@ -76,7 +76,6 @@ public class SaxRule extends org.apache.commons.digester.Rule {
     /**
      * Sets a {@code Set<String>} containing all Namespace URIs that should not be feed to the target {@code ContentHandler} on match.
      * Default (or setting to {@code null}) means no restriction: All namespace prefixes visible in the current context will be reported.
-     * @param ch the SAX ContentHandler
      */
     public void setExcludeNamespaces(Set<String> excludeNamespaces) {
         this.excludeNamespaces=excludeNamespaces;

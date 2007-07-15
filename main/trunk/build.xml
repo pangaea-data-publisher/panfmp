@@ -12,6 +12,11 @@
 	<property name="version" value="0.0-dev"/>
 	<property name="versionsuffix" value="-${version}"/>
 	<property name="pkgname" value="${ant.project.name}${versionsuffix}"/>
+	
+	<property name="year" value="2007"/>
+	
+	<property name="javadoc.link.sun" value="http://java.sun.com/j2se/1.5/docs/api/" />
+	<property name="javadoc.link.lucene" value="http://lucene.apache.org/java/docs/api/" />
 
 	<!-- GLOBALS -->
 	<target name="init">
@@ -22,7 +27,7 @@
 		<fileset dir="${libs}">
 			<include name="**/*.jar"/>
 			<!-- exclude local version of metadataportal itsself from compile classpath! -->
-			<exclude name="**/metadataportal*.jar"/>
+			<exclude name="**/${ant.project.name}*.jar"/>
 		</fileset>
 	</path>
 	
@@ -35,12 +40,12 @@
 	
 	<target name="dist" depends="compile">
 		<mkdir dir="${dist}"/>
-		<jar destfile="${dist}/metadataportal${versionsuffix}.jar" basedir="${build}">
+		<jar destfile="${dist}/${ant.project.name}${versionsuffix}.jar" basedir="${build}">
 			<manifest>
 				<attribute name="Package" value="de.pangaea.metadataportal"/>
-				<attribute name="Implementation-Title" value="panFMP"/>
+				<attribute name="Implementation-Title" value="${ant.project.name}"/>
 				<attribute name="Implementation-Version" value="${version}"/>
-				<attribute name="Implementation-Vendor" value="panFMP Developers c/o Uwe Schindler"/>
+				<attribute name="Implementation-Vendor" value="${ant.project.name} Developers c/o Uwe Schindler"/>
 			</manifest>    	
 			<metainf dir="${basedir}">
 				<include name="LICENSE.txt"/>
@@ -51,14 +56,19 @@
 	
 	<!-- JAVADOCS TARGET -->
 	<target name="javadocs" depends="init">
+		<delete dir="${docs}"/>
 		<mkdir dir="${docs}"/>
-		<javadoc sourcepath="${src}" destdir="${docs}" source="1.5" packagenames="*" classpathref="classpath"/>
+		<javadoc sourcepath="${src}" destdir="${docs}" source="1.5" packagenames="*" classpathref="classpath" windowtitle="${ant.project.name} ${version} Documentation">
+			<link href="${javadoc.link.sun}"/>
+			<link href="${javadoc.link.lucene}"/>
+			<doctitle><![CDATA[<H1>${ant.project.name} ${version}</H1>]]></doctitle>
+			<bottom><![CDATA[<ADDRESS>Copyright &copy;${year} ${ant.project.name} Developers c/o Uwe Schindler</ADDRESS>]]></bottom>
+		</javadoc>
 	</target>	
 	
 	<!-- PACKAGING -->
 	<target name="binpackage" depends="dist,javadocs">
 		<zip destfile="${basedir}/${pkgname}-bin.zip">
-			<exclude name="**/.svn"/>
 			<zipfileset dir="${libs}/axis" prefix="${pkgname}/libs/axis"/>
 			<zipfileset dir="${libs}/core" prefix="${pkgname}/libs/core"/>
 			<zipfileset dir="${dist}" prefix="${pkgname}/libs/core"/>
