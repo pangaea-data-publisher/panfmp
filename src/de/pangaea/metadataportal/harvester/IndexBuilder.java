@@ -34,6 +34,7 @@ public class IndexBuilder {
     private boolean create;
 
     private volatile boolean indexerFinished=false,converterFinished=false;
+    private volatile int runningConverters=0;
     private volatile TreeMap<String,Document> ldocBuffer=new TreeMap<String,Document>();
     private volatile Stack<MetadataDocument> mdocBuffer=new Stack<MetadataDocument>();
     private volatile Exception failure=null;
@@ -209,7 +210,8 @@ public class IndexBuilder {
     }
 
     private void converterThreadRun() {
-        org.apache.commons.logging.Log converterLog = org.apache.commons.logging.LogFactory.getLog(Thread.currentThread().getName());
+        org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(Thread.currentThread().getName());
+        log.info("Converter thread started.");
         XPathResolverImpl.getInstance().setIndexBuilder(this);
         try {
             while ((!converterFinished || mdocBuffer.size()>0) && failure==null) {
@@ -221,14 +223,14 @@ public class IndexBuilder {
                     if (!converterFinished && mdocBuffer.size()==0) try {
                         converterThreadLock.wait();
                     } catch (InterruptedException ie) {}
-                    // fetch docs and replace by new one
+                    // fetch a document
                     if (mdocBuffer.size()==0) continue;
                     mdoc=mdocBuffer.pop();
                 }
 
                 if (Thread.interrupted()) break;
-                if (converterLog.isDebugEnabled()) converterLog.debug("Handling document: "+mdoc.toString());
-                if (converterLog.isTraceEnabled()) converterLog.trace("XML: "+mdoc.getXML());
+                if (log.isDebugEnabled()) log.debug("Handling document: "+mdoc.toString());
+                if (log.isTraceEnabled()) log.trace("XML: "+mdoc.getXML());
 
                 Document ldoc=mdoc.getLuceneDocument(iconfig);
 
@@ -240,15 +242,22 @@ public class IndexBuilder {
             }
 
             // notify indexer of end
-            synchronized(indexerThreadLock) {
-                indexerFinished=true;
-                indexerThreadLock.notify();
+            synchronized(converterThreadLock) {
+                // is this really the last running converter?
+                if (runningConverters<=1) synchronized(indexerThreadLock) {
+                    indexerFinished=true;
+                    indexerThreadLock.notify();
+                }
             }
         } catch (Exception e) {
-            converterLog.debug(e);
+            log.debug(e);
             failure=e;
         } finally {
+            synchronized(converterThreadLock) {
+                runningConverters--;
+            }
             XPathResolverImpl.getInstance().unsetIndexBuilder();
+            log.info("Stopped converter thread.");
         }
 
         synchronized(converterThreadLock) {
@@ -259,7 +268,8 @@ public class IndexBuilder {
 
     // this thread eats from the docs and fills index
     private void indexerThreadRun() {
-        org.apache.commons.logging.Log indexerLog = org.apache.commons.logging.LogFactory.getLog(Thread.currentThread().getName());
+        org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(Thread.currentThread().getName());
+        log.info("Indexer thread started.");
         IndexWriter writer=null;
         try {
             writer = new IndexWriter(dir, true, iconfig.parent.getAnalyzer(), !IndexReader.indexExists(dir));
@@ -283,7 +293,7 @@ public class IndexBuilder {
                     ldocBuffer=new TreeMap<String,Document>();
                 }
 
-                indexerLog.info("Updating index...");
+                log.info("Updating index...");
 
                 int updated=0, deleted=0;
                 for (Map.Entry<String,Document> docEntry : docs.entrySet()) {
@@ -307,7 +317,7 @@ public class IndexBuilder {
                     // only flush if commitEvent interface registered
                     if (commitEvent!=null) writer.flush();
 
-                    indexerLog.info(deleted+" docs presumably deleted (only if existent) and "+updated+" docs (re-)indexed.");
+                    log.info(deleted+" docs presumably deleted (only if existent) and "+updated+" docs (re-)indexed.");
 
                     // notify Harvester of index commit
                     if (commitEvent!=null) commitEvent.harvesterCommitted(Collections.unmodifiableMap(docs).keySet().iterator());
@@ -317,20 +327,21 @@ public class IndexBuilder {
             writer.flush();
 
             if (iconfig.autoOptimize) {
-                indexerLog.info("Optimizing index...");
+                log.info("Optimizing index...");
                 writer.optimize();
-                indexerLog.info("Index optimized.");
+                log.info("Index optimized.");
             }
         } catch (IOException e) {
-            indexerLog.debug(e);
+            log.debug(e);
             failure=e;
         } finally {
             if (writer!=null) try {
                 writer.close();
             } catch (IOException ioe) {
-                indexerLog.warn("Failed to close Lucene IndexWriter, you may need to remove lock files!",ioe);
+                log.warn("Failed to close Lucene IndexWriter, you may need to remove lock files!",ioe);
             }
             writer=null;
+            log.info("Stopped indexer thread.");
         }
 
         synchronized(indexerThreadLock) {
@@ -351,9 +362,10 @@ public class IndexBuilder {
 
     private void startThreads() {
         if (!threadsStarted) try {
-            log.info("Starting "+converterThreadList.length+" converter thread(s)...");
-            for (Thread t : converterThreadList) t.start();
-            log.info("Starting indexer thread...");
+            for (Thread t : converterThreadList) {
+                t.start();
+                runningConverters++;
+            }
             indexerThread.start();
         } finally {
             threadsStarted=true;
@@ -361,7 +373,11 @@ public class IndexBuilder {
     }
 
     private void checkThreads() {
-        if (converterThreads.activeCount()==0 || !indexerThread.isAlive())
+        int rc=0;
+        synchronized(converterThreadLock) {
+            rc=runningConverters;
+        }
+        if (rc==0 || !indexerThread.isAlive())
             throw new IllegalStateException("IndexBuilder threads died unexspected!");
     }
 
