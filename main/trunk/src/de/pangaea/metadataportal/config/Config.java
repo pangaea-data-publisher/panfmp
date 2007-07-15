@@ -206,8 +206,9 @@ public class Config {
     }
 
     public void addVariable(VariableConfig f) {
-        if (configMode==ConfigMode.SEARCH) return;
-        if (f.name==null) throw new IllegalArgumentException("A XPath variable name is mandatory");
+        if (configMode!=ConfigMode.HARVESTING) return;
+        if (filters.size()>0 || fields.size()>0) throw new IllegalStateException("Variables must be declared before all fields and filters!");
+        if (f.name==null) throw new IllegalArgumentException("A variable name is mandatory");
         if (de.pangaea.metadataportal.harvester.XPathResolverImpl.INDEX_BUILDER_NAMESPACE.equals(f.name.getNamespaceURI()))
             throw new IllegalArgumentException("A XPath variable name may not be in the namespace for internal variables ('"+de.pangaea.metadataportal.harvester.XPathResolverImpl.INDEX_BUILDER_NAMESPACE+"')");
         if (f.xPathExpr==null && f.xslt==null) throw new IllegalArgumentException("A XPath or template itsself may not be empty");
@@ -216,8 +217,8 @@ public class Config {
     }
 
     public void addFilter(FilterConfig f) {
-        if (configMode==ConfigMode.SEARCH) return;
-        if (f.xPathExpr==null) throw new IllegalArgumentException("A XPath itsself may not be empty");
+        if (configMode!=ConfigMode.HARVESTING) return;
+        if (f.xPathExpr==null) throw new IllegalArgumentException("A filter needs an XPath expression");
         if (f.xslt!=null) throw new IllegalArgumentException("A filter may not contain a template");
         String type=dig.getCurrentElementName();
         f.setType(type);
@@ -310,7 +311,7 @@ public class Config {
     }
 
     public void setSchema(String namespace, String url) throws Exception {
-        if (configMode==ConfigMode.SEARCH) return; // no schema support when search engine
+        if (configMode!=ConfigMode.HARVESTING) return; // no schema support when search engine
         if (schema!=null) throw new SAXException("Schema URL already defined!");
         url=url.trim();
         if (namespace!=null) namespace=namespace.trim();
