@@ -50,6 +50,12 @@
 			<haltOnError>false</haltOnError>
 		</schema>
     </metadata>
+    <globalHarvesterProperties>
+    	<numConverterThreads>2</numConverterThreads>
+    	<maxConverterQueue>250</maxConverterQueue>
+    	<minChangesBeforeIndexCommit>1000</minChangesBeforeIndexCommit>
+    	<maxChangesBeforeIndexCommit>2000</maxChangesBeforeIndexCommit>
+    </globalHarvesterProperties>
     <analyzer>
         <class>org.apache.lucene.analysis.standard.StandardAnalyzer</class>
         <importEnglishStopWords/>
