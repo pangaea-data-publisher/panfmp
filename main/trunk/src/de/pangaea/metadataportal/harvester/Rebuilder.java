@@ -45,7 +45,7 @@ public class Rebuilder extends AbstractHarvester {
     public void harvest() throws Exception {
         if (reader==null) throw new IllegalStateException("Rebuilder was not opened!");
         for (int i=0, c=reader.maxDoc(); i<c; i++) {
-            if (!reader.isDeleted(i)) addDocument(MetadataDocument.createInstanceFromLucene(reader.document(i)));
+            if (!reader.isDeleted(i)) addDocument(MetadataDocument.createInstanceFromLucene(iconfig,reader.document(i)));
         }
     }
 

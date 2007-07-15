@@ -37,7 +37,7 @@ public class MetadataDocument {
     public MetadataDocument() {
     }
 
-    public static final MetadataDocument createInstanceFromLucene(Document ldoc) throws Exception {
+    public static final MetadataDocument createInstanceFromLucene(SingleIndexConfig iconf, Document ldoc) throws Exception {
         String mdocImpl=ldoc.get(IndexConstants.FIELDNAME_MDOC_IMPL);
         Class<? extends MetadataDocument> cls=MetadataDocument.class;
         if (mdocImpl==null) {
