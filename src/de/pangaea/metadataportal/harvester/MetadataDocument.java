@@ -20,7 +20,6 @@ import de.pangaea.metadataportal.utils.*;
 import de.pangaea.metadataportal.config.*;
 import java.io.StringWriter;
 import java.io.StringReader;
-import java.util.HashSet;
 import java.util.HashMap;
 import java.util.Map;
 import javax.xml.transform.*;
@@ -38,8 +37,26 @@ public class MetadataDocument {
     public MetadataDocument() {
     }
 
+    public static final MetadataDocument createInstanceFromLucene(Document ldoc) throws Exception {
+        String mdocImpl=ldoc.get(IndexConstants.FIELDNAME_MDOC_IMPL);
+        Class<? extends MetadataDocument> cls=MetadataDocument.class;
+        if (mdocImpl==null) {
+            // guess type for backwards compatibility (to be removed in future)
+            if (ldoc.get(IndexConstants.FIELDNAME_SET)!=null) cls=OAIMetadataDocument.class;
+        } else try {
+            if (mdocImpl!=null) cls=Class.forName(mdocImpl).asSubclass(MetadataDocument.class);
+        } catch (ClassNotFoundException cnfe) {
+            throw new ClassNotFoundException("There exists no class "+mdocImpl+" for rebuilding index. "+
+                "This error occurs if there was an incompatible change of panFMP. You have to reharvest from the original source and cannot rebuild your index!");
+        }
+        if (log.isDebugEnabled()) log.debug("Using MetadataDocument class: "+cls.getName());
+        MetadataDocument mdoc=cls.newInstance();
+        mdoc.loadFromLucene(ldoc);
+        return mdoc;
+    }
+
     public void loadFromLucene(Document ldoc) throws Exception {
-        deleted=false; datestamp=null; sets.clear();
+        deleted=false; datestamp=null;
         xmlCache=ldoc.get(IndexConstants.FIELDNAME_XML);
         identifier=ldoc.get(IndexConstants.FIELDNAME_IDENTIFIER);
         try {
@@ -48,8 +65,6 @@ public class MetadataDocument {
         } catch (NumberFormatException ne) {
             log.warn("Datestamp of document '"+identifier+"' is invalid. Deleting datestamp!",ne);
         }
-        String[] sets=ldoc.getValues(IndexConstants.FIELDNAME_SET);
-        if (sets!=null) for (String set : sets) if (set!=null) addSet(set);
 
         // build DOM tree for XPath
         dom=StaticFactories.dombuilder.newDocument();
@@ -58,10 +73,6 @@ public class MetadataDocument {
         Transformer trans=StaticFactories.transFactory.newTransformer();
         trans.setErrorListener(new LoggingErrorListener(getClass()));
         trans.transform(s,r);
-    }
-
-    public void addSet(String set) {
-        sets.add(set);
     }
 
     public void invalidateXMLCache() {
@@ -86,7 +97,7 @@ public class MetadataDocument {
     }
 
     public String toString() {
-        return "identifier="+identifier+" deleted="+deleted+" datestamp="+((datestamp!=null)?ISODateFormatter.formatLong(datestamp):(String)null)+" sets="+sets;
+        return "identifier="+identifier+" deleted="+deleted+" datestamp="+((datestamp!=null)?ISODateFormatter.formatLong(datestamp):(String)null);
     }
 
     protected Document createEmptyDocument() throws Exception {
@@ -99,12 +110,12 @@ public class MetadataDocument {
         } else {
             Document ldoc = new Document();
             ldoc.add(new Field(IndexConstants.FIELDNAME_IDENTIFIER, identifier, Field.Store.YES, Field.Index.UN_TOKENIZED));
+            ldoc.add(new Field(IndexConstants.FIELDNAME_MDOC_IMPL, getClass().getName(), Field.Store.YES, Field.Index.NO));
             if (datestamp!=null) {
                 String val;
                 ldoc.add(new Field(IndexConstants.FIELDNAME_DATESTAMP, val=LuceneConversions.dateToLucene(datestamp), Field.Store.YES, Field.Index.UN_TOKENIZED));
                 LuceneConversions.addTrieIndexEntries(ldoc,IndexConstants.FIELDNAME_DATESTAMP,val);
             }
-            for (String set : sets) ldoc.add(new Field(IndexConstants.FIELDNAME_SET, set, Field.Store.YES, Field.Index.UN_TOKENIZED));
             return ldoc;
         }
     }
@@ -322,7 +333,6 @@ public class MetadataDocument {
     public boolean deleted=false;
     public java.util.Date datestamp=null;
     public String identifier=null;
-    public HashSet<String> sets=new HashSet<String>();
 
     public org.w3c.dom.Document dom=null;
     private String xmlCache=null;

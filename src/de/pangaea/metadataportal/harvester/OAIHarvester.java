@@ -175,7 +175,7 @@ public class OAIHarvester extends AbstractHarvester {
 
     public void addDocument(MetadataDocument mdoc) throws Exception {
         if (sets!=null) {
-            if (Collections.disjoint(mdoc.sets,sets)) mdoc.deleted=true;
+            if (Collections.disjoint(((OAIMetadataDocument)mdoc).sets,sets)) mdoc.deleted=true;
         }
         super.addDocument(mdoc);
     }
@@ -281,19 +281,6 @@ public class OAIHarvester extends AbstractHarvester {
         reset();
 
         index.setLastHarvested(lastHarvested);
-    }
-
-    /**
-     * helper class
-     */
-    public static final class OAIMetadataDocument extends MetadataDocument {
-
-        public void setHeaderInfo(String status, String identifier, String datestampStr) throws java.text.ParseException {
-            this.deleted=(status!=null && status.equals("deleted"));
-            this.identifier=identifier;
-            this.datestamp=ISODateFormatter.parseDate(datestampStr);
-        }
-
     }
 
 }
