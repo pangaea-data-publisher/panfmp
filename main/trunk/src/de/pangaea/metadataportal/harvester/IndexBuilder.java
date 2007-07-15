@@ -128,7 +128,7 @@ public class IndexBuilder {
         if (failure!=null) {
             throwFailure();
         } else {
-            startThreads();
+            startThreads(true);
 
             synchronized(converterThreadLock) {
                 converterFinished=true;
@@ -168,7 +168,7 @@ public class IndexBuilder {
         if (isClosed()) throw new IllegalStateException("IndexBuilder already closed");
         throwFailure();
 
-        startThreads();
+        startThreads(false);
 
         synchronized(converterThreadLock) {
             if (mdocBuffer.size()>=maxConverterQueue) internalWaitConverter();
@@ -182,7 +182,7 @@ public class IndexBuilder {
         if (isClosed()) throw new IllegalStateException("IndexBuilder already closed");
         throwFailure();
 
-        startThreads();
+        startThreads(false);
 
         synchronized(indexerThreadLock) {
             if (ldocBuffer.size()>=(minChangesBeforeCommit+maxChangesBeforeCommit)/2) internalWaitIndexer();
@@ -257,7 +257,7 @@ public class IndexBuilder {
                 runningConverters--;
             }
             XPathResolverImpl.getInstance().unsetIndexBuilder();
-            log.info("Stopped converter thread.");
+            log.info("Converter thread stopped.");
         }
 
         synchronized(converterThreadLock) {
@@ -341,7 +341,7 @@ public class IndexBuilder {
                 log.warn("Failed to close Lucene IndexWriter, you may need to remove lock files!",ioe);
             }
             writer=null;
-            log.info("Stopped indexer thread.");
+            log.info("Indexer thread stopped.");
         }
 
         synchronized(indexerThreadLock) {
@@ -360,9 +360,9 @@ public class IndexBuilder {
         }
     }
 
-    private void startThreads() {
+    private void startThreads(boolean onlyIndexer) {
         if (!threadsStarted) try {
-            for (Thread t : converterThreadList) {
+            if (!onlyIndexer) for (Thread t : converterThreadList) {
                 t.start();
                 runningConverters++;
             }
