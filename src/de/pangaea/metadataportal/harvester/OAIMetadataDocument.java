@@ -17,6 +17,7 @@
 package de.pangaea.metadataportal.harvester;
 
 import de.pangaea.metadataportal.utils.*;
+import de.pangaea.metadataportal.config.SingleIndexConfig;
 import java.util.HashSet;
 import org.apache.lucene.document.*;
 
@@ -35,9 +36,9 @@ public class OAIMetadataDocument extends MetadataDocument {
         sets.add(set);
     }
 
-    public void loadFromLucene(Document ldoc) throws Exception {
+    public void loadFromLucene(SingleIndexConfig iconf, Document ldoc) throws Exception {
         sets.clear();
-        super.loadFromLucene(ldoc);
+        super.loadFromLucene(iconf,ldoc);
         String[] sets=ldoc.getValues(IndexConstants.FIELDNAME_SET);
         if (sets!=null) for (String set : sets) if (set!=null) addSet(set);
     }

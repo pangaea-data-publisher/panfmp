@@ -51,11 +51,11 @@ public class MetadataDocument {
         }
         if (log.isDebugEnabled()) log.debug("Using MetadataDocument class: "+cls.getName());
         MetadataDocument mdoc=cls.newInstance();
-        mdoc.loadFromLucene(ldoc);
+        mdoc.loadFromLucene(iconf,ldoc);
         return mdoc;
     }
 
-    public void loadFromLucene(Document ldoc) throws Exception {
+    public void loadFromLucene(SingleIndexConfig iconf, Document ldoc) throws Exception {
         deleted=false; datestamp=null;
         xmlCache=ldoc.get(IndexConstants.FIELDNAME_XML);
         identifier=ldoc.get(IndexConstants.FIELDNAME_IDENTIFIER);
