@@ -66,6 +66,9 @@ public class MetadataDocument {
             log.warn("Datestamp of document '"+identifier+"' is invalid. Deleting datestamp!",ne);
         }
 
+        if (identifier==null || xmlCache==null)
+            throw new IllegalArgumentException("Tried to load incomplete document from index.");
+
         // build DOM tree for XPath
         dom=StaticFactories.dombuilder.newDocument();
         StreamSource s=new StreamSource(new StringReader(xmlCache),identifier);
