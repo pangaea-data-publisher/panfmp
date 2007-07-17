@@ -224,7 +224,7 @@ public class MetadataDocument {
     protected final void processXPathVariables(SingleIndexConfig iconfig) throws Exception {
         // put map of variables in thread local storage of index config
         boolean needCleanup=true;
-        Map<QName,Object> data=XPathResolverImpl.getInstance().createVariableMap();
+        Map<QName,Object> data=XPathResolverImpl.getInstance().initVariables();
         try {
             addSystemVariables(iconfig,data);
 
