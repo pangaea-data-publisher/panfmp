@@ -130,7 +130,7 @@ public final class XPathResolverImpl implements XPathFunctionResolver,XPathVaria
     }
 
     // API
-    public synchronized Map<QName,Object> createVariableMap() {
+    public synchronized Map<QName,Object> initVariables() {
         HashMap<QName,Object> data=new HashMap<QName,Object>();
         xPathVariableData.set(data);
         return data;
