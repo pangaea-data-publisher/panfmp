@@ -26,7 +26,7 @@ public class FieldConfig extends AnyExpressionConfig {
 
     public void setDatatype(String v) {
         try {
-            datatype=Enum.valueOf(DataType.class,v.toUpperCase());
+            datatype=DataType.valueOf(v.toUpperCase());
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Invalid value '"+v+"' for attribute datatype!");
         }

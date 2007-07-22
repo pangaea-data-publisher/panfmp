@@ -29,9 +29,9 @@ public abstract class IndexConfig {
     }
 
     public void check() {
-        checked=true;
         if (id==null) throw new IllegalStateException("Every index needs a unique id!");
         if (displayName==null || "".equals(displayName)) throw new IllegalStateException("Index with id=\""+id+"\" has no displayName!");
+        checked=true;
     }
 
     // Searcher
