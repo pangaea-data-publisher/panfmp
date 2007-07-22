@@ -434,10 +434,12 @@ public class Config {
         }
 
         protected void initDocument() throws SAXException {
+            destContentHandler.startPrefixMapping(XSL_PREFIX,XSL_NAMESPACE);
+
             AttributesImpl atts=new AttributesImpl();
 
-            atts.addAttribute(XMLConstants.NULL_NS_URI,"version","",CNAME,"1.0");
-            destContentHandler.startElement(XSL_NAMESPACE,"stylesheet","",atts);
+            atts.addAttribute(XMLConstants.NULL_NS_URI,"version","version",CNAME,"1.0");
+            destContentHandler.startElement(XSL_NAMESPACE,"stylesheet",XSL_PREFIX+":stylesheet",atts);
             atts.clear();
 
             // register variables as params for template
@@ -447,26 +449,27 @@ public class Config {
                 // it is not clear why xalan does not allow a variable with no namespace declared by a prefix that points to the empty namespace
                 boolean nullNS=XMLConstants.NULL_NS_URI.equals(name.getNamespaceURI());
                 if (nullNS) {
-                    atts.addAttribute(XMLConstants.NULL_NS_URI,"name","",CNAME,name.getLocalPart());
+                    atts.addAttribute(XMLConstants.NULL_NS_URI,"name","name",CNAME,name.getLocalPart());
                 } else {
                     destContentHandler.startPrefixMapping("var",name.getNamespaceURI());
-                    atts.addAttribute(XMLConstants.NULL_NS_URI,"name","",CNAME,"var:"+name.getLocalPart());
+                    atts.addAttribute(XMLConstants.NULL_NS_URI,"name","name",CNAME,"var:"+name.getLocalPart());
                 }
-                destContentHandler.startElement(XSL_NAMESPACE,"param","",atts);
+                destContentHandler.startElement(XSL_NAMESPACE,"param",XSL_PREFIX+":param",atts);
                 atts.clear();
-                destContentHandler.endElement(XSL_NAMESPACE,"param","");
+                destContentHandler.endElement(XSL_NAMESPACE,"param",XSL_PREFIX+":param");
                 if (!nullNS) destContentHandler.endPrefixMapping("var");
             }
 
             // start a template
-            atts.addAttribute(XMLConstants.NULL_NS_URI,"match","",CNAME,"/");
-            destContentHandler.startElement(XSL_NAMESPACE,"template","",atts);
+            atts.addAttribute(XMLConstants.NULL_NS_URI,"match","match",CNAME,"/");
+            destContentHandler.startElement(XSL_NAMESPACE,"template",XSL_PREFIX+":template",atts);
             //atts.clear();
         }
 
         protected void finishDocument() throws SAXException {
-            destContentHandler.endElement(XSL_NAMESPACE,"template","");
-            destContentHandler.endElement(XSL_NAMESPACE,"stylesheet","");
+            destContentHandler.endElement(XSL_NAMESPACE,"template",XSL_PREFIX+":template");
+            destContentHandler.endElement(XSL_NAMESPACE,"stylesheet",XSL_PREFIX+":stylesheet");
+            destContentHandler.endPrefixMapping(XSL_PREFIX);
         }
 
         protected void setResult(Templates t) {
@@ -476,6 +479,7 @@ public class Config {
         }
 
         private static final String XSL_NAMESPACE="http://www.w3.org/1999/XSL/Transform";
+        private static final String XSL_PREFIX="int-tmpl-xsl";
         private static final String CNAME="CNAME";
 
     }
