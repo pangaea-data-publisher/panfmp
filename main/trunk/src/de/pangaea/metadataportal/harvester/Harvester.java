@@ -36,9 +36,9 @@ public class Harvester {
             Config conf=new Config(args[0],Config.ConfigMode.HARVESTING);
             Collection<IndexConfig> indexList=null;
             if ("*".equals(args[1])) {
-                indexList=conf.indices.values();
+                indexList=conf.indexes.values();
             } else {
-                IndexConfig iconf=conf.indices.get(args[1]);
+                IndexConfig iconf=conf.indexes.get(args[1]);
                 if (iconf==null || !(iconf instanceof SingleIndexConfig)) throw new IllegalArgumentException("There is no index defined with id=\""+args[1]+"\"!");
                 indexList=Collections.singletonList(iconf);
             }

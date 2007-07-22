@@ -38,7 +38,7 @@ public class SearchRequest implements java.io.Serializable {
     protected void normalize(Config config) {
         // checks
         if (indexName==null) throw new IllegalArgumentException("indexName may not be null!");
-        if (!config.indices.containsKey(indexName)) throw new IllegalArgumentException("indexName='"+indexName+"' is not a valid index!");
+        if (!config.indexes.containsKey(indexName)) throw new IllegalArgumentException("indexName='"+indexName+"' is not a valid index!");
         // normalize
         if (ranges!=null) for (SearchRequestRange r : ranges) r.normalize(config);
         if (queries!=null) for (SearchRequestQuery fq : queries) fq.normalize(config);

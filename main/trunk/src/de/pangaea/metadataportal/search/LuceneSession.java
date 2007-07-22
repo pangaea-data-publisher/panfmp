@@ -41,7 +41,7 @@ public class LuceneSession {
         boolean ok=false;
 
         Analyzer analyzer=owner.config.getAnalyzer();
-        IndexConfig index=owner.config.indices.get(req.indexName);
+        IndexConfig index=owner.config.indexes.get(req.indexName);
         if (index==null) throw new IllegalArgumentException("Index '"+req.indexName+"' does not exist!");
         Searcher searcher=index.newSearcher();
 

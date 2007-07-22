@@ -134,37 +134,37 @@ public class Config {
             dig.addCallMethod("config/analyzer/addStopWords", "addStopWords", 0);
 
             // *** INDEX CONFIG ***
-            dig.addDoNothing("config/indices");
+            dig.addDoNothing("config/indexes");
 
             // SingleIndex
-            dig.addObjectCreate("config/indices/index", SingleIndexConfig.class);
-            dig.addSetNext("config/indices/index", "addIndex");
-            dig.addCallMethod("config/indices/index","setId", 1);
-            dig.addCallParam("config/indices/index", 0, "id");
+            dig.addObjectCreate("config/indexes/index", SingleIndexConfig.class);
+            dig.addSetNext("config/indexes/index", "addIndex");
+            dig.addCallMethod("config/indexes/index","setId", 1);
+            dig.addCallParam("config/indexes/index", 0, "id");
 
-            dig.addCallMethod("config/indices/index/displayName","setDisplayName",0);
-            dig.addCallMethod("config/indices/index/indexDir","setIndexDir",0);
-            dig.addCallMethod("config/indices/index/harvesterClass","setHarvesterClass",0);
-            dig.addCallMethod("config/indices/index/autoOptimize","setAutoOptimize",0);
-            dig.addCallMethod("config/indices/index/validate","setValidate",0);
+            dig.addCallMethod("config/indexes/index/displayName","setDisplayName",0);
+            dig.addCallMethod("config/indexes/index/indexDir","setIndexDir",0);
+            dig.addCallMethod("config/indexes/index/harvesterClass","setHarvesterClass",0);
+            dig.addCallMethod("config/indexes/index/autoOptimize","setAutoOptimize",0);
+            dig.addCallMethod("config/indexes/index/validate","setValidate",0);
 
-            dig.addRule("config/indices/index/transform", (configMode==ConfigMode.HARVESTING) ? new IndexConfigTransformerSaxRule(this,file) : SaxRule.emptyRule());
+            dig.addRule("config/indexes/index/transform", (configMode==ConfigMode.HARVESTING) ? new IndexConfigTransformerSaxRule(this,file) : SaxRule.emptyRule());
 
-            dig.addDoNothing("config/indices/index/harvesterProperties");
-            dig.addCallMethod("config/indices/index/harvesterProperties/*","addHarvesterProperty",2, X_PATH_PARAMS);
-            dig.addObjectParam("config/indices/index/harvesterProperties/*", 0, dig);
-            dig.addCallParam("config/indices/index/harvesterProperties/*", 1);
+            dig.addDoNothing("config/indexes/index/harvesterProperties");
+            dig.addCallMethod("config/indexes/index/harvesterProperties/*","addHarvesterProperty",2, X_PATH_PARAMS);
+            dig.addObjectParam("config/indexes/index/harvesterProperties/*", 0, dig);
+            dig.addCallParam("config/indexes/index/harvesterProperties/*", 1);
 
             // VirtualIndex
-            dig.addObjectCreate("config/indices/virtualIndex", VirtualIndexConfig.class);
-            dig.addSetNext("config/indices/virtualIndex", "addIndex");
-            dig.addCallMethod("config/indices/virtualIndex","setId", 1);
-            dig.addCallParam("config/indices/virtualIndex", 0, "id");
+            dig.addObjectCreate("config/indexes/virtualIndex", VirtualIndexConfig.class);
+            dig.addSetNext("config/indexes/virtualIndex", "addIndex");
+            dig.addCallMethod("config/indexes/virtualIndex","setId", 1);
+            dig.addCallParam("config/indexes/virtualIndex", 0, "id");
 
-            dig.addCallMethod("config/indices/virtualIndex/displayName","setDisplayName",0);
-            dig.addCallMethod("config/indices/virtualIndex/threaded","setThreaded",0);
-            dig.addCallMethod("config/indices/virtualIndex/index","addIndex",1);
-            dig.addCallParam("config/indices/virtualIndex/index", 0, "ref");
+            dig.addCallMethod("config/indexes/virtualIndex/displayName","setDisplayName",0);
+            dig.addCallMethod("config/indexes/virtualIndex/threaded","setThreaded",0);
+            dig.addCallMethod("config/indexes/virtualIndex/index","addIndex",1);
+            dig.addCallParam("config/indexes/virtualIndex/index", 0, "ref");
 
             // *** SEARCH PROPERTIES ***
             dig.addDoNothing("config/search");
@@ -226,12 +226,12 @@ public class Config {
     }
 
     public void addIndex(IndexConfig i) {
-        if (indices.containsKey(i.id))
+        if (indexes.containsKey(i.id))
             throw new IllegalArgumentException("There is already an index with id=\""+i.id+"\" added to configuration!");
         i.parent=this;
         if (i instanceof SingleIndexConfig) ((SingleIndexConfig)i).harvesterProperties.setParentProperties(globalHarvesterProperties);
         i.check();
-        indices.put(i.id,i);
+        indexes.put(i.id,i);
     }
 
     public void setFilterDefault(String v) {
@@ -347,7 +347,7 @@ public class Config {
     }
 
     // members "the configuration"
-    public Map<String,IndexConfig> indices=new HashMap<String,IndexConfig>();
+    public Map<String,IndexConfig> indexes=new HashMap<String,IndexConfig>();
 
     public Map<String,FieldConfig> fields=new HashMap<String,FieldConfig>();
     public AnyExpressionConfig defaultField=null;
