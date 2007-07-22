@@ -77,7 +77,7 @@ public final class XPathResolverImpl implements XPathFunctionResolver,XPathVaria
             log.info("Opening virtual index reader containing "+ids+" for duplicates checking...");
             IndexReader[] l=new IndexReader[ids.size()];
             Iterator<String> it=ids.iterator();
-            for (int i=0; it.hasNext(); i++) l[i]=conf.indices.get(it.next()).getUncachedIndexReader();
+            for (int i=0; it.hasNext(); i++) l[i]=conf.indexes.get(it.next()).getUncachedIndexReader();
             ci.put(ids,reader=new org.apache.lucene.index.MultiReader(l));
         }
         return reader;
@@ -93,20 +93,20 @@ public final class XPathResolverImpl implements XPathFunctionResolver,XPathVaria
         try {
             if (args.size()==0) {
                 // collect all indexes, excluding the current one
-                for (IndexConfig iconfig : index.iconfig.parent.indices.values()) {
+                for (IndexConfig iconfig : index.iconfig.parent.indexes.values()) {
                     if (iconfig==index.iconfig) continue;
                     if (!(iconfig instanceof SingleIndexConfig)) continue;
                     if (!((SingleIndexConfig)iconfig).isIndexAvailable()) continue;
                     indexIds.add(iconfig.id);
                 }
             } else {
-                // collect indices by id, excluding the current one
+                // collect indexes by id, excluding the current one
                 for (Object o : args) {
                     if (!(o instanceof String))
-                        throw new XPathFunctionException(FUNCTION_DOC_UNIQUE.toString()+" only allows type STRING as parameters (which are index ids, or empty for all indices)!");
+                        throw new XPathFunctionException(FUNCTION_DOC_UNIQUE.toString()+" only allows type STRING as parameters (which are index ids, or empty for all indexes)!");
                     String s=(String)o;
                     if (s.equals(index.iconfig.id)) continue;
-                    IndexConfig iconfig=index.iconfig.parent.indices.get(s);
+                    IndexConfig iconfig=index.iconfig.parent.indexes.get(s);
                     if (!(iconfig instanceof SingleIndexConfig))
                         throw new XPathFunctionException(FUNCTION_DOC_UNIQUE.toString()+" does not support index '"+s+"' (not defined or wrong type)!");
                     if (!((SingleIndexConfig)iconfig).isIndexAvailable()) continue;

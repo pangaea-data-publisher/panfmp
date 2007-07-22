@@ -35,7 +35,7 @@ public class SearchServiceAxisImpl {
 
         String cfgFile=(String)axisCfg.get("de.pangaea.metadataportal.search.indexConfigFile");
         if (cfgFile==null)
-            throw new ConfigurationException("The configuration file for the indices must be given as global configuration parameter 'de.pangaea.metadataportal.search.indexConfigFile' in the Apache AXIS configuration (WEB-INF/server-config.wsdd)!");
+            throw new ConfigurationException("The configuration file for the indexes must be given as global configuration parameter 'de.pangaea.metadataportal.search.indexConfigFile' in the Apache AXIS configuration (WEB-INF/server-config.wsdd)!");
         HttpServlet servlet = (HttpServlet)mcontext.getProperty(HTTPConstants.MC_HTTP_SERVLET);
         if (servlet==null)
             throw new ConfigurationException("Cannot get AXIS servlet instance from MessageContext!");

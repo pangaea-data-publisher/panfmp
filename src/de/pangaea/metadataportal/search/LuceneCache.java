@@ -65,10 +65,10 @@ public class LuceneCache {
 
         long now=new java.util.Date().getTime();
 
-        // check indices for changes and queue re-open
+        // check indexes for changes and queue re-open
         if (!indexChanged) {
             boolean changed=false;
-            for (IndexConfig cfg : config.indices.values()) {
+            for (IndexConfig cfg : config.indexes.values()) {
                 if (cfg instanceof SingleIndexConfig && !cfg.isIndexCurrent()) {
                     changed=true;
                     break;
@@ -76,17 +76,17 @@ public class LuceneCache {
             }
             if (changed) {
                 indexChangedAt=now;
-                log.info("Detected change in one of the configured indices. Preparing for reload in "+reloadIndexIfChangedAfter+"s.");
+                log.info("Detected change in one of the configured indexes. Preparing for reload in "+reloadIndexIfChangedAfter+"s.");
             }
             indexChanged=changed;
         }
 
-        // reopen indices after RELOAD_AFTER secs. from detection of change
+        // reopen indexes after RELOAD_AFTER secs. from detection of change
         boolean doReopen=(indexChanged && now-indexChangedAt>((long)reloadIndexIfChangedAfter)*1000L);
 
         if (doReopen) {
-            for (IndexConfig cfg : config.indices.values()) {
-                // only scan real indices, the others will be implicitely reopened
+            for (IndexConfig cfg : config.indexes.values()) {
+                // only scan real indexes, the others will be implicitely reopened
                 if (cfg instanceof SingleIndexConfig) {
                     log.info("Reopening index '"+cfg.id+"'.");
                     cfg.reopenIndex();

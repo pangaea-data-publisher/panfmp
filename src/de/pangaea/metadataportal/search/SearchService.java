@@ -99,7 +99,7 @@ public class SearchService {
         cache.cleanupCache();
 
         // init Index
-        IndexConfig index=cache.config.indices.get(indexName);
+        IndexConfig index=cache.config.indexes.get(indexName);
         if (index==null) throw new IllegalArgumentException("Index '"+indexName+"' does not exist!");
         IndexReader reader = index.getIndexReader();
 
@@ -122,7 +122,7 @@ public class SearchService {
             cache.cleanupCache();
 
             // init Index
-            IndexConfig index=cache.config.indices.get(indexName);
+            IndexConfig index=cache.config.indexes.get(indexName);
             if (index==null) throw new IllegalArgumentException("Index '"+indexName+"' does not exist!");
 
             query.normalize(cache.config);
@@ -143,7 +143,7 @@ public class SearchService {
         if (count==0) return new String[0];
 
         // init Index
-        IndexConfig index=cache.config.indices.get(indexName);
+        IndexConfig index=cache.config.indexes.get(indexName);
         if (index==null) throw new IllegalArgumentException("Index '"+indexName+"' does not exist!");
         IndexReader reader=index.getIndexReader();
 
