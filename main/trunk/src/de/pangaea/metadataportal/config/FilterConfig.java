@@ -23,7 +23,7 @@ public class FilterConfig extends AnyExpressionConfig {
 
     public void setType(String v) {
         try {
-            type=Enum.valueOf(FilterType.class,v.toUpperCase());
+            type=FilterType.valueOf(v.toUpperCase());
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Invalid filter type: '"+v+"'");
         }
