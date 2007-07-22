@@ -28,6 +28,7 @@ public abstract class AbstractHarvester {
     public SingleIndexConfig iconfig=null;
     protected int harvestCount=0;
     protected int harvestMessageStep=100;
+    protected XMLConverter xmlConverter=null;
 
     // construtors
     public AbstractHarvester() {}
@@ -38,6 +39,7 @@ public abstract class AbstractHarvester {
         harvestMessageStep=Integer.parseInt(iconfig.harvesterProperties.getProperty("harvestMessageStep","100"));
         if (harvestMessageStep<=0) throw new IllegalArgumentException("Invalid value for harvestMessageStep: "+harvestMessageStep);
         index = new IndexBuilder(false,iconfig);
+        xmlConverter=new XMLConverter(iconfig);
     }
 
     public void close() throws Exception {

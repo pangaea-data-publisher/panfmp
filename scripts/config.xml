@@ -68,24 +68,24 @@
         <index id="pangaea-carboocean">
             <displayName>PANGAEA datasets for CARBOOCEAN</displayName>
             <indexDir>./lucene-store/pangaea-carboocean</indexDir>
-            <autoOptimize>true</autoOptimize>
-            <validate>false</validate>
             <harvesterClass>de.pangaea.metadataportal.harvester.OAIHarvester</harvesterClass>
             <harvesterProperties>
                 <baseUrl>http://ws.pangaea.de/oai/</baseUrl>
                 <metadataPrefix>dif</metadataPrefix>
                 <setSpec>CARBOOCEAN</setSpec>
+				<autoOptimize>true</autoOptimize>
+				<validate>false</validate>
             </harvesterProperties>
         </index>
         <index id="ifremer">
             <displayName>IFREMER datasets</displayName>
             <indexDir>./lucene-store/ifremer</indexDir>
-            <autoOptimize>true</autoOptimize>
-            <validate>true</validate>
             <harvesterClass>de.pangaea.metadataportal.harvester.OAIHarvester</harvesterClass>
             <harvesterProperties>
                 <baseUrl>http://www.ifremer.fr/oai/provider</baseUrl>
                 <metadataPrefix>dif</metadataPrefix>
+				<autoOptimize>true</autoOptimize>
+				<validate>true</validate>
             </harvesterProperties>
             <!--<transform>
                 <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="./ns-convert.xslt"/>

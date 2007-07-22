@@ -145,8 +145,6 @@ public class Config {
             dig.addCallMethod("config/indexes/index/displayName","setDisplayName",0);
             dig.addCallMethod("config/indexes/index/indexDir","setIndexDir",0);
             dig.addCallMethod("config/indexes/index/harvesterClass","setHarvesterClass",0);
-            dig.addCallMethod("config/indexes/index/autoOptimize","setAutoOptimize",0);
-            dig.addCallMethod("config/indexes/index/validate","setValidate",0);
 
             dig.addRule("config/indexes/index/transform", (configMode==ConfigMode.HARVESTING) ? new IndexConfigTransformerSaxRule(this,file) : SaxRule.emptyRule());
 

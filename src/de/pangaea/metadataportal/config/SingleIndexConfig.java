@@ -31,14 +31,6 @@ public class SingleIndexConfig extends IndexConfig {
         indexDir=v;
     }
 
-    public void setAutoOptimize(String v) {
-        autoOptimize=Boolean.parseBoolean(v);
-    }
-
-    public void setValidate(String v) {
-        validate=Boolean.parseBoolean(v);
-    }
-
     public void setHarvesterClass(String v) throws ClassNotFoundException {
         Class<?> c=Class.forName(v);
         harvesterClass=c.asSubclass(de.pangaea.metadataportal.harvester.AbstractHarvester.class);
@@ -101,8 +93,6 @@ public class SingleIndexConfig extends IndexConfig {
 
     // members "the configuration"
     private String indexDir=null;
-    public boolean autoOptimize=false;
-    public boolean validate=true;
     public Class<? extends de.pangaea.metadataportal.harvester.AbstractHarvester> harvesterClass=null;
     public InheritedProperties harvesterProperties=new InheritedProperties();
     public Templates xslt=null;

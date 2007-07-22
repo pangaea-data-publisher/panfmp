@@ -61,7 +61,7 @@ public class DirectoryHarvester extends AbstractHarvester implements FilenameFil
         MetadataDocument mdoc=new MetadataDocument();
         mdoc.identifier="file:"+identifierPrefix+directory.toURI().normalize().relativize(file.toURI().normalize()).toString();
         mdoc.datestamp=new java.util.Date(file.lastModified());
-        mdoc.dom=(new XMLConverter(iconfig)).transform(new StreamSource(file));
+        mdoc.dom=xmlConverter.transform(new StreamSource(file));
 
         addDocument(mdoc);
     }
