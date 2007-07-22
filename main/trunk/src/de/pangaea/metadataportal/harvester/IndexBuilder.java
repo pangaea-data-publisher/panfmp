@@ -47,7 +47,9 @@ public class IndexBuilder {
     private Thread indexerThread;
     private ThreadGroup converterThreads;
     private Thread[] converterThreadList;
-    private Object commitEventLock=new Object(),converterThreadLock=mdocBuffer,indexerThreadLock=new Object();
+    private Object commitEventLock=new Object();
+    private Object converterQueueLock=mdocBuffer,indexerQueueLock=new Object();
+    private Object converterQueueFullLock=new Object(),indexerQueueFullLock=new Object();
     private boolean threadsStarted=false;
 
     public IndexBuilder(boolean create, SingleIndexConfig iconfig) throws IOException {
@@ -67,7 +69,7 @@ public class IndexBuilder {
         for (int i=0; i<threadCount; i++) {
             converterThreadList[i]=new Thread(converterThreads,new Runnable() {
                 public void run() { converterThreadRun(); }
-            },getClass().getName()+"#Converter#"+i);
+            },getClass().getName()+"#Converter#"+(i+1));
         }
 
         // indexer
@@ -91,23 +93,23 @@ public class IndexBuilder {
 
     public void setChangesBeforeCommit(int min, int max) {
         if (min<1 || max<1 || max<min) throw new IllegalArgumentException("Invalid values for minChangesBeforeCommit, maxChangesBeforeCommit.");
-        synchronized(indexerThreadLock) {
+        synchronized(indexerQueueLock) {
             this.minChangesBeforeCommit=min;
             this.maxChangesBeforeCommit=max;
-            if (ldocBuffer.size()>=minChangesBeforeCommit) indexerThreadLock.notify();
+            if (ldocBuffer.size()>=minChangesBeforeCommit) indexerQueueLock.notifyAll();
         }
     }
 
     public void setMaxConverterQueue(int max) {
         if (max<1) throw new IllegalArgumentException("Invalid value for maxConverterQueue.");
-        synchronized(converterThreadLock) {
+        synchronized(converterQueueLock) {
             this.maxConverterQueue=max;
-            converterThreadLock.notifyAll();
+            converterQueueLock.notifyAll();
         }
     }
 
     public void setMaxWaitForIndexer(long maxWaitForIndexer) {
-        synchronized(indexerThreadLock) {
+        synchronized(indexerQueueLock) {
             this.maxWaitForIndexer=maxWaitForIndexer;
         }
     }
@@ -130,9 +132,9 @@ public class IndexBuilder {
         } else {
             startThreads(true);
 
-            synchronized(converterThreadLock) {
+            synchronized(converterQueueLock) {
                 converterFinished=true;
-                converterThreadLock.notifyAll();
+                converterQueueLock.notifyAll();
             }
             for (Thread t : converterThreadList) {
                 if (t.isAlive()) try {
@@ -141,9 +143,9 @@ public class IndexBuilder {
             }
 
             // wait for indexer
-            synchronized(indexerThreadLock) {
+            synchronized(indexerQueueLock) {
                 indexerFinished=true;
-                indexerThreadLock.notifyAll();
+                indexerQueueLock.notifyAll();
             }
             if (indexerThread.isAlive()) try {
                 indexerThread.join();
@@ -170,10 +172,10 @@ public class IndexBuilder {
 
         startThreads(false);
 
-        synchronized(converterThreadLock) {
-            if (mdocBuffer.size()>=maxConverterQueue) internalWaitConverter();
+        if (mdocBuffer.size()>=maxConverterQueue) internalWaitConverter(); // mdocBuffer is synchronized!
+        synchronized(converterQueueLock) {
             mdocBuffer.push(mdoc);
-            converterThreadLock.notify();
+            converterQueueLock.notify();
         }
     }
 
@@ -184,9 +186,11 @@ public class IndexBuilder {
 
         startThreads(false);
 
-        synchronized(indexerThreadLock) {
-            if (ldocBuffer.size()>=(minChangesBeforeCommit+maxChangesBeforeCommit)/2) internalWaitIndexer();
+        boolean doWait;
+        synchronized(indexerQueueLock) {
+            doWait=(ldocBuffer.size()>=(minChangesBeforeCommit+maxChangesBeforeCommit)/2);
         }
+        if (doWait) internalWaitIndexer();
     }
 
     // sets the date of last harvesting (written to disk after closing!!!)
@@ -215,13 +219,15 @@ public class IndexBuilder {
         XPathResolverImpl.getInstance().setIndexBuilder(this);
         try {
             while ((!converterFinished || mdocBuffer.size()>0) && failure==null) {
-                MetadataDocument mdoc=null;
-                synchronized(converterThreadLock) {
+                MetadataDocument mdoc;
+                synchronized(converterQueueFullLock) {
                     // notify eventually waiting threads
-                    converterThreadLock.notify();
+                    converterQueueFullLock.notifyAll();
+                }
+                synchronized(converterQueueLock) {
                     // wait if queue is empty
                     if (!converterFinished && mdocBuffer.size()==0) try {
-                        converterThreadLock.wait();
+                        converterQueueLock.wait();
                     } catch (InterruptedException ie) {}
                     // fetch a document
                     if (mdocBuffer.size()==0) continue;
@@ -234,35 +240,39 @@ public class IndexBuilder {
 
                 Document ldoc=mdoc.getLuceneDocument(iconfig);
 
-                synchronized(indexerThreadLock) {
-                    if (ldocBuffer.size()>=maxChangesBeforeCommit) internalWaitIndexer();
+                boolean doWait;
+                synchronized(indexerQueueLock) {
+                    doWait=(ldocBuffer.size()>=maxChangesBeforeCommit);
+                }
+                if (doWait) internalWaitIndexer();
+                synchronized(indexerQueueLock) {
                     ldocBuffer.put(mdoc.identifier,ldoc);
-                    if (ldocBuffer.size()>=minChangesBeforeCommit) indexerThreadLock.notify();
+                    if (ldocBuffer.size()>=minChangesBeforeCommit) indexerQueueLock.notify();
                 }
             }
 
             // notify indexer of end
-            synchronized(converterThreadLock) {
+            synchronized(converterQueueLock) {
                 // is this really the last running converter?
-                if (runningConverters<=1) synchronized(indexerThreadLock) {
+                if (runningConverters<=1) synchronized(indexerQueueLock) {
                     indexerFinished=true;
-                    indexerThreadLock.notify();
+                    indexerQueueLock.notifyAll();
                 }
             }
         } catch (Exception e) {
             log.debug(e);
             failure=e;
         } finally {
-            synchronized(converterThreadLock) {
+            synchronized(converterQueueLock) {
                 runningConverters--;
             }
             XPathResolverImpl.getInstance().unsetIndexBuilder();
             log.info("Converter thread stopped.");
         }
 
-        synchronized(converterThreadLock) {
+        synchronized(converterQueueFullLock) {
             // notify eventually waiting threads
-            converterThreadLock.notify();
+            converterQueueFullLock.notifyAll();
         }
     }
 
@@ -280,13 +290,15 @@ public class IndexBuilder {
 
             int docBufferSize=0;
             do {
-                TreeMap<String,Document> docs=null;
-                synchronized(indexerThreadLock) {
+                TreeMap<String,Document> docs;
+                synchronized(indexerQueueFullLock) {
                     // notify eventually waiting threads
-                    indexerThreadLock.notify();
+                    indexerQueueFullLock.notifyAll();
+                }
+                synchronized(indexerQueueLock) {
                     // wait if queue is too empty
                     if (!indexerFinished && ldocBuffer.size()<minChangesBeforeCommit) try {
-                        indexerThreadLock.wait();
+                        indexerQueueLock.wait();
                     } catch (InterruptedException ie) {}
                     // fetch docs and replace by new one
                     docs=ldocBuffer;
@@ -311,7 +323,7 @@ public class IndexBuilder {
                 }
 
                 // get current status of buffer
-                synchronized(indexerThreadLock) { docBufferSize=ldocBuffer.size(); }
+                synchronized(indexerQueueLock) { docBufferSize=ldocBuffer.size(); }
 
                 synchronized(commitEventLock) {
                     // only flush if commitEvent interface registered
@@ -326,7 +338,7 @@ public class IndexBuilder {
 
             writer.flush();
 
-            if (iconfig.autoOptimize) {
+            if (Boolean.parseBoolean(iconfig.harvesterProperties.getProperty("autoOptimize","false"))) {
                 log.info("Optimizing index...");
                 writer.optimize();
                 log.info("Index optimized.");
@@ -344,9 +356,9 @@ public class IndexBuilder {
             log.info("Indexer thread stopped.");
         }
 
-        synchronized(indexerThreadLock) {
+        synchronized(indexerQueueFullLock) {
             // notify eventually waiting threads
-            indexerThreadLock.notify();
+            indexerQueueFullLock.notifyAll();
         }
     }
 
@@ -374,7 +386,7 @@ public class IndexBuilder {
 
     private void checkThreads() {
         int rc=0;
-        synchronized(converterThreadLock) {
+        synchronized(converterQueueLock) {
             rc=runningConverters;
         }
         if (rc==0 || !indexerThread.isAlive())
@@ -383,20 +395,20 @@ public class IndexBuilder {
 
     private void internalWaitConverter() {
         checkThreads();
-        synchronized (converterThreadLock) {
+        synchronized (converterQueueFullLock) {
             try {
                 log.debug("Harvester is too fast for converter thread(s), waiting..."); // only debug, it happens often!
-                converterThreadLock.wait();
+                converterQueueFullLock.wait();
             } catch (InterruptedException ie) {}
         }
     }
 
     private void internalWaitIndexer() {
         checkThreads();
-        synchronized (indexerThreadLock) {
+        synchronized (indexerQueueFullLock) {
             try {
                 log.info("Converter is too fast for indexer thread, waiting...");
-                if (maxWaitForIndexer>0L) indexerThreadLock.wait(maxWaitForIndexer); else indexerThreadLock.wait();
+                if (maxWaitForIndexer>0L) indexerQueueFullLock.wait(maxWaitForIndexer); else indexerQueueFullLock.wait();
             } catch (InterruptedException ie) {}
         }
     }

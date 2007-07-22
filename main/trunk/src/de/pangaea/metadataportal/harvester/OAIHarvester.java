@@ -85,7 +85,7 @@ public class OAIHarvester extends AbstractHarvester {
         listRecordsDig.addCallMethod("OAI-PMH/ListRecords/record/header/setSpec", "addSet", 0);
 
         // metadata element
-        listRecordsDig.addRule("OAI-PMH/ListRecords/record/metadata", new OAIMetadataSaxRule(new XMLConverter(iconfig)));
+        listRecordsDig.addRule("OAI-PMH/ListRecords/record/metadata", new OAIMetadataSaxRule(xmlConverter));
 
         // dummy SAX handler to put <about> into trash
         listRecordsDig.addRule("OAI-PMH/ListRecords/record/about", SaxRule.emptyRule());

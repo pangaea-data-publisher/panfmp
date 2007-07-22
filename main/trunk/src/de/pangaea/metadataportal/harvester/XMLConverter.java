@@ -35,12 +35,22 @@ public class XMLConverter  {
     private static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(XMLConverter.class);
 
     private SingleIndexConfig iconfig;
+    private boolean validate=true;
+
     public XMLConverter(SingleIndexConfig iconfig) {
         this.iconfig=iconfig;
+        String v=iconfig.harvesterProperties.getProperty("validate");
+        if (iconfig.parent.schema==null) {
+            if (v!=null) throw new IllegalStateException("The <validate> harvester property is only allowed if a XML schema is set in the metadata properties!");
+            validate=false; // no validation if no schema available
+        } else {
+            if (v==null) validate=true; // validate by default
+            else validate=Boolean.parseBoolean(v);
+        }
     }
 
     private DOMResult validate(final DOMSource ds, final boolean wasTransformed) throws SAXException,IOException {
-        if (!iconfig.validate || iconfig.parent.schema==null) {
+        if (!validate) {
             return DOMSource2Result(ds);
         } else {
             if (log.isDebugEnabled()) log.debug("Validating '"+ds.getSystemId()+"'...");
