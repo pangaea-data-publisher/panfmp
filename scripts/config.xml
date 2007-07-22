@@ -64,7 +64,7 @@
             area,location,geocode,method,parameter
         </addStopWords>
     </analyzer>
-    <indices>
+    <indexes>
         <index id="pangaea-carboocean">
             <displayName>PANGAEA datasets for CARBOOCEAN</displayName>
             <indexDir>./lucene-store/pangaea-carboocean</indexDir>
@@ -97,7 +97,7 @@
             <index ref="pangaea-carboocean"/>
             <index ref="ifremer"/>
         </virtualIndex>
-    </indices>
+    </indexes>
     <search>
         <returnXML>true</returnXML>
         <returnStoredFields>true</returnStoredFields>
