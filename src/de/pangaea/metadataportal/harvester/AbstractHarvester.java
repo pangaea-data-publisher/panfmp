@@ -47,14 +47,14 @@ public abstract class AbstractHarvester {
         if (!index.isClosed()) index.close();
         index=null;
 
-        log.info("Harvested "+harvestCount+" documents - finished.");
+        log.info("Harvested "+harvestCount+" objects - finished.");
     }
 
     public void addDocument(MetadataDocument mdoc) throws Exception {
         if (index==null) throw new IllegalStateException("Harvester must be opened before using");
         index.addDocument(mdoc);
         harvestCount++;
-        if (harvestCount%harvestMessageStep==0) log.info("Harvested "+harvestCount+" documents so far.");
+        if (harvestCount%harvestMessageStep==0) log.info("Harvested "+harvestCount+" objects so far.");
     }
 
     public abstract void harvest() throws Exception;
