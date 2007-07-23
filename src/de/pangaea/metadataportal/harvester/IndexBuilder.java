@@ -270,6 +270,11 @@ public class IndexBuilder {
 
             writer.flush();
 
+            // notify Harvester of index commit
+            synchronized(commitEventLock) {
+                if (commitEvent!=null) commitEvent.harvesterCommitted(Collections.unmodifiableSet(committedIdentifiers).iterator());
+            }
+
             log.info(deleted+" docs presumably deleted (only if existent) and "+updated+" docs (re-)indexed - finished.");
 
             if (Boolean.parseBoolean(iconfig.harvesterProperties.getProperty("autoOptimize","false"))) {
