@@ -53,8 +53,8 @@
     <globalHarvesterProperties>
     	<numConverterThreads>2</numConverterThreads>
     	<maxConverterQueue>250</maxConverterQueue>
-    	<minChangesBeforeIndexCommit>1000</minChangesBeforeIndexCommit>
-    	<maxChangesBeforeIndexCommit>2000</maxChangesBeforeIndexCommit>
+    	<maxIndexerQueue>250</maxIndexerQueue>
+    	<changesBeforeIndexCommit>1000</changesBeforeIndexCommit>
     </globalHarvesterProperties>
     <analyzer>
         <class>org.apache.lucene.analysis.standard.StandardAnalyzer</class>

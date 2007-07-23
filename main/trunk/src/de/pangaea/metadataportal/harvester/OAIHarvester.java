@@ -239,8 +239,6 @@ public class OAIHarvester extends AbstractHarvester {
         checkIdentify(baseUrl);
         reset();
 
-        index.setChangesBeforeCommit(1000,2000);
-        index.setMaxConverterQueue(1000);
         Date from=index.getLastHarvestedFromDisk();
         StringBuilder url=new StringBuilder(baseUrl);
         String prefix=iconfig.harvesterProperties.getProperty("metadataPrefix");
@@ -259,18 +257,12 @@ public class OAIHarvester extends AbstractHarvester {
         }
         readStream(url.toString());
         Date lastHarvested=currResponseDate;
-        if (currResumptionToken!=null) {
-            // resize the maximum number for commits to index not to break HTTP downloads!
-            if (harvestCount>500) {
-                index.setChangesBeforeCommit(harvestCount*2,harvestCount*4);
-            }
-        }
 
         while (currResumptionToken!=null) {
             // checkIndexerBuffer or harvester should max. wait for 1/2 resumption Token expiration!!!
             log.debug("Resumption token expires in "+currResumptionExpiration+" ms");
-            long maxWaitTime=(currResumptionExpiration>0L) ? currResumptionExpiration/2L : -1;
-            index.setMaxWaitForIndexer(maxWaitTime);
+            //long maxWaitTime=(currResumptionExpiration>0L) ? currResumptionExpiration/2L : -1;
+            //index.setMaxWaitForIndexer(maxWaitTime);
             index.checkIndexerBuffer();
             url=new StringBuilder(baseUrl);
             url.append("?verb=ListRecords&resumptionToken=");
