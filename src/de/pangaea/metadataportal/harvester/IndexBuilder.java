@@ -46,6 +46,7 @@ public class IndexBuilder {
 
     private HarvesterCommitEvent commitEvent=null;
     private Object commitEventLock=new Object();
+    private Object indexerLock=new Object();
 
     private int changesBeforeCommit;
 
@@ -142,16 +143,23 @@ public class IndexBuilder {
     public void addDocument(MetadataDocument mdoc) throws Exception {
         if (isClosed()) throw new IllegalStateException("IndexBuilder already closed");
         throwFailure();
-
         startThreads(false);
 
         mdocBuffer.put(mdoc);
     }
 
-    // call this between harvest resumptions to give the indexer a chance NOW to set this thread to wait not while HTTP transfers
+    // call this between harvest resumptions to wait if buffer 2/3 full, this helps to not block while running HTTP transfers (if buffer is big enough)
     public void checkIndexerBuffer() throws Exception {
         if (isClosed()) throw new IllegalStateException("IndexBuilder already closed");
-        /* TODO */
+        throwFailure();
+        startThreads(false);
+
+        if (ldocBuffer.remainingCapacity()*2<ldocBuffer.size()) {
+            log.warn("Harvester is too fast for indexer thread, that is blocked. Waiting...");
+            while (ldocBuffer.size()>0) synchronized(indexerLock) {
+                indexerLock.wait();
+            }
+        }
     }
 
     // sets the date of last harvesting (written to disk after closing!!!)
@@ -253,6 +261,11 @@ public class IndexBuilder {
                     if (commitEvent!=null) commitEvent.harvesterCommitted(Collections.unmodifiableSet(committedIdentifiers).iterator());
                     committedIdentifiers.clear();
                 }
+
+                // notify eventually waiting checkIndexerBuffer() calls
+                synchronized(indexerLock) {
+                    indexerLock.notifyAll();
+                }
             }
 
             writer.flush();
@@ -268,6 +281,11 @@ public class IndexBuilder {
             log.debug(e);
             failure=e;
         } finally {
+            // notify eventually waiting checkIndexerBuffer() calls
+            synchronized(indexerLock) {
+                indexerLock.notifyAll();
+            }
+            // close reader
             if (writer!=null) try {
                 writer.close();
             } catch (IOException ioe) {
