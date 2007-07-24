@@ -19,6 +19,7 @@ package de.pangaea.metadataportal.harvester;
 import de.pangaea.metadataportal.utils.*;
 import de.pangaea.metadataportal.config.*;
 import java.io.*;
+import java.util.*;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import javax.xml.transform.stream.StreamSource;
@@ -87,6 +88,17 @@ public class DirectoryHarvester extends AbstractHarvester implements FilenameFil
         from=null;
 
         index.setLastHarvested(startDate);
+    }
+
+    public List<String> getValidHarvesterPropertyNames() {
+        ArrayList<String> l=new ArrayList<String>(super.getValidHarvesterPropertyNames());
+        l.addAll(Arrays.<String>asList(
+            "directory",
+            "recursive",
+            "identifierPrefix",
+            "filenameFilter"
+        ));
+        return l;
     }
 
 }
