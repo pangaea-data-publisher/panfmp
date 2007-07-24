@@ -182,6 +182,11 @@ public class Config {
         } finally {
             dig=null;
         }
+
+        // check some consistency things
+        for (IndexConfig iconf : indexes.values()) {
+            if (iconf instanceof SingleIndexConfig) ((SingleIndexConfig)iconf).checkProperties();
+        }
     }
 
     public String makePathAbsolute(String file) throws java.io.IOException {

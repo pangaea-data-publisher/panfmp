@@ -16,6 +16,7 @@
 
 package de.pangaea.metadataportal.harvester;
 
+import java.util.*;
 import de.pangaea.metadataportal.config.*;
 
 public abstract class AbstractHarvester {
@@ -55,6 +56,21 @@ public abstract class AbstractHarvester {
         index.addDocument(mdoc);
         harvestCount++;
         if (harvestCount%harvestMessageStep==0) log.info("Harvested "+harvestCount+" objects so far.");
+    }
+
+    public List<String> getValidHarvesterPropertyNames() {
+        return Arrays.<String>asList(
+            // own
+            "harvestMessageStep",
+            // IndexBuilder
+            "changesBeforeIndexCommit",
+            "numConverterThreads",
+            "maxConverterQueue",
+            "maxIndexerQueue",
+            "autoOptimize",
+            // XMLConverter
+            "validate"
+        );
     }
 
     public abstract void harvest() throws Exception;

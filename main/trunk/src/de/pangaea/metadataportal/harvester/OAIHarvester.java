@@ -275,4 +275,16 @@ public class OAIHarvester extends AbstractHarvester {
         index.setLastHarvested(lastHarvested);
     }
 
+    public List<String> getValidHarvesterPropertyNames() {
+        ArrayList<String> l=new ArrayList<String>(super.getValidHarvesterPropertyNames());
+        l.addAll(Arrays.<String>asList(
+            "setSpec",
+            "retryCount",
+            "retryAfterSeconds",
+            "baseUrl",
+            "metadataPrefix"
+        ));
+        return l;
+    }
+
 }

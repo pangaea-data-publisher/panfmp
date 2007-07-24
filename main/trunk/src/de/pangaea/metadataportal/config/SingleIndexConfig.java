@@ -46,6 +46,17 @@ public class SingleIndexConfig extends IndexConfig {
             throw new IllegalStateException("Some index configuration fields are missing for index with id=\""+id+"\"!");
     }
 
+    @SuppressWarnings("unchecked")
+    public void checkProperties() throws Exception {
+        de.pangaea.metadataportal.harvester.AbstractHarvester h=harvesterClass.newInstance();
+        HashSet<String> validProperties=new HashSet<String>(h.getValidHarvesterPropertyNames());
+        for (Enumeration<String> en=(Enumeration<String>)harvesterProperties.propertyNames(); en.hasMoreElements();) {
+            String prop=en.nextElement();
+            if (!validProperties.contains(prop))
+                throw new IllegalArgumentException("Harvester '"+harvesterClass.getName()+"' for index '"+id+"' does not support property '"+prop+"'!");
+        }
+    }
+
     // Searcher
     public synchronized org.apache.lucene.search.Searcher newSearcher() throws java.io.IOException {
         if (indexReader==null) indexReader=org.apache.lucene.index.IndexReader.open(getFullIndexPath());
