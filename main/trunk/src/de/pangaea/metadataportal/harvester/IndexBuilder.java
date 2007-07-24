@@ -64,19 +64,21 @@ public class IndexBuilder {
             dir.deleteFile(IndexConstants.FILENAME_LASTHARVESTED);
         } catch (IOException e) {}
 
+        changesBeforeCommit=Integer.parseInt(iconfig.harvesterProperties.getProperty("changesBeforeIndexCommit","1000"));
+
+        int threadCount=Integer.parseInt(iconfig.harvesterProperties.getProperty("numConverterThreads","1"));
+        if (threadCount<1) throw new IllegalArgumentException("numConverterThreads harvester-property must be >=1!");
+
         int size=Integer.parseInt(iconfig.harvesterProperties.getProperty("maxConverterQueue","250"));
+        if (size<threadCount) throw new IllegalArgumentException("maxConverterQueue must be >=numConverterThreads!");
         mdocBuffer=new ArrayBlockingQueue<MetadataDocument>(size,true);
 
         size=Integer.parseInt(iconfig.harvesterProperties.getProperty("maxIndexerQueue","250"));
+        if (size<1) throw new IllegalArgumentException("maxConverterQueue must be >=1!");
         ldocBuffer=new ArrayBlockingQueue<IndexerQueueEntry>(size,false);
 
-        changesBeforeCommit=Integer.parseInt(iconfig.harvesterProperties.getProperty("changesBeforeIndexCommit","1000"));
-
-        converterThreads=new ThreadGroup(getClass().getName()+"#Converter#ThreadGroup");
-
         // converter threads
-        int threadCount=Integer.parseInt(iconfig.harvesterProperties.getProperty("numConverterThreads","1"));
-        if (threadCount<1) throw new IllegalArgumentException("numConverterThreads harvester-property must be >=1!");
+        converterThreads=new ThreadGroup(getClass().getName()+"#Converter#ThreadGroup");
         converterThreadList=new Thread[threadCount];
         for (int i=0; i<threadCount; i++) {
             converterThreadList[i]=new Thread(converterThreads,new Runnable() {
@@ -119,7 +121,10 @@ public class IndexBuilder {
                     if (t.isAlive()) t.join();
                 }
 
-                ldocBuffer.put(LDOC_EOF);
+                // in ldocBuffer not empty there were already some threads filling the queue
+                // => LDOC_EOF is queued by the threads
+                // explicitely putting a LDOC_EOF is only needed when converterThreads were never running!
+                if (ldocBuffer.size()==0) ldocBuffer.put(LDOC_EOF);
                 if (indexerThread.isAlive()) indexerThread.join();
             } catch (InterruptedException e) {
                 log.error(e);
@@ -183,7 +188,6 @@ public class IndexBuilder {
     }
 
     private void converterThreadRun() {
-        runningConverters++;
         org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(Thread.currentThread().getName());
         log.info("Converter thread started.");
         XPathResolverImpl.getInstance().setIndexBuilder(this);
@@ -313,7 +317,10 @@ public class IndexBuilder {
 
     private void startThreads(boolean onlyIndexer) {
         if (!threadsStarted) try {
-            if (!onlyIndexer) for (Thread t : converterThreadList) t.start();
+            if (!onlyIndexer) for (Thread t : converterThreadList) {
+                runningConverters++;
+                t.start();
+            }
             indexerThread.start();
         } finally {
             threadsStarted=true;
