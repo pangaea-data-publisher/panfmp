@@ -53,7 +53,7 @@ public class SingleIndexConfig extends IndexConfig {
         for (Enumeration<String> en=(Enumeration<String>)harvesterProperties.propertyNames(); en.hasMoreElements();) {
             String prop=en.nextElement();
             if (!validProperties.contains(prop))
-                throw new IllegalArgumentException("Harvester '"+harvesterClass.getName()+"' for index '"+id+"' does not support property '"+prop+"'!");
+                throw new IllegalArgumentException("Harvester '"+harvesterClass.getName()+"' for index '"+id+"' does not support property '"+prop+"'! Supported properties are: "+validProperties);
         }
     }
 
