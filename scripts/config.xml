@@ -1,21 +1,21 @@
-<?xml version="1.0" encoding="ISO-8859-1" ?>
-<config xmlns="urn:java:de.pangaea.metadataportal.config.Config" xmlns:cfg="urn:java:de.pangaea.metadataportal.config.Config">
-	<metadata xmlns:dif="http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/" xmlns:ib="urn:java:de.pangaea.metadataportal.harvester.IndexBuilder">
-		<variables>
-			<variable name="startdate">/dif:DIF/dif:Temporal_Coverage/dif:Start_Date</variable>
-			<variable name="enddate">/dif:DIF/dif:Temporal_Coverage/dif:Stop_Date</variable>
-			<variable-template name="boost" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<cfg:config xmlns:cfg="urn:java:de.pangaea.metadataportal.config.Config" xmlns:ib="urn:java:de.pangaea.metadataportal.harvester.IndexBuilder">
+	<cfg:metadata xmlns:dif="http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/">
+		<cfg:variables>
+			<cfg:variable name="startdate">/dif:DIF/dif:Temporal_Coverage/dif:Start_Date</cfg:variable>
+			<cfg:variable name="enddate">/dif:DIF/dif:Temporal_Coverage/dif:Stop_Date</cfg:variable>
+			<cfg:variable-template name="boost" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
 				<xsl:choose>
 					<xsl:when test="/dif:DIF/dif:Parent_DIF">1.0</xsl:when>
 					<xsl:otherwise>5.0</xsl:otherwise>
 				</xsl:choose>
-			</variable-template>
-		</variables>
-		<filters default="accept">
+			</cfg:variable-template>
+		</cfg:variables>
+		<cfg:filters default="accept">
 			<!-- we want to remove all documents harvested into index 'pangaea-carboocean' that are from project 'JGOFS' -->
-			<deny>$ib:index='pangaea-carboocean' and /dif:DIF/dif:Project/dif:Short_Name[contains(.,'JGOFS')]</deny>
+			<cfg:deny>$ib:index='pangaea-carboocean' and /dif:DIF/dif:Project/dif:Short_Name[contains(.,'JGOFS')]</cfg:deny>
 			<!-- we want to remove all documents with wrong namespace -->
-			<deny>namespace-uri(/*)!='http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/'</deny>
+			<cfg:deny>namespace-uri(/*)!='http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/'</cfg:deny>
 			<!--
 				We want to remove all duplicates; this is the simple approach: it checks if every harvested
 				identifier is in no other currently existing index.
@@ -23,86 +23,86 @@
 				You can create more complicated dependencies by using the $ib:index variable and also IDs
 				as string parameters given to the ib:isDocIdentifierUnique() function.
 			-->
-			<deny>not(ib:isDocIdentifierUnique())</deny>
-		</filters>
-		<fields>
-			<field name="citation" datatype="tokenizedText" lucenestorage="false" luceneindexed="true">/dif:DIF/dif:Data_Set_Citation|/dif:DIF/dif:Entry_Title|/dif:DIF/dif:Entry_ID</field>
-			<field name="investigator" datatype="tokenizedText" lucenestorage="false" luceneindexed="true">/dif:DIF/dif:Personnel[contains(dif:Role,'nvestigat')]</field>
-			<field name="parameter" datatype="tokenizedText" lucenestorage="false" luceneindexed="true">/dif:DIF/dif:Parameters</field>
-			<field name="method" datatype="tokenizedText" lucenestorage="false" luceneindexed="true">/dif:DIF/dif:Sensor_Name</field>
-			<field name="project" datatype="tokenizedText" lucenestorage="false" luceneindexed="true">/dif:DIF/dif:Project</field>
-			<field name="projectFull" datatype="string" lucenestorage="true" luceneindexed="true">/dif:DIF/dif:Project/dif:Short_Name</field>
-			<field name="minLatitude" datatype="number" lucenestorage="true" luceneindexed="true">/dif:DIF/dif:Spatial_Coverage/dif:Southernmost_Latitude</field>
-			<field name="maxLatitude" datatype="number" lucenestorage="true" luceneindexed="true">/dif:DIF/dif:Spatial_Coverage/dif:Northernmost_Latitude</field>
-			<field name="minLongitude" datatype="number" lucenestorage="true" luceneindexed="true">/dif:DIF/dif:Spatial_Coverage/dif:Westernmost_Longitude</field>
-			<field name="maxLongitude" datatype="number" lucenestorage="true" luceneindexed="true">/dif:DIF/dif:Spatial_Coverage/dif:Easternmost_Longitude</field>
-			<field name="minDateTime" datatype="dateTime" lucenestorage="true" luceneindexed="true" default="1900-01-01T00:00:00">$startdate</field>
-			<field name="maxDateTime" datatype="dateTime" lucenestorage="true" luceneindexed="true" default="2038-12-31T23:59:59">$enddate</field>
-			<field name="minMonth" datatype="number" lucenestorage="true" luceneindexed="true">substring-before(substring-after($startdate,'-'),'-')</field>
-			<field name="maxMonth" datatype="number" lucenestorage="true" luceneindexed="true">substring-before(substring-after($enddate,'-'),'-')</field>
-			<field name="dataCenter" datatype="tokenizedText" lucenestorage="false" luceneindexed="true">/dif:DIF/dif:Data_Center/dif:Data_Center_Name</field>
-			<field name="dataCenterFull" datatype="string" lucenestorage="true" luceneindexed="true">/dif:DIF/dif:Data_Center/dif:Data_Center_Name/dif:Short_Name</field>
-			<default>.</default>
-		</fields>
-		<documentBoost>number($boost)</documentBoost>
-		<schema>
-			<url>http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/dif_v9.4.xsd</url>
-			<haltOnError>false</haltOnError>
-		</schema>
-    </metadata>
-    <globalHarvesterProperties>
-    	<numConverterThreads>2</numConverterThreads>
-    	<maxConverterQueue>250</maxConverterQueue>
-    	<maxIndexerQueue>250</maxIndexerQueue>
-    	<changesBeforeIndexCommit>1000</changesBeforeIndexCommit>
-    </globalHarvesterProperties>
-    <analyzer>
-        <class>org.apache.lucene.analysis.standard.StandardAnalyzer</class>
-        <importEnglishStopWords/>
-        <addStopWords>
+			<cfg:deny>not(ib:isDocIdentifierUnique())</cfg:deny>
+		</cfg:filters>
+		<cfg:fields>
+			<cfg:field name="citation" datatype="tokenizedText" lucenestorage="false" luceneindexed="true">/dif:DIF/dif:Data_Set_Citation|/dif:DIF/dif:Entry_Title|/dif:DIF/dif:Entry_ID</cfg:field>
+			<cfg:field name="investigator" datatype="tokenizedText" lucenestorage="false" luceneindexed="true">/dif:DIF/dif:Personnel[contains(dif:Role,'nvestigat')]</cfg:field>
+			<cfg:field name="parameter" datatype="tokenizedText" lucenestorage="false" luceneindexed="true">/dif:DIF/dif:Parameters</cfg:field>
+			<cfg:field name="method" datatype="tokenizedText" lucenestorage="false" luceneindexed="true">/dif:DIF/dif:Sensor_Name</cfg:field>
+			<cfg:field name="project" datatype="tokenizedText" lucenestorage="false" luceneindexed="true">/dif:DIF/dif:Project</cfg:field>
+			<cfg:field name="projectFull" datatype="string" lucenestorage="true" luceneindexed="true">/dif:DIF/dif:Project/dif:Short_Name</cfg:field>
+			<cfg:field name="minLatitude" datatype="number" lucenestorage="true" luceneindexed="true">/dif:DIF/dif:Spatial_Coverage/dif:Southernmost_Latitude</cfg:field>
+			<cfg:field name="maxLatitude" datatype="number" lucenestorage="true" luceneindexed="true">/dif:DIF/dif:Spatial_Coverage/dif:Northernmost_Latitude</cfg:field>
+			<cfg:field name="minLongitude" datatype="number" lucenestorage="true" luceneindexed="true">/dif:DIF/dif:Spatial_Coverage/dif:Westernmost_Longitude</cfg:field>
+			<cfg:field name="maxLongitude" datatype="number" lucenestorage="true" luceneindexed="true">/dif:DIF/dif:Spatial_Coverage/dif:Easternmost_Longitude</cfg:field>
+			<cfg:field name="minDateTime" datatype="dateTime" lucenestorage="true" luceneindexed="true" default="1900-01-01T00:00:00">$startdate</cfg:field>
+			<cfg:field name="maxDateTime" datatype="dateTime" lucenestorage="true" luceneindexed="true" default="2038-12-31T23:59:59">$enddate</cfg:field>
+			<cfg:field name="minMonth" datatype="number" lucenestorage="true" luceneindexed="true">substring-before(substring-after($startdate,'-'),'-')</cfg:field>
+			<cfg:field name="maxMonth" datatype="number" lucenestorage="true" luceneindexed="true">substring-before(substring-after($enddate,'-'),'-')</cfg:field>
+			<cfg:field name="dataCenter" datatype="tokenizedText" lucenestorage="false" luceneindexed="true">/dif:DIF/dif:Data_Center/dif:Data_Center_Name</cfg:field>
+			<cfg:field name="dataCenterFull" datatype="string" lucenestorage="true" luceneindexed="true">/dif:DIF/dif:Data_Center/dif:Data_Center_Name/dif:Short_Name</cfg:field>
+			<cfg:default>.</cfg:default>
+		</cfg:fields>
+		<cfg:documentBoost>number($boost)</cfg:documentBoost>
+		<cfg:schema>
+			<cfg:url>http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/dif_v9.4.xsd</cfg:url>
+			<cfg:haltOnError>false</cfg:haltOnError>
+		</cfg:schema>
+	</cfg:metadata>
+	<cfg:globalHarvesterProperties>
+		<cfg:numConverterThreads>2</cfg:numConverterThreads>
+		<cfg:maxConverterQueue>250</cfg:maxConverterQueue>
+		<cfg:maxIndexerQueue>250</cfg:maxIndexerQueue>
+		<cfg:changesBeforeIndexCommit>1000</cfg:changesBeforeIndexCommit>
+	</cfg:globalHarvesterProperties>
+	<cfg:analyzer>
+		<cfg:class>org.apache.lucene.analysis.standard.StandardAnalyzer</cfg:class>
+		<cfg:importEnglishStopWords/>
+		<cfg:addStopWords>
             latitude,longitude,elevation,depth,source,e-mail,north,south,east,west, 
             area,location,geocode,method,parameter
-        </addStopWords>
-    </analyzer>
-    <indexes>
-        <index id="pangaea-carboocean">
-            <displayName>PANGAEA datasets for CARBOOCEAN</displayName>
-            <indexDir>./lucene-store/pangaea-carboocean</indexDir>
-            <harvesterClass>de.pangaea.metadataportal.harvester.OAIHarvester</harvesterClass>
-            <harvesterProperties>
-                <baseUrl>http://ws.pangaea.de/oai/</baseUrl>
-                <metadataPrefix>dif</metadataPrefix>
-                <setSpec>CARBOOCEAN</setSpec>
-				<autoOptimize>true</autoOptimize>
-				<validate>false</validate>
-            </harvesterProperties>
-        </index>
-        <index id="ifremer">
-            <displayName>IFREMER datasets</displayName>
-            <indexDir>./lucene-store/ifremer</indexDir>
-            <harvesterClass>de.pangaea.metadataportal.harvester.OAIHarvester</harvesterClass>
-            <harvesterProperties>
-                <baseUrl>http://www.ifremer.fr/oai/provider</baseUrl>
-                <metadataPrefix>dif</metadataPrefix>
-				<autoOptimize>true</autoOptimize>
-				<validate>true</validate>
-            </harvesterProperties>
-            <!--<transform>
+        </cfg:addStopWords>
+	</cfg:analyzer>
+	<cfg:indexes>
+		<cfg:index id="pangaea-carboocean">
+			<cfg:displayName>PANGAEA datasets for CARBOOCEAN</cfg:displayName>
+			<cfg:indexDir>./lucene-store/pangaea-carboocean</cfg:indexDir>
+			<cfg:harvesterClass>de.pangaea.metadataportal.harvester.OAIHarvester</cfg:harvesterClass>
+			<cfg:harvesterProperties>
+				<cfg:baseUrl>http://ws.pangaea.de/oai/</cfg:baseUrl>
+				<cfg:metadataPrefix>dif</cfg:metadataPrefix>
+				<cfg:setSpec>CARBOOCEAN</cfg:setSpec>
+				<cfg:autoOptimize>true</cfg:autoOptimize>
+				<cfg:validate>false</cfg:validate>
+			</cfg:harvesterProperties>
+		</cfg:index>
+		<cfg:index id="ifremer">
+			<cfg:displayName>IFREMER datasets</cfg:displayName>
+			<cfg:indexDir>./lucene-store/ifremer</cfg:indexDir>
+			<cfg:harvesterClass>de.pangaea.metadataportal.harvester.OAIHarvester</cfg:harvesterClass>
+			<cfg:harvesterProperties>
+				<cfg:baseUrl>http://www.ifremer.fr/oai/provider</cfg:baseUrl>
+				<cfg:metadataPrefix>dif</cfg:metadataPrefix>
+				<cfg:autoOptimize>true</cfg:autoOptimize>
+				<cfg:validate>true</cfg:validate>
+			</cfg:harvesterProperties>
+			<!--<transform>
                 <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="./ns-convert.xslt"/>
             </transform>-->
-        </index>
-        <virtualIndex id="dataportal-carboocean">
-            <displayName>CARBOOCEAN Dataportal</displayName>
-            <threaded>true</threaded>
-            <index ref="pangaea-carboocean"/>
-            <index ref="ifremer"/>
-        </virtualIndex>
-    </indexes>
-    <search>
-        <returnXML>true</returnXML>
-        <returnStoredFields>true</returnStoredFields>
-        <cacheMaxAge>300</cacheMaxAge>
-        <cacheMaxSessions>10</cacheMaxSessions>
-        <reloadIndexIfChangedAfter>60</reloadIndexIfChangedAfter>
-    </search>
-</config>
+		</cfg:index>
+		<cfg:virtualIndex id="dataportal-carboocean">
+			<cfg:displayName>CARBOOCEAN Dataportal</cfg:displayName>
+			<cfg:threaded>true</cfg:threaded>
+			<cfg:index ref="pangaea-carboocean"/>
+			<cfg:index ref="ifremer"/>
+		</cfg:virtualIndex>
+	</cfg:indexes>
+	<cfg:search>
+		<cfg:returnXML>true</cfg:returnXML>
+		<cfg:returnStoredFields>true</cfg:returnStoredFields>
+		<cfg:cacheMaxAge>300</cfg:cacheMaxAge>
+		<cfg:cacheMaxSessions>10</cfg:cacheMaxSessions>
+		<cfg:reloadIndexIfChangedAfter>60</cfg:reloadIndexIfChangedAfter>
+	</cfg:search>
+</cfg:config>
