@@ -29,10 +29,33 @@ public final class Package {
         return (pkg==null) ? null : pkg.getImplementationVersion();
     }
 
+    public static String getProductName() {
+        java.lang.Package pkg=get();
+        return (pkg==null) ? null : pkg.getImplementationTitle();
+    }
+
+    public static String getProductVendor() {
+        java.lang.Package pkg=get();
+        return (pkg==null) ? null : pkg.getImplementationVendor();
+    }
+
+    public static String getFullPackageDescription() {
+        java.lang.Package pkg=get();
+        if (pkg==null) return null;
+        StringBuilder sb=new StringBuilder();
+        sb.append(pkg.getImplementationTitle());
+        sb.append(" version ");
+        sb.append(pkg.getImplementationVersion());
+        sb.append(" (");
+        sb.append(pkg.getImplementationVendor());
+        sb.append(")");
+        return sb.toString();
+    }
+
     public static void checkMinimumRequirements() {
         java.lang.Package lpkg=org.apache.lucene.LucenePackage.get();
         if (lpkg==null || !lpkg.isCompatibleWith("2.2.0"))
-            throw new RuntimeException("panFMP only runs with Apache Lucene 2.2.0 as a minimum requirement!");
+            throw new RuntimeException(getProductName()+" only runs with Apache Lucene 2.2.0 as a minimum requirement!");
     }
 
 }
