@@ -38,6 +38,7 @@ public class Config {
         this.file=file;
         this.configMode=configMode;
 
+        log.info(de.pangaea.metadataportal.Package.getFullPackageDescription());
         de.pangaea.metadataportal.Package.checkMinimumRequirements();
 
         setAnalyzerClass(org.apache.lucene.analysis.standard.StandardAnalyzer.class);
