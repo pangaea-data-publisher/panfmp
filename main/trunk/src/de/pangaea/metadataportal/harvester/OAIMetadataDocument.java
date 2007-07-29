@@ -18,7 +18,7 @@ package de.pangaea.metadataportal.harvester;
 
 import de.pangaea.metadataportal.utils.*;
 import de.pangaea.metadataportal.config.SingleIndexConfig;
-import java.util.HashSet;
+import java.util.*;
 import org.apache.lucene.document.*;
 
 /**
@@ -29,13 +29,17 @@ public class OAIMetadataDocument extends MetadataDocument {
     @PublicForDigesterUse
     @Deprecated
     public void setHeaderInfo(String status, String identifier, String datestampStr) throws java.text.ParseException {
-        this.deleted=(status!=null && status.equals("deleted"));
-        this.identifier=identifier;
-        this.datestamp=ISODateFormatter.parseDate(datestampStr);
+        setDeleted(status!=null && status.equals("deleted"));
+        setIdentifier(identifier);
+        setDatestamp(ISODateFormatter.parseDate(datestampStr));
     }
 
     public void addSet(String set) {
         sets.add(set);
+    }
+
+    public Set<String> getSets() {
+        return sets;
     }
 
     @Override
@@ -60,6 +64,6 @@ public class OAIMetadataDocument extends MetadataDocument {
         return super.toString()+" sets="+sets;
     }
 
-    public HashSet<String> sets=new HashSet<String>();
+    protected HashSet<String> sets=new HashSet<String>();
 
 }

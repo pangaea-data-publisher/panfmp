@@ -61,9 +61,9 @@ public class DirectoryHarvester extends AbstractHarvester implements FilenameFil
 
     protected void processFile(File file) throws Exception {
         MetadataDocument mdoc=new MetadataDocument();
-        mdoc.identifier="file:"+identifierPrefix+directory.toURI().normalize().relativize(file.toURI().normalize()).toString();
-        mdoc.datestamp=new java.util.Date(file.lastModified());
-        mdoc.dom=xmlConverter.transform(new StreamSource(file));
+        mdoc.setIdentifier("file:"+identifierPrefix+directory.toURI().normalize().relativize(file.toURI().normalize()).toString());
+        mdoc.setDatestamp(new java.util.Date(file.lastModified()));
+        mdoc.setDOM(xmlConverter.transform(new StreamSource(file)));
 
         addDocument(mdoc);
     }
