@@ -34,18 +34,24 @@ public class OAIMetadataDocument extends MetadataDocument {
         setDatestamp(ISODateFormatter.parseDate(datestampStr));
     }
 
+    /**
+     * Adds an OAI set to the set {@link Set}.
+     */
     public void addSet(String set) {
         sets.add(set);
     }
 
+    /**
+     * Returns all OAI sets as {@link Set}.
+     */
     public Set<String> getSets() {
         return sets;
     }
 
     @Override
-    public void loadFromLucene(SingleIndexConfig iconf, Document ldoc) throws Exception {
+    public void loadFromLucene(Document ldoc) throws Exception {
         sets.clear();
-        super.loadFromLucene(iconf,ldoc);
+        super.loadFromLucene(ldoc);
         String[] sets=ldoc.getValues(IndexConstants.FIELDNAME_SET);
         if (sets!=null) for (String set : sets) if (set!=null) addSet(set);
     }
@@ -64,6 +70,9 @@ public class OAIMetadataDocument extends MetadataDocument {
         return super.toString()+" sets="+sets;
     }
 
+    /**
+     * @see #getSets
+     */
     protected HashSet<String> sets=new HashSet<String>();
 
 }

@@ -19,30 +19,19 @@ package de.pangaea.metadataportal.search;
 import de.pangaea.metadataportal.utils.*;
 
 public class SearchResponseItem implements java.io.Serializable {
-    /**
-     * @return
-     */
+
     public float getScore() {
         return score;
     }
 
-    /**
-     * @return
-     */
     public String getXml() {
         return xml;
     }
 
-    /**
-     * @return
-     */
     public String getIdentifier() {
         return identifier;
     }
 
-    /**
-     * @return
-     */
     public java.util.Map<String,Object[]> getFields() {
         return fields;
     }

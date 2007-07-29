@@ -53,6 +53,7 @@ public abstract class AbstractHarvester {
 
     public void addDocument(MetadataDocument mdoc) throws Exception {
         if (index==null) throw new IllegalStateException("Harvester must be opened before using");
+        mdoc.setIndexConfig(iconfig);
         index.addDocument(mdoc);
         harvestCount++;
         if (harvestCount%harvestMessageStep==0) log.info("Harvested "+harvestCount+" objects so far.");
