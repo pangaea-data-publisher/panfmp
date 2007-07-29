@@ -19,30 +19,19 @@ package de.pangaea.metadataportal.search;
 import de.pangaea.metadataportal.utils.*;
 
 public class SearchResponse implements java.io.Serializable {
-    /**
-     * @return
-     */
+
     public int getOffset() {
         return offset;
     }
 
-    /**
-     * @return
-     */
     public SearchResponseItem[] getResults() {
         return results;
     }
 
-    /**
-     * @return
-     */
     public long getQueryTime() {
         return queryTime;
     }
 
-    /**
-     * @return
-     */
     public int getTotalCount() {
         return totalCount;
     }
