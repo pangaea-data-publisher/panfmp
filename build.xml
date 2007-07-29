@@ -63,7 +63,7 @@
 			<link href="${javadoc.link.sun}"/>
 			<link href="${javadoc.link.lucene}"/>
 			<doctitle><![CDATA[<H1>${ant.project.name} ${version}</H1>]]></doctitle>
-			<bottom><![CDATA[<ADDRESS>Copyright &copy;${year} <a href=\"${javadoc.projectWebSite}\" target=\"_top\">${ant.project.name}</a> Developers c/o Uwe Schindler</ADDRESS>]]></bottom>
+			<bottom><![CDATA[<ADDRESS>Copyright &copy;${year} <A HREF='${javadoc.projectWebSite}' TARGET='_top'>${ant.project.name}</A> Developers c/o Uwe Schindler</ADDRESS>]]></bottom>
 		</javadoc>
 	</target>	
 	
