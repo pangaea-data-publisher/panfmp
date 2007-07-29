@@ -178,6 +178,8 @@ public class OAIHarvester extends AbstractHarvester {
         currResponseDate=ISODateFormatter.parseDate(date);
     }
 
+    @PublicForDigesterUse
+    @Deprecated
     public void setRequest(Map<String,String> req) {
         currRequest=req;
     }
