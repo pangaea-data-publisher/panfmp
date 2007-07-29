@@ -83,24 +83,17 @@ public class TrieRangeQuery extends Query {
 
     @Override
     public Query rewrite(IndexReader reader) throws java.io.IOException {
-        ConstantScoreQuery q = new ConstantScoreQuery(new TrieRangeFilter(field,min,max));
+        ConstantScoreQuery q = new ConstantScoreQuery(new TrieRangeFilter());
         q.setBoost(getBoost());
         return q.rewrite(reader);
     }
 
     // members
-    protected String field,min,max;
+    private String field,min,max;
 
-    protected final class TrieRangeFilter extends Filter {
+    private final class TrieRangeFilter extends Filter {
 
-        private String field;
-        private String min;
-        private String max;
-
-        protected TrieRangeFilter(String field, String min, String max) {
-            this.field = field.intern();
-            this.min = min;
-            this.max = max;
+        private TrieRangeFilter() {
         }
 
         // code borrowed from original RangeFilter and simplified (and returns number of terms)
