@@ -78,10 +78,6 @@ public class MetadataDocument {
         trans.transform(s,r);
     }
 
-    public void invalidateXMLCache() {
-        xmlCache=null;
-    }
-
     public String getXML() throws Exception {
         if (deleted || dom==null) return null;
         if (xmlCache!=null) return xmlCache;
@@ -101,7 +97,7 @@ public class MetadataDocument {
 
     public void setDOM(org.w3c.dom.Document  dom) {
         this.dom=dom;
-        invalidateXMLCache();
+        xmlCache=null;
     }
 
     public org.w3c.dom.Document getDOM() {
