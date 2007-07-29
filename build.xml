@@ -15,6 +15,7 @@
 	
 	<property name="year" value="2007"/>
 	
+	<property name="javadoc.projectWebSite" value="http://www.panFMP.org/" />
 	<property name="javadoc.link.sun" value="http://java.sun.com/j2se/1.5/docs/api/" />
 	<property name="javadoc.link.lucene" value="http://lucene.apache.org/java/docs/api/" />
 
@@ -62,7 +63,7 @@
 			<link href="${javadoc.link.sun}"/>
 			<link href="${javadoc.link.lucene}"/>
 			<doctitle><![CDATA[<H1>${ant.project.name} ${version}</H1>]]></doctitle>
-			<bottom><![CDATA[<ADDRESS>Copyright &copy;${year} ${ant.project.name} Developers c/o Uwe Schindler</ADDRESS>]]></bottom>
+			<bottom><![CDATA[<ADDRESS>Copyright &copy;${year} <a href=\"${javadoc.projectWebSite}\" target=\"_top\">${ant.project.name}</a> Developers c/o Uwe Schindler</ADDRESS>]]></bottom>
 		</javadoc>
 	</target>	
 	
