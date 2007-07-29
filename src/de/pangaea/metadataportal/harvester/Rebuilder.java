@@ -30,18 +30,21 @@ public class Rebuilder extends AbstractHarvester {
     // harvester interface
     private IndexReader reader=null;
 
+    @Override
     public void open(SingleIndexConfig iconfig) throws Exception {
         log.info("Opening index \""+iconfig.id+"\" for harvesting all documents...");
         reader = iconfig.getUncachedIndexReader();
         super.open(iconfig);
     }
 
+    @Override
     public void close() throws Exception {
         if (reader!=null) reader.close();
         reader=null;
         super.close();
     }
 
+    @Override
     public void harvest() throws Exception {
         if (reader==null) throw new IllegalStateException("Rebuilder was not opened!");
         for (int i=0, c=reader.maxDoc(); i<c; i++) {

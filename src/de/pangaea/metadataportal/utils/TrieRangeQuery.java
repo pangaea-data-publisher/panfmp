@@ -56,6 +56,7 @@ public class TrieRangeQuery extends Query {
         this.field=field.intern();
     }
 
+    @Override
     public String toString(String field) {
         StringBuilder sb=new StringBuilder();
         if (!this.field.equals(field)) sb.append(this.field+':');
@@ -67,6 +68,7 @@ public class TrieRangeQuery extends Query {
         return sb.toString();
     }
 
+    @Override
     public final boolean equals(Object o) {
         if (o instanceof TrieRangeQuery) {
             TrieRangeQuery q=(TrieRangeQuery)o;
@@ -74,10 +76,12 @@ public class TrieRangeQuery extends Query {
         } else return false;
     }
 
+    @Override
     public final int hashCode() {
         return field.hashCode()+(min.hashCode()^0x14fa55fb)+(max.hashCode()^0x733fa5fe);
     }
 
+    @Override
     public Query rewrite(IndexReader reader) throws java.io.IOException {
         ConstantScoreQuery q = new ConstantScoreQuery(new TrieRangeFilter(field,min,max));
         q.setBoost(getBoost());
@@ -149,6 +153,7 @@ public class TrieRangeQuery extends Query {
          * permitted in search results, and false for those that should
          * not.
          */
+        @Override
         public BitSet bits(IndexReader reader) throws IOException {
             BitSet bits = new BitSet(reader.maxDoc());
             TermDocs termDocs=reader.termDocs();

@@ -34,6 +34,7 @@ public class DirectoryHarvester extends AbstractHarvester implements FilenameFil
     protected java.util.Date from=null;
     protected String identifierPrefix="";
 
+    @Override
     public void open(SingleIndexConfig iconfig) throws Exception {
         // TODO: we want to regenerate the index every time
         super.open(iconfig);
@@ -78,6 +79,7 @@ public class DirectoryHarvester extends AbstractHarvester implements FilenameFil
         log.info("Finished directory \""+dir+"\".");
     }
 
+    @Override
     public void harvest() throws Exception {
         if (index==null) throw new IllegalStateException("Index not yet opened");
 
@@ -90,6 +92,7 @@ public class DirectoryHarvester extends AbstractHarvester implements FilenameFil
         index.setLastHarvested(startDate);
     }
 
+    @Override
     public List<String> getValidHarvesterPropertyNames() {
         ArrayList<String> l=new ArrayList<String>(super.getValidHarvesterPropertyNames());
         l.addAll(Arrays.<String>asList(

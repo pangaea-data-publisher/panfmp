@@ -61,6 +61,7 @@ public class SaxRule extends org.apache.commons.digester.Rule {
      * Set the <code>Digester</code> with which this <code>Rule</code> is associated.
      * @throws IllegalArgumentException if <code>digester</code> is not an {@link ExtendedDigester} instance.
      */
+    @Override
     public void setDigester(org.apache.commons.digester.Digester digester) {
         if (digester instanceof ExtendedDigester) super.setDigester(digester);
         else throw new IllegalArgumentException("You can only use this rule in a "+ExtendedDigester.class.getName()+" instance!");
@@ -97,6 +98,7 @@ public class SaxRule extends org.apache.commons.digester.Rule {
     protected void finishDocument() throws SAXException {
     }
 
+    @Override
     public void begin(java.lang.String namespace, java.lang.String name, Attributes attributes) throws Exception {
         if (destContentHandler==null) throw new IllegalStateException("You must set a target ContentHandler instance before processing this rule!");
         if (lastContentHandler!=null) throw new IllegalStateException("begin(...) called twice!");
@@ -118,6 +120,7 @@ public class SaxRule extends org.apache.commons.digester.Rule {
         initDocument();
     }
 
+    @Override
     public void end(java.lang.String namespace, java.lang.String name) throws java.lang.Exception {
         finishDocument();
 
@@ -143,6 +146,7 @@ public class SaxRule extends org.apache.commons.digester.Rule {
         }
 
         /* SAX part */
+        @Override
         public void endElement(String namespaceURI, String localName, String qName) throws SAXException {
             if (elementCounter==0) {
                 // restore original ContentHandler in Digester and resubmit event
@@ -155,15 +159,18 @@ public class SaxRule extends org.apache.commons.digester.Rule {
             }
         }
 
+        @Override
         public void startElement(String namespaceURI, String localName, String qName, Attributes atts) throws SAXException {
             elementCounter++;
             super.startElement(namespaceURI,localName,qName,atts);
         }
 
+        @Override
         public void startDocument() throws SAXException {
             throw new SAXException("Cannot start a new XML document in middle of another document!");
         }
 
+        @Override
         public void endDocument() throws SAXException {
             throw new SAXException("Cannot end current XML document here!");
         }

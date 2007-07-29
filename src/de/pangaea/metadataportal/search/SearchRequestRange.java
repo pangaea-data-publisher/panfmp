@@ -83,6 +83,7 @@ public class SearchRequestRange implements java.io.Serializable {
         } else return false;
     }
 
+    @Override
     public final int hashCode() {
         int hashCode=0;
         if (fieldName!=null) hashCode^=fieldName.hashCode()^0x8774ab42;
@@ -91,6 +92,7 @@ public class SearchRequestRange implements java.io.Serializable {
         return hashCode;
     }
 
+    @Override
     public String toString() {
         return fieldName+"=["+min+".."+max+"]";
     }

@@ -99,6 +99,7 @@ public class MetadataDocument {
         return xmlCache=xmlWriter.toString();
     }
 
+    @Override
     public String toString() {
         return "identifier="+identifier+" deleted="+deleted+" datestamp="+((datestamp!=null)?ISODateFormatter.formatLong(datestamp):(String)null);
     }

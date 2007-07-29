@@ -30,6 +30,7 @@ public class VariableConfig extends AnyExpressionConfig {
         this.name=QNameParser.parseLexicalQName(nameStr,dig.getCurrentNamespaceContext(true,true));
     }
 
+    @Override
     public String toString() {
         return new StringBuilder(name.toString()).append(" (").append(super.toString()).append(')').toString();
     }

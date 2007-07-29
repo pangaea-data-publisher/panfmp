@@ -66,6 +66,7 @@ public class SearchRequest implements java.io.Serializable {
         } else return false;
     }
 
+    @Override
     public final int hashCode() {
         int hashCode=0;
         if (indexName!=null) hashCode^=indexName.hashCode();
@@ -76,6 +77,7 @@ public class SearchRequest implements java.io.Serializable {
         return hashCode;
     }
 
+    @Override
     public String toString() {
         StringBuilder sb=new StringBuilder("index='"+indexName+"'; ");
         if (queries!=null) sb.append("queries="+Arrays.toString(queries)+"; ");

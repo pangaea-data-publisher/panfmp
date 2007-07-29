@@ -36,6 +36,7 @@ public class FieldConfig extends AnyExpressionConfig {
     public void setLuceneindexed(String v) { luceneindexed=Boolean.parseBoolean(v); }
     public void setDefault(String v) { defaultValue=v; }
 
+    @Override
     public String toString() {
         return name;
     }

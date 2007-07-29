@@ -53,6 +53,7 @@ public class OAIHarvester extends AbstractHarvester {
     public boolean fineGranularity=false; // default for OAI 2.0
 
     // construtor
+    @Override
     public void open(SingleIndexConfig iconfig) throws Exception {
         super.open(iconfig);
 
@@ -173,6 +174,7 @@ public class OAIHarvester extends AbstractHarvester {
         currRequest=req;
     }
 
+    @Override
     public void addDocument(MetadataDocument mdoc) throws Exception {
         if (sets!=null) {
             if (Collections.disjoint(((OAIMetadataDocument)mdoc).sets,sets)) mdoc.deleted=true;
@@ -224,6 +226,7 @@ public class OAIHarvester extends AbstractHarvester {
         log.info("Repository supports "+(fineGranularity?"seconds":"days")+"-granularity in selective harvesting.");
     }
 
+    @Override
     public void close() throws Exception {
         reset();
         listRecordsDig=null;
@@ -231,6 +234,7 @@ public class OAIHarvester extends AbstractHarvester {
         super.close();
     }
 
+    @Override
     public void harvest() throws Exception {
         if (index==null) throw new IllegalStateException("Index not yet opened");
 
@@ -275,6 +279,7 @@ public class OAIHarvester extends AbstractHarvester {
         index.setLastHarvested(lastHarvested);
     }
 
+    @Override
     public List<String> getValidHarvesterPropertyNames() {
         ArrayList<String> l=new ArrayList<String>(super.getValidHarvesterPropertyNames());
         l.addAll(Arrays.<String>asList(

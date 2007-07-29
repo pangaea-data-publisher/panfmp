@@ -40,6 +40,7 @@ public class SingleIndexConfig extends IndexConfig {
         harvesterProperties.setProperty(dig.getCurrentElementName(),value);
     }
 
+    @Override
     public void check() {
         super.check();
         if (indexDir==null || harvesterClass==null)
@@ -58,21 +59,25 @@ public class SingleIndexConfig extends IndexConfig {
     }
 
     // Searcher
+    @Override
     public synchronized org.apache.lucene.search.Searcher newSearcher() throws java.io.IOException {
         if (indexReader==null) indexReader=org.apache.lucene.index.IndexReader.open(getFullIndexPath());
         return new org.apache.lucene.search.IndexSearcher(indexReader);
     }
 
     // Reader
+    @Override
     public synchronized org.apache.lucene.index.IndexReader getIndexReader() throws java.io.IOException {
         if (indexReader==null) indexReader=org.apache.lucene.index.IndexReader.open(getFullIndexPath());
         return indexReader;
     }
 
+    @Override
     public org.apache.lucene.index.IndexReader getUncachedIndexReader() throws java.io.IOException {
         return org.apache.lucene.index.IndexReader.open(getFullIndexPath());
     }
 
+    @Override
     public boolean isIndexAvailable() throws java.io.IOException {
         return org.apache.lucene.index.IndexReader.indexExists(getFullIndexPath());
     }
@@ -82,11 +87,13 @@ public class SingleIndexConfig extends IndexConfig {
     }
 
     // check if current opened reader is current
+    @Override
     public synchronized boolean isIndexCurrent() throws java.io.IOException {
         if (indexReader==null) return true;
         return indexReader.isCurrent();
     }
 
+    @Override
     public synchronized void reopenIndex() throws java.io.IOException {
         closeIndex();
     }
@@ -95,6 +102,7 @@ public class SingleIndexConfig extends IndexConfig {
         closeIndex();
     }
 
+    @Override
     public synchronized void closeIndex() throws java.io.IOException {
         if (indexReader!=null) indexReader.close();
         indexReader=null;
