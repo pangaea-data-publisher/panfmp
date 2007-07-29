@@ -89,12 +89,9 @@ public class TrieRangeQuery extends Query {
     }
 
     // members
-    private String field,min,max;
+    protected String field,min,max;
 
-    private final class TrieRangeFilter extends Filter {
-
-        private TrieRangeFilter() {
-        }
+    protected final class TrieRangeFilter extends Filter {
 
         // code borrowed from original RangeFilter and simplified (and returns number of terms)
         private int setBits(IndexReader reader, TermDocs termDocs, BitSet bits, String lowerTerm, String upperTerm) throws IOException {
