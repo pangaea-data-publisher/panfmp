@@ -20,7 +20,7 @@ import de.pangaea.metadataportal.utils.*;
 import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
 
-public class VariableConfig extends AnyExpressionConfig {
+public class VariableConfig extends ExpressionConfig {
 
     public void setName(ExtendedDigester dig, String nameStr) {
         if ("".equals(nameStr)) return; // Exception throws the Config.addVariable() method

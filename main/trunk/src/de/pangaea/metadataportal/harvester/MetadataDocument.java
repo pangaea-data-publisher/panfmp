@@ -280,7 +280,7 @@ public class MetadataDocument {
         return ldoc;
     }
 
-    protected NodeList evaluateTemplate(AnyExpressionConfig expr) throws TransformerException {
+    protected NodeList evaluateTemplate(ExpressionConfig expr) throws TransformerException {
         Transformer trans=expr.xslt.newTransformer();
         trans.setErrorListener(new LoggingErrorListener(getClass()));
 

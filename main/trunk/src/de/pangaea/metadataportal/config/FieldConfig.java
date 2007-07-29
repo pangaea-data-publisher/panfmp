@@ -18,7 +18,7 @@ package de.pangaea.metadataportal.config;
 
 import de.pangaea.metadataportal.utils.*;
 
-public class FieldConfig extends AnyExpressionConfig {
+public class FieldConfig extends ExpressionConfig {
 
     public void setName(String v) {
         name=v;

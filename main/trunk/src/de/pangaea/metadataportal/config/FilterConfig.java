@@ -19,7 +19,7 @@ package de.pangaea.metadataportal.config;
 import de.pangaea.metadataportal.utils.*;
 import javax.xml.transform.*;
 
-public class FilterConfig extends AnyExpressionConfig {
+public class FilterConfig extends ExpressionConfig {
 
     public void setType(String v) {
         try {
@@ -29,6 +29,7 @@ public class FilterConfig extends AnyExpressionConfig {
         }
     }
 
+    @Override
     public void setTemplate(Templates xslt) {
         throw new UnsupportedOperationException("Cannot assign a template to a filter!");
     }
