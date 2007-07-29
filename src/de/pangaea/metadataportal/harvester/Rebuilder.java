@@ -48,7 +48,16 @@ public class Rebuilder extends AbstractHarvester {
     public void harvest() throws Exception {
         if (reader==null) throw new IllegalStateException("Rebuilder was not opened!");
         for (int i=0, c=reader.maxDoc(); i<c; i++) {
-            if (!reader.isDeleted(i)) addDocument(MetadataDocument.createInstanceFromLucene(iconfig,reader.document(i)));
+            if (!reader.isDeleted(i)) {
+                MetadataDocument mdoc=MetadataDocument.createInstanceFromLucene(iconfig,reader.document(i));
+                if (mdoc.getIdentifier()==null)
+                    throw new IllegalArgumentException("Tried to load document with no identifier!");
+                if (mdoc.getXML()==null) {
+                    mdoc.setDeleted(true);
+                    log.warn("Document '"+mdoc.getIdentifier()+"' contains no XML code. It will be deleted!");
+                }
+                addDocument(mdoc);
+            }
         }
     }
 
