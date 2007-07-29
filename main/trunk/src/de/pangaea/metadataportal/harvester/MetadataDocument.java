@@ -96,13 +96,7 @@ public class MetadataDocument {
         } catch (NumberFormatException ne) {
             log.warn("Datestamp of document '"+identifier+"' is invalid. Deleting datestamp!",ne);
         }
-
-        String xml=ldoc.get(IndexConstants.FIELDNAME_XML);
-
-        if (identifier==null || xml==null)
-            throw new IllegalArgumentException("Tried to load incomplete document from index.");
-
-        setXML(xml);
+        setXML(ldoc.get(IndexConstants.FIELDNAME_XML));
     }
 
     /**
