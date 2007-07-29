@@ -79,7 +79,7 @@ public class Config {
             dig.addCallMethod("config/metadata/variables/variable-template","setName", 2, X_PATH_PARAMS);
             dig.addObjectParam("config/metadata/variables/variable-template", 0, dig);
             dig.addCallParam("config/metadata/variables/variable-template", 1, "name");
-            dig.addRule("config/metadata/variables/variable-template", (configMode==ConfigMode.HARVESTING) ? new TemplateSaxRule(this,file) : SaxRule.emptyRule());
+            dig.addRule("config/metadata/variables/variable-template", (configMode==ConfigMode.HARVESTING) ? new TemplateSaxRule() : SaxRule.emptyRule());
 
             // filters
             dig.addCallMethod("config/metadata/filters", "setFilterDefault", 1);
@@ -112,7 +112,7 @@ public class Config {
             r=new SetPropertiesRule();
             r.setIgnoreMissingProperty(false);
             dig.addRule("config/metadata/fields/field-template",r);
-            dig.addRule("config/metadata/fields/field-template", (configMode==ConfigMode.HARVESTING) ? new TemplateSaxRule(this,file) : SaxRule.emptyRule());
+            dig.addRule("config/metadata/fields/field-template", (configMode==ConfigMode.HARVESTING) ? new TemplateSaxRule() : SaxRule.emptyRule());
 
             dig.addCallMethod("config/metadata/fields/default", "setDefaultField", 0);
 
@@ -120,7 +120,7 @@ public class Config {
             dig.addCallMethod("config/metadata/documentBoost", "setDocumentBoost", 0);
 
             // transform
-            /*dig.addRule("config/metadata/transformBeforeXPath", (configMode==ConfigMode.HARVESTING) ? new IndexConfigTransformerSaxRule(this,file) : SaxRule.emptyRule());*/
+            /*dig.addRule("config/metadata/transformBeforeXPath", (configMode==ConfigMode.HARVESTING) ? new IndexConfigTransformerSaxRule() : SaxRule.emptyRule());*/
 
             // schema
             dig.addDoNothing("config/metadata/schema");
@@ -148,7 +148,7 @@ public class Config {
             dig.addCallMethod("config/indexes/index/indexDir","setIndexDir",0);
             dig.addCallMethod("config/indexes/index/harvesterClass","setHarvesterClass",0);
 
-            dig.addRule("config/indexes/index/transform", (configMode==ConfigMode.HARVESTING) ? new IndexConfigTransformerSaxRule(this,file) : SaxRule.emptyRule());
+            dig.addRule("config/indexes/index/transform", (configMode==ConfigMode.HARVESTING) ? new IndexConfigTransformerSaxRule() : SaxRule.emptyRule());
 
             dig.addDoNothing("config/indexes/index/harvesterProperties");
             dig.addCallMethod("config/indexes/index/harvesterProperties/*","addHarvesterProperty",2, X_PATH_PARAMS);
@@ -400,24 +400,16 @@ public class Config {
     public String file;
     private ConfigMode configMode;
 
-    private ExtendedDigester dig=null;
+    protected ExtendedDigester dig=null;
 
     public static final int DEFAULT_MAX_CLAUSE_COUNT = 131072;
 
     public static enum ConfigMode { HARVESTING,SEARCH };
 
     // internal classes
-    private abstract static class TransformerSaxRule extends SaxRule {
+    private abstract class TransformerSaxRule extends SaxRule {
 
-        protected Config owner;
         private TemplatesHandler th=null;
-        private String file;
-
-        public TransformerSaxRule(Config owner, String file) {
-            super();
-            this.owner=owner;
-            this.file=file;
-        }
 
         @Override
         public void begin(java.lang.String namespace, java.lang.String name, Attributes attributes) throws Exception {
@@ -438,15 +430,11 @@ public class Config {
 
     }
 
-    private static final class IndexConfigTransformerSaxRule extends TransformerSaxRule {
-
-        public IndexConfigTransformerSaxRule(Config owner, String file) {
-            super(owner,file);
-        }
+    private final class IndexConfigTransformerSaxRule extends TransformerSaxRule {
 
         @Override
         protected void setResult(Templates t) {
-            Object o=owner.dig.peek();
+            Object o=dig.peek();
             if (o instanceof SingleIndexConfig) ((SingleIndexConfig)o).xslt=t;
             /*else if (o instanceof Config) ((Config)o).xsltBeforeXPath=t; // the config itsself*/
             else throw new RuntimeException("A XSLT tree is not allowed here!");
@@ -454,11 +442,7 @@ public class Config {
 
     }
 
-    private static final class TemplateSaxRule extends TransformerSaxRule {
-
-        public TemplateSaxRule(Config owner, String file) {
-            super(owner,file);
-        }
+    private final class TemplateSaxRule extends TransformerSaxRule {
 
         @Override
         protected void initDocument() throws SAXException {
@@ -472,7 +456,7 @@ public class Config {
 
             // register variables as params for template
             HashSet<QName> vars=new HashSet<QName>(de.pangaea.metadataportal.harvester.XPathResolverImpl.BASE_VARIABLES);
-            for (VariableConfig v : owner.xPathVariables) vars.add(v.name);
+            for (VariableConfig v : xPathVariables) vars.add(v.name);
             for (QName name : vars) {
                 // it is not clear why xalan does not allow a variable with no namespace declared by a prefix that points to the empty namespace
                 boolean nullNS=XMLConstants.NULL_NS_URI.equals(name.getNamespaceURI());
@@ -503,7 +487,7 @@ public class Config {
 
         @Override
         protected void setResult(Templates t) {
-            Object o=owner.dig.peek();
+            Object o=dig.peek();
             if (o instanceof ExpressionConfig) ((ExpressionConfig)o).setTemplate(t);
             else throw new RuntimeException("A XSLT template is not allowed here!");
         }
