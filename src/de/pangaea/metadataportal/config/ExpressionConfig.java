@@ -21,7 +21,7 @@ import javax.xml.XMLConstants;
 import javax.xml.xpath.*;
 import javax.xml.transform.*;
 
-public class AnyExpressionConfig {
+public class ExpressionConfig {
 
     public void setXPath(ExtendedDigester dig, String xpath) throws XPathExpressionException {
         if ("".equals(xpath)) return; // Exception throws the Config.addField() method

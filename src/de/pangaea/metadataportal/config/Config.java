@@ -256,7 +256,7 @@ public class Config {
         if (".".equals(v) || "/".equals(v) || "/*".equals(v)) {
             defaultField=null; // all fields from SAX parser
         } else {
-            defaultField=new AnyExpressionConfig();
+            defaultField=new ExpressionConfig();
             defaultField.setXPath(dig,v);
         }
     }
@@ -267,7 +267,7 @@ public class Config {
             return;
         }
         v=v.trim();
-        documentBoost=new AnyExpressionConfig();
+        documentBoost=new ExpressionConfig();
         documentBoost.setXPath(dig,v);
     }
 
@@ -355,7 +355,7 @@ public class Config {
     public Map<String,IndexConfig> indexes=new HashMap<String,IndexConfig>();
 
     public Map<String,FieldConfig> fields=new HashMap<String,FieldConfig>();
-    public AnyExpressionConfig defaultField=null;
+    public ExpressionConfig defaultField=null;
 
     // filters
     public FilterConfig.FilterType filterDefault=FilterConfig.FilterType.ACCEPT;
@@ -369,7 +369,7 @@ public class Config {
     public boolean haltOnSchemaError=false;
 
     // document boost
-    public AnyExpressionConfig documentBoost=null;
+    public ExpressionConfig documentBoost=null;
 
     /*public Templates xsltBeforeXPath=null;*/
 
@@ -487,7 +487,7 @@ public class Config {
         @Override
         protected void setResult(Templates t) {
             Object o=owner.dig.peek();
-            if (o instanceof AnyExpressionConfig) ((AnyExpressionConfig)o).setTemplate(t);
+            if (o instanceof ExpressionConfig) ((ExpressionConfig)o).setTemplate(t);
             else throw new RuntimeException("A XSLT template is not allowed here!");
         }
 
