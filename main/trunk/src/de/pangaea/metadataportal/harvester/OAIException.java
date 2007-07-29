@@ -23,6 +23,7 @@ public class OAIException extends java.lang.Exception {
         this.code=("".equals(code)?null:code);
     }
 
+    @Override
     public String getMessage() {
         StringBuilder sb=new StringBuilder((code==null)?"default":code);
         String s=super.getMessage();

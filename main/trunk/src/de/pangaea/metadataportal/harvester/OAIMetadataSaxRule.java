@@ -36,6 +36,7 @@ public class OAIMetadataSaxRule extends de.pangaea.metadataportal.utils.SaxRule 
 
     // Digester rule part
 
+    @Override
     public void begin(java.lang.String namespace, java.lang.String name, org.xml.sax.Attributes attributes) throws Exception {
         doc=(MetadataDocument)digester.peek(); // the MetadataDocument is on the stack!!!
         ContentHandler handler=trans.getTransformContentHandler(doc.identifier);
@@ -44,6 +45,7 @@ public class OAIMetadataSaxRule extends de.pangaea.metadataportal.utils.SaxRule 
         super.begin(namespace,name,attributes);
     }
 
+    @Override
     public void end(java.lang.String namespace, java.lang.String name) throws Exception {
         super.end(namespace,name);
         doc.dom=trans.finishTransformation();

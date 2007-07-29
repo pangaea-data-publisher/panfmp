@@ -30,18 +30,22 @@ public class ExtendedDigester extends Digester {
     public ExtendedDigester() { super(); }
     public ExtendedDigester(javax.xml.parsers.SAXParser parser) { super(parser); }
 
+    @Override
     public void setCustomContentHandler(ContentHandler c) {
         custContentHandler=c;
     }
 
+    @Override
     public ContentHandler getCustomContentHandler() {
         return custContentHandler;
     }
 
+    @Override
     public void setErrorHandler(ErrorHandler err) {
         if (err!=null) throw new IllegalArgumentException("You cannot set any ErrorHandler with "+getClass().getName());
     }
 
+    @Override
     public ErrorHandler getErrorHandler() {
         return null;
     }
@@ -58,6 +62,7 @@ public class ExtendedDigester extends Digester {
 
     // *** START: ContentHandler (to fix bugs in original digester that prevent some events from working)
 
+    @Override
     public void startPrefixMapping(String prefix, String uri) throws SAXException {
         ArrayStack stack=null;
         if (currentNamespaceMap.containsKey(prefix)) stack=currentNamespaceMap.get(prefix);
@@ -73,6 +78,7 @@ public class ExtendedDigester extends Digester {
             super.startPrefixMapping(prefix,uri);
     }
 
+    @Override
     public void endPrefixMapping(String prefix) throws SAXException {
         if (custContentHandler!=null)
             custContentHandler.endPrefixMapping(prefix);
@@ -84,6 +90,7 @@ public class ExtendedDigester extends Digester {
         if (stack.empty()) currentNamespaceMap.remove(prefix);
     }
 
+    @Override
     public void startElement(String uri,String localName,String qName,Attributes atts) throws SAXException {
         if (custContentHandler!=null)
             custContentHandler.startElement(uri,localName,qName,atts);
@@ -91,6 +98,7 @@ public class ExtendedDigester extends Digester {
             super.startElement(uri,localName,qName,atts);
     }
 
+    @Override
     public void endElement(String uri,String localName,String qName) throws SAXException {
         if (custContentHandler!=null)
             custContentHandler.endElement(uri,localName,qName);
@@ -98,6 +106,7 @@ public class ExtendedDigester extends Digester {
             super.endElement(uri,localName,qName);
     }
 
+    @Override
     public void characters(char[] ch,int start,int length) throws SAXException {
         if (custContentHandler!=null)
             custContentHandler.characters(ch,start,length);
@@ -105,6 +114,7 @@ public class ExtendedDigester extends Digester {
             super.characters(ch,start,length);
     }
 
+    @Override
     public void ignorableWhitespace(char[] ch,int start,int length) throws SAXException {
         if (custContentHandler!=null)
             custContentHandler.ignorableWhitespace(ch,start,length);
@@ -112,6 +122,7 @@ public class ExtendedDigester extends Digester {
             super.ignorableWhitespace(ch,start,length);
     }
 
+    @Override
     public void processingInstruction(String target,String data) throws SAXException {
         if (custContentHandler!=null)
             custContentHandler.processingInstruction(target,data);
@@ -119,6 +130,7 @@ public class ExtendedDigester extends Digester {
             super.processingInstruction(target,data);
     }
 
+    @Override
     public void skippedEntity(String name) throws SAXException {
         if (custContentHandler!=null)
             custContentHandler.skippedEntity(name);
@@ -130,15 +142,18 @@ public class ExtendedDigester extends Digester {
 
     // *** START: ErrorHandler (with exceptions)
 
+    @Override
     public void warning(SAXParseException ex) throws SAXException {
         log.warn(ex);
     }
 
+    @Override
     public void error(SAXParseException ex) throws SAXException {
         // stop processing on errors
         throw ex;
     }
 
+    @Override
     public void fatalError(SAXParseException ex) throws SAXException {
         // stop processing on fatal errors
         throw ex;

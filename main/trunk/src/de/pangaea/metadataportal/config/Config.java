@@ -402,6 +402,7 @@ public class Config {
             this.file=file;
         }
 
+        @Override
         public void begin(java.lang.String namespace, java.lang.String name, Attributes attributes) throws Exception {
             th=StaticFactories.transFactory.newTemplatesHandler();
             th.setSystemId(file);
@@ -411,6 +412,7 @@ public class Config {
 
         protected abstract void setResult(Templates t);
 
+        @Override
         public void end(java.lang.String namespace, java.lang.String name) throws Exception {
             super.end(namespace,name);
             setResult(th.getTemplates());
@@ -425,6 +427,7 @@ public class Config {
             super(owner,file);
         }
 
+        @Override
         protected void setResult(Templates t) {
             Object o=owner.dig.peek();
             if (o instanceof SingleIndexConfig) ((SingleIndexConfig)o).xslt=t;
@@ -440,6 +443,7 @@ public class Config {
             super(owner,file);
         }
 
+        @Override
         protected void initDocument() throws SAXException {
             destContentHandler.startPrefixMapping(XSL_PREFIX,XSL_NAMESPACE);
 
@@ -473,12 +477,14 @@ public class Config {
             //atts.clear();
         }
 
+        @Override
         protected void finishDocument() throws SAXException {
             destContentHandler.endElement(XSL_NAMESPACE,"template",XSL_PREFIX+":template");
             destContentHandler.endElement(XSL_NAMESPACE,"stylesheet",XSL_PREFIX+":stylesheet");
             destContentHandler.endPrefixMapping(XSL_PREFIX);
         }
 
+        @Override
         protected void setResult(Templates t) {
             Object o=owner.dig.peek();
             if (o instanceof AnyExpressionConfig) ((AnyExpressionConfig)o).setTemplate(t);

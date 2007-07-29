@@ -33,6 +33,7 @@ public class FilterConfig extends AnyExpressionConfig {
         throw new UnsupportedOperationException("Cannot assign a template to a filter!");
     }
 
+    @Override
     public String toString() {
         return new StringBuilder(type.toString()).append('(').append(super.toString()).append(')').toString();
     }

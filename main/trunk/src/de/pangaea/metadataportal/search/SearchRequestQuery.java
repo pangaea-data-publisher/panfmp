@@ -71,6 +71,7 @@ public class SearchRequestQuery implements java.io.Serializable {
         } else return false;
     }
 
+    @Override
     public final int hashCode() {
         int hashCode=0;
         if (fieldName!=null) hashCode^=fieldName.hashCode()^0x1234abcd;
@@ -79,6 +80,7 @@ public class SearchRequestQuery implements java.io.Serializable {
         return hashCode;
     }
 
+    @Override
     public String toString() {
         return ((fieldName==null || fieldName==IndexConstants.FIELDNAME_CONTENT)?("'"+query+"'"):(fieldName+"='"+query+"'"))+(anyof?"(anyOf)":"");
     }

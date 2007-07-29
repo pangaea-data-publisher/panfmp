@@ -36,6 +36,7 @@ public class OAIMetadataDocument extends MetadataDocument {
         sets.add(set);
     }
 
+    @Override
     public void loadFromLucene(SingleIndexConfig iconf, Document ldoc) throws Exception {
         sets.clear();
         super.loadFromLucene(iconf,ldoc);
@@ -43,6 +44,7 @@ public class OAIMetadataDocument extends MetadataDocument {
         if (sets!=null) for (String set : sets) if (set!=null) addSet(set);
     }
 
+    @Override
     protected Document createEmptyDocument() throws Exception {
         Document ldoc=super.createEmptyDocument();
         if (ldoc!=null) {
@@ -51,6 +53,7 @@ public class OAIMetadataDocument extends MetadataDocument {
         return ldoc;
     }
 
+    @Override
     public String toString() {
         return super.toString()+" sets="+sets;
     }
