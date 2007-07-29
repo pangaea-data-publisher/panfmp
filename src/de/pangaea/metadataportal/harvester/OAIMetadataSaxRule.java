@@ -39,7 +39,7 @@ public class OAIMetadataSaxRule extends de.pangaea.metadataportal.utils.SaxRule 
     @Override
     public void begin(java.lang.String namespace, java.lang.String name, org.xml.sax.Attributes attributes) throws Exception {
         doc=(MetadataDocument)digester.peek(); // the MetadataDocument is on the stack!!!
-        ContentHandler handler=trans.getTransformContentHandler(doc.identifier);
+        ContentHandler handler=trans.getTransformContentHandler(doc.getIdentifier());
         setExcludeNamespaces(java.util.Collections.singleton(OAIHarvester.OAI_NS));
         setContentHandler(handler);
         super.begin(namespace,name,attributes);
@@ -48,7 +48,7 @@ public class OAIMetadataSaxRule extends de.pangaea.metadataportal.utils.SaxRule 
     @Override
     public void end(java.lang.String namespace, java.lang.String name) throws Exception {
         super.end(namespace,name);
-        doc.dom=trans.finishTransformation();
+        doc.setDOM(trans.finishTransformation());
         doc=null;
     }
 

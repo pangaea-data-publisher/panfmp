@@ -187,7 +187,7 @@ public class OAIHarvester extends AbstractHarvester {
     @Override
     public void addDocument(MetadataDocument mdoc) throws Exception {
         if (sets!=null) {
-            if (Collections.disjoint(((OAIMetadataDocument)mdoc).sets,sets)) mdoc.deleted=true;
+            if (Collections.disjoint(((OAIMetadataDocument)mdoc).getSets(),sets)) mdoc.setDeleted(true);
         }
         super.addDocument(mdoc);
     }

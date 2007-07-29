@@ -203,7 +203,7 @@ public class IndexBuilder {
 
                 if (log.isDebugEnabled()) log.debug("Handling document: "+mdoc.toString());
                 if (log.isTraceEnabled()) log.trace("XML: "+mdoc.getXML());
-                ldocBuffer.put(new IndexerQueueEntry(mdoc.identifier,mdoc.getLuceneDocument(iconfig)));
+                ldocBuffer.put(new IndexerQueueEntry(mdoc.getIdentifier(),mdoc.getLuceneDocument(iconfig)));
             }
         } catch (InterruptedException ie) {
             log.debug(ie);

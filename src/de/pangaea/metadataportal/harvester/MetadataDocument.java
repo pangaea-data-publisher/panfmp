@@ -99,6 +99,39 @@ public class MetadataDocument {
         return xmlCache=xmlWriter.toString();
     }
 
+    public void setDOM(org.w3c.dom.Document  dom) {
+        this.dom=dom;
+        invalidateXMLCache();
+    }
+
+    public org.w3c.dom.Document getDOM() {
+        return dom;
+    }
+
+    public void setDeleted(boolean deleted) {
+        this.deleted=deleted;
+    }
+
+    public boolean isDeleted() {
+        return deleted;
+    }
+
+    public void setDatestamp(java.util.Date datestamp) {
+        this.datestamp=datestamp;
+    }
+
+    public java.util.Date getDatestamp() {
+        return datestamp;
+    }
+
+    public void setIdentifier(String identifier) {
+        this.identifier=identifier;
+    }
+
+    public String getIdentifier() {
+        return identifier;
+    }
+
     @Override
     public String toString() {
         return "identifier="+identifier+" deleted="+deleted+" datestamp="+((datestamp!=null)?ISODateFormatter.formatLong(datestamp):(String)null);
@@ -334,10 +367,10 @@ public class MetadataDocument {
             LuceneConversions.addTrieIndexEntries(ldoc,f.name,val);
     }
 
-    public boolean deleted=false;
-    public java.util.Date datestamp=null;
-    public String identifier=null;
+    protected boolean deleted=false;
+    protected java.util.Date datestamp=null;
+    protected String identifier=null;
 
-    public org.w3c.dom.Document dom=null;
+    private org.w3c.dom.Document dom=null;
     private String xmlCache=null;
 }
