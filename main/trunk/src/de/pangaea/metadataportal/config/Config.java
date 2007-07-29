@@ -168,15 +168,11 @@ public class Config {
 
             // *** SEARCH PROPERTIES ***
             dig.addDoNothing("config/search");
-            dig.addCallMethod("config/search/*","addSearchProperty",2, X_PATH_PARAMS);
-            dig.addObjectParam("config/search/*", 0, dig);
-            dig.addCallParam("config/search/*", 1);
+            dig.addCallMethod("config/search/*","addSearchProperty",0);
 
             // *** GLOBAL HARVESTER PROPERTIES ***
             dig.addDoNothing("config/globalHarvesterProperties");
-            dig.addCallMethod("config/globalHarvesterProperties/*","addGlobalHarvesterProperty",2, X_PATH_PARAMS);
-            dig.addObjectParam("config/globalHarvesterProperties/*", 0, dig);
-            dig.addCallParam("config/globalHarvesterProperties/*", 1);
+            dig.addCallMethod("config/globalHarvesterProperties/*","addGlobalHarvesterProperty",0);
 
             // parse config
             dig.push(this);
@@ -310,7 +306,7 @@ public class Config {
 
     @PublicForDigesterUse
     @Deprecated
-    public void addSearchProperty(ExtendedDigester dig, String value) {
+    public void addSearchProperty(String value) {
         String name=dig.getCurrentElementName();
         if ("maxClauseCount".equals(name)) {
             if ("inf".equals(value))
@@ -325,7 +321,7 @@ public class Config {
 
     @PublicForDigesterUse
     @Deprecated
-    public void addGlobalHarvesterProperty(ExtendedDigester dig, String value) {
+    public void addGlobalHarvesterProperty(String value) {
         String name=dig.getCurrentElementName();
         globalHarvesterProperties.setProperty(name,value);
     }
