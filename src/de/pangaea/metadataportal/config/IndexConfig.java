@@ -18,7 +18,6 @@ package de.pangaea.metadataportal.config;
 
 public abstract class IndexConfig {
 
-    // Digester set methods
     public void setId(String v) {
         if (checked) throw new IllegalStateException("Virtual index configuration cannot be changed anymore!");
         id=v;

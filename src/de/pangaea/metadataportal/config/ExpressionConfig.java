@@ -23,6 +23,8 @@ import javax.xml.transform.*;
 
 public class ExpressionConfig {
 
+    @PublicForDigesterUse
+    @Deprecated
     public void setXPath(ExtendedDigester dig, String xpath) throws XPathExpressionException {
         if ("".equals(xpath)) return; // Exception throws the Config.addField() method
         XPath x=StaticFactories.xpathFactory.newXPath();

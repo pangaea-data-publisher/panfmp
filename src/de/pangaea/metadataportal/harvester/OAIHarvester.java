@@ -145,12 +145,14 @@ public class OAIHarvester extends AbstractHarvester {
 
     // Digester entry points
 
+    @PublicForDigesterUse
     public void setGranularity(String granularity) {
         if ("YYYY-MM-DD".equals(granularity)) this.fineGranularity=false;
         else if ("YYYY-MM-DDThh:mm:ssZ".equals(granularity)) this.fineGranularity=true;
         else throw new IllegalArgumentException("Invalid granularity in identify response: "+granularity);
     }
 
+    @PublicForDigesterUse
     public void setResumptionToken(String token, String expirationDateStr, String cursorStr, String completeListSizeStr) {
         if (token!=null && token.equals("")) token=null;
         this.currResumptionToken=token;
@@ -162,10 +164,12 @@ public class OAIHarvester extends AbstractHarvester {
         }
     }
 
+    @PublicForDigesterUse
     public void doError(String code, String message) throws OAIException {
         if (!"noRecordsMatch".equals(code)) throw new OAIException(code,message);
     }
 
+    @PublicForDigesterUse
     public void setResponseDate(String date) throws java.text.ParseException {
         currResponseDate=ISODateFormatter.parseDate(date);
     }

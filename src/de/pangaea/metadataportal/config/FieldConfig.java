@@ -24,6 +24,8 @@ public class FieldConfig extends ExpressionConfig {
         name=v;
     }
 
+    @PublicForDigesterUse
+    @Deprecated
     public void setDatatype(String v) {
         try {
             datatype=DataType.valueOf(v.toUpperCase());
@@ -32,9 +34,21 @@ public class FieldConfig extends ExpressionConfig {
         }
     }
 
-    public void setLucenestorage(String v) { lucenestorage=Boolean.parseBoolean(v); }
-    public void setLuceneindexed(String v) { luceneindexed=Boolean.parseBoolean(v); }
-    public void setDefault(String v) { defaultValue=v; }
+    @PublicForDigesterUse
+    @Deprecated
+    public void setLucenestorage(String v) {
+        lucenestorage=Boolean.parseBoolean(v);
+    }
+
+    @PublicForDigesterUse
+    @Deprecated
+    public void setLuceneindexed(String v) {
+        luceneindexed=Boolean.parseBoolean(v);
+    }
+
+    public void setDefault(String v) {
+        defaultValue=v;
+    }
 
     @Override
     public String toString() {

@@ -225,8 +225,7 @@ public class Config {
         if (configMode!=ConfigMode.HARVESTING) return;
         if (f.xPathExpr==null) throw new IllegalArgumentException("A filter needs an XPath expression");
         if (f.xslt!=null) throw new IllegalArgumentException("A filter may not contain a template");
-        String type=dig.getCurrentElementName();
-        f.setType(type);
+        f.type=FilterConfig.FilterType.valueOf(dig.getCurrentElementName().toUpperCase());
         filters.add(f);
     }
 
@@ -239,6 +238,8 @@ public class Config {
         indexes.put(i.id,i);
     }
 
+    @PublicForDigesterUse
+    @Deprecated
     public void setFilterDefault(String v) {
         if (v==null) return; // no change
         // a bit of hack, we use an empty filter to find out type :)
@@ -247,6 +248,8 @@ public class Config {
         filterDefault=f.type;
     }
 
+    @PublicForDigesterUse
+    @Deprecated
     public void setDefaultField(String v) throws Exception {
         if (v==null) {
             defaultField=null;
@@ -261,6 +264,8 @@ public class Config {
         }
     }
 
+    @PublicForDigesterUse
+    @Deprecated
     public void setDocumentBoost(String v) throws Exception {
         if (v==null) {
             documentBoost=null;
@@ -271,6 +276,8 @@ public class Config {
         documentBoost.setXPath(dig,v);
     }
 
+    @PublicForDigesterUse
+    @Deprecated
     public void addStopWords(String stopWords) {
         for (String w : stopWords.split("[\\,\\;\\s]+")) {
             w=w.trim().toLowerCase();
@@ -278,10 +285,14 @@ public class Config {
         }
     }
 
+    @PublicForDigesterUse
+    @Deprecated
     public void importEnglishStopWords(String dummy) {
         luceneStopWords.addAll(Arrays.asList(org.apache.lucene.analysis.StopAnalyzer.ENGLISH_STOP_WORDS));
     }
 
+    @PublicForDigesterUse
+    @Deprecated
     public void setAnalyzer(String v) throws Exception {
         Class<?> c=Class.forName(v.trim());
         setAnalyzerClass(c.asSubclass(org.apache.lucene.analysis.Analyzer.class));
@@ -297,6 +308,8 @@ public class Config {
         }
     }
 
+    @PublicForDigesterUse
+    @Deprecated
     public void addSearchProperty(ExtendedDigester dig, String value) {
         String name=dig.getCurrentElementName();
         if ("maxClauseCount".equals(name)) {
@@ -310,6 +323,8 @@ public class Config {
         }
     }
 
+    @PublicForDigesterUse
+    @Deprecated
     public void addGlobalHarvesterProperty(ExtendedDigester dig, String value) {
         String name=dig.getCurrentElementName();
         globalHarvesterProperties.setProperty(name,value);
@@ -330,6 +345,8 @@ public class Config {
         }
     }
 
+    @PublicForDigesterUse
+    @Deprecated
     public void setHaltOnSchemaError(String v) {
         haltOnSchemaError=Boolean.parseBoolean(v.trim());
     }
