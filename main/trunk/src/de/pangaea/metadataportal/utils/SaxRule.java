@@ -39,7 +39,7 @@ public class SaxRule extends org.apache.commons.digester.Rule {
      */
     protected Set<String> excludeNamespaces=Collections.<String>emptySet();
 
-    private org.xml.sax.ContentHandler lastContentHandler=null;
+    private ContentHandler lastContentHandler=null;
 
     /**
      * Default constructor
@@ -78,7 +78,7 @@ public class SaxRule extends org.apache.commons.digester.Rule {
      * Default (or setting to {@code null}) means no restriction: All namespace prefixes visible in the current context will be reported.
      */
     public void setExcludeNamespaces(Set<String> excludeNamespaces) {
-        this.excludeNamespaces=excludeNamespaces;
+        this.excludeNamespaces=(excludeNamespaces==null) ? Collections.<String>emptySet() : excludeNamespaces;
     }
 
     /**
@@ -99,9 +99,10 @@ public class SaxRule extends org.apache.commons.digester.Rule {
 
     public void begin(java.lang.String namespace, java.lang.String name, Attributes attributes) throws Exception {
         if (destContentHandler==null) throw new IllegalStateException("You must set a target ContentHandler instance before processing this rule!");
+        if (lastContentHandler!=null) throw new IllegalStateException("begin(...) called twice!");
 
         // initialize target ContentHandler
-        SaxFilter filter=new SaxFilter(this,destContentHandler);
+        SaxFilter filter=new SaxFilter();
         filter.setDocumentLocator(digester.getDocumentLocator());
         lastContentHandler=digester.getCustomContentHandler();
         digester.setCustomContentHandler(filter);
@@ -117,7 +118,7 @@ public class SaxRule extends org.apache.commons.digester.Rule {
         initDocument();
     }
 
-    private void release() throws SAXException {
+    public void end(java.lang.String namespace, java.lang.String name) throws java.lang.Exception {
         finishDocument();
 
         // un-register namespace prefixes
@@ -125,32 +126,29 @@ public class SaxRule extends org.apache.commons.digester.Rule {
             if (!excludeNamespaces.contains((String)e.getValue().peek())) destContentHandler.endPrefixMapping(e.getKey());
         }
 
-        // end document and restore ContentHandler
         destContentHandler.endDocument();
-        digester.setCustomContentHandler(lastContentHandler);
-        lastContentHandler=null;
     }
 
     // the XMLFilter
-    private static final class SaxFilter extends XMLFilterImpl {
+    private final class SaxFilter extends XMLFilterImpl {
 
         private int elementCounter=0;
-        private SaxRule owner=null;
 
-        private SaxFilter(SaxRule owner, ContentHandler ch) {
+        public SaxFilter() {
             super();
-            this.owner=owner;
-            setContentHandler(ch);
-            if (ch instanceof EntityResolver) setEntityResolver((EntityResolver)ch);
-            if (ch instanceof DTDHandler) setDTDHandler((DTDHandler)ch);
-            if (ch instanceof ErrorHandler) setErrorHandler((ErrorHandler)ch);
+            setContentHandler(destContentHandler);
+            if (destContentHandler instanceof EntityResolver) setEntityResolver((EntityResolver)destContentHandler);
+            if (destContentHandler instanceof DTDHandler) setDTDHandler((DTDHandler)destContentHandler);
+            if (destContentHandler instanceof ErrorHandler) setErrorHandler((ErrorHandler)destContentHandler);
         }
 
         /* SAX part */
         public void endElement(String namespaceURI, String localName, String qName) throws SAXException {
             if (elementCounter==0) {
-                owner.release();
-                owner.digester.endElement(namespaceURI,localName,qName); // this should implicitly call owner.end(namespace,name);
+                // restore original ContentHandler in Digester and resubmit event
+                digester.setCustomContentHandler(lastContentHandler);
+                lastContentHandler=null;
+                digester.endElement(namespaceURI,localName,qName);
             } else {
                 super.endElement(namespaceURI,localName,qName);
                 elementCounter--;
