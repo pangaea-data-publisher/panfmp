@@ -26,16 +26,19 @@ public class SingleIndexConfig extends IndexConfig {
         super();
     }
 
-    // Digester set methods
     public void setIndexDir(String v) throws java.io.IOException {
         indexDir=v;
     }
 
+    @PublicForDigesterUse
+    @Deprecated
     public void setHarvesterClass(String v) throws ClassNotFoundException {
         Class<?> c=Class.forName(v);
         harvesterClass=c.asSubclass(de.pangaea.metadataportal.harvester.AbstractHarvester.class);
     }
 
+    @PublicForDigesterUse
+    @Deprecated
     public void addHarvesterProperty(ExtendedDigester dig, String value) {
         harvesterProperties.setProperty(dig.getCurrentElementName(),value);
     }

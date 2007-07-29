@@ -26,6 +26,7 @@ import org.apache.lucene.document.*;
  */
 public class OAIMetadataDocument extends MetadataDocument {
 
+    @PublicForDigesterUse
     public void setHeaderInfo(String status, String identifier, String datestampStr) throws java.text.ParseException {
         this.deleted=(status!=null && status.equals("deleted"));
         this.identifier=identifier;

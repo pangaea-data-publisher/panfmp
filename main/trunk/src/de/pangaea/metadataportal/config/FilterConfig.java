@@ -21,6 +21,8 @@ import javax.xml.transform.*;
 
 public class FilterConfig extends ExpressionConfig {
 
+    @PublicForDigesterUse
+    @Deprecated
     public void setType(String v) {
         try {
             type=FilterType.valueOf(v.toUpperCase());

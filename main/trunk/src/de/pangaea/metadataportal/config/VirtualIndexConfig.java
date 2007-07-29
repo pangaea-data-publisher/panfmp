@@ -16,6 +16,7 @@
 
 package de.pangaea.metadataportal.config;
 
+import de.pangaea.metadataportal.utils.PublicForDigesterUse;
 import java.util.*;
 
 public class VirtualIndexConfig extends IndexConfig {
@@ -24,7 +25,6 @@ public class VirtualIndexConfig extends IndexConfig {
         super();
     }
 
-    // Digester set methods
     public void addIndex(String v) {
         if (checked) throw new IllegalStateException("Virtual index configuration cannot be changed anymore!");
         v=v.trim();
@@ -38,6 +38,8 @@ public class VirtualIndexConfig extends IndexConfig {
         for (String s : v) addIndex(s);
     }
 
+    @PublicForDigesterUse
+    @Deprecated
     public void setThreaded(String v) {
         threaded=Boolean.parseBoolean(v.trim());
     }
