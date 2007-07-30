@@ -70,7 +70,7 @@ public final class XPathResolverImpl implements XPathFunctionResolver,XPathVaria
 
     // private
     private IndexReader openIndexReader(Config conf, Set<String> ids) throws java.io.IOException {
-        HashMap<Set<String>,IndexReader> ci=cachedIndexes.get();
+        Map<Set<String>,IndexReader> ci=cachedIndexes.get();
         if (ci==null) throw new IllegalStateException("There is no correct data in thread local storage!");
         IndexReader reader=ci.get(ids);
         if (reader==null) {
@@ -89,7 +89,7 @@ public final class XPathResolverImpl implements XPathFunctionResolver,XPathVaria
             throw new IllegalStateException("There is no IndexBuilder instance in thread local storage!");
         String identifier=(String)resolveVariable(VARIABLE_DOC_IDENTIFIER);
         if (identifier==null) throw new IllegalStateException("Missing variable "+VARIABLE_DOC_IDENTIFIER+" in thread local storage!");
-        HashSet<String> indexIds=new HashSet<String>();
+        Set<String> indexIds=new LinkedHashSet<String>();
         try {
             if (args.size()==0) {
                 // collect all indexes, excluding the current one
@@ -179,9 +179,9 @@ public final class XPathResolverImpl implements XPathFunctionResolver,XPathVaria
     private static XPathResolverImpl instance=new XPathResolverImpl();
 
     // object members
-    private ThreadLocal<HashMap<QName,Object>> xPathVariableData=new ThreadLocal<HashMap<QName,Object>>();
+    private ThreadLocal<Map<QName,Object>> xPathVariableData=new ThreadLocal<Map<QName,Object>>();
     private ThreadLocal<IndexBuilder> currentIndexBuilder=new ThreadLocal<IndexBuilder>();
-    private ThreadLocal<HashMap<Set<String>,IndexReader>> cachedIndexes=new ThreadLocal<HashMap<Set<String>,IndexReader>>();
+    private ThreadLocal<Map<Set<String>,IndexReader>> cachedIndexes=new ThreadLocal<Map<Set<String>,IndexReader>>();
 
     private XPathFunctionResolver parent=null;
 
