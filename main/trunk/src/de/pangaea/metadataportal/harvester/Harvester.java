@@ -75,30 +75,26 @@ public abstract class Harvester {
             Class<? extends Harvester> hc=(harvesterClass==null) ? siconf.harvesterClass : harvesterClass;
             staticLog.info("Harvesting documents into index \""+siconf.id+"\" using harvester \""+hc.getName()+"\"...");
             Harvester h=null;
-            boolean failed=false;
             try {
                 h=hc.newInstance();
                 h.open(siconf);
                 h.harvest();
+            } catch (IndexBuilderBackgroundFailure ibf) {
+                // do nothing, this exception is only to break out, real exception is thrown on close
             } catch (org.xml.sax.SAXParseException saxe) {
-                failed=true;
-                staticLog.fatal("Harvesting documents into index \""+siconf.id+"\" failed due to SAX parse error in \""+saxe.getSystemId()+"\", line "+saxe.getLineNumber()+", column "+saxe.getColumnNumber()+".",saxe);
+                staticLog.fatal("Harvesting documents into index \""+siconf.id+"\" failed due to SAX parse error in \""+saxe.getSystemId()+"\", line "+saxe.getLineNumber()+", column "+saxe.getColumnNumber()+":",saxe.getException());
             } catch (Exception e) {
-                failed=true;
                 if (e.getCause() instanceof org.xml.sax.SAXParseException) {
                     org.xml.sax.SAXParseException saxe=(org.xml.sax.SAXParseException)e.getCause();
-                    staticLog.fatal("Harvesting documents into index \""+siconf.id+"\" failed due to SAX parse error in \""+saxe.getSystemId()+"\", line "+saxe.getLineNumber()+", column "+saxe.getColumnNumber()+".",saxe);
+                    staticLog.fatal("Harvesting documents into index \""+siconf.id+"\" failed due to SAX parse error in \""+saxe.getSystemId()+"\", line "+saxe.getLineNumber()+", column "+saxe.getColumnNumber()+":",saxe.getException());
                 } else staticLog.fatal("Harvesting documents into index \""+siconf.id+"\" failed!",e);
-            } finally {
-                if (h!=null && !h.isClosed()) try {
-                    h.close();
-                    staticLog.info("Harvester for index \""+siconf.id+"\" closed.");
-                } catch (Exception e) {
-                    if (failed)
-                        staticLog.fatal("Broken harvester and index builder for index \""+siconf.id+"\" hopefully closed.");
-                    else
-                        staticLog.fatal("Error during harvester close operation for index \""+siconf.id+"\" occurred.",e);
-                }
+            }
+            // cleanup
+            if (h!=null && !h.isClosed()) try {
+                h.close();
+                staticLog.info("Harvester for index \""+siconf.id+"\" closed.");
+            } catch (Exception e) {
+                staticLog.fatal("Error during harvesting into index \""+siconf.id+"\" occurred:",e);
             }
         }
     }
@@ -177,10 +173,12 @@ public abstract class Harvester {
 
     /**
      * Adds a document to the {@link #index} working in the background.
-     * @throws Exception if an exception occurs during adding (various types of exceptions can be thrown).
+     * @throws IndexBuilderBackgroundFailure if an error occurred in background thread.
      * Exceptions can be thrown asynchronous and may not affect the currect document.
+     * The real exception is thrown again in {@link #close}.
+     * @throws InterruptedException if wait operation was interrupted.
      */
-    protected void addDocument(MetadataDocument mdoc) throws Exception {
+    protected void addDocument(MetadataDocument mdoc) throws IndexBuilderBackgroundFailure,InterruptedException {
         if (index==null) throw new IllegalStateException("Harvester must be opened before using");
         mdoc.setIndexConfig(iconfig);
         index.addDocument(mdoc);

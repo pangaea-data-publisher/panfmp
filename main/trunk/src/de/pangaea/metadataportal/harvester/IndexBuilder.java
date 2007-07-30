@@ -21,11 +21,10 @@ import de.pangaea.metadataportal.config.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
-import java.io.*;
-import org.apache.lucene.analysis.standard.*;
+import java.io.IOException;
 import org.apache.lucene.index.*;
-import org.apache.lucene.document.*;
-import org.apache.lucene.store.*;
+import org.apache.lucene.document.Document;
+import org.apache.lucene.store.FSDirectory;
 
 public class IndexBuilder {
     private static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(IndexBuilder.class);
@@ -40,13 +39,12 @@ public class IndexBuilder {
     private static IndexerQueueEntry LDOC_EOF = new IndexerQueueEntry(null,null);
 
     private AtomicInteger runningConverters=new AtomicInteger(0);
-    private AtomicReference<Exception> failure=new AtomicReference<Exception>();
+    private AtomicReference<Exception> failure=new AtomicReference<Exception>(null);
+    private AtomicReference<HarvesterCommitEvent> commitEvent=new AtomicReference<HarvesterCommitEvent>(null);
 
     private BlockingQueue<MetadataDocument> mdocBuffer;
     private BlockingQueue<IndexerQueueEntry> ldocBuffer;
 
-    private HarvesterCommitEvent commitEvent=null;
-    private Object commitEventLock=new Object();
     private Object indexerLock=new Object();
 
     private int changesBeforeCommit;
@@ -102,9 +100,7 @@ public class IndexBuilder {
     }
 
     public void registerHarvesterCommitEvent(HarvesterCommitEvent event) {
-        synchronized(commitEventLock) {
-            commitEvent=event;
-        }
+        commitEvent.set(event);
     }
 
     public boolean isClosed() {
@@ -143,10 +139,11 @@ public class IndexBuilder {
         converterThreadList=null;
         indexerThread=null;
 
-        throwFailure();
+        Exception f=failure.get();
+        if (f!=null) throw f;
     }
 
-    public void addDocument(MetadataDocument mdoc) throws Exception {
+    public void addDocument(MetadataDocument mdoc) throws IndexBuilderBackgroundFailure,InterruptedException {
         if (isClosed()) throw new IllegalStateException("IndexBuilder already closed");
         throwFailure();
         startThreads(false);
@@ -155,7 +152,7 @@ public class IndexBuilder {
     }
 
     // call this between harvest resumptions to wait if buffer 2/3 full, this helps to not block while running HTTP transfers (if buffer is big enough)
-    public void checkIndexerBuffer() throws Exception {
+    public void checkIndexerBuffer() throws IndexBuilderBackgroundFailure,InterruptedException {
         if (isClosed()) throw new IllegalStateException("IndexBuilder already closed");
         throwFailure();
         startThreads(false);
@@ -202,7 +199,7 @@ public class IndexBuilder {
                 }
                 if (mdoc==MDOC_EOF) break;
 
-                if (log.isDebugEnabled()) log.debug("Handling document: "+mdoc.toString());
+                if (log.isDebugEnabled()) log.debug("Converting document: "+mdoc.toString());
                 if (log.isTraceEnabled()) log.trace("XML: "+mdoc.getXML());
                 ldocBuffer.put(new IndexerQueueEntry(mdoc.getIdentifier(),mdoc.getLuceneDocument()));
             }
@@ -249,22 +246,27 @@ public class IndexBuilder {
 
                 Term t=new Term(IndexConstants.FIELDNAME_IDENTIFIER,entry.identifier);
                 if (entry.ldoc==null) {
+                    if (log.isDebugEnabled()) log.debug("Deleting document: "+entry.identifier);
                     writer.deleteDocuments(t);
                     deleted++;
                 } else {
+                    if (log.isDebugEnabled()) log.debug("Updating document: "+entry.identifier);
+                    if (log.isTraceEnabled()) log.debug("Data: "+entry.ldoc.toString());
                     writer.updateDocument(t,entry.ldoc);
                     updated++;
                 }
                 committedIdentifiers.add(entry.identifier);
 
-                if (committedIdentifiers.size()>=changesBeforeCommit) synchronized(commitEventLock) {
+                if (committedIdentifiers.size()>=changesBeforeCommit)  {
+                    HarvesterCommitEvent ce=commitEvent.get();
+
                     // only flush if commitEvent interface registered
-                    if (commitEvent!=null) writer.flush();
+                    if (ce!=null) writer.flush();
 
                     log.info(deleted+" docs presumably deleted (if existent) and "+updated+" docs (re-)indexed so far.");
 
                     // notify Harvester of index commit
-                    if (commitEvent!=null) commitEvent.harvesterCommitted(Collections.unmodifiableSet(committedIdentifiers));
+                    if (ce!=null) ce.harvesterCommitted(Collections.unmodifiableSet(committedIdentifiers));
                     committedIdentifiers.clear();
                 }
 
@@ -277,9 +279,8 @@ public class IndexBuilder {
             writer.flush();
 
             // notify Harvester of index commit
-            synchronized(commitEventLock) {
-                if (commitEvent!=null) commitEvent.harvesterCommitted(Collections.unmodifiableSet(committedIdentifiers));
-            }
+            HarvesterCommitEvent ce=commitEvent.get();
+            if (ce!=null && committedIdentifiers.size()>0) ce.harvesterCommitted(Collections.unmodifiableSet(committedIdentifiers));
 
             finished=true;
             log.info(deleted+" docs presumably deleted (only if existent) and "+updated+" docs (re-)indexed - finished.");
@@ -310,12 +311,12 @@ public class IndexBuilder {
         }
     }
 
-    private void throwFailure() throws Exception {
+    private void throwFailure() throws IndexBuilderBackgroundFailure {
         Exception f=failure.get();
         if (f!=null) {
             if (converterThreads!=null) converterThreads.interrupt();
             if (indexerThread!=null) indexerThread.interrupt();
-            throw f;
+            throw new IndexBuilderBackgroundFailure(f);
         }
     }
 

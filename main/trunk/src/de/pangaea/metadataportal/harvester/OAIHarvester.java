@@ -185,7 +185,7 @@ public class OAIHarvester extends Harvester {
     }
 
     @Override
-    public void addDocument(MetadataDocument mdoc) throws Exception {
+    public void addDocument(MetadataDocument mdoc) throws IndexBuilderBackgroundFailure,InterruptedException {
         if (sets!=null) {
             if (Collections.disjoint(((OAIMetadataDocument)mdoc).getSets(),sets)) mdoc.setDeleted(true);
         }
@@ -253,40 +253,46 @@ public class OAIHarvester extends Harvester {
         checkIdentify(baseUrl);
         reset();
 
-        Date from=index.getLastHarvestedFromDisk();
-        StringBuilder url=new StringBuilder(baseUrl);
-        String prefix=iconfig.harvesterProperties.getProperty("metadataPrefix");
-        if (prefix==null) throw new NullPointerException("No metadataPrefix for the OAI repository was given!");
-        url.append("?verb=ListRecords&metadataPrefix=");
-        url.append(URLEncoder.encode(prefix,"UTF-8"));
-        if (sets!=null) {
-            if (sets.size()==1) {
-                url.append("&set=");
-                url.append(URLEncoder.encode(sets.iterator().next(),"UTF-8"));
-            } else log.warn("More than one set to be harvested - this is not supported by OAI-PMH. Filtering documents during indexing!");
-        }
-        if (from!=null) {
-            url.append("&from=");
-            url.append(URLEncoder.encode(fineGranularity?ISODateFormatter.formatLong(from):ISODateFormatter.formatShort(from),"UTF-8"));
-        }
-        readStream(url.toString());
-        Date lastHarvested=currResponseDate;
-
-        while (currResumptionToken!=null) {
-            // checkIndexerBuffer or harvester should max. wait for 1/2 resumption Token expiration!!!
-            log.debug("Resumption token expires in "+currResumptionExpiration+" ms");
-            //long maxWaitTime=(currResumptionExpiration>0L) ? currResumptionExpiration/2L : -1;
-            //index.setMaxWaitForIndexer(maxWaitTime);
-            index.checkIndexerBuffer();
-            url=new StringBuilder(baseUrl);
-            url.append("?verb=ListRecords&resumptionToken=");
-            url.append(URLEncoder.encode(currResumptionToken,"UTF-8"));
-            reset();
+        try {
+            Date from=index.getLastHarvestedFromDisk();
+            StringBuilder url=new StringBuilder(baseUrl);
+            String prefix=iconfig.harvesterProperties.getProperty("metadataPrefix");
+            if (prefix==null) throw new NullPointerException("No metadataPrefix for the OAI repository was given!");
+            url.append("?verb=ListRecords&metadataPrefix=");
+            url.append(URLEncoder.encode(prefix,"UTF-8"));
+            if (sets!=null) {
+                if (sets.size()==1) {
+                    url.append("&set=");
+                    url.append(URLEncoder.encode(sets.iterator().next(),"UTF-8"));
+                } else log.warn("More than one set to be harvested - this is not supported by OAI-PMH. Filtering documents during indexing!");
+            }
+            if (from!=null) {
+                url.append("&from=");
+                url.append(URLEncoder.encode(fineGranularity?ISODateFormatter.formatLong(from):ISODateFormatter.formatShort(from),"UTF-8"));
+            }
             readStream(url.toString());
-        }
-        reset();
+            Date lastHarvested=currResponseDate;
 
-        index.setLastHarvested(lastHarvested);
+            while (currResumptionToken!=null) {
+                // checkIndexerBuffer or harvester should max. wait for 1/2 resumption Token expiration!!!
+                log.debug("Resumption token expires in "+currResumptionExpiration+" ms");
+                //long maxWaitTime=(currResumptionExpiration>0L) ? currResumptionExpiration/2L : -1;
+                //index.setMaxWaitForIndexer(maxWaitTime);
+                index.checkIndexerBuffer();
+                url=new StringBuilder(baseUrl);
+                url.append("?verb=ListRecords&resumptionToken=");
+                url.append(URLEncoder.encode(currResumptionToken,"UTF-8"));
+                reset();
+                readStream(url.toString());
+            }
+
+            reset();
+            index.setLastHarvested(lastHarvested);
+        } catch (org.xml.sax.SAXException saxe) {
+            // throw the real Exception not the digester one
+            if (saxe.getException()!=null) throw saxe.getException();
+            else throw saxe;
+        }
     }
 
     @Override
