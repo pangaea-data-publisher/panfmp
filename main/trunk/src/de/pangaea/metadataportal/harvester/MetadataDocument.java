@@ -20,7 +20,6 @@ import de.pangaea.metadataportal.utils.*;
 import de.pangaea.metadataportal.config.*;
 import java.io.StringWriter;
 import java.io.StringReader;
-import java.util.HashMap;
 import java.util.Map;
 import javax.xml.transform.*;
 import javax.xml.transform.dom.*;

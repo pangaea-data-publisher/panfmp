@@ -365,9 +365,9 @@ public class Config {
     }
 
     // members "the configuration"
-    public Map<String,IndexConfig> indexes=new HashMap<String,IndexConfig>();
+    public Map<String,IndexConfig> indexes=new LinkedHashMap<String,IndexConfig>();
 
-    public Map<String,FieldConfig> fields=new HashMap<String,FieldConfig>();
+    public Map<String,FieldConfig> fields=new LinkedHashMap<String,FieldConfig>();
     public ExpressionConfig defaultField=null;
 
     // filters

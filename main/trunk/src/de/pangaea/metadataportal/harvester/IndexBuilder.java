@@ -264,7 +264,7 @@ public class IndexBuilder {
                     log.info(deleted+" docs presumably deleted (if existent) and "+updated+" docs (re-)indexed so far.");
 
                     // notify Harvester of index commit
-                    if (commitEvent!=null) commitEvent.harvesterCommitted(Collections.unmodifiableSet(committedIdentifiers).iterator());
+                    if (commitEvent!=null) commitEvent.harvesterCommitted(Collections.unmodifiableSet(committedIdentifiers));
                     committedIdentifiers.clear();
                 }
 
@@ -278,7 +278,7 @@ public class IndexBuilder {
 
             // notify Harvester of index commit
             synchronized(commitEventLock) {
-                if (commitEvent!=null) commitEvent.harvesterCommitted(Collections.unmodifiableSet(committedIdentifiers).iterator());
+                if (commitEvent!=null) commitEvent.harvesterCommitted(Collections.unmodifiableSet(committedIdentifiers));
             }
 
             finished=true;

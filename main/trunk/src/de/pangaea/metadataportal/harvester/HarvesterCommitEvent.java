@@ -16,6 +16,20 @@
 
 package de.pangaea.metadataportal.harvester;
 
+/**
+ * This interface must be implemented to receive harvester commit events.
+ * Each time after the {@link IndexBuilder} commits changes to the Lucene index
+ * it calls this interface's {@link #harvesterCommitted} method.
+ * <P>To use commit events, the {@link Harvester} class must implement this interface
+ * (which is not the default) and call {@link IndexBuilder#registerHarvesterCommitEvent}
+ * on startup.
+ */
 public interface HarvesterCommitEvent {
-    public void harvesterCommitted(java.util.Iterator<String> docIds);
+
+    /**
+     * Called with a {@link java.util.Set} of {@link String}s that are the commited document identifiers.
+     * Be warned, you should have some synchronization because this method is called from a different thread!
+     */
+    public void harvesterCommitted(java.util.Set<String> docIds);
+
 }
