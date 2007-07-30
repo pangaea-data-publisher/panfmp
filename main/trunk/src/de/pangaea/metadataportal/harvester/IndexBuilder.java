@@ -20,6 +20,7 @@ import de.pangaea.metadataportal.utils.*;
 import de.pangaea.metadataportal.config.*;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
 import java.io.*;
 import org.apache.lucene.analysis.standard.*;
 import org.apache.lucene.index.*;
@@ -38,8 +39,8 @@ public class IndexBuilder {
     private static MetadataDocument  MDOC_EOF = new MetadataDocument();
     private static IndexerQueueEntry LDOC_EOF = new IndexerQueueEntry(null,null);
 
-    private volatile int runningConverters=0;
-    private volatile Exception failure=null;
+    private AtomicInteger runningConverters=new AtomicInteger(0);
+    private AtomicReference<Exception> failure=new AtomicReference<Exception>();
 
     private BlockingQueue<MetadataDocument> mdocBuffer;
     private BlockingQueue<IndexerQueueEntry> ldocBuffer;
@@ -96,6 +97,10 @@ public class IndexBuilder {
         return create;
     }
 
+    public boolean isFailed() {
+        return (failure.get()!=null);
+    }
+
     public void registerHarvesterCommitEvent(HarvesterCommitEvent event) {
         synchronized(commitEventLock) {
             commitEvent=event;
@@ -109,29 +114,23 @@ public class IndexBuilder {
     public void close() throws Exception {
         if (isClosed()) throw new IllegalStateException("IndexBuilder already closed");
 
-        throwFailure();
         startThreads(true);
 
         try {
             for (int i=0; i<converterThreadList.length; i++)
                 mdocBuffer.put(MDOC_EOF);
-            throwFailure();
             for (Thread t : converterThreadList) {
                 if (t.isAlive()) t.join();
             }
-            throwFailure();
 
             // in ldocBuffer not empty there were already some threads filling the queue
             // => LDOC_EOF is queued by the threads
             // explicitely putting a LDOC_EOF is only needed when converterThreads were never running!
             if (ldocBuffer.size()==0) ldocBuffer.put(LDOC_EOF);
-            throwFailure();
             if (indexerThread.isAlive()) indexerThread.join();
         } catch (InterruptedException e) {
             log.error(e);
         }
-
-        throwFailure();
 
         if (lastHarvested!=null) {
             org.apache.lucene.store.IndexOutput out=dir.createOutput(IndexConstants.FILENAME_LASTHARVESTED);
@@ -143,6 +142,8 @@ public class IndexBuilder {
         converterThreads=null;
         converterThreadList=null;
         indexerThread=null;
+
+        throwFailure();
     }
 
     public void addDocument(MetadataDocument mdoc) throws Exception {
@@ -161,7 +162,7 @@ public class IndexBuilder {
 
         if (ldocBuffer.remainingCapacity()*2<ldocBuffer.size()) {
             log.warn("Harvester is too fast for indexer thread, that is blocked. Waiting...");
-            while (ldocBuffer.size()>0) synchronized(indexerLock) {
+            while (ldocBuffer.size()>0 && failure.get()==null) synchronized(indexerLock) {
                 indexerLock.wait();
             }
         }
@@ -192,7 +193,7 @@ public class IndexBuilder {
         log.info("Converter thread started.");
         XPathResolverImpl.getInstance().setIndexBuilder(this);
         try {
-            while (failure==null) {
+            while (failure.get()==null) {
                 MetadataDocument mdoc;
                 try {
                     mdoc=mdocBuffer.take();
@@ -209,12 +210,11 @@ public class IndexBuilder {
             log.debug(ie);
         } catch (Exception e) {
             log.debug(e);
-            failure=e;
+            failure.set(e);
         } finally {
-            runningConverters--;
-            if (runningConverters==0) try {
-                ldocBuffer.put(LDOC_EOF);
+            if (runningConverters.decrementAndGet()==0) try {
                 mdocBuffer.clear();
+                ldocBuffer.put(LDOC_EOF);
             } catch (InterruptedException e) {
                 log.error(e);
             }
@@ -238,7 +238,7 @@ public class IndexBuilder {
 
             HashSet<String> committedIdentifiers=new HashSet<String>(changesBeforeCommit);
 
-            while (failure==null) {
+            while (failure.get()==null) {
                 IndexerQueueEntry entry;
                 try {
                     entry=ldocBuffer.take();
@@ -292,7 +292,7 @@ public class IndexBuilder {
         } catch (IOException e) {
             log.debug(e);
             if (!finished) log.warn("Only "+deleted+" docs presumably deleted (only if existent) and "+updated+" docs (re-)indexed before the following error occurred: "+e);
-            failure=e;
+            failure.set(e);
         } finally {
             ldocBuffer.clear();
             // notify eventually waiting checkIndexerBuffer() calls
@@ -311,11 +311,10 @@ public class IndexBuilder {
     }
 
     private void throwFailure() throws Exception {
-        if (failure!=null) {
+        Exception f=failure.get();
+        if (f!=null) {
             if (converterThreads!=null) converterThreads.interrupt();
             if (indexerThread!=null) indexerThread.interrupt();
-            Exception f=failure;
-            failure=null;
             throw f;
         }
     }
@@ -323,7 +322,7 @@ public class IndexBuilder {
     private void startThreads(boolean onlyIndexer) {
         if (!threadsStarted) try {
             if (!onlyIndexer) for (Thread t : converterThreadList) {
-                runningConverters++;
+                runningConverters.incrementAndGet();
                 t.start();
             }
             indexerThread.start();

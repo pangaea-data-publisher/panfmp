@@ -75,13 +75,16 @@ public abstract class Harvester {
             Class<? extends Harvester> hc=(harvesterClass==null) ? siconf.harvesterClass : harvesterClass;
             staticLog.info("Harvesting documents into index \""+siconf.id+"\" using harvester \""+hc.getName()+"\"...");
             Harvester h=null;
+            boolean failed=false;
             try {
                 h=hc.newInstance();
                 h.open(siconf);
                 h.harvest();
             } catch (org.xml.sax.SAXParseException saxe) {
+                failed=true;
                 staticLog.fatal("Harvesting documents into index \""+siconf.id+"\" failed due to SAX parse error in \""+saxe.getSystemId()+"\", line "+saxe.getLineNumber()+", column "+saxe.getColumnNumber()+".",saxe);
             } catch (Exception e) {
+                failed=true;
                 if (e.getCause() instanceof org.xml.sax.SAXParseException) {
                     org.xml.sax.SAXParseException saxe=(org.xml.sax.SAXParseException)e.getCause();
                     staticLog.fatal("Harvesting documents into index \""+siconf.id+"\" failed due to SAX parse error in \""+saxe.getSystemId()+"\", line "+saxe.getLineNumber()+", column "+saxe.getColumnNumber()+".",saxe);
@@ -91,7 +94,10 @@ public abstract class Harvester {
                     h.close();
                     staticLog.info("Harvester for index \""+siconf.id+"\" closed.");
                 } catch (Exception e) {
-                    staticLog.fatal("Error during harvester close operation for index \""+siconf.id+"\" occurred.",e);
+                    if (failed)
+                        staticLog.fatal("Broken harvester and index builder for index \""+siconf.id+"\" hopefully closed.");
+                    else
+                        staticLog.fatal("Error during harvester close operation for index \""+siconf.id+"\" occurred.",e);
                 }
             }
         }
