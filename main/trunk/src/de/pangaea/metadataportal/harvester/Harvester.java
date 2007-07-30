@@ -72,11 +72,11 @@ public abstract class Harvester {
         for (IndexConfig iconf : indexList) if (iconf instanceof SingleIndexConfig) {
             SingleIndexConfig siconf=(SingleIndexConfig)iconf;
 
-            if (harvesterClass==null) harvesterClass=siconf.harvesterClass;
-            staticLog.info("Harvesting documents into index \""+siconf.id+"\" using harvester \""+harvesterClass.getName()+"\"...");
+            Class<? extends Harvester> hc=(harvesterClass==null) ? siconf.harvesterClass : harvesterClass;
+            staticLog.info("Harvesting documents into index \""+siconf.id+"\" using harvester \""+hc.getName()+"\"...");
             Harvester h=null;
             try {
-                h=harvesterClass.newInstance();
+                h=hc.newInstance();
                 h.open(siconf);
                 h.harvest();
             } catch (org.xml.sax.SAXParseException saxe) {
