@@ -46,7 +46,7 @@ public class Config {
         org.apache.lucene.search.BooleanQuery.setMaxClauseCount(DEFAULT_MAX_CLAUSE_COUNT);
         org.apache.lucene.search.BooleanQuery.setAllowDocsOutOfOrder(true);
         try {
-            final Class[] X_PATH_PARAMS=new Class[]{ExtendedDigester.class,String.class};
+            final Class[] DIGSTRING_PARAMS=new Class[]{ExtendedDigester.class,String.class};
 
             dig=new ExtendedDigester(StaticFactories.xinclSaxFactory.newSAXParser());
             dig.setLogger(log.isDebugEnabled()?log:new org.apache.commons.logging.impl.NoOpLog());
@@ -65,18 +65,18 @@ public class Config {
 
             dig.addObjectCreate("config/metadata/variables/variable", VariableConfig.class);
             dig.addSetNext("config/metadata/variables/variable", "addVariable");
-            dig.addCallMethod("config/metadata/variables/variable","setName", 2, X_PATH_PARAMS);
+            dig.addCallMethod("config/metadata/variables/variable","setName", 2, DIGSTRING_PARAMS);
             dig.addObjectParam("config/metadata/variables/variable", 0, dig);
             dig.addCallParam("config/metadata/variables/variable", 1, "name");
             if (configMode==ConfigMode.HARVESTING) {
-                dig.addCallMethod("config/metadata/variables/variable","setXPath", 2, X_PATH_PARAMS);
+                dig.addCallMethod("config/metadata/variables/variable","setXPath", 2, DIGSTRING_PARAMS);
                 dig.addObjectParam("config/metadata/variables/variable", 0, dig);
                 dig.addCallParam("config/metadata/variables/variable", 1);
             }
 
             dig.addObjectCreate("config/metadata/variables/variable-template", VariableConfig.class);
             dig.addSetNext("config/metadata/variables/variable-template", "addVariable");
-            dig.addCallMethod("config/metadata/variables/variable-template","setName", 2, X_PATH_PARAMS);
+            dig.addCallMethod("config/metadata/variables/variable-template","setName", 2, DIGSTRING_PARAMS);
             dig.addObjectParam("config/metadata/variables/variable-template", 0, dig);
             dig.addCallParam("config/metadata/variables/variable-template", 1, "name");
             dig.addRule("config/metadata/variables/variable-template", (configMode==ConfigMode.HARVESTING) ? new TemplateSaxRule() : SaxRule.emptyRule());
@@ -88,7 +88,7 @@ public class Config {
             dig.addObjectCreate("config/metadata/filters/*", FilterConfig.class);
             dig.addSetNext("config/metadata/filters/*", "addFilter");
             if (configMode==ConfigMode.HARVESTING) {
-                dig.addCallMethod("config/metadata/filters/*","setXPath", 2, X_PATH_PARAMS);
+                dig.addCallMethod("config/metadata/filters/*","setXPath", 2, DIGSTRING_PARAMS);
                 dig.addObjectParam("config/metadata/filters/*", 0, dig);
                 dig.addCallParam("config/metadata/filters/*", 1);
             }
@@ -102,7 +102,7 @@ public class Config {
             r.setIgnoreMissingProperty(false);
             dig.addRule("config/metadata/fields/field",r);
             if (configMode==ConfigMode.HARVESTING) {
-                dig.addCallMethod("config/metadata/fields/field","setXPath", 2, X_PATH_PARAMS);
+                dig.addCallMethod("config/metadata/fields/field","setXPath", 2, DIGSTRING_PARAMS);
                 dig.addObjectParam("config/metadata/fields/field", 0, dig);
                 dig.addCallParam("config/metadata/fields/field", 1);
             }
@@ -151,7 +151,7 @@ public class Config {
             dig.addRule("config/indexes/index/transform", (configMode==ConfigMode.HARVESTING) ? new IndexConfigTransformerSaxRule() : SaxRule.emptyRule());
 
             dig.addDoNothing("config/indexes/index/harvesterProperties");
-            dig.addCallMethod("config/indexes/index/harvesterProperties/*","addHarvesterProperty",2, X_PATH_PARAMS);
+            dig.addCallMethod("config/indexes/index/harvesterProperties/*","addHarvesterProperty",2, DIGSTRING_PARAMS);
             dig.addObjectParam("config/indexes/index/harvesterProperties/*", 0, dig);
             dig.addCallParam("config/indexes/index/harvesterProperties/*", 1);
 

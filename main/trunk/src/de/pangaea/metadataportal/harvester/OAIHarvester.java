@@ -26,7 +26,7 @@ import org.xml.sax.*;
 import org.apache.commons.digester.*;
 import javax.xml.transform.sax.*;
 
-public class OAIHarvester extends AbstractHarvester {
+public class OAIHarvester extends Harvester {
     // Class members
     private static final String[] requestVariables=new String[]{
         "verb",

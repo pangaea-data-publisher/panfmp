@@ -25,7 +25,7 @@ import java.util.regex.Matcher;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.parsers.*;
 
-public class DirectoryHarvester extends AbstractHarvester implements FilenameFilter {
+public class DirectoryHarvester extends Harvester implements FilenameFilter {
 
     // Class members
     protected File directory=null;

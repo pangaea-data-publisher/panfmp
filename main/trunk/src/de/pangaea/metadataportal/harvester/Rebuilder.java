@@ -23,9 +23,24 @@ import org.apache.lucene.index.*;
 import org.apache.lucene.store.FSDirectory;
 import java.util.*;
 
-public class Rebuilder extends AbstractHarvester {
+public class Rebuilder extends Harvester {
 
-    private static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(Rebuilder.class);
+    private static org.apache.commons.logging.Log staticLog = org.apache.commons.logging.LogFactory.getLog(Rebuilder.class);
+
+    // main-Methode
+    public static void main(String[] args) {
+        if (args.length!=2) {
+            System.err.println("Command line: java "+Rebuilder.class.getName()+" config.xml index-name|*");
+            return;
+        }
+
+        try {
+            Config conf=new Config(args[0],Config.ConfigMode.HARVESTING);
+            runHarvester(conf,args[1],Rebuilder.class);
+        } catch (Exception e) {
+            staticLog.fatal("Rebuilder general error:",e);
+        }
+    }
 
     // harvester interface
     private IndexReader reader=null;
@@ -50,8 +65,14 @@ public class Rebuilder extends AbstractHarvester {
         for (int i=0, c=reader.maxDoc(); i<c; i++) {
             if (!reader.isDeleted(i)) {
                 MetadataDocument mdoc=MetadataDocument.createInstanceFromLucene(iconfig,reader.document(i));
-                if (mdoc.getIdentifier()==null)
-                    throw new IllegalArgumentException("Tried to load document with no identifier!");
+                if (mdoc.getIdentifier()==null) {
+                    log.error(
+                        "Cannot process or delete a document without an identifier! "+
+                        "It will stay forever in index and pollute search results. "+
+                        "You should drop index and re-harvest!"
+                    );
+                    continue;
+                }
                 if (mdoc.getXML()==null) {
                     mdoc.setDeleted(true);
                     log.warn("Document '"+mdoc.getIdentifier()+"' contains no XML code. It will be deleted!");
@@ -61,46 +82,4 @@ public class Rebuilder extends AbstractHarvester {
         }
     }
 
-    // main-Methode
-    public static void main (String[] args) {
-        if (args.length!=2) {
-            System.err.println("Command line: java "+Rebuilder.class.getName()+" config.xml index-name|*");
-            return;
-        }
-
-        try {
-            Config conf=new Config(args[0],Config.ConfigMode.HARVESTING);
-            Collection<IndexConfig> indexList=null;
-            if ("*".equals(args[1])) {
-                indexList=conf.indexes.values();
-            } else {
-                IndexConfig iconf=conf.indexes.get(args[1]);
-                if (iconf==null || !(iconf instanceof SingleIndexConfig)) throw new IllegalArgumentException("There is no index defined with id=\""+args[1]+"\"!");
-                indexList=Collections.singletonList(iconf);
-            }
-
-            for (IndexConfig iconf : indexList) if (iconf instanceof SingleIndexConfig) {
-                SingleIndexConfig siconf=(SingleIndexConfig)iconf;
-
-                log.info("Rebuilding index \""+siconf.id+"\"...");
-                AbstractHarvester h=new Rebuilder();
-                try {
-                    h.open(siconf);
-                    h.harvest();
-                } catch (org.xml.sax.SAXParseException saxe) {
-                    log.fatal("Harvesting documents into index \""+siconf.id+"\" failed due to SAX parse error in \""+saxe.getSystemId()+"\", line "+saxe.getLineNumber()+", column "+saxe.getColumnNumber()+".",saxe);
-                } catch (Exception e) {
-                    if (e.getCause() instanceof org.xml.sax.SAXParseException) {
-                        org.xml.sax.SAXParseException saxe=(org.xml.sax.SAXParseException)e.getCause();
-                        log.fatal("Harvesting documents into index \""+siconf.id+"\" failed due to SAX parse error in \""+saxe.getSystemId()+"\", line "+saxe.getLineNumber()+", column "+saxe.getColumnNumber()+".",saxe);
-                    } else log.fatal("Harvesting documents into index \""+siconf.id+"\" failed!",e);
-                } finally {
-                    h.close();
-                }
-                log.info("Finished rebuilding of index \""+siconf.id+"\".");
-            }
-        } catch (Exception e) {
-            log.fatal("Exception during index rebuild.",e);
-        }
-    }
 }

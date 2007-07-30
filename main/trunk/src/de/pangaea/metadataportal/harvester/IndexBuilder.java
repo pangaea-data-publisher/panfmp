@@ -109,29 +109,29 @@ public class IndexBuilder {
     public void close() throws Exception {
         if (isClosed()) throw new IllegalStateException("IndexBuilder already closed");
 
-        if (failure!=null) {
+        throwFailure();
+        startThreads(true);
+
+        try {
+            for (int i=0; i<converterThreadList.length; i++)
+                mdocBuffer.put(MDOC_EOF);
             throwFailure();
-        } else {
-            startThreads(true);
-
-            try {
-                for (int i=0; i<converterThreadList.length; i++)
-                    mdocBuffer.put(MDOC_EOF);
-                for (Thread t : converterThreadList) {
-                    if (t.isAlive()) t.join();
-                }
-
-                // in ldocBuffer not empty there were already some threads filling the queue
-                // => LDOC_EOF is queued by the threads
-                // explicitely putting a LDOC_EOF is only needed when converterThreads were never running!
-                if (ldocBuffer.size()==0) ldocBuffer.put(LDOC_EOF);
-                if (indexerThread.isAlive()) indexerThread.join();
-            } catch (InterruptedException e) {
-                log.error(e);
+            for (Thread t : converterThreadList) {
+                if (t.isAlive()) t.join();
             }
-
             throwFailure();
+
+            // in ldocBuffer not empty there were already some threads filling the queue
+            // => LDOC_EOF is queued by the threads
+            // explicitely putting a LDOC_EOF is only needed when converterThreads were never running!
+            if (ldocBuffer.size()==0) ldocBuffer.put(LDOC_EOF);
+            throwFailure();
+            if (indexerThread.isAlive()) indexerThread.join();
+        } catch (InterruptedException e) {
+            log.error(e);
         }
+
+        throwFailure();
 
         if (lastHarvested!=null) {
             org.apache.lucene.store.IndexOutput out=dir.createOutput(IndexConstants.FILENAME_LASTHARVESTED);
@@ -214,6 +214,7 @@ public class IndexBuilder {
             runningConverters--;
             if (runningConverters==0) try {
                 ldocBuffer.put(LDOC_EOF);
+                mdocBuffer.clear();
             } catch (InterruptedException e) {
                 log.error(e);
             }
@@ -226,6 +227,8 @@ public class IndexBuilder {
         org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(Thread.currentThread().getName());
         log.info("Indexer thread started.");
         IndexWriter writer=null;
+        int updated=0, deleted=0;
+        boolean finished=false;
         try {
             writer = new IndexWriter(dir, true, iconfig.parent.getAnalyzer(), !IndexReader.indexExists(dir));
             //writer.setInfoStream(System.err);
@@ -233,7 +236,6 @@ public class IndexBuilder {
             writer.setMaxBufferedDocs(changesBeforeCommit);
             writer.setMaxBufferedDeleteTerms(changesBeforeCommit);
 
-            int updated=0, deleted=0;
             HashSet<String> committedIdentifiers=new HashSet<String>(changesBeforeCommit);
 
             while (failure==null) {
@@ -279,6 +281,7 @@ public class IndexBuilder {
                 if (commitEvent!=null) commitEvent.harvesterCommitted(Collections.unmodifiableSet(committedIdentifiers).iterator());
             }
 
+            finished=true;
             log.info(deleted+" docs presumably deleted (only if existent) and "+updated+" docs (re-)indexed - finished.");
 
             if (Boolean.parseBoolean(iconfig.harvesterProperties.getProperty("autoOptimize","false"))) {
@@ -288,8 +291,10 @@ public class IndexBuilder {
             }
         } catch (IOException e) {
             log.debug(e);
+            if (!finished) log.warn("Only "+deleted+" docs presumably deleted (only if existent) and "+updated+" docs (re-)indexed before the following error occurred: "+e);
             failure=e;
         } finally {
+            ldocBuffer.clear();
             // notify eventually waiting checkIndexerBuffer() calls
             synchronized(indexerLock) {
                 indexerLock.notifyAll();
