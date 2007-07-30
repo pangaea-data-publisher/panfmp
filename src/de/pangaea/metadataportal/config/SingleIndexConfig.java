@@ -34,7 +34,7 @@ public class SingleIndexConfig extends IndexConfig {
     @Deprecated
     public void setHarvesterClass(String v) throws ClassNotFoundException {
         Class<?> c=Class.forName(v);
-        harvesterClass=c.asSubclass(de.pangaea.metadataportal.harvester.AbstractHarvester.class);
+        harvesterClass=c.asSubclass(de.pangaea.metadataportal.harvester.Harvester.class);
     }
 
     @PublicForDigesterUse
@@ -52,7 +52,7 @@ public class SingleIndexConfig extends IndexConfig {
 
     @SuppressWarnings("unchecked")
     public void checkProperties() throws Exception {
-        de.pangaea.metadataportal.harvester.AbstractHarvester h=harvesterClass.newInstance();
+        de.pangaea.metadataportal.harvester.Harvester h=harvesterClass.newInstance();
         HashSet<String> validProperties=new HashSet<String>(h.getValidHarvesterPropertyNames());
         for (Enumeration<String> en=(Enumeration<String>)harvesterProperties.propertyNames(); en.hasMoreElements();) {
             String prop=en.nextElement();
@@ -115,7 +115,7 @@ public class SingleIndexConfig extends IndexConfig {
 
     // members "the configuration"
     private String indexDir=null;
-    public Class<? extends de.pangaea.metadataportal.harvester.AbstractHarvester> harvesterClass=null;
+    public Class<? extends de.pangaea.metadataportal.harvester.Harvester> harvesterClass=null;
     public InheritedProperties harvesterProperties=new InheritedProperties();
     public Templates xslt=null;
 }

@@ -104,13 +104,15 @@ public class RemoveDuplicates {
                     } finally {
                         terms.close();
                     }
+                    log.info("Finished removing duplicates. "+foundDupl+" duplicates of "+foundDocs+" documents removed!");
+                } catch (java.io.IOException e) {
+                    log.fatal("Exception during removing duplicates:",e);
                 } finally {
                     if (reader!=null) reader.close();
                 }
-                log.info("Finished removing duplicates. "+foundDupl+" duplicates of "+foundDocs+" documents removed!");
             }
         } catch (Exception e) {
-            log.fatal("Exception during removing duplicates.",e);
+            log.fatal("General error during removing duplicates:",e);
         }
     }
 }

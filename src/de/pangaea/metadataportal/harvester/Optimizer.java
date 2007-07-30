@@ -57,13 +57,15 @@ public class Optimizer {
                     writer = new IndexWriter(dir, conf.getAnalyzer(), false);
                     log.info("Optimizing...");
                     writer.optimize();
+                    log.info("Finished index optimizing of index \""+iconf.id+"\".");
+                } catch (java.io.IOException e) {
+                    log.fatal("Exception during index optimization.",e);
                 } finally {
                     if (writer!=null) writer.close();
                 }
-                log.info("Finished index optimizing.");
             }
         } catch (Exception e) {
-            log.fatal("Exception during index optimization.",e);
+            log.fatal("Optimizer general error:",e);
         }
     }
 

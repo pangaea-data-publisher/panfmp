@@ -64,7 +64,7 @@ public class MetadataDocument {
             if (mdocImpl!=null) cls=Class.forName(mdocImpl).asSubclass(MetadataDocument.class);
         } catch (ClassNotFoundException cnfe) {
             throw new ClassNotFoundException("There exists no class "+mdocImpl+" for rebuilding index. "+
-                "This error occurs if there was an incompatible change of panFMP. You have to reharvest from the original source and cannot rebuild your index!");
+                "This error occurs if there was an incompatible change of panFMP. You have to reharvest from the original source and recreate your index!");
         }
         if (log.isDebugEnabled()) log.debug("Using MetadataDocument class: "+cls.getName());
         MetadataDocument mdoc=cls.newInstance();
@@ -90,6 +90,8 @@ public class MetadataDocument {
     public void loadFromLucene(Document ldoc) throws Exception {
         deleted=false; datestamp=null;
         identifier=ldoc.get(IndexConstants.FIELDNAME_IDENTIFIER);
+        if (identifier==null)
+            log.warn("Loaded document without identifier from index.");
         try {
             String d=ldoc.get(IndexConstants.FIELDNAME_DATESTAMP);
             if (d!=null) datestamp=LuceneConversions.luceneToDate(d);
