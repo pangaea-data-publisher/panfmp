@@ -24,7 +24,8 @@ import java.util.*;
 import java.util.zip.*;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
-import javax.xml.transform.stream.StreamSource;
+import javax.xml.transform.sax.SAXSource;
+import org.xml.sax.InputSource;
 
 public class WebCrawlingHarvester extends Harvester {
 
@@ -281,8 +282,15 @@ public class WebCrawlingHarvester extends Harvester {
                         MetadataDocument mdoc=new MetadataDocument();
                         mdoc.setIdentifier(url.toString());
                         mdoc.setDatestamp(lastModified);
-                        StreamSource stream=new StreamSource(in,url.toString()); // TODO: encoding from HTTP header?
-                        mdoc.setDOM(xmlConverter.transform(stream));
+
+                        // a SAX InputSource is used because we can set the default encoding from the HTTP headers
+                        // if charset is superseded by <?xml ?> declaration, it is changed later by parser
+                        InputSource src=new InputSource(in);
+                        src.setSystemId(url.toString());
+                        src.setEncoding(charset);
+                        SAXSource ss=new SAXSource(StaticFactories.xinclSaxFactory.newSAXParser().getXMLReader(), src);
+                        mdoc.setDOM(xmlConverter.transform(ss));
+
                         addDocument(mdoc);
                     } finally {
                         in.close();
