@@ -175,8 +175,14 @@ public class Config {
             dig.addCallMethod("config/globalHarvesterProperties/*","addGlobalHarvesterProperty",0);
 
             // parse config
-            dig.push(this);
-            dig.parse(file);
+            try {
+                dig.push(this);
+                dig.parse(file);
+            } catch (org.xml.sax.SAXException saxe) {
+                // throw the real Exception not the digester one
+                if (saxe.getException()!=null) throw saxe.getException();
+                else throw saxe;
+            }
         } finally {
             dig=null;
         }
