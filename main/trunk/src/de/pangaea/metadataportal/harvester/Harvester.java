@@ -133,6 +133,19 @@ public abstract class Harvester {
     protected int harvestMessageStep=100;
 
     /**
+     * Date from which should be harvested (in time reference of the original server)
+     */
+    protected Date fromDateReference=null;
+
+    /**
+     * Reference date of this harvesting event (in time reference of the original server).
+     * This date is used on the next harvesting in variable {@link #fromDateReference}.
+     * Be sure to set this variable only <b>after</b> the successful harvesting, probably at the end of {@link #harvest}.
+     * As long as this variable is null, the harvester will not write or update the value in the index directory.
+     */
+    protected Date thisHarvestDateReference=null;
+
+    /**
      * Default constructor.
      */
     public Harvester() {}
@@ -149,6 +162,8 @@ public abstract class Harvester {
         if (harvestMessageStep<=0) throw new IllegalArgumentException("Invalid value for harvestMessageStep: "+harvestMessageStep);
         index = new IndexBuilder(false,iconfig);
         xmlConverter=new XMLConverter(iconfig);
+
+        fromDateReference=index.getLastHarvestedFromDisk();
     }
 
     /**
@@ -165,6 +180,9 @@ public abstract class Harvester {
      */
     public void close() throws Exception {
         if (index==null) throw new IllegalStateException("Harvester must be opened before using");
+
+        if (thisHarvestDateReference!=null) index.setLastHarvested(thisHarvestDateReference);
+
         if (!index.isClosed()) index.close();
         index=null;
 

@@ -23,7 +23,6 @@ import java.util.*;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import javax.xml.transform.stream.StreamSource;
-import javax.xml.parsers.*;
 
 public class DirectoryHarvester extends Harvester implements FilenameFilter {
 
@@ -31,7 +30,6 @@ public class DirectoryHarvester extends Harvester implements FilenameFilter {
     protected File directory=null;
     protected boolean recursive=false;
     protected Pattern filenameFilter=null;
-    protected java.util.Date from=null;
     protected String identifierPrefix="";
 
     @Override
@@ -48,12 +46,34 @@ public class DirectoryHarvester extends Harvester implements FilenameFilter {
         filenameFilter=(s==null) ? null : Pattern.compile(s);
     }
 
-    // harvester code
+    @Override
+    public void harvest() throws Exception {
+        if (index==null) throw new IllegalStateException("Index not yet opened");
+
+        java.util.Date startDate=new java.util.Date(); // store reference date of first harvesting step, to be set at end
+
+        processDirectory(directory);
+
+        // set the date for next harvesting
+        thisHarvestDateReference=startDate;
+    }
+
+    @Override
+    public List<String> getValidHarvesterPropertyNames() {
+        ArrayList<String> l=new ArrayList<String>(super.getValidHarvesterPropertyNames());
+        l.addAll(Arrays.<String>asList(
+            "directory",
+            "recursive",
+            "identifierPrefix",
+            "filenameFilter"
+        ));
+        return l;
+    }
 
     public boolean accept(File dir, String name) {
         File file=new File(dir,name);
         if (file.isDirectory()) return (recursive && !".".equals(name) && !"..".equals(name));
-        if (from!=null && from.getTime()>file.lastModified()) return false;
+        if (fromDateReference!=null && fromDateReference.getTime()>file.lastModified()) return false;
         if (filenameFilter==null) return true;
         Matcher m=filenameFilter.matcher(name);
         return m.matches();
@@ -77,31 +97,6 @@ public class DirectoryHarvester extends Harvester implements FilenameFilter {
             else if (f.isFile()) processFile(f);
         }
         log.info("Finished directory \""+dir+"\".");
-    }
-
-    @Override
-    public void harvest() throws Exception {
-        if (index==null) throw new IllegalStateException("Index not yet opened");
-
-        java.util.Date startDate=new java.util.Date();
-
-        from=index.getLastHarvestedFromDisk();
-        processDirectory(directory);
-        from=null;
-
-        index.setLastHarvested(startDate);
-    }
-
-    @Override
-    public List<String> getValidHarvesterPropertyNames() {
-        ArrayList<String> l=new ArrayList<String>(super.getValidHarvesterPropertyNames());
-        l.addAll(Arrays.<String>asList(
-            "directory",
-            "recursive",
-            "identifierPrefix",
-            "filenameFilter"
-        ));
-        return l;
     }
 
 }
