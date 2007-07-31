@@ -50,7 +50,7 @@ public class OAIHarvester extends Harvester {
     private Set<String> sets=null;
     private int retryCount=DEFAULT_RETRY_COUNT;
     private int retryTime=DEFAULT_RETRY_TIME;
-    public boolean fineGranularity=false; // default for OAI 2.0
+    private boolean fineGranularity=false; // default for OAI 2.0
 
     // construtor
     @Override
@@ -257,7 +257,6 @@ public class OAIHarvester extends Harvester {
         checkIdentify(baseUrl);
         reset();
 
-        Date from=index.getLastHarvestedFromDisk();
         StringBuilder url=new StringBuilder(baseUrl);
         String prefix=iconfig.harvesterProperties.getProperty("metadataPrefix");
         if (prefix==null) throw new NullPointerException("No metadataPrefix for the OAI repository was given!");
@@ -269,18 +268,16 @@ public class OAIHarvester extends Harvester {
                 url.append(URLEncoder.encode(sets.iterator().next(),"UTF-8"));
             } else log.warn("More than one set to be harvested - this is not supported by OAI-PMH. Filtering documents during indexing!");
         }
-        if (from!=null) {
+        if (fromDateReference!=null) {
             url.append("&from=");
-            url.append(URLEncoder.encode(fineGranularity?ISODateFormatter.formatLong(from):ISODateFormatter.formatShort(from),"UTF-8"));
+            url.append(URLEncoder.encode(fineGranularity?ISODateFormatter.formatLong(fromDateReference):ISODateFormatter.formatShort(fromDateReference),"UTF-8"));
         }
         readStream(url.toString());
-        Date lastHarvested=currResponseDate;
+        Date lastHarvested=currResponseDate; // store reference date of first harvesting step, to be set at end
 
         while (currResumptionToken!=null) {
             // checkIndexerBuffer or harvester should max. wait for 1/2 resumption Token expiration!!!
             log.debug("Resumption token expires in "+currResumptionExpiration+" ms");
-            //long maxWaitTime=(currResumptionExpiration>0L) ? currResumptionExpiration/2L : -1;
-            //index.setMaxWaitForIndexer(maxWaitTime);
             index.checkIndexerBuffer();
             url=new StringBuilder(baseUrl);
             url.append("?verb=ListRecords&resumptionToken=");
@@ -288,9 +285,10 @@ public class OAIHarvester extends Harvester {
             reset();
             readStream(url.toString());
         }
-
         reset();
-        index.setLastHarvested(lastHarvested);
+
+        // set the date for next harvesting
+        thisHarvestDateReference=lastHarvested;
     }
 
     @Override
