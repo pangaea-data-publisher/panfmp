@@ -91,11 +91,23 @@
                 <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="./ns-convert.xslt"/>
             </cfg:transform>-->
 		</cfg:index>
-		<cfg:virtualIndex id="dataportal-carboocean">
-			<cfg:displayName>CARBOOCEAN Dataportal</cfg:displayName>
+		<cfg:index id="copepod">
+			<cfg:displayName>COPEPOD</cfg:displayName>
+			<cfg:indexDir>./lucene-store/copepod</cfg:indexDir>
+			<cfg:harvesterClass>de.pangaea.metadataportal.harvester.WebCrawlingHarvester</cfg:harvesterClass>
+			<cfg:harvesterProperties>
+				<cfg:baseUrl>http://www.st.nmfs.gov/plankton/content/xml_src/</cfg:baseUrl>
+				<cfg:filenameFilter>.*\.xml</cfg:filenameFilter>
+				<cfg:autoOptimize>true</cfg:autoOptimize>
+				<cfg:validate>false</cfg:validate>
+			</cfg:harvesterProperties>
+		</cfg:index>
+		<cfg:virtualIndex id="dataportal">
+			<cfg:displayName>Test Dataportal</cfg:displayName>
 			<cfg:threaded>true</cfg:threaded>
 			<cfg:index ref="pangaea-carboocean"/>
 			<cfg:index ref="ifremer"/>
+			<cfg:index ref="copepod"/>
 		</cfg:virtualIndex>
 	</cfg:indexes>
 	<cfg:search>

@@ -205,6 +205,18 @@ public abstract class Harvester {
     }
 
     /**
+     * Optional method: Assigns a {@link Set} of valid identifiers observed during harvesting.
+     * {@link IndexBuilder} will check all documents in index with this set and delete
+     * all documents that are missing in it.
+     * <B>Only assign this set after harvesting is finished and before closing the index.
+     * A set, that does not contain really all valid identifiers, deletes unwanted ones from the index!</B>
+     */
+    protected void setValidIdentifiers(Set<String> validIdentifiers) {
+        if (index==null && !index.isClosed()) throw new IllegalStateException("Harvester must be opened before using");
+        index.setValidIdentifiers(validIdentifiers);
+    }
+
+    /**
      * Return the list of harvester property names that this harvester supports.
      * This method is called on {@link Config} loading to check if all property names in the config file are correct.
      * Overwrite this method in your own implementation and create a new {@link List} with the <code>List</code> returned by
