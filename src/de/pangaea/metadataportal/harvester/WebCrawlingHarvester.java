@@ -176,11 +176,10 @@ public class WebCrawlingHarvester extends Harvester {
     }
 
     private void analyzeHTML(URL url, String html) {
-        // TODO: a better and less memory and processing intensive parser :-)
-        String[] part=html.split("</[aA]\\s*>");
-        Pattern pat=Pattern.compile(".*<a\\b.*\\bhref\\s*=\\s*[\\\"\\'](.*?)[\\\"\\'\\#].*>.*",Pattern.CASE_INSENSITIVE|Pattern.DOTALL);
-        for (int i=0,c=part.length-1; i<c; i++) {
-            String link=pat.matcher(part[i]).replaceFirst("$1").trim();
+        Pattern pat=Pattern.compile("<a\\b.*?\\bhref\\s*=\\s*[\\\"\\'](.*?)[\\\"\\'\\#].*?>",Pattern.CASE_INSENSITIVE|Pattern.DOTALL);
+        Matcher m=pat.matcher(html);
+        while (m.find()) {
+            String link=m.group(1);
             try {
                 // only add this URL if it is valid
                 queueURL(new URL(url,link).toString());
