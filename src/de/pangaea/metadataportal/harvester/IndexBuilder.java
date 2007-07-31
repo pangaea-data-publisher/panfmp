@@ -41,6 +41,7 @@ public class IndexBuilder {
     private AtomicInteger runningConverters=new AtomicInteger(0);
     private AtomicReference<Exception> failure=new AtomicReference<Exception>(null);
     private AtomicReference<HarvesterCommitEvent> commitEvent=new AtomicReference<HarvesterCommitEvent>(null);
+    private AtomicReference<Set<String>> validIdentifiers=new AtomicReference<Set<String>>(null);
 
     private BlockingQueue<MetadataDocument> mdocBuffer;
     private BlockingQueue<IndexerQueueEntry> ldocBuffer;
@@ -101,6 +102,10 @@ public class IndexBuilder {
 
     public void registerHarvesterCommitEvent(HarvesterCommitEvent event) {
         commitEvent.set(event);
+    }
+
+    public void setValidIdentifiers(Set<String> validIdentifiers) {
+        this.validIdentifiers.set(validIdentifiers);
     }
 
     public boolean isClosed() {
@@ -221,13 +226,13 @@ public class IndexBuilder {
     }
 
     private void indexerThreadRun() {
-        org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(Thread.currentThread().getName());
+        org.apache.commons.logging.Log log=org.apache.commons.logging.LogFactory.getLog(Thread.currentThread().getName());
         log.info("Indexer thread started.");
         IndexWriter writer=null;
         int updated=0, deleted=0;
         boolean finished=false;
         try {
-            writer = new IndexWriter(dir, true, iconfig.parent.getAnalyzer(), !IndexReader.indexExists(dir));
+            writer=new IndexWriter(dir, true, iconfig.parent.getAnalyzer(), create);
             //writer.setInfoStream(System.err);
             writer.setMaxFieldLength(Integer.MAX_VALUE);
             writer.setMaxBufferedDocs(changesBeforeCommit);
@@ -278,14 +283,50 @@ public class IndexBuilder {
 
             writer.flush();
 
+            // check vor validIdentifiers Set and remove all unknown identifiers from index, if available
+            Set<String> validIdentifiers=this.validIdentifiers.get();
+            if (validIdentifiers!=null) {
+                log.info(deleted+" docs presumably deleted (if existent) and "+updated+" docs (re-)indexed so far.");
+                writer.close(); writer=null;
+
+                log.info("Removing documents not seen while harvesting (this may take a while)...");
+                IndexReader reader=null;
+                TermEnum terms=null;
+                Term base=new Term(IndexConstants.FIELDNAME_IDENTIFIER,"");
+                try {
+                    reader = iconfig.getUncachedIndexReader();
+                    terms=reader.terms(base);
+                    do {
+                        Term t=terms.term();
+                        if (t!=null && base.field()==t.field()) {
+                            if (!validIdentifiers.contains(t.text())) {
+                                int count=reader.deleteDocuments(t);
+                                if (count>0) committedIdentifiers.add(t.text());
+                                deleted+=count;
+                            }
+                        } else {
+                            break;
+                        }
+                    } while (terms.next());
+                } finally {
+                    if (terms!=null) terms.close();
+                    if (reader!=null) reader.close();
+                }
+            }
+
             // notify Harvester of index commit
             HarvesterCommitEvent ce=commitEvent.get();
             if (ce!=null && committedIdentifiers.size()>0) ce.harvesterCommitted(Collections.unmodifiableSet(committedIdentifiers));
+            committedIdentifiers.clear();
 
             finished=true;
             log.info(deleted+" docs presumably deleted (only if existent) and "+updated+" docs (re-)indexed - finished.");
 
             if (Boolean.parseBoolean(iconfig.harvesterProperties.getProperty("autoOptimize","false"))) {
+                if (writer==null) {
+                    writer=new IndexWriter(dir, true, iconfig.parent.getAnalyzer(), false);
+                    writer.setMaxFieldLength(Integer.MAX_VALUE);
+                }
                 log.info("Optimizing index...");
                 writer.optimize();
                 log.info("Index optimized.");
