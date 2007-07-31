@@ -82,11 +82,11 @@ public abstract class Harvester {
             } catch (IndexBuilderBackgroundFailure ibf) {
                 // do nothing, this exception is only to break out, real exception is thrown on close
             } catch (org.xml.sax.SAXParseException saxe) {
-                staticLog.fatal("Harvesting documents into index \""+siconf.id+"\" failed due to SAX parse error in \""+saxe.getSystemId()+"\", line "+saxe.getLineNumber()+", column "+saxe.getColumnNumber()+":",saxe.getException());
+                staticLog.fatal("Harvesting documents into index \""+siconf.id+"\" failed due to SAX parse error in \""+saxe.getSystemId()+"\", line "+saxe.getLineNumber()+", column "+saxe.getColumnNumber()+":",saxe);
             } catch (Exception e) {
                 if (e.getCause() instanceof org.xml.sax.SAXParseException) {
                     org.xml.sax.SAXParseException saxe=(org.xml.sax.SAXParseException)e.getCause();
-                    staticLog.fatal("Harvesting documents into index \""+siconf.id+"\" failed due to SAX parse error in \""+saxe.getSystemId()+"\", line "+saxe.getLineNumber()+", column "+saxe.getColumnNumber()+":",saxe.getException());
+                    staticLog.fatal("Harvesting documents into index \""+siconf.id+"\" failed due to SAX parse error in \""+saxe.getSystemId()+"\", line "+saxe.getLineNumber()+", column "+saxe.getColumnNumber()+":",saxe);
                 } else staticLog.fatal("Harvesting documents into index \""+siconf.id+"\" failed!",e);
             }
             // cleanup
