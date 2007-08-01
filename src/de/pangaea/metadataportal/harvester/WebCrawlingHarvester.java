@@ -33,7 +33,13 @@ public class WebCrawlingHarvester extends Harvester {
     public static final int DEFAULT_RETRY_TIME = 60; // seconds
     public static final int DEFAULT_RETRY_COUNT = 5;
 
-    public String HTML_SAX_PARSER_CLASS="org.cyberneko.html.parsers.SAXParser";
+    /**
+     * This is the parser class used to parse HTML documents to collect URLs for crawling.
+     * If this class is not in your classpath, the harvester will fail on startup in {@link #open}.
+     * If you change the implementation (possibly in future a HTML parser is embedded in XERCES),
+     * change this. Do not forget to revisit the features for this parser in the parsing method.
+     */
+    public static final String HTML_SAX_PARSER_CLASS="org.cyberneko.html.parsers.SAXParser";
 
     // Class members
     private String baseURL=null;
@@ -42,6 +48,7 @@ public class WebCrawlingHarvester extends Harvester {
     private Set<String> validIdentifiers=null;
     private int retryCount=DEFAULT_RETRY_COUNT;
     private int retryTime=DEFAULT_RETRY_TIME;
+    private long pauseBetweenRequests=0;
 
     private Set<String> harvested=new HashSet<String>();
     private SortedSet<String> needsHarvest=new TreeSet<String>();
@@ -71,6 +78,8 @@ public class WebCrawlingHarvester extends Harvester {
         if (retryCountStr!=null) retryCount=Integer.parseInt(retryCountStr);
         String retryTimeStr=iconfig.harvesterProperties.getProperty("retryAfterSeconds");
         if (retryTimeStr!=null) retryTime=Integer.parseInt(retryTimeStr);
+        String pauseBetweenRequestsStr=iconfig.harvesterProperties.getProperty("pauseBetweenRequests");
+        if (pauseBetweenRequestsStr!=null) pauseBetweenRequests=Long.parseLong(pauseBetweenRequestsStr);
 
         s=iconfig.harvesterProperties.getProperty("filenameFilter");
         filenameFilter=(s==null) ? null : Pattern.compile(s);
@@ -103,6 +112,10 @@ public class WebCrawlingHarvester extends Harvester {
             processURL(new URL(urlStr),retryCount);
             needsHarvest.remove(urlStr);
             harvested.add(urlStr);
+            // waiting
+            if (pauseBetweenRequests>0L && !needsHarvest.isEmpty()) try {
+                Thread.sleep(pauseBetweenRequests);
+            } catch (InterruptedException ie) {}
         }
 
         // update this for next harvesting
@@ -119,7 +132,8 @@ public class WebCrawlingHarvester extends Harvester {
             "retryAfterSeconds",
             "filenameFilter",
             "contentTypes",
-            "deleteMissingDocuments"
+            "deleteMissingDocuments",
+            "pauseBetweenRequests" /* in milliseconds */
         ));
         return l;
     }
@@ -127,6 +141,8 @@ public class WebCrawlingHarvester extends Harvester {
     // internal implementation
 
     private void queueURL(String url) {
+        int p=url.indexOf('#');
+        if (p>=0) url=url.substring(0,p);
         // check if it is below base
         if (!url.startsWith(baseURL)) return;
         // was it already harvested?
@@ -195,7 +211,8 @@ public class WebCrawlingHarvester extends Harvester {
         r.setFeature("http://xml.org/sax/features/namespaces", true);
         r.setFeature("http://cyberneko.org/html/features/balance-tags", true);
         r.setFeature("http://cyberneko.org/html/features/report-errors",false);
-        r.setProperty("http://cyberneko.org/html/properties/names/elems","lower");
+        // these are the defaults for HTML 4.0 and DOM with HTML:
+        r.setProperty("http://cyberneko.org/html/properties/names/elems","upper");
         r.setProperty("http://cyberneko.org/html/properties/names/attrs","lower");
 
         DefaultHandler handler=new DefaultHandler() {
@@ -208,52 +225,54 @@ public class WebCrawlingHarvester extends Harvester {
             @Override
             public void startElement(String namespaceURI, String localName, String qName, Attributes atts) throws SAXException {
                 String url=null;
-                if ("body".equals(localName)) {
+                if ("BODY".equals(localName)) {
                     inBODY++;
-                } else if ("frameset".equals(localName)) {
+                } else if ("FRAMESET".equals(localName)) {
                     inFRAMESET++;
-                } else if ("head".equals(localName)) {
+                } else if ("HEAD".equals(localName)) {
                     inHEAD++;
                 } else if (inHEAD>0) {
-                    if ("base".equals(localName)) {
+                    if ("BASE".equals(localName)) {
                         String newBase=atts.getValue("href");
                         if (newBase!=null) try {
                             base=new URL(base,newBase);
                         } catch (MalformedURLException mue) {
-                            log.warn("HTMLParser detected an invalid URL in HTML 'BASE' tag: "+newBase);
+                            // special exception to stop processing
+                            log.debug("Found invalid BASE-URL: "+url);
+                            throw new SAXException("#panFMP#HTML_INVALID_BASE");
                         }
                     }
                 } else {
                     if (inBODY>0) {
-                        if ("a".equals(localName) || "area".equals(localName)) {
+                        if ("A".equals(localName) || "AREA".equals(localName)) {
                             url=atts.getValue("href");
-                        } else if ("iframe".equals(localName)) {
+                        } else if ("IFRAME".equals(localName)) {
                             url=atts.getValue("src");
                         }
                     }
                     if (inFRAMESET>0) {
-                        if ("frame".equals(localName)) {
+                        if ("FRAME".equals(localName)) {
                             url=atts.getValue("src");
                         }
                     }
                 }
-                // append url to queue
-                if (url!=null) {
-                    int p=url.indexOf('#');
-                    if (p>=0) url=url.substring(0,p);
-                    try {
-                        queueURL(new URL(base,url).toString());
-                    } catch (MalformedURLException mue) {}
+                // append a possible url to queue
+                if (url!=null) try {
+                    queueURL(new URL(base,url).toString());
+                } catch (MalformedURLException mue) {
+                    // there may be javascript:-URLs in the document or something other
+                    // we will not throw errors!
+                    log.debug("Found invalid URL: "+url);
                 }
             }
 
             @Override
             public void endElement(String namespaceURI, String localName, String qName) throws SAXException {
-                if ("body".equals(localName)) {
+                if ("BODY".equals(localName)) {
                     inBODY--;
-                } else if ("frameset".equals(localName)) {
+                } else if ("FRAMESET".equals(localName)) {
                     inFRAMESET--;
-                } else if ("head".equals(localName)) {
+                } else if ("HEAD".equals(localName)) {
                     inHEAD--;
                 }
             }
@@ -261,7 +280,14 @@ public class WebCrawlingHarvester extends Harvester {
         };
         r.setContentHandler(handler);
         r.setErrorHandler(handler);
-        r.parse(source);
+        try {
+            r.parse(source);
+        } catch (SAXException saxe) {
+            // filter special stop criteria
+            if ("#panFMP#HTML_INVALID_BASE".equals(saxe.getMessage())) {
+                log.warn("HTMLParser detected an invalid URL in HTML 'BASE' tag. Stopped link parsing for this document!");
+            } else throw saxe;
+        }
     }
 
     private boolean acceptFile(URL url) {
