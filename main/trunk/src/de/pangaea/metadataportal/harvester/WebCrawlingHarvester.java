@@ -25,12 +25,15 @@ import java.util.zip.*;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import javax.xml.transform.sax.SAXSource;
-import org.xml.sax.InputSource;
+import org.xml.sax.*;
+import org.xml.sax.helpers.DefaultHandler;
 
 public class WebCrawlingHarvester extends Harvester {
 
     public static final int DEFAULT_RETRY_TIME = 60; // seconds
     public static final int DEFAULT_RETRY_COUNT = 5;
+
+    public String HTML_SAX_PARSER_CLASS="org.cyberneko.html.parsers.SAXParser";
 
     // Class members
     private String baseURL=null;
@@ -43,6 +46,8 @@ public class WebCrawlingHarvester extends Harvester {
     private Set<String> harvested=new HashSet<String>();
     private SortedSet<String> needsHarvest=new TreeSet<String>();
     private Date firstDateFound=null;
+
+    private Class<? extends XMLReader> htmlReaderClass=null;
 
     @Override
     public void open(SingleIndexConfig iconfig) throws Exception {
@@ -73,6 +78,13 @@ public class WebCrawlingHarvester extends Harvester {
 
         validIdentifiers=null;
         if (Boolean.parseBoolean(iconfig.harvesterProperties.getProperty("deleteMissingDocuments","true"))) validIdentifiers=new HashSet<String>();
+
+        // initialize and test for HTML SAX Parser
+        try {
+            htmlReaderClass=Class.forName(HTML_SAX_PARSER_CLASS).asSubclass(XMLReader.class);
+        } catch (ClassNotFoundException cfe) {
+            throw new ClassNotFoundException(getClass().getName()+" needs the NekoHTML parser in classpath!");
+        }
     }
 
     @Override
@@ -175,16 +187,76 @@ public class WebCrawlingHarvester extends Harvester {
         }
     }
 
-    private void analyzeHTML(URL url, String html) {
-        Pattern pat=Pattern.compile("<a\\b.*?\\bhref\\s*=\\s*[\\\"\\'](.*?)[\\\"\\'\\#].*?>",Pattern.CASE_INSENSITIVE|Pattern.DOTALL);
-        Matcher m=pat.matcher(html);
-        while (m.find()) {
-            String link=m.group(1);
-            try {
-                // only add this URL if it is valid
-                queueURL(new URL(url,link).toString());
-            } catch (MalformedURLException mue) {}
-        }
+    private void analyzeHTML(final URL baseURL, final InputSource source) throws Exception {
+        XMLReader r=htmlReaderClass.newInstance();
+        r.setFeature("http://xml.org/sax/features/namespaces", true);
+        r.setFeature("http://cyberneko.org/html/features/balance-tags", true);
+        r.setFeature("http://cyberneko.org/html/features/report-errors",false);
+        r.setProperty("http://cyberneko.org/html/properties/names/elems","lower");
+        r.setProperty("http://cyberneko.org/html/properties/names/attrs","lower");
+        if (source.getEncoding()!=null) r.setProperty("http://cyberneko.org/html/properties/default-encoding",source.getEncoding());
+        DefaultHandler handler=new DefaultHandler() {
+
+            private URL base=baseURL; // make it unfinal ;-)
+            private int inBODY=0;
+            private int inFRAMESET=0;
+            private int inHEAD=0;
+
+            @Override
+            public void startElement(String namespaceURI, String localName, String qName, Attributes atts) throws SAXException {
+                String url=null;
+                if ("body".equals(localName)) {
+                    inBODY++;
+                } else if ("frameset".equals(localName)) {
+                    inFRAMESET++;
+                } else if ("head".equals(localName)) {
+                    inHEAD++;
+                } else if (inBODY>0) {
+                    if ("a".equals(localName) || "area".equals(localName)) {
+                        url=atts.getValue("href");
+                    }
+                    if ("iframe".equals(localName)) {
+                        url=atts.getValue("src");
+                    }
+                } else if (inFRAMESET>0) {
+                    if ("frame".equals(localName)) {
+                        url=atts.getValue("src");
+                    }
+                } else if (inHEAD>0) {
+                    if ("base".equals(localName)) {
+                        String newBase=atts.getValue("href");
+                        if (newBase!=null) try {
+                            base=new URL(base,newBase);
+                        } catch (MalformedURLException mue) {
+                            log.warn("HTMLParser detected an invalid URL in <base/>!");
+                        }
+                    }
+                }
+                // append url to queue
+                if (url!=null) {
+                    int p=url.indexOf('#');
+                    if (p>=0) url=url.substring(0,p);
+                    try {
+                        queueURL(new URL(base,url).toString());
+                    } catch (MalformedURLException mue) {}
+                }
+            }
+
+            @Override
+            public void endElement(String namespaceURI, String localName, String qName) throws SAXException {
+                if ("body".equals(localName)) {
+                    inBODY--;
+                } else if ("frameset".equals(localName)) {
+                    inFRAMESET--;
+                } else if ("head".equals(localName)) {
+                    inHEAD--;
+                }
+            }
+
+        };
+        r.setContentHandler(handler);
+        r.setErrorHandler(handler);
+        r.parse(source);
     }
 
     private boolean acceptFile(URL url) {
@@ -239,28 +311,14 @@ public class WebCrawlingHarvester extends Harvester {
             if ("text/html".equals(contentType)) {
                 log.info("Analyzing HTML links in '"+url+"'...");
 
-                if (charset==null) charset="ISO-8859-1";
-
-                // guess buffer size for chars
-                int len=conn.getContentLength();
-                if (len<=0) {
-                    len=32768; // default StringBuilder size
-                } else {
-                    len=(int)Math.ceil(((double)len)*java.nio.charset.Charset.forName(charset).newDecoder().averageCharsPerByte());
-                    if (len>32768*32) len=32768*32; // if too big
-                }
-
                 // reopen for GET
                 conn=(HttpURLConnection)url.openConnection();
                 in=sendHTTPRequest(conn,"GET");
                 if (in!=null) try {
-                    Reader r=new InputStreamReader(in,charset);
-                    StringBuilder sb=new StringBuilder(len);
-                    char[] buf=new char[8192];
-                    int count;
-                    while ((count=r.read(buf))>=0) sb.append(buf,0,count);
-                    r.close();
-                    analyzeHTML(url,sb.toString());
+                    InputSource src=new InputSource(in);
+                    src.setSystemId(url.toString());
+                    src.setEncoding(charset);
+                    analyzeHTML(url,src);
                 } finally {
                     in.close();
                 }
