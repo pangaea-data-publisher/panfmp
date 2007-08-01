@@ -51,7 +51,6 @@ public class WebCrawlingHarvester extends Harvester {
 
     @Override
     public void open(SingleIndexConfig iconfig) throws Exception {
-        // TODO: we want to regenerate the index every time
         super.open(iconfig);
 
         String s=iconfig.harvesterProperties.getProperty("baseUrl");
@@ -148,7 +147,11 @@ public class WebCrawlingHarvester extends Harvester {
 
             conn.setRequestProperty("Accept-Encoding","gzip, deflate, identity;q=0.3, *;q=0");
             conn.setRequestProperty("Accept-Charset","utf-8, *;q=0.5");
-            conn.setRequestProperty("Accept","text/xml, application/xml, text/html, *;q=0.1");
+
+            StringBuilder ac=new StringBuilder();
+            for (String c : contentTypes) ac.append(c+", ");
+            ac.append("text/html, *;q=0.1");
+            conn.setRequestProperty("Accept",ac.toString());
 
             conn.setUseCaches(false);
             conn.setFollowRedirects(true);
@@ -194,7 +197,7 @@ public class WebCrawlingHarvester extends Harvester {
         r.setFeature("http://cyberneko.org/html/features/report-errors",false);
         r.setProperty("http://cyberneko.org/html/properties/names/elems","lower");
         r.setProperty("http://cyberneko.org/html/properties/names/attrs","lower");
-        if (source.getEncoding()!=null) r.setProperty("http://cyberneko.org/html/properties/default-encoding",source.getEncoding());
+
         DefaultHandler handler=new DefaultHandler() {
 
             private URL base=baseURL; // make it unfinal ;-)
@@ -217,15 +220,14 @@ public class WebCrawlingHarvester extends Harvester {
                         if (newBase!=null) try {
                             base=new URL(base,newBase);
                         } catch (MalformedURLException mue) {
-                            log.warn("HTMLParser detected an invalid URL in <base/>!");
+                            log.warn("HTMLParser detected an invalid URL in HTML 'BASE' tag: "+newBase);
                         }
                     }
                 } else {
                     if (inBODY>0) {
                         if ("a".equals(localName) || "area".equals(localName)) {
                             url=atts.getValue("href");
-                        }
-                        if ("iframe".equals(localName)) {
+                        } else if ("iframe".equals(localName)) {
                             url=atts.getValue("src");
                         }
                     }

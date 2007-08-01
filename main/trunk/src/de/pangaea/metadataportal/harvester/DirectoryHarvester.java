@@ -36,7 +36,6 @@ public class DirectoryHarvester extends Harvester implements FilenameFilter {
 
     @Override
     public void open(SingleIndexConfig iconfig) throws Exception {
-        // TODO: we want to regenerate the index every time
         super.open(iconfig);
 
         String s=iconfig.harvesterProperties.getProperty("directory");
