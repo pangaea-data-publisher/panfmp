@@ -211,17 +211,6 @@ public class WebCrawlingHarvester extends Harvester {
                     inFRAMESET++;
                 } else if ("head".equals(localName)) {
                     inHEAD++;
-                } else if (inBODY>0) {
-                    if ("a".equals(localName) || "area".equals(localName)) {
-                        url=atts.getValue("href");
-                    }
-                    if ("iframe".equals(localName)) {
-                        url=atts.getValue("src");
-                    }
-                } else if (inFRAMESET>0) {
-                    if ("frame".equals(localName)) {
-                        url=atts.getValue("src");
-                    }
                 } else if (inHEAD>0) {
                     if ("base".equals(localName)) {
                         String newBase=atts.getValue("href");
@@ -229,6 +218,20 @@ public class WebCrawlingHarvester extends Harvester {
                             base=new URL(base,newBase);
                         } catch (MalformedURLException mue) {
                             log.warn("HTMLParser detected an invalid URL in <base/>!");
+                        }
+                    }
+                } else {
+                    if (inBODY>0) {
+                        if ("a".equals(localName) || "area".equals(localName)) {
+                            url=atts.getValue("href");
+                        }
+                        if ("iframe".equals(localName)) {
+                            url=atts.getValue("src");
+                        }
+                    }
+                    if (inFRAMESET>0) {
+                        if ("frame".equals(localName)) {
+                            url=atts.getValue("src");
                         }
                     }
                 }
