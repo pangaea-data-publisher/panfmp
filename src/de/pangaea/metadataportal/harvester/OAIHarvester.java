@@ -113,7 +113,6 @@ public class OAIHarvester extends Harvester {
 
     protected void digesterAddGeneralOAIRules(ExtendedDigester dig) throws Exception {
         dig.setEntityResolver(OAIDownload.getEntityResolver(dig.getEntityResolver()));
-        dig.setLogger(log.isDebugEnabled()?log:new org.apache.commons.logging.impl.NoOpLog());
         dig.setNamespaceAware(true);
         dig.setValidating(false);
         dig.setRulesWithInvalidElementCheck( new ExtendedBaseRules() );

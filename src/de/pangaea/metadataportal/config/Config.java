@@ -53,7 +53,6 @@ public class Config {
             final Class[] DIGSTRING_PARAMS=new Class[]{ExtendedDigester.class,String.class};
 
             dig=new ExtendedDigester(StaticFactories.xinclSaxFactory.newSAXParser());
-            dig.setLogger(log.isDebugEnabled()?log:new org.apache.commons.logging.impl.NoOpLog());
             dig.setNamespaceAware(true);
             dig.setValidating(false);
             dig.setRulesWithInvalidElementCheck( new ExtendedBaseRules() );
