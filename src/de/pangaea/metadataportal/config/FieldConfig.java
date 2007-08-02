@@ -18,6 +18,11 @@ package de.pangaea.metadataportal.config;
 
 import de.pangaea.metadataportal.utils.*;
 
+/**
+ * Config element that contains the definition of a field. It contains its name and some
+ * properties like name, datatype and Lucene indexing flags.
+ * @author Uwe Schindler
+ */
 public class FieldConfig extends ExpressionConfig {
 
     public void setName(String v) {

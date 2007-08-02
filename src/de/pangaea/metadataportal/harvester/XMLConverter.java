@@ -26,10 +26,10 @@ import org.w3c.dom.Document;
 import org.xml.sax.*;
 import java.io.IOException;
 
-/*
-This class handles the transformation from any source to the "official" metadata format and can even validate it
-*/
-
+/**
+ * This class handles the transformation from any source to the "official" metadata format and can even validate it
+ * @author Uwe Schindler
+ */
 public class XMLConverter  {
 
     private static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(XMLConverter.class);

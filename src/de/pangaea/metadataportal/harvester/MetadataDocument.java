@@ -33,6 +33,7 @@ import org.w3c.dom.DocumentFragment;
 /**
  * This class holds all information harvested and provides methods for {@link IndexBuilder} to create
  * a Lucene {@link Document} instance from it.
+ * @author Uwe Schindler
  */
 public class MetadataDocument {
     private static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(MetadataDocument.class);

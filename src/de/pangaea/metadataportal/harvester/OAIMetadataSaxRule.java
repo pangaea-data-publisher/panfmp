@@ -19,14 +19,15 @@ package de.pangaea.metadataportal.harvester;
 import de.pangaea.metadataportal.utils.*;
 import org.xml.sax.ContentHandler;
 
-/***
-This class is used as a rule for the "metadata" element of the OAI response.
-Whenever this element occurs in digester, begin/end will be called, that then puts all further SAX events to the specified ContentHandler
-***/
-
+/**
+ * This class is used as a rule for the "metadata" element of the OAI response.
+ * Whenever this element occurs in Digester, it feeds the SAX events to a content handler supplied by {@link XMLConverter}
+ * and stores the DOM result in the {@link OAIMetadataDocument} on the Digester stack.
+ * @author Uwe Schindler
+ */
 public class OAIMetadataSaxRule extends de.pangaea.metadataportal.utils.SaxRule {
 
-    private MetadataDocument doc=null;
+    private OAIMetadataDocument doc=null;
     private XMLConverter trans=null;
 
     public OAIMetadataSaxRule(XMLConverter trans) {
@@ -38,7 +39,7 @@ public class OAIMetadataSaxRule extends de.pangaea.metadataportal.utils.SaxRule 
 
     @Override
     public void begin(java.lang.String namespace, java.lang.String name, org.xml.sax.Attributes attributes) throws Exception {
-        doc=(MetadataDocument)digester.peek(); // the MetadataDocument is on the stack!!!
+        doc=(OAIMetadataDocument)digester.peek(); // the OAIMetadataDocument is on the stack!!!
         ContentHandler handler=trans.getTransformContentHandler(doc.getIdentifier());
         setExcludeNamespaces(java.util.Collections.singleton(OAIHarvester.OAI_NS));
         setContentHandler(handler);

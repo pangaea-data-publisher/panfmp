@@ -20,6 +20,10 @@ import java.util.*;
 import de.pangaea.metadataportal.utils.*;
 import javax.xml.transform.*;
 
+/**
+ * Configuration of a real lucene index. Such indexes can be the target of a harvest operation.
+ * @author Uwe Schindler
+ */
 public class SingleIndexConfig extends IndexConfig {
 
     public SingleIndexConfig() {

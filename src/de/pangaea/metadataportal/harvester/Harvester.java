@@ -22,6 +22,7 @@ import de.pangaea.metadataportal.config.*;
 /**
  * Harvester interface to panFMP. This class is the abstract superclass of all harvesters.
  * It also supplies an entry point for the command line interface.
+ * @author Uwe Schindler
  */
 public abstract class Harvester {
 

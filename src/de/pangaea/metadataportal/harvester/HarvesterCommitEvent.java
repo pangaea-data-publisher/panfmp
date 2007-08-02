@@ -23,6 +23,7 @@ package de.pangaea.metadataportal.harvester;
  * <P>To use commit events, the {@link Harvester} class must implement this interface
  * (which is not the default) and call {@link IndexBuilder#registerHarvesterCommitEvent}
  * on startup.
+ * @author Uwe Schindler
  */
 public interface HarvesterCommitEvent {
 
