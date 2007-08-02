@@ -43,7 +43,7 @@ public class FilterConfig extends ExpressionConfig {
 
     @Override
     public String toString() {
-        return new StringBuilder(type.toString()).append('(').append(super.toString()).append(')').toString();
+        return new StringBuilder().append(type).append('(').append(super.toString()).append(')').toString();
     }
 
     // members "the configuration"

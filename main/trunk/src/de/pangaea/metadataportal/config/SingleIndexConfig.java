@@ -54,11 +54,11 @@ public class SingleIndexConfig extends IndexConfig {
             throw new IllegalStateException("Some index configuration fields are missing for index with id=\""+id+"\"!");
     }
 
-    @SuppressWarnings("unchecked")
     public void checkProperties() throws Exception {
         de.pangaea.metadataportal.harvester.Harvester h=harvesterClass.newInstance();
         HashSet<String> validProperties=new HashSet<String>(h.getValidHarvesterPropertyNames());
-        for (Enumeration<String> en=(Enumeration<String>)harvesterProperties.propertyNames(); en.hasMoreElements();) {
+        @SuppressWarnings("unchecked") Enumeration<String> en=(Enumeration<String>)harvesterProperties.propertyNames();
+        while (en.hasMoreElements()) {
             String prop=en.nextElement();
             if (!validProperties.contains(prop))
                 throw new IllegalArgumentException("Harvester '"+harvesterClass.getName()+"' for index '"+id+"' does not support property '"+prop+"'! Supported properties are: "+validProperties);
@@ -105,6 +105,7 @@ public class SingleIndexConfig extends IndexConfig {
         closeIndex();
     }
 
+    @Override
     protected void finalize() throws java.io.IOException {
         closeIndex();
     }

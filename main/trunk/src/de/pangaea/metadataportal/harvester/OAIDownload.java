@@ -97,6 +97,7 @@ public final class OAIDownload {
         String contentType=conn.getContentType();
         String charset=null;
         if (contentType!=null) {
+            contentType=contentType.toLowerCase();
             int charsetStart=contentType.indexOf("charset=");
             if (charsetStart>=0) {
                 int charsetEnd=contentType.indexOf(";",charsetStart);

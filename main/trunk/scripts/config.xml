@@ -99,7 +99,7 @@
 				<cfg:baseUrl>http://www.st.nmfs.gov/plankton/content/xml_src/</cfg:baseUrl>
 				<cfg:filenameFilter>.*\.xml</cfg:filenameFilter>
 				<cfg:autoOptimize>true</cfg:autoOptimize>
-				<cfg:validate>false</cfg:validate>
+				<cfg:validate>true</cfg:validate>
 			</cfg:harvesterProperties>
 		</cfg:index>
 		<cfg:virtualIndex id="dataportal">

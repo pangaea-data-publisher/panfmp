@@ -40,7 +40,7 @@ public class VariableConfig extends ExpressionConfig {
 
     @Override
     public String toString() {
-        return new StringBuilder(name.toString()).append(" (").append(super.toString()).append(')').toString();
+        return new StringBuilder().append(name).append(" (").append(super.toString()).append(')').toString();
     }
 
     // members "the configuration"

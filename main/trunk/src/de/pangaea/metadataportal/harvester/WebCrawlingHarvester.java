@@ -70,7 +70,7 @@ public class WebCrawlingHarvester extends Harvester {
 
         s=iconfig.harvesterProperties.getProperty("contentTypes","text/xml,application/xml");
         for (String c : s.split("[\\,\\;\\s]+")) {
-            c=c.trim();
+            c=c.trim().toLowerCase();
             if (!"".equals(c)) contentTypes.add(c);
         }
 
@@ -315,6 +315,7 @@ public class WebCrawlingHarvester extends Harvester {
             String contentType=conn.getContentType();
             String charset=null;
             if (contentType!=null) {
+                contentType=contentType.toLowerCase();
                 int charsetStart=contentType.indexOf("charset=");
                 if (charsetStart>=0) {
                     int charsetEnd=contentType.indexOf(";",charsetStart);
@@ -324,7 +325,7 @@ public class WebCrawlingHarvester extends Harvester {
                 }
                 int contentEnd=contentType.indexOf(';');
                 if (contentEnd>=0) contentType=contentType.substring(0,contentEnd);
-                contentType=contentType.trim().toLowerCase();
+                contentType=contentType.trim();
             }
             log.debug("Charset from Content-Type: "+charset+"; plain Content-Type without parameters: "+contentType);
             if (contentType==null) {
