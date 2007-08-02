@@ -106,7 +106,7 @@ public final class OAIDownload {
                 charset=contentType.substring(charsetStart,charsetEnd).trim();
             }
         }
-        log.debug("Charset from Content-Type: "+charset);
+            log.debug("Charset from Content-Type: '"+charset+"'");
 
         InputSource src=new InputSource(in);
         src.setSystemId(url.toString());

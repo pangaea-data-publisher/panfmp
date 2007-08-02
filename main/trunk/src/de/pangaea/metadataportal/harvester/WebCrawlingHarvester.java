@@ -99,23 +99,33 @@ public class WebCrawlingHarvester extends Harvester {
     public void harvest() throws Exception {
         if (index==null) throw new IllegalStateException("Index not yet opened");
 
-        // queue this base URL to start with
-        queueURL(baseURL);
+        // process this URL directly and save possible redirect as new base
+        String urlStr=baseURL; baseURL=""; // disable base checking for the entry point to follow a initial redirect for sure
+        harvested.add(urlStr);
+        URL newbaseURL=processURL(new URL(urlStr),retryCount);
 
         // get an URL that points to the current directory
         // from now on this is used as baseURL
-        baseURL=new URL(new URL(baseURL),"./").toString();
+        baseURL = ("".equals(newbaseURL.getPath())) ? newbaseURL.toString() : new URL(newbaseURL,"./").toString();
+        log.debug("URL directory which harvesting may not escape: "+baseURL);
+
+        // remove invalid URLs from queued list (because until now we had no baseURL restriction)
+        Iterator<String> it=needsHarvest.iterator();
+        while (it.hasNext()) {
+            if (!it.next().startsWith(baseURL)) it.remove();
+        }
 
         // harvest queue
         while (!needsHarvest.isEmpty()) {
-            String urlStr=needsHarvest.first();
-            processURL(new URL(urlStr),retryCount);
-            needsHarvest.remove(urlStr);
-            harvested.add(urlStr);
             // waiting
-            if (pauseBetweenRequests>0L && !needsHarvest.isEmpty()) try {
+            if (pauseBetweenRequests>0L) try {
                 Thread.sleep(pauseBetweenRequests);
             } catch (InterruptedException ie) {}
+            // process a new url
+            urlStr=needsHarvest.first();
+            needsHarvest.remove(urlStr);
+            harvested.add(urlStr);
+            processURL(new URL(urlStr),retryCount);
         }
 
         // update this for next harvesting
@@ -190,14 +200,16 @@ public class WebCrawlingHarvester extends Harvester {
             }
 
             // cast stream if encoding different from identity
-            String encoding=conn.getContentEncoding();
-            if (encoding==null) encoding="identity";
-            encoding=encoding.toLowerCase();
+            if (!"HEAD".equals(method)) {
+                String encoding=conn.getContentEncoding();
+                if (encoding==null) encoding="identity";
+                encoding=encoding.toLowerCase();
 
-            log.debug("HTTP server uses "+encoding+" content encoding.");
-            if ("gzip".equals(encoding)) in=new GZIPInputStream(in);
-            else if ("deflate".equals(encoding)) in=new InflaterInputStream(in);
-            else if (!"identity".equals(encoding)) throw new IOException("Server uses an invalid content encoding: "+encoding);
+                log.debug("HTTP server uses "+encoding+" content encoding.");
+                if ("gzip".equals(encoding)) in=new GZIPInputStream(in);
+                else if ("deflate".equals(encoding)) in=new InflaterInputStream(in);
+                else if (!"identity".equals(encoding)) throw new IOException("Server uses an invalid content encoding: "+encoding);
+            }
 
             return in;
         } catch (FileNotFoundException fnfe) {
@@ -299,13 +311,13 @@ public class WebCrawlingHarvester extends Harvester {
         return m.matches();
     }
 
-    private void processURL(URL url, int retryCount) throws Exception {
+    private URL processURL(URL url, int retryCount) throws Exception {
         log.info("Requesting props of '"+url+"'...");
 
         try {
             HttpURLConnection conn=(HttpURLConnection)url.openConnection();
             InputStream in=sendHTTPRequest(conn,"HEAD");
-            if (in==null) return;
+            if (in==null) return url;
             in.close(); // it is empty
 
             // set the harvest date to the first received timestamp from server
@@ -327,18 +339,25 @@ public class WebCrawlingHarvester extends Harvester {
                 if (contentEnd>=0) contentType=contentType.substring(0,contentEnd);
                 contentType=contentType.trim();
             }
-            log.debug("Charset from Content-Type: "+charset+"; plain Content-Type without parameters: "+contentType);
+            log.debug("Charset from Content-Type: '"+charset+"'; Type from Content-Type: '"+contentType+"'");
             if (contentType==null) {
                 log.warn("Connection to URL '"+url+"' did not return a content-type, skipping.");
-                return;
+                return url;
             }
 
             // if we got a redirect the new URL is now needed
-            url=conn.getURL();
-            // check if it is below base
-            if (!url.toString().startsWith(baseURL)) return;
-            // was it already harvested?
-            if (harvested.contains(url.toString())) return;
+            URL newurl=conn.getURL();
+            if (!url.toString().equals(newurl.toString())) {
+                log.debug("Got redirect to: "+newurl);
+                url=newurl;
+                // check if it is below base
+                if (!url.toString().startsWith(baseURL)) return url;
+                // was it already harvested?
+                if (harvested.contains(url.toString())) return url;
+                // clean this new url from lists
+                needsHarvest.remove(url.toString());
+                harvested.add(url.toString());
+            }
 
             if ("text/html".equals(contentType)) {
                 log.info("Analyzing HTML links in '"+url+"'...");
@@ -360,7 +379,7 @@ public class WebCrawlingHarvester extends Harvester {
 
                     Date lastModified=null;
                     if (conn.getLastModified()!=0L) lastModified=new java.util.Date(conn.getLastModified());
-                    if (lastModified!=null && fromDateReference!=null && lastModified.getTime()<fromDateReference.getTime()) return;
+                    if (lastModified!=null && fromDateReference!=null && lastModified.getTime()<fromDateReference.getTime()) return url;
 
                     log.info("Harvesting '"+url+"'...");
 
@@ -398,8 +417,9 @@ public class WebCrawlingHarvester extends Harvester {
             }
             log.info("Retrying after "+after+" seconds ("+retryCount+" retries left)...");
             try { Thread.sleep(1000L*after); } catch (InterruptedException ie) {}
-            processURL(url,retryCount-1);
+            return processURL(url,retryCount-1);
         }
+        return url;
     }
 
 }
