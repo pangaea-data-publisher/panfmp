@@ -24,6 +24,7 @@ import java.lang.annotation.*;
  * intended to be public. So <b>please do not use them in your Java code!</b>
  * The annotation should always be used together with <code>@Deprecated</code>
  * to warn the user if it is used in code outside of Digester.
+ * @author Uwe Schindler
  */
 @Documented
 @Retention(value=RetentionPolicy.RUNTIME)

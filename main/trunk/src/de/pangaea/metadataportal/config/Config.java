@@ -29,6 +29,10 @@ import javax.xml.transform.sax.*;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.*;
 
+/**
+ * Main panFMP configuration class. It loads the configuration from a XML file.
+ * @author Uwe Schindler
+ */
 public class Config {
 
     protected static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(Config.class);

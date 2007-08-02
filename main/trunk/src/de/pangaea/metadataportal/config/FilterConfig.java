@@ -19,6 +19,11 @@ package de.pangaea.metadataportal.config;
 import de.pangaea.metadataportal.utils.*;
 import javax.xml.transform.*;
 
+/**
+ * A filter config element that filters harvested documents by a XPath expression
+ * that returns a {@link javax.xml.xpath.XPathConstants#BOOLEAN} value.
+ * @author Uwe Schindler
+ */
 public class FilterConfig extends ExpressionConfig {
 
     @PublicForDigesterUse

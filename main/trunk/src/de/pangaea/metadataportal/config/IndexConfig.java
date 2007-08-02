@@ -16,6 +16,11 @@
 
 package de.pangaea.metadataportal.config;
 
+/**
+ * Abstract configuration of an panFMP index. It not only configures its properties like name/id,
+ * it also contains methods to get some index access objects (IndexReader, Searcher) and status information.
+ * @author Uwe Schindler
+ */
 public abstract class IndexConfig {
 
     public void setId(String v) {

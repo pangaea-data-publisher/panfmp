@@ -21,6 +21,10 @@ import javax.xml.XMLConstants;
 import javax.xml.xpath.*;
 import javax.xml.transform.*;
 
+/**
+ * Generic XPath/XSLT config element. This class contains a XPath expression <b>OR</b> a XSLT Template.
+ * @author Uwe Schindler
+ */
 public class ExpressionConfig {
 
     @PublicForDigesterUse

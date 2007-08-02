@@ -19,6 +19,13 @@ package de.pangaea.metadataportal.config;
 import de.pangaea.metadataportal.utils.PublicForDigesterUse;
 import java.util.*;
 
+/**
+ * Configuration of a virtual lucene index. Such indexes can not be the target of a harvest operation.
+ * It is only a collection of {@link SingleIndexConfig}.
+ * It supplies methods to get some index access objects (IndexReader, Searcher) and status information.
+ * Because of that it is possible to use these virtual indexes for searching like one single index.
+ * @author Uwe Schindler
+ */
 public class VirtualIndexConfig extends IndexConfig {
 
     public VirtualIndexConfig() {

@@ -26,6 +26,7 @@ import org.xml.sax.*;
  * This class is used as a rule for included documents during <code>Digester</code> parsing.
  * Whenever this element matches in <code>Digester</code>, <code>begin</code>/<code>end</code> will be called,
  * that then puts all further SAX events to the specified SAX <code>ContentHandler</code>.
+ * @author Uwe Schindler
  */
 public class SaxRule extends org.apache.commons.digester.Rule {
 

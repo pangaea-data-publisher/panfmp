@@ -20,6 +20,12 @@ import de.pangaea.metadataportal.utils.*;
 import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
 
+/**
+ * A config element that supplies a variable like variables in XPath.
+ * Variables can later be used in {@link FilterConfig}, {@link FieldConfig}, or document boosts
+ * as XPath expression components.
+ * @author Uwe Schindler
+ */
 public class VariableConfig extends ExpressionConfig {
 
     @PublicForDigesterUse

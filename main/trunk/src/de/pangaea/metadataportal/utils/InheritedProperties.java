@@ -18,7 +18,10 @@ package de.pangaea.metadataportal.utils;
 
 import java.util.Properties;
 
-/* This class extends Properties by a method to set the protected parent Properties */
+/**
+ * This class extends Properties by a method to set the protected parent Properties
+ * @author Uwe Schindler
+ */
 public final class InheritedProperties extends Properties {
 
     public void setParentProperties(Properties props) {

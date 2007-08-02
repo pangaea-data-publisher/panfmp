@@ -23,6 +23,7 @@ import org.apache.lucene.document.*;
 
 /**
  * Special implementation of {@link MetadataDocument} that adds OAI set support to internal fields
+ * @author Uwe Schindler
  */
 public class OAIMetadataDocument extends MetadataDocument {
 
