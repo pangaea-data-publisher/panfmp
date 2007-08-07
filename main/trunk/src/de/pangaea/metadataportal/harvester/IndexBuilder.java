@@ -283,9 +283,9 @@ public class IndexBuilder {
 
             writer.flush();
 
-            // check vor validIdentifiers Set and remove all unknown identifiers from index, if available
+            // check vor validIdentifiers Set and remove all unknown identifiers from index, if available (but not if new-created index)
             Set<String> validIdentifiers=this.validIdentifiers.get();
-            if (validIdentifiers!=null) {
+            if (validIdentifiers!=null && !create) {
                 log.info(deleted+" docs presumably deleted (if existent) and "+updated+" docs (re-)indexed so far.");
                 writer.close(); writer=null;
 
