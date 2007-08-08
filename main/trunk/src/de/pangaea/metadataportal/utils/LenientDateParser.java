@@ -19,6 +19,7 @@ package de.pangaea.metadataportal.utils;
 import java.util.Date;
 import java.util.TimeZone;
 import java.util.Locale;
+import java.util.regex.Pattern;
 import java.text.*;
 
 // TODO !!!!!!!!!!!!!!!!!
@@ -29,6 +30,11 @@ public final class LenientDateParser {
 
     public static synchronized Date parseDate(String date) throws ParseException {
         if (date==null) return null;
+
+        // try to remove invalid time zone (remove dot)
+        date=tzpat.matcher(date).replaceFirst("$1$2");
+
+        // parse
         ParsePosition pp=new ParsePosition(0);
         Date d1=null,d2=null;
 
@@ -60,6 +66,7 @@ public final class LenientDateParser {
     }
 
     // static constants
+    private static Pattern tzpat=Pattern.compile("([\\+\\-]\\d\\d)\\:(\\d\\d)\\z");
     private static DateFormat[] dateFormats={
         new SimpleDateFormat("yyyy-MM-dd'T'",Locale.US),
         new SimpleDateFormat("yyyy-MM-dd",Locale.US),
@@ -75,10 +82,10 @@ public final class LenientDateParser {
     private static DateFormat[] timeFormats={
         new SimpleDateFormat("HH:mm:ss.SSS'Z'",Locale.US),
         new SimpleDateFormat("HH:mm:ss'Z'",Locale.US),
-        new SimpleDateFormat("HH:mm:ss.SSS Z",Locale.US),
-        new SimpleDateFormat("HH:mm:ss Z",Locale.US),
         new SimpleDateFormat("HH:mm:ss.SSSZ",Locale.US),
         new SimpleDateFormat("HH:mm:ssZ",Locale.US),
+        new SimpleDateFormat("HH:mm:ss.SSS z",Locale.US),
+        new SimpleDateFormat("HH:mm:ss z",Locale.US),
         java.text.DateFormat.getTimeInstance(DateFormat.FULL,Locale.US),
         java.text.DateFormat.getTimeInstance(DateFormat.FULL,Locale.GERMANY),
         java.text.DateFormat.getTimeInstance(DateFormat.MEDIUM,Locale.US),
