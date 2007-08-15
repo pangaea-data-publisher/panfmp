@@ -60,9 +60,9 @@ public class SearchServiceImpl {
             }
             // add field to query (in anyOf subclause or as main query part)
             if (fq.fieldName==null) {
-                dest.add(service.newDefaultFieldQuery(fq.query), BooleanClause.Occur.MUST);
+                dest.add(service.newDefaultFieldQuery(fq.query), destType);
             } else {
-                dest.add(service.newTextQuery(fq.fieldName,fq.query), BooleanClause.Occur.MUST);
+                dest.add(service.newTextQuery(fq.fieldName,fq.query), destType);
             }
             ok=true;
         }
