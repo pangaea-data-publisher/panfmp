@@ -52,13 +52,17 @@ import java.util.*;
  * // start search
  * SearchResultList list=service.search(bq,sort);
  * // print search results (start is item to start with, count is number of results)
- * for (int i=start; i&lt;start+count; i++) {
- *   SearchResultItem item=list.getResult(i);
+ * int start=0,count=10;
+ * List&lt;SearchResultItem&gt; page=list.subList(
+ *   Math.min(start, list.size()),
+ *   Math.min(start+count, list.size())
+ * );
+ * for (SearchResultItem item : page) {
  *   System.out.println(item.getFields());
  * }
  * </pre>
  * <p>It is good to know that {@link SearchResultList} implements the {@link List} interface. This makes it possible to
- * use the standard Java Collection API to access search results.</p>
+ * use the standard Java Collection API to access search results as you can see in the example.</p>
  * </li>
  * <li><p>Retrieve a large number of results in unsorted order through a {@link SearchResultCollector}. This is recommended for creating
  * large files with thousands of results or processing map data because iterating over a {@link SearchResultList} is very slow
