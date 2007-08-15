@@ -3,6 +3,5 @@ Harvester:
 * Compression on/off for XML stored
 
 Search:
-* New Search API:
-  - Optional usage of default lucene "Query" classes when requesting search results
-  - split AXIS api from generic API
+* Testing of Collector API
+* Storing of Queries for retrieval my a hash.
