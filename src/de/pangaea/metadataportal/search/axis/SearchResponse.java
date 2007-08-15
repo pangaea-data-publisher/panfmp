@@ -16,7 +16,8 @@
 
 package de.pangaea.metadataportal.search.axis;
 
-import de.pangaea.metadataportal.search.SearchResultList;
+import de.pangaea.metadataportal.search.*;
+import java.util.List;
 
 public final class SearchResponse {
 
@@ -33,11 +34,11 @@ public final class SearchResponse {
     }
 
     public SearchResponseItem[] getResults() throws java.io.IOException {
-        if (list.size()-offset<count) count=list.size()-offset;
-        if (count<0) count=0;
-        SearchResponseItem[] results=new SearchResponseItem[count];
-        for (int i=0; i<count; i++) {
-            results[i]=new SearchResponseItem(list.getResult(offset+i),returnXML,returnStoredFields);
+        List<SearchResultItem> page=list.subList(Math.min(offset,list.size()), Math.min(offset+count,list.size()));
+        SearchResponseItem[] results=new SearchResponseItem[page.size()];
+        int i=0;
+        for (SearchResultItem item : page) {
+            results[i++]=new SearchResponseItem(item,returnXML,returnStoredFields);
         }
         return results;
     }
