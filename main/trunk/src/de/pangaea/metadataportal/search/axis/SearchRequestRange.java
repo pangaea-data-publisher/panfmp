@@ -14,33 +14,27 @@
  *   limitations under the License.
  */
 
-package de.pangaea.metadataportal.search;
+package de.pangaea.metadataportal.search.axis;
 
-import de.pangaea.metadataportal.utils.*;
+public final class SearchRequestRange implements java.io.Serializable {
 
-public class SearchResponse implements java.io.Serializable {
-
-    public int getOffset() {
-        return offset;
+    // default for axis
+    public SearchRequestRange() {
     }
 
-    public SearchResponseItem[] getResults() {
-        return results;
+    // simple easy-to-use constructor
+    public SearchRequestRange(String field, Object min, Object max) {
+        this.fieldName=field.intern();
+        this.min=min;
+        this.max=max;
     }
 
-    public long getQueryTime() {
-        return queryTime;
-    }
+    public void setField(String v) { fieldName=v.intern(); }
+    public void setMin(Object v) { min=v; }
+    public void setMax(Object v) { max=v; }
 
-    public int getTotalCount() {
-        return totalCount;
-    }
+    // members
+    protected String fieldName=null;
+    protected Object min=null,max=null;
 
-    // information
-    protected int totalCount=0;
-    protected int offset=0;
-    protected long queryTime=0L;
-
-    // data
-    protected SearchResponseItem results[]=null;
 }

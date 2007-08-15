@@ -14,7 +14,7 @@
  *   limitations under the License.
  */
 
-package de.pangaea.metadataportal.search;
+package de.pangaea.metadataportal.search.axis;
 
 import java.rmi.RemoteException;
 import org.apache.axis.ConfigurationException;
@@ -24,7 +24,7 @@ import javax.servlet.http.HttpServlet;
 public class SearchServiceAxisImpl {
     private static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(SearchServiceAxisImpl.class);
 
-    private SearchService searchService;
+    private SearchServiceImpl searchService;
 
     // default constructor that fetches config and other things from servlet configuration
     public SearchServiceAxisImpl() throws ConfigurationException {
@@ -33,7 +33,7 @@ public class SearchServiceAxisImpl {
             throw new ConfigurationException("The constructor "+getClass().getName()+"() only works inside an Apache AXIS environment!");
         java.util.Map axisCfg=mcontext.getAxisEngine().getConfig().getGlobalOptions();
 
-        String cfgFile=(String)axisCfg.get("de.pangaea.metadataportal.search.indexConfigFile");
+        String cfgFile=(String)axisCfg.get("de.pangaea.metadataportal.search.axis.indexConfigFile");
         if (cfgFile==null)
             throw new ConfigurationException("The configuration file for the indexes must be given as global configuration parameter 'de.pangaea.metadataportal.search.indexConfigFile' in the Apache AXIS configuration (WEB-INF/server-config.wsdd)!");
         HttpServlet servlet = (HttpServlet)mcontext.getProperty(HTTPConstants.MC_HTTP_SERVLET);
@@ -45,7 +45,7 @@ public class SearchServiceAxisImpl {
 
         try {
             cfgFile=(new java.io.File(webinf,cfgFile)).getCanonicalPath();
-            searchService=new SearchService(cfgFile);
+            searchService=new SearchServiceImpl(cfgFile);
         } catch (Exception e) {
             throw new ConfigurationException("Cannot initialize search service with '"+cfgFile+"' as index configuration file: "+e);
         }
