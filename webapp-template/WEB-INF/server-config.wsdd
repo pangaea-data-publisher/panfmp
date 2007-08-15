@@ -10,20 +10,20 @@
    <parameter name="dotNetSoapEncFix" value="true"/>
    <parameter name="axis.servicesPath" value="/axis/"/>
    <!-- Configuration of Lucene Indices: -->
-   <parameter name="de.pangaea.metadataportal.search.indexConfigFile" value="../../config.xml"/>
+   <parameter name="de.pangaea.metadataportal.search.axis.indexConfigFile" value="../../scripts/config.xml"/>
  </globalConfiguration>
 
  <handler type="java:org.apache.axis.handlers.http.URLMapper" name="URLMapper"/>
 
- <service xmlns:ns1="urn:java:de.pangaea.metadataportal.search.SearchService" name="Search" provider="java:RPC">
-  <parameter name="className" value="de.pangaea.metadataportal.search.SearchServiceAxisImpl"/>
+ <service xmlns:ns1="urn:java:de.pangaea.metadataportal.search.axis.SearchService" name="Search" provider="java:RPC">
+  <parameter name="className" value="de.pangaea.metadataportal.search.axis.SearchServiceAxisImpl"/>
   <parameter name="scope" value="Application"/>  
-  <namespace>urn:java:de.pangaea.metadataportal.search.SearchService</namespace>
-  <beanMapping qname="ns1:SearchRequest" languageSpecificType="java:de.pangaea.metadataportal.search.SearchRequest"/>
-  <beanMapping qname="ns1:SearchRequestRange" languageSpecificType="java:de.pangaea.metadataportal.search.SearchRequestRange"/>
-  <beanMapping qname="ns1:SearchRequestQuery" languageSpecificType="java:de.pangaea.metadataportal.search.SearchRequestQuery"/>
-  <beanMapping qname="ns1:SearchResponse" languageSpecificType="java:de.pangaea.metadataportal.search.SearchResponse"/>
-  <beanMapping qname="ns1:SearchResponseItem" languageSpecificType="java:de.pangaea.metadataportal.search.SearchResponseItem"/>
+  <namespace>urn:java:de.pangaea.metadataportal.search.axis.SearchService</namespace>
+  <beanMapping qname="ns1:SearchRequest" languageSpecificType="java:de.pangaea.metadataportal.search.axis.SearchRequest"/>
+  <beanMapping qname="ns1:SearchRequestRange" languageSpecificType="java:de.pangaea.metadataportal.search.axis.SearchRequestRange"/>
+  <beanMapping qname="ns1:SearchRequestQuery" languageSpecificType="java:de.pangaea.metadataportal.search.axis.SearchRequestQuery"/>
+  <beanMapping qname="ns1:SearchResponse" languageSpecificType="java:de.pangaea.metadataportal.search.axis.SearchResponse"/>
+  <beanMapping qname="ns1:SearchResponseItem" languageSpecificType="java:de.pangaea.metadataportal.search.axis.SearchResponseItem"/>
  </service>
 
  <transport name="http">

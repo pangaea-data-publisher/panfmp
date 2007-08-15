@@ -14,8 +14,9 @@
  *   limitations under the License.
  */
 
-package de.pangaea.metadataportal.utils;
+package de.pangaea.metadataportal.search;
 
+import de.pangaea.metadataportal.utils.LuceneConversions;
 import org.apache.lucene.search.*;
 import org.apache.lucene.index.*;
 import java.io.IOException;
@@ -29,6 +30,8 @@ public class TrieRangeQuery extends Query {
     // Generic constructor: uses already converted min/max fields
     public TrieRangeQuery(String field, String min, String max) {
         if (min==null && max==null) throw new IllegalArgumentException("The min and max values cannot be both null.");
+        this.minUnconverted=min;
+        this.maxUnconverted=max;
         this.min=(min==null) ? LuceneConversions.LUCENE_NUMERIC_MIN : min;
         this.max=(max==null) ? LuceneConversions.LUCENE_NUMERIC_MAX : max;
         this.field=field.intern();
@@ -37,6 +40,8 @@ public class TrieRangeQuery extends Query {
     // Constructors for different numeric datatypes
     public TrieRangeQuery(String field, Double min, Double max) {
         if (min==null && max==null) throw new IllegalArgumentException("The min and max double values cannot be both null.");
+        this.minUnconverted=min;
+        this.maxUnconverted=max;
         this.min=(min==null) ? LuceneConversions.LUCENE_NUMERIC_MIN : LuceneConversions.doubleToLucene(min.doubleValue());
         this.max=(max==null) ? LuceneConversions.LUCENE_NUMERIC_MAX : LuceneConversions.doubleToLucene(max.doubleValue());
         this.field=field.intern();
@@ -44,6 +49,8 @@ public class TrieRangeQuery extends Query {
 
     public TrieRangeQuery(String field, Date min, Date max) {
         if (min==null && max==null) throw new IllegalArgumentException("The min and max date values cannot be both null.");
+        this.minUnconverted=min;
+        this.maxUnconverted=max;
         this.min=(min==null) ? LuceneConversions.LUCENE_NUMERIC_MIN : LuceneConversions.dateToLucene(min);
         this.max=(max==null) ? LuceneConversions.LUCENE_NUMERIC_MAX : LuceneConversions.dateToLucene(max);
         this.field=field.intern();
@@ -51,6 +58,8 @@ public class TrieRangeQuery extends Query {
 
     public TrieRangeQuery(String field, Long min, Long max) {
         if (min==null && max==null) throw new IllegalArgumentException("The min and max long values cannot be both null.");
+        this.minUnconverted=min;
+        this.maxUnconverted=max;
         this.min=(min==null) ? LuceneConversions.LUCENE_NUMERIC_MIN : LuceneConversions.longToLucene(min.longValue());
         this.max=(max==null) ? LuceneConversions.LUCENE_NUMERIC_MAX : LuceneConversions.longToLucene(max.longValue());
         this.field=field.intern();
@@ -61,9 +70,9 @@ public class TrieRangeQuery extends Query {
         StringBuilder sb=new StringBuilder();
         if (!this.field.equals(field)) sb.append(this.field+':');
         sb.append('[');
-        sb.append(min);
+        sb.append(minUnconverted);
         sb.append(" TO ");
-        sb.append(max);
+        sb.append(maxUnconverted);
         sb.append(']');
         return sb.toString();
     }
@@ -90,6 +99,7 @@ public class TrieRangeQuery extends Query {
 
     // members
     protected String field,min,max;
+    private Object minUnconverted,maxUnconverted;
 
     protected final class TrieRangeFilter extends Filter {
 

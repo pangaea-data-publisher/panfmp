@@ -18,6 +18,10 @@ package de.pangaea.metadataportal.search;
 
 import java.util.*;
 import de.pangaea.metadataportal.config.*;
+import de.pangaea.metadataportal.utils.IndexConstants;
+import org.apache.lucene.index.*;
+import org.apache.lucene.search.*;
+import org.apache.lucene.document.*;
 
 public class LuceneCache {
 
@@ -45,12 +49,13 @@ public class LuceneCache {
     }
 
     // Queries
-    public synchronized LuceneSession getLuceneResult(SearchRequest req) throws Exception {
-        LuceneSession sess=sessions.get(req);
+    public synchronized Session getSession(IndexConfig index, Query query, Sort sort) throws java.io.IOException {
+        Identifier id=new Identifier(index.id,query,sort);
+        Session sess=sessions.get(id);
         if (sess==null) {
-            sess=new LuceneSession(this,req);
-            sessions.put(req,sess);
-            log.info("New LuceneSession for SearchRequest: "+req);
+            sess=new Session(config,index.newSearcher(),query,sort);
+            sessions.put(id,sess);
+            log.info("Session for query={"+query.toString(IndexConstants.FIELDNAME_CONTENT)+"}; sorting={"+sort+"}");
         } else {
             sess.logAccess();
         }
@@ -95,15 +100,15 @@ public class LuceneCache {
         }
 
         // now really clean up sessions
-        LuceneSession oldest=null;
+        Session oldest=null;
         while (oldest==null /* always for first time */ || sessions.size()>cacheMaxSessions /* when too many sessions */ ) {
             // iterate over sessions and look for oldest one, delete outdated ones
-            Iterator<LuceneSession> entries=sessions.values().iterator();
+            Iterator<Session> entries=sessions.values().iterator();
             while (entries.hasNext()) {
-                LuceneSession e=entries.next();
+                Session e=entries.next();
                 if (doReopen || now-e.lastAccess>((long)cacheMaxAge)*1000L) {
                     entries.remove();
-                    log.info("Removed LuceneSession for SearchRequest: "+e.req);
+                    //log.info("Removed Session for Query: "+e.query);
                 } else {
                     if (oldest==null || e.lastAccess<oldest.lastAccess) oldest=e;
                 }
@@ -112,7 +117,7 @@ public class LuceneCache {
             if (oldest==null) break;
             if (sessions.size()>cacheMaxSessions) {
                 sessions.values().remove(oldest);
-                log.info("Removed LuceneSession for SearchRequest: "+oldest.req);
+                //log.info("Removed Session for SearchRequest: "+oldest.req);
             }
         }
 
@@ -121,7 +126,26 @@ public class LuceneCache {
         if (log.isDebugEnabled()) log.debug("Cache after cleanup: "+sessions);
     }
 
-    private HashMap<SearchRequest,LuceneSession> sessions=new HashMap<SearchRequest,LuceneSession>();
+    public static FieldSelector getFieldSelector(Config config, boolean loadXml, Collection<String> fieldsToLoad) {
+        if (fieldsToLoad!=null) {
+
+            // check fields
+            for (String fieldName : fieldsToLoad) {
+                FieldConfig f=config.fields.get(fieldName);
+                if (f==null) throw new IllegalFieldConfigException("Field name '"+fieldName+"' is unknown!");
+                if (!f.lucenestorage) throw new IllegalFieldConfigException("Field '"+fieldName+"' is not a stored field!");
+            }
+
+            HashSet<String> set=new HashSet<String>(loadXml?FIELDS_XML:FIELDS_DEFAULT);
+            set.addAll(fieldsToLoad);
+            return new SetBasedFieldSelector(set,Collections.<String>emptySet());
+        } else {
+            if (!loadXml) throw new IllegalArgumentException("If you want to load all fields (fieldsToLoad==null), XML must be loaded, too!");
+            return null;
+        }
+    }
+
+    private HashMap<Identifier,Session> sessions=new HashMap<Identifier,Session>();
     private boolean indexChanged=false;
     private long indexChangedAt;
 
@@ -130,6 +154,63 @@ public class LuceneCache {
     public static final int DEFAULT_CACHE_MAX_SESSIONS=Integer.MAX_VALUE; // infinite
     public static final int DEFAULT_CACHE_MAX_AGE=5*60; // default 5 minutes
     public static final int DEFAULT_RELOAD_AFTER=1*60; // reload changed index after 1 minutes
+
+    private static final Set<String> FIELDS_DEFAULT=Collections.singleton(IndexConstants.FIELDNAME_IDENTIFIER);
+    private static final Set<String> FIELDS_XML=new HashSet<String>(FIELDS_DEFAULT);
+    static {
+        FIELDS_XML.add(IndexConstants.FIELDNAME_XML);
+    }
+
+    protected static final class Identifier {
+
+        // we use the String representations, because e.g. Sort has Buggy or missing equals()/hashCode()
+
+        public Identifier(String index, Query query, Sort sort) {
+            this.index=index;
+            this.query=(query==null) ? null : query.toString();
+            this.sort=(sort==null) ? null : sort.toString();
+        }
+
+        @Override
+        public final int hashCode() {
+            return ((index==null)?0:index.hashCode()^0x0f134aff) + ((query==null)?0:query.hashCode()^0x43615555) + ((sort==null)?0:sort.hashCode());
+        }
+
+        @Override
+        public final boolean equals(Object o) {
+            if (!(o instanceof Identifier)) return false;
+            Identifier i=(Identifier)o;
+            return (index==i.index || index.equals(i.index)) && (query==i.query || query.equals(i.query)) && (sort==i.sort || sort.equals(i.sort));
+        }
+
+        public String index,query,sort;
+    }
+
+    protected static final class Session {
+
+        protected Session(Config config, Searcher searcher, Query query, Sort sort) throws java.io.IOException {
+            lastAccess=queryTime=new java.util.Date().getTime();
+            this.config=config;
+            this.searcher=searcher;
+            if (sort!=null) hits=searcher.search(query,sort);
+            else hits=searcher.search(query);
+            queryTime=new java.util.Date().getTime()-queryTime;
+        }
+
+        protected synchronized void logAccess() {
+            lastAccess=new java.util.Date().getTime();
+        }
+
+        public SearchResultList getSearchResultList(boolean loadXml, Collection<String> fieldsToLoad) {
+            return new SearchResultList(this, getFieldSelector(config,loadXml,fieldsToLoad));
+        }
+
+        protected Config config;
+        protected Searcher searcher;
+        protected Hits hits;
+        protected long lastAccess;
+        protected long queryTime;
+    }
 
     /* config options:
         <cacheMaxAge>300</cacheMaxAge>
