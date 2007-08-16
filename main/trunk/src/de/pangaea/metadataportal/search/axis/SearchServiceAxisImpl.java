@@ -102,4 +102,13 @@ public class SearchServiceAxisImpl {
         }
     }
 
+    public String storeQuery(SearchRequest req) throws RemoteException {
+        try {
+            return searchService.storeQuery(req);
+        } catch (Exception e) {
+            log.error("Error during Lucene query",e);
+            throw new RemoteException("Error during Lucene query",e);
+        }
+    }
+
 }

@@ -37,8 +37,7 @@ public class SingleIndexConfig extends IndexConfig {
     @PublicForDigesterUse
     @Deprecated
     public void setHarvesterClass(String v) throws ClassNotFoundException {
-        Class<?> c=Class.forName(v);
-        harvesterClass=c.asSubclass(de.pangaea.metadataportal.harvester.Harvester.class);
+        harvesterClass=Class.forName(v).asSubclass(de.pangaea.metadataportal.harvester.Harvester.class);
     }
 
     @PublicForDigesterUse
