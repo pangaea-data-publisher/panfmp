@@ -21,7 +21,7 @@ import java.util.List;
 
 public final class SearchResponse {
 
-    public SearchResponse(SearchResultList list, int offset, int count, boolean returnXML, boolean returnStoredFields) {
+    protected SearchResponse(SearchResultList list, int offset, int count, boolean returnXML, boolean returnStoredFields) {
         this.list=list;
         this.offset=offset;
         this.count=count;

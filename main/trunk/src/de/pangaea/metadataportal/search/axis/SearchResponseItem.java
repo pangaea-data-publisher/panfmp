@@ -20,7 +20,7 @@ import de.pangaea.metadataportal.search.SearchResultItem;
 
 public final class SearchResponseItem {
 
-    public SearchResponseItem(SearchResultItem item, boolean returnXML, boolean returnStoredFields) {
+    protected SearchResponseItem(SearchResultItem item, boolean returnXML, boolean returnStoredFields) {
         this.item=item;
         this.returnXML=returnXML;
         this.returnStoredFields=returnStoredFields;
