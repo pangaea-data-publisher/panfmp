@@ -520,6 +520,33 @@ public class SearchService {
     }
 
     /**
+     * Stores a query for later use in the cache. The query can be retrieved again using the returned string, which is an opaque
+     * hash code.
+     * <p>This function can be used to store a query a user generated in your web interface for later use,
+     * e.g. if you generate a query by the web service interface of panFMP and want to use it later in a Java Servlet for generating a
+     * geographical map of document locations using the Collector API. In this case you store the query using the web service and supply the hash code
+     * as a parameter to the servlet.
+     * @param query the query to store.
+     * @return a hash code identifying the query.
+     * @see #readStoredQuery
+     */
+    public String storeQuery(Query query) {
+        return cache.storeQuery(query);
+    }
+
+    /**
+     * Reads a query identified by a hash code from the cache.
+     * @param hash the hash code returned by {@link #storeQuery}.
+     * @return the stored query or <code>null</code> if the hash code does not specify a query. This method may return <code>null</code>,
+     * even if a query identified by this hash existed in the past, when the query store is full and older (LRU) queries are removed by
+     * previous {@link #storeQuery} calls.
+     * @see #storeQuery
+     */
+    public Query readStoredQuery(String hash) {
+        return cache.readStoredQuery(hash);
+    }
+
+    /**
      * Override in a subclass to use another query parser. This version uses the Lucene one with {@link QueryParser#AND_OPERATOR} as default operator.
      * @param fieldName the expanded field name of the field that is used as default when creating queries (when no prefix-notation is used)
      * @param query the query string entered by the user

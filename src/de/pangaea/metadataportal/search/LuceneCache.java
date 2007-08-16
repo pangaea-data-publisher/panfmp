@@ -19,19 +19,33 @@ package de.pangaea.metadataportal.search;
 import java.util.*;
 import de.pangaea.metadataportal.config.*;
 import de.pangaea.metadataportal.utils.IndexConstants;
+import de.pangaea.metadataportal.utils.HashGenerator;
 import org.apache.lucene.index.*;
 import org.apache.lucene.search.*;
 import org.apache.lucene.document.*;
+import org.apache.commons.collections.map.LRUMap;
 
+/**
+ * Implementation of the caching algorithm behind the panFMP search engine.
+ * This class is for internal use only.
+ * <p>To configure the cache use the following search properties in your config file <em>(these are the defaults):</em></p>
+ *<pre>{@literal
+ *<cacheMaxAge>300</cacheMaxAge>
+ *<cacheMaxSessions>30</cacheMaxSessions>
+ *<reloadIndexIfChangedAfter>60</reloadIndexIfChangedAfter>
+ *<maxStoredQueries>200</maxStoredQueries>
+ *}</pre>
+ * @author Uwe Schindler
+ */
 public class LuceneCache {
 
     private static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(LuceneCache.class);
 
-    // Singleton per configuration
-    private LuceneCache() {}
-
     private LuceneCache(Config config) {
         this.config=config;
+        int maxStoredQueries=Integer.parseInt(config.searchProperties.getProperty("maxStoredQueries",Integer.toString(DEFAULT_MAX_STORED_QUERIES)));
+        @SuppressWarnings("unchecked") Map<String,Query> storedQueries=(Map<String,Query>)new LRUMap(maxStoredQueries);
+        this.storedQueries=Collections.synchronizedMap(storedQueries);
     }
 
     private static final Map<String,LuceneCache> instances=new HashMap<String,LuceneCache>();
@@ -48,14 +62,27 @@ public class LuceneCache {
         return instance;
     }
 
-    // Queries
+    // Stored Queries
+    public String storeQuery(Query query) {
+        String hash=HashGenerator.sha1(query.toString());
+        storedQueries.put(hash,query);
+        return hash;
+    }
+
+    public Query readStoredQuery(String hash) {
+        return storedQueries.get(hash);
+    }
+
+    // Cache of Hits
     public synchronized Session getSession(IndexConfig index, Query query, Sort sort) throws java.io.IOException {
-        Identifier id=new Identifier(index.id,query,sort);
+        // generate an unique identifier
+        String id="index="+index.id+"\000query="+query.toString(IndexConstants.FIELDNAME_CONTENT)+"\000sort="+sort;
+        // look for identifier in cache
         Session sess=sessions.get(id);
         if (sess==null) {
             sess=new Session(config,index.newSearcher(),query,sort);
             sessions.put(id,sess);
-            log.info("Session for query={"+query.toString(IndexConstants.FIELDNAME_CONTENT)+"}; sorting={"+sort+"}");
+            log.info("Created session: "+sess);
         } else {
             sess.logAccess();
         }
@@ -108,7 +135,7 @@ public class LuceneCache {
                 Session e=entries.next();
                 if (doReopen || now-e.lastAccess>((long)cacheMaxAge)*1000L) {
                     entries.remove();
-                    //log.info("Removed Session for Query: "+e.query);
+                    log.info("Removed session: "+e);
                 } else {
                     if (oldest==null || e.lastAccess<oldest.lastAccess) oldest=e;
                 }
@@ -117,13 +144,13 @@ public class LuceneCache {
             if (oldest==null) break;
             if (sessions.size()>cacheMaxSessions) {
                 sessions.values().remove(oldest);
-                //log.info("Removed Session for SearchRequest: "+oldest.req);
+                log.info("Removed session: "+oldest);
             }
         }
 
         if (doReopen) indexChanged=false; // reset flag
 
-        if (log.isDebugEnabled()) log.debug("Cache after cleanup: "+sessions);
+        if (log.isDebugEnabled()) log.debug("Session cache after cleanup: "+sessions);
     }
 
     public static FieldSelector getFieldSelector(Config config, boolean loadXml, Collection<String> fieldsToLoad) {
@@ -145,15 +172,18 @@ public class LuceneCache {
         }
     }
 
-    private HashMap<Identifier,Session> sessions=new HashMap<Identifier,Session>();
     private boolean indexChanged=false;
     private long indexChangedAt;
+    private Map<String,Query> storedQueries;
+    private Map<String,Session> sessions=new HashMap<String,Session>();
 
-    protected de.pangaea.metadataportal.config.Config config=null;
+    protected de.pangaea.metadataportal.config.Config config;
 
-    public static final int DEFAULT_CACHE_MAX_SESSIONS=Integer.MAX_VALUE; // infinite
     public static final int DEFAULT_CACHE_MAX_AGE=5*60; // default 5 minutes
     public static final int DEFAULT_RELOAD_AFTER=1*60; // reload changed index after 1 minutes
+
+    public static final int DEFAULT_MAX_STORED_QUERIES=200;
+    public static final int DEFAULT_CACHE_MAX_SESSIONS=30;
 
     private static final Set<String> FIELDS_DEFAULT=Collections.singleton(IndexConstants.FIELDNAME_IDENTIFIER);
     private static final Set<String> FIELDS_XML=new HashSet<String>(FIELDS_DEFAULT);
@@ -161,34 +191,10 @@ public class LuceneCache {
         FIELDS_XML.add(IndexConstants.FIELDNAME_XML);
     }
 
-    protected static final class Identifier {
-
-        // we use the String representations, because e.g. Sort has Buggy or missing equals()/hashCode()
-
-        public Identifier(String index, Query query, Sort sort) {
-            this.index=index;
-            this.query=(query==null) ? null : query.toString();
-            this.sort=(sort==null) ? null : sort.toString();
-        }
-
-        @Override
-        public final int hashCode() {
-            return ((index==null)?0:index.hashCode()^0x0f134aff) + ((query==null)?0:query.hashCode()^0x43615555) + ((sort==null)?0:sort.hashCode());
-        }
-
-        @Override
-        public final boolean equals(Object o) {
-            if (!(o instanceof Identifier)) return false;
-            Identifier i=(Identifier)o;
-            return (index==i.index || index.equals(i.index)) && (query==i.query || query.equals(i.query)) && (sort==i.sort || sort.equals(i.sort));
-        }
-
-        public String index,query,sort;
-    }
-
     protected static final class Session {
 
         protected Session(Config config, Searcher searcher, Query query, Sort sort) throws java.io.IOException {
+            identifier="query={"+query.toString(IndexConstants.FIELDNAME_CONTENT)+"}; sorting={"+sort+"}";
             lastAccess=queryTime=new java.util.Date().getTime();
             this.config=config;
             this.searcher=searcher;
@@ -205,16 +211,17 @@ public class LuceneCache {
             return new SearchResultList(this, getFieldSelector(config,loadXml,fieldsToLoad));
         }
 
+        @Override
+        public String toString() {
+            return identifier;
+        }
+
         protected Config config;
+        protected String identifier;
         protected Searcher searcher;
         protected Hits hits;
         protected long lastAccess;
         protected long queryTime;
     }
 
-    /* config options:
-        <cacheMaxAge>300</cacheMaxAge>
-        <cacheMaxSessions>10</cacheMaxSessions>
-        <reloadIndexIfChangedAfter>60</reloadIndexIfChangedAfter>
-    */
 }
