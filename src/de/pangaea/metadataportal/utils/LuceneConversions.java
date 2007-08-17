@@ -41,7 +41,7 @@ public final class LuceneConversions {
         return sb.toString();
     }
 
-    private static long internalLuceneToLong(String s) throws NumberFormatException {
+    private static long internalLuceneToLong(String s) {
         if (s==null) throw new NumberFormatException(ERR_STRING+s);
         int len=s.length();
         if (len!=16) throw new NumberFormatException(ERR_STRING+s);
@@ -80,7 +80,7 @@ public final class LuceneConversions {
         return internalLongToLucene(l);
     }
 
-    public static double luceneToDouble(String s) throws NumberFormatException {
+    public static double luceneToDouble(String s) {
         long l=internalLuceneToLong(s);
         if ((l & 0x8000000000000000L) != 0L) {
             // >0
@@ -98,7 +98,7 @@ public final class LuceneConversions {
         return longToLucene(d.getTime());
     }
 
-    public static Date luceneToDate(String s) throws NumberFormatException {
+    public static Date luceneToDate(String s) {
         return new Date(luceneToLong(s));
     }
 
