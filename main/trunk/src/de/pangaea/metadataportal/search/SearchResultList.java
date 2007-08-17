@@ -68,12 +68,12 @@ public class SearchResultList extends AbstractList<SearchResultItem> {
         if (index<0 || index>=size()) throw new IndexOutOfBoundsException();
         if (fields!=null) {
             return new SearchResultItem(
-                session.config,
+                session.parent.config,
                 session.hits.score(index),
                 session.searcher.doc(session.hits.id(index),fields)
             );
         } else {
-            return new SearchResultItem(session.config,session.hits.score(index),session.hits.doc(index));
+            return new SearchResultItem(session.parent.config,session.hits.score(index),session.hits.doc(index));
         }
     }
 
