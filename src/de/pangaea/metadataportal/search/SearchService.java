@@ -442,7 +442,7 @@ public class SearchService {
         LuceneHitCollector coll=new LuceneHitCollector(
             collectorBufferSize,collector,
             cache.config,searcher,
-            LuceneCache.getFieldSelector(cache.config,loadXml,fieldsToLoad)
+            cache.getFieldSelector(loadXml,fieldsToLoad)
         );
         try {
             searcher.search(query,coll);
@@ -499,7 +499,7 @@ public class SearchService {
         TermDocs td=reader.termDocs(new Term(IndexConstants.FIELDNAME_IDENTIFIER,identifier));
         try {
             if (td.next()) {
-                Document doc=reader.document(td.doc(), LuceneCache.getFieldSelector(cache.config,loadXml,fieldsToLoad));
+                Document doc=reader.document(td.doc(), cache.getFieldSelector(loadXml,fieldsToLoad));
                 if (td.next()) log.warn("There are multiple documents for identifier '"+identifier+"' in index '"+index.id+"'. Only first one returned!");
                 return new SearchResultItem(cache.config, 1.0f, doc);
             } else return null;

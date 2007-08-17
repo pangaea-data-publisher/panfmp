@@ -80,7 +80,7 @@ public class LuceneCache {
         // look for identifier in cache
         Session sess=sessions.get(id);
         if (sess==null) {
-            sess=new Session(config,index.newSearcher(),query,sort);
+            sess=new Session(this,index.newSearcher(),query,sort);
             sessions.put(id,sess);
             log.info("Created session: "+sess);
         } else {
@@ -153,7 +153,7 @@ public class LuceneCache {
         if (log.isDebugEnabled()) log.debug("Session cache after cleanup: "+sessions);
     }
 
-    public static FieldSelector getFieldSelector(Config config, boolean loadXml, Collection<String> fieldsToLoad) {
+    public FieldSelector getFieldSelector(boolean loadXml, Collection<String> fieldsToLoad) {
         if (fieldsToLoad!=null) {
 
             // check fields
@@ -177,7 +177,7 @@ public class LuceneCache {
     private Map<String,Query> storedQueries;
     private Map<String,Session> sessions=new HashMap<String,Session>();
 
-    protected de.pangaea.metadataportal.config.Config config;
+    protected Config config;
 
     public static final int DEFAULT_CACHE_MAX_AGE=5*60; // default 5 minutes
     public static final int DEFAULT_RELOAD_AFTER=1*60; // reload changed index after 1 minutes
@@ -193,10 +193,10 @@ public class LuceneCache {
 
     protected static final class Session {
 
-        protected Session(Config config, Searcher searcher, Query query, Sort sort) throws java.io.IOException {
+        protected Session(LuceneCache parent, Searcher searcher, Query query, Sort sort) throws java.io.IOException {
             identifier="query={"+query.toString(IndexConstants.FIELDNAME_CONTENT)+"}; sorting={"+sort+"}";
             lastAccess=queryTime=new java.util.Date().getTime();
-            this.config=config;
+            this.parent=parent;
             this.searcher=searcher;
             if (sort!=null) hits=searcher.search(query,sort);
             else hits=searcher.search(query);
@@ -208,7 +208,7 @@ public class LuceneCache {
         }
 
         public SearchResultList getSearchResultList(boolean loadXml, Collection<String> fieldsToLoad) {
-            return new SearchResultList(this, getFieldSelector(config,loadXml,fieldsToLoad));
+            return new SearchResultList(this, parent.getFieldSelector(loadXml,fieldsToLoad));
         }
 
         @Override
@@ -216,7 +216,7 @@ public class LuceneCache {
             return identifier;
         }
 
-        protected Config config;
+        protected LuceneCache parent;
         protected String identifier;
         protected Searcher searcher;
         protected Hits hits;
