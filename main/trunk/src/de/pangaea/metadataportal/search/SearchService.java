@@ -19,7 +19,6 @@ package de.pangaea.metadataportal.search;
 import de.pangaea.metadataportal.config.*;
 import de.pangaea.metadataportal.utils.IndexConstants;
 import de.pangaea.metadataportal.utils.LenientDateParser;
-import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.search.*;
 import org.apache.lucene.queryParser.*;
 import org.apache.lucene.index.*;
@@ -114,7 +113,7 @@ public class SearchService {
      * Tokenized text fields are parsed by {@link #parseQuery} and expand to different query types combined by a {@link BooleanQuery}.
      * @throws IllegalFieldConfigException if the configuration of <code>fieldName</code> does not match this query type or it is unknown
      */
-    public Query newTextQuery(String fieldName, String query) throws IOException,ParseException {
+    public Query newTextQuery(String fieldName, String query) throws ParseException {
         FieldConfig f=cache.config.fields.get(fieldName);
         if (f==null) throw new IllegalFieldConfigException("Field name '"+fieldName+"' is unknown!");
         if (!f.luceneindexed) throw new IllegalFieldConfigException("Field '"+fieldName+"' is not searchable!");
@@ -134,7 +133,7 @@ public class SearchService {
      * Constructs a {@link Query} for querying the default field.
      * The query is parsed by {@link #parseQuery} and expands to different query types combined by a {@link BooleanQuery}.
      */
-    public Query newDefaultFieldQuery(String query) throws IOException,ParseException {
+    public Query newDefaultFieldQuery(String query) throws ParseException {
         if (query==null) throw new NullPointerException("A query string must be given!");
         return parseQuery(IndexConstants.FIELDNAME_CONTENT,query);
     }
@@ -145,7 +144,7 @@ public class SearchService {
      * @param max Maximum value as Date or <code>null</code> if upper bound open
      * @throws IllegalFieldConfigException if the configuration of <code>fieldName</code> does not match this query type or it is unknown
      */
-    public Query newDateRangeQuery(String fieldName, Date min, Date max) throws IOException {
+    public Query newDateRangeQuery(String fieldName, Date min, Date max) {
         FieldConfig f=cache.config.fields.get(fieldName);
         if (f==null) throw new IllegalFieldConfigException("Field name '"+fieldName+"' is unknown!");
         if (!f.luceneindexed) throw new IllegalFieldConfigException("Field '"+fieldName+"' is not searchable!");
@@ -160,7 +159,7 @@ public class SearchService {
      * @param max Maximum value as Calendar or <code>null</code> if upper bound open; the Calendar is internally converted to a {@link Date}
      * @throws IllegalFieldConfigException if the configuration of <code>fieldName</code> does not match this query type or it is unknown
      */
-    public Query newDateRangeQuery(String fieldName, Calendar min, Calendar max) throws IOException {
+    public Query newDateRangeQuery(String fieldName, Calendar min, Calendar max) {
         return newDateRangeQuery(fieldName, (min!=null)?min.getTime():null, (max!=null)?max.getTime():null);
     }
 
@@ -171,7 +170,7 @@ public class SearchService {
      * @throws IllegalFieldConfigException if the configuration of <code>fieldName</code> does not match this query type or it is unknown
      * @throws java.text.ParseException if one of the boundaries is not a parseable date string
      */
-    public Query newDateRangeQuery(String fieldName, String min, String max) throws IOException,java.text.ParseException {
+    public Query newDateRangeQuery(String fieldName, String min, String max) throws java.text.ParseException {
         return newDateRangeQuery(fieldName, (min!=null)?LenientDateParser.parseDate(min):null, (max!=null)?LenientDateParser.parseDate(max):null);
     }
 
@@ -181,7 +180,7 @@ public class SearchService {
      * @param max Maximum value as Double or <code>null</code> if upper bound open
      * @throws IllegalFieldConfigException if the configuration of <code>fieldName</code> does not match this query type or it is unknown
      */
-    public Query newNumericRangeQuery(String fieldName, Double min, Double max) throws IOException {
+    public Query newNumericRangeQuery(String fieldName, Double min, Double max) {
         FieldConfig f=cache.config.fields.get(fieldName);
         if (f==null) throw new IllegalFieldConfigException("Field name '"+fieldName+"' is unknown!");
         if (!f.luceneindexed) throw new IllegalFieldConfigException("Field '"+fieldName+"' is not searchable!");
@@ -198,7 +197,7 @@ public class SearchService {
      * but it can be any numeric Java type
      * @throws IllegalFieldConfigException if the configuration of <code>fieldName</code> does not match this query type or it is unknown
      */
-    public Query newNumericRangeQuery(String fieldName, Number min, Number max) throws IOException {
+    public Query newNumericRangeQuery(String fieldName, Number min, Number max) {
         return newNumericRangeQuery(fieldName, (min!=null)?Double.valueOf(min.doubleValue()):null, (max!=null)?Double.valueOf(max.doubleValue()):null);
     }
 
@@ -209,8 +208,28 @@ public class SearchService {
      * @throws IllegalFieldConfigException if the configuration of <code>fieldName</code> does not match this query type or it is unknown
      * @throws NumberFormatException if one of the boundaries is not a parseable numeric string
      */
-    public Query newNumericRangeQuery(String fieldName, String min, String max) throws IOException {
+    public Query newNumericRangeQuery(String fieldName, String min, String max) {
         return newNumericRangeQuery(fieldName, (min!=null)?Double.valueOf(min):null, (max!=null)?Double.valueOf(max):null);
+    }
+
+    /**
+     * Constructs a {@link MatchAllDocsQuery}. Use this to generate a query that matches all documents. It is useful under
+     * two circumstances:
+     * <ul>
+     * <li>Return all documents in index e.g. for generating a geographic map containing all documents with the collector search methods.</li>
+     * <li>Constructing a query that should return all documents excluding some with special constraints. This can be achieved by constructing
+     * a {@link BooleanQuery} containing this <code>MatchAllDocsQuery</code> with {@link org.apache.lucene.search.BooleanClause.Occur#MUST}
+     * and the excluding query with {@link org.apache.lucene.search.BooleanClause.Occur#MUST_NOT}</li>
+     * </ul>
+     * <p>The current version is equivalent to
+     * <pre>
+     * Query q=new {@link MatchAllDocsQuery}();
+     * </pre>
+     * but this should be avoided to make further extensions to this class possible (e.g. in future indexes may contain documents
+     * marked as &quot;deleted&quot; that should not be returned).
+     */
+    public Query newMatchAllDocsQuery() {
+        return new MatchAllDocsQuery();
     }
 
     /**
