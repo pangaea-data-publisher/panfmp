@@ -375,7 +375,7 @@ public class SearchService {
      * @param query the previously constructed query
      * @param sort if you want to sort search results supply a {@link Sort} instance that describes the search (use {@link #newSort} for that).
      * Supply <code>null</code> for default sorting (by relevance backwards).
-     * @param loadXml return the XML blob of search results. Must be <code>true</code> if no field selection is given (next parameter)
+     * @param loadXml return the XML blob of search results.
      * @param fieldsToLoad a collection of field names that should be made available. <code>null</code> to return all fields <b>and</b> XML.
      */
     public SearchResultList search(Query query, Sort sort, boolean loadXml, Collection<String> fieldsToLoad) throws IOException {
@@ -430,7 +430,7 @@ public class SearchService {
      * <p><em>Note:</em> Scores of returned documents are <em>raw scores</em> and <b>not</b> normalized to <code>0.0&lt;score&lt;=1.0</code>.
      * @param collector a class implementing interface {@link SearchResultCollector}
      * @param query the previously constructed query
-     * @param loadXml return the XML blob of search results. Must be <code>true</code> if no field selection is given (next parameter)
+     * @param loadXml return the XML blob of search results
      * @param fieldsToLoad a collection of field names that should be made available. <code>null</code> to return all fields <b>and</b> XML.
      */
     public void search(SearchResultCollector collector, Query query, boolean loadXml, Collection<String> fieldsToLoad) throws IOException {

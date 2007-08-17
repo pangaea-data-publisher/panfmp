@@ -39,7 +39,7 @@ public class SearchServiceImpl {
         Sort sort=null;
         if (req.sortFieldName!=null && req.sortReverse!=null) sort=service.newSort(service.newFieldBasedSort(req.sortFieldName,req.sortReverse));
 
-        SearchResultList res=service.search(q, sort, returnStoredFields || returnXML, returnStoredFields ? null : Collections.<String>emptySet() );
+        SearchResultList res=service.search(q, sort, returnXML, returnStoredFields ? null : Collections.<String>emptySet() );
         SearchResponse resp=new SearchResponse(res, offset, count, returnXML, returnStoredFields);
         return resp;
     }
