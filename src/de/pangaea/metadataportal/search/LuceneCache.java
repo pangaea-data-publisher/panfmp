@@ -154,22 +154,21 @@ public class LuceneCache {
     }
 
     public FieldSelector getFieldSelector(boolean loadXml, Collection<String> fieldsToLoad) {
-        if (fieldsToLoad!=null) {
-
+        HashSet<String> set=new HashSet<String>(loadXml?FIELDS_XML:FIELDS_DEFAULT);
+        if (fieldsToLoad==null) {
+            for (FieldConfig f : config.fields.values()) {
+                if (f.lucenestorage) set.add(f.name);
+            }
+        } else {
             // check fields
             for (String fieldName : fieldsToLoad) {
                 FieldConfig f=config.fields.get(fieldName);
                 if (f==null) throw new IllegalFieldConfigException("Field name '"+fieldName+"' is unknown!");
                 if (!f.lucenestorage) throw new IllegalFieldConfigException("Field '"+fieldName+"' is not a stored field!");
             }
-
-            HashSet<String> set=new HashSet<String>(loadXml?FIELDS_XML:FIELDS_DEFAULT);
             set.addAll(fieldsToLoad);
-            return new SetBasedFieldSelector(set,Collections.<String>emptySet());
-        } else {
-            if (!loadXml) throw new IllegalArgumentException("If you want to load all fields (fieldsToLoad==null), XML must be loaded, too!");
-            return null;
         }
+        return new SetBasedFieldSelector(set,Collections.<String>emptySet());
     }
 
     private boolean indexChanged=false;
@@ -186,7 +185,7 @@ public class LuceneCache {
     public static final int DEFAULT_CACHE_MAX_SESSIONS=30;
 
     private static final Set<String> FIELDS_DEFAULT=Collections.singleton(IndexConstants.FIELDNAME_IDENTIFIER);
-    private static final Set<String> FIELDS_XML=new HashSet<String>(FIELDS_DEFAULT);
+    private static final Set<String> FIELDS_XML=new TreeSet<String>(FIELDS_DEFAULT);
     static {
         FIELDS_XML.add(IndexConstants.FIELDNAME_XML);
     }
