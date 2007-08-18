@@ -28,7 +28,6 @@ public interface SearchResultCollector {
      * parameters of used search method in {@link SearchService})
      * @return <code>true</code>, if further results should be collected &ndash;
      * <code>false</code>, if collecting must be stopped (use this to signal that you got enough items)
-     *
      */
     public boolean collect(SearchResultItem item);
 
