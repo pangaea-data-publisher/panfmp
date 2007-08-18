@@ -28,11 +28,12 @@ import java.io.IOException;
 import java.util.*;
 
 /**
- * This class is the main entry point to panFMP's search engine.
- * <h3>To start a query with panFMP do the following:</h3>
+ * This class is the main entry point to <b>panFMP</b>'s search engine.
+ * <h3>To start a query with <b>panFMP<b> do the following:</h3>
  * <pre>
  * import de.pangaea.metadataportal.search.*;
  * import org.apache.lucene.search.*;
+ * import java.util.List;
  * ...
  *
  * // create a search service
@@ -376,7 +377,7 @@ public class SearchService {
      * @param sort if you want to sort search results supply a {@link Sort} instance that describes the search (use {@link #newSort} for that).
      * Supply <code>null</code> for default sorting (by relevance backwards).
      * @param loadXml return the XML blob of search results.
-     * @param fieldsToLoad a collection of field names that should be made available. <code>null</code> to return all fields <b>and</b> XML.
+     * @param fieldsToLoad a collection of field names that should be made available. <code>null</code> to return all fields.
      */
     public SearchResultList search(Query query, Sort sort, boolean loadXml, Collection<String> fieldsToLoad) throws IOException {
         cache.cleanupCache();
@@ -431,7 +432,7 @@ public class SearchService {
      * @param collector a class implementing interface {@link SearchResultCollector}
      * @param query the previously constructed query
      * @param loadXml return the XML blob of search results
-     * @param fieldsToLoad a collection of field names that should be made available. <code>null</code> to return all fields <b>and</b> XML.
+     * @param fieldsToLoad a collection of field names that should be made available. <code>null</code> to return all fields.
      */
     public void search(SearchResultCollector collector, Query query, boolean loadXml, Collection<String> fieldsToLoad) throws IOException {
         cache.cleanupCache();

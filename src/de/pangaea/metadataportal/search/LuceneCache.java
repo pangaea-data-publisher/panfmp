@@ -26,7 +26,7 @@ import org.apache.lucene.document.*;
 import org.apache.commons.collections.map.LRUMap;
 
 /**
- * Implementation of the caching algorithm behind the panFMP search engine.
+ * Implementation of the caching algorithm behind the <b>panFMP</b> search engine.
  * This class is for internal use only.
  * <p>To configure the cache use the following search properties in your config file <em>(these are the defaults):</em></p>
  *<pre>{@literal
@@ -190,6 +190,9 @@ public class LuceneCache {
         FIELDS_XML.add(IndexConstants.FIELDNAME_XML);
     }
 
+    /**
+     * Implementation of a cache entry.
+     */
     protected static final class Session {
 
         protected Session(LuceneCache parent, Searcher searcher, Query query, Sort sort) throws java.io.IOException {

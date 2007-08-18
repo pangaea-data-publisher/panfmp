@@ -16,6 +16,12 @@
 
 package de.pangaea.metadataportal.search;
 
+/**
+ * This exception (unchecked) is thrown by {@link SearchService} methods, if
+ * you try to create a query using a field name with an configuration not supported by the
+ * underlying {@link de.pangaea.metadataportal.config.FieldConfig}.
+ * @author Uwe Schindler
+ */
 public class IllegalFieldConfigException extends IllegalArgumentException {
 
     public IllegalFieldConfigException(String message) {

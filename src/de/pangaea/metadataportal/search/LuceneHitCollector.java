@@ -22,10 +22,17 @@ import org.apache.lucene.document.*;
 import java.io.IOException;
 import java.util.*;
 
+/**
+ * Internal implementation of a Lucene {@link HitCollector} for the collector API of {@link SearchService}.
+ * @author Uwe Schindler
+ */
 public final class LuceneHitCollector extends HitCollector {
 
     private static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(LuceneHitCollector.class);
 
+    /**
+     * Creates an instance using the specified buffer size wrapping the {@link SearchResultCollector}.
+     */
     protected LuceneHitCollector(int bufferSize, SearchResultCollector coll, Config config, Searcher searcher, FieldSelector fields) {
         if (bufferSize<=0) throw new IllegalArgumentException("Buffer must have a size >0");
         buffer=new Item[bufferSize];
@@ -35,6 +42,10 @@ public final class LuceneHitCollector extends HitCollector {
         this.fields=fields;
     }
 
+    /**
+     * Flushes the internal buffer by calling {@link SearchResultCollector#collect} with
+     * the loaded document instance for each buffer entry.
+     */
     protected synchronized void flushBuffer() {
         if (log.isDebugEnabled()) log.debug("Flushing buffer containing "+count+" search results...");
         try {
@@ -52,6 +63,9 @@ public final class LuceneHitCollector extends HitCollector {
         }
     }
 
+    /**
+     * Called by Lucene to collect search result items.
+     */
     public synchronized void collect(int doc, float score) {
         buffer[count++]=new Item(doc,score);
         if (count==buffer.length) flushBuffer();
@@ -64,6 +78,9 @@ public final class LuceneHitCollector extends HitCollector {
     private Searcher searcher;
     private FieldSelector fields;
 
+    /**
+     * Thrown to stop collecting of results when {@link SearchResultCollector#collect} returns <code>false</code>.
+     */
     protected static final class StopException extends RuntimeException {
         protected StopException() {
             super();
