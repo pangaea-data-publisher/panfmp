@@ -17,6 +17,7 @@
 package de.pangaea.metadataportal.config;
 
 import de.pangaea.metadataportal.utils.PublicForDigesterUse;
+import de.pangaea.metadataportal.utils.BooleanParser;
 import java.util.*;
 
 /**
@@ -48,7 +49,7 @@ public class VirtualIndexConfig extends IndexConfig {
     @PublicForDigesterUse
     @Deprecated
     public void setThreaded(String v) {
-        threaded=Boolean.parseBoolean(v.trim());
+        threaded=BooleanParser.parseBoolean(v.trim());
     }
 
     @Override

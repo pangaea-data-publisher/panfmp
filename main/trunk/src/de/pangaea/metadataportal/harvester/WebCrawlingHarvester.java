@@ -85,7 +85,7 @@ public class WebCrawlingHarvester extends Harvester {
         filenameFilter=(s==null) ? null : Pattern.compile(s);
 
         validIdentifiers=null;
-        if (Boolean.parseBoolean(iconfig.harvesterProperties.getProperty("deleteMissingDocuments","true"))) validIdentifiers=new HashSet<String>();
+        if (BooleanParser.parseBoolean(iconfig.harvesterProperties.getProperty("deleteMissingDocuments","true"))) validIdentifiers=new HashSet<String>();
 
         // initialize and test for HTML SAX Parser
         try {

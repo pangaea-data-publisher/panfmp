@@ -322,7 +322,7 @@ public class IndexBuilder {
             finished=true;
             log.info(deleted+" docs presumably deleted (only if existent) and "+updated+" docs (re-)indexed - finished.");
 
-            if (Boolean.parseBoolean(iconfig.harvesterProperties.getProperty("autoOptimize","false"))) {
+            if (BooleanParser.parseBoolean(iconfig.harvesterProperties.getProperty("autoOptimize","false"))) {
                 if (writer==null) {
                     writer=new IndexWriter(dir, true, iconfig.parent.getAnalyzer(), false);
                     writer.setMaxFieldLength(Integer.MAX_VALUE);

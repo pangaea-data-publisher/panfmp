@@ -357,7 +357,7 @@ public class Config {
     @PublicForDigesterUse
     @Deprecated
     public void setHaltOnSchemaError(String v) {
-        haltOnSchemaError=Boolean.parseBoolean(v.trim());
+        haltOnSchemaError=BooleanParser.parseBoolean(v.trim());
     }
 
     // get configuration infos

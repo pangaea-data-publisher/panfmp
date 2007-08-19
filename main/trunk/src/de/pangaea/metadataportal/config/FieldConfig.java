@@ -46,20 +46,17 @@ public class FieldConfig extends ExpressionConfig {
     public void setLucenestorage(String v) {
         if (v==null) return;
         v=v.toUpperCase();
-        if ("TRUE".equals(v) || "YES".equals(v)) lucenestorage=Field.Store.YES;
-        else if ("FALSE".equals(v) || "NO".equals(v)) lucenestorage=Field.Store.NO;
-        else if ("COMPRESS".equals(v) || "COMPRESSED".equals(v)) lucenestorage=Field.Store.COMPRESS;
-        else throw new IllegalArgumentException("Attribute lucenestorage must be one of: [YES,TRUE]; [NO,FALSE]; [COMPRESS,COMPRESSED]");
+        if ("COMPRESS".equals(v) || "COMPRESSED".equals(v)) lucenestorage=Field.Store.COMPRESS;
+        else if ("TRUE".equals(v) || "YES".equals(v) || "ON".equals(v)) lucenestorage=Field.Store.YES;
+        else if ("FALSE".equals(v) || "NO".equals(v) || "OFF".equals(v)) lucenestorage=Field.Store.NO;
+        else throw new IllegalArgumentException("Attribute lucenestorage must be one of: [YES,TRUE,ON]; [NO,FALSE,OFF]; [COMPRESS,COMPRESSED]");
     }
 
     @PublicForDigesterUse
     @Deprecated
     public void setLuceneindexed(String v) {
         if (v==null) return;
-        v=v.toUpperCase();
-        if ("TRUE".equals(v) || "YES".equals(v)) luceneindexed=true;
-        else if ("FALSE".equals(v) || "NO".equals(v)) luceneindexed=false;
-        else throw new IllegalArgumentException("Attribute luceneindexed must be one of: [YES,TRUE]; [NO,FALSE]");
+        luceneindexed=BooleanParser.parseBoolean(v);
     }
 
     public void setDefault(String v) {

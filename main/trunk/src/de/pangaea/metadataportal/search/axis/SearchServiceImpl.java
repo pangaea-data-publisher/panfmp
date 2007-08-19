@@ -17,6 +17,7 @@
 package de.pangaea.metadataportal.search.axis;
 
 import de.pangaea.metadataportal.search.*;
+import de.pangaea.metadataportal.utils.BooleanParser;
 import org.apache.lucene.search.*;
 import java.util.*;
 
@@ -32,8 +33,8 @@ public class SearchServiceImpl {
     public SearchResponse search(SearchRequest req, int offset, int count) throws Exception {
         SearchService service=new SearchService(cfgFile,req.indexName);
 
-        boolean returnXML=Boolean.parseBoolean(service.getConfig().searchProperties.getProperty("returnXML","true"));
-        boolean returnStoredFields=Boolean.parseBoolean(service.getConfig().searchProperties.getProperty("returnStoredFields","true"));
+        boolean returnXML=BooleanParser.parseBoolean(service.getConfig().searchProperties.getProperty("returnXML","true"));
+        boolean returnStoredFields=BooleanParser.parseBoolean(service.getConfig().searchProperties.getProperty("returnStoredFields","true"));
 
         Query q=req.getLuceneQuery(service);
         Sort sort=null;

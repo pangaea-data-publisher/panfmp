@@ -45,7 +45,7 @@ public class XMLConverter  {
             validate=false; // no validation if no schema available
         } else {
             if (v==null) validate=true; // validate by default
-            else validate=Boolean.parseBoolean(v);
+            else validate=BooleanParser.parseBoolean(v);
         }
     }
 
