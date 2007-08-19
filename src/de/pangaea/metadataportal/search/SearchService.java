@@ -37,18 +37,18 @@ import java.util.*;
  * ...
  *
  * // create a search service
- * SearchService service=new SearchService("config.xml", "indexname");
+ * SearchService service=new SearchService(&quot;config.xml&quot;, &quot;indexname&quot;);
  * // build a query
  * BooleanQuery bq=service.newBooleanQuery();
- * bq.add(service.newDefaultFieldQuery("a search query for the simple search"), BooleanClause.Occur.MUST);
- * bq.add(service.newNumericRangeQuery("longitude", -20.0, 10.0), BooleanClause.Occur.MUST);
- * bq.add(service.newNumericRangeQuery("latitude", null, 30.5), BooleanClause.Occur.MUST);
+ * bq.add(service.newDefaultFieldQuery(&quot;a search query for the simple search&quot;), BooleanClause.Occur.MUST);
+ * bq.add(service.newNumericRangeQuery(&quot;longitude&quot;, -20.0, 10.0), BooleanClause.Occur.MUST);
+ * bq.add(service.newNumericRangeQuery(&quot;latitude&quot;, null, 30.5), BooleanClause.Occur.MUST);
  * </pre>
  * <h3>You have two possibilities to start the search:</h3>
  * <ul>
  * <li><p>Retrieve sorted results as a listing (works good for web pages that display search results like Google with paging):</p><pre>
  * // create a Sort, if you want standard sorting by relevance use sort=null
- * Sort sort=service.newSort(service.newFieldBasedSort("longitude", false));
+ * Sort sort=service.newSort(service.newFieldBasedSort(&quot;longitude&quot;, false));
  * // start search
  * SearchResultList list=service.search(bq,sort);
  * // print search results (start is item to start with, count is number of results)
@@ -58,7 +58,7 @@ import java.util.*;
  *   Math.min(start+count, list.size())
  * );
  * for (SearchResultItem item : page) {
- *   System.out.println(item.getFields());
+ *   System.out.println(item.getIdentifier());
  * }
  * </pre>
  * <p>It is good to know that {@link SearchResultList} implements the {@link List} interface. This makes it possible to
@@ -69,7 +69,7 @@ import java.util.*;
  * and is expensive in memory consumption!!!</p><pre>
  * service.search(new SearchResultCollector() {
  *   public boolean collect(SearchResultItem item) {
- *     System.out.println(item.getFields());
+ *     System.out.println(item.getIdentifier());
  *     return true; // return false to stop collecting results
  *   }
  * }, bq);
