@@ -28,6 +28,7 @@ import javax.xml.transform.*;
 import javax.xml.transform.sax.*;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.*;
+import org.apache.lucene.document.Field;
 
 /**
  * Main panFMP configuration class. It loads the configuration from a XML file.
@@ -208,10 +209,13 @@ public class Config {
         if (configMode==ConfigMode.HARVESTING) {
             if (f.xPathExpr==null && f.xslt==null) throw new IllegalArgumentException("A XPath or template itsself may not be empty");
             if (f.xPathExpr!=null && f.xslt!=null) throw new IllegalArgumentException("It may not both XPath and template be defined");
+            if (f.datatype==FieldConfig.DataType.XHTML && f.xslt==null) throw new IllegalArgumentException("XHTML fields may only be declared as a XSLT template (using <field-template/>)");
         }
-        if (!f.lucenestorage && !f.luceneindexed) throw new IllegalArgumentException("A field must be at least indexed and/or stored");
+        if (f.lucenestorage==Field.Store.NO && !f.luceneindexed) throw new IllegalArgumentException("A field must be at least indexed and/or stored");
         if (f.defaultValue!=null && f.datatype!=FieldConfig.DataType.NUMBER && f.datatype!=FieldConfig.DataType.DATETIME)
-            throw new IllegalArgumentException("A default value can only be given for number or dateTime fields");
+            throw new IllegalArgumentException("A default value can only be given for NUMBER or DATETIME fields");
+        if ((f.datatype==FieldConfig.DataType.XML || f.datatype==FieldConfig.DataType.XHTML) && (f.luceneindexed || f.lucenestorage==Field.Store.NO))
+            throw new IllegalArgumentException("Fields with datatype XML or XHTML must be stored, but not indexed");
         fields.put(f.name,f);
     }
 
@@ -439,7 +443,7 @@ public class Config {
 
         @Override
         protected void setResult(Templates t) {
-            Object o=dig.peek();
+            Object o=digester.peek();
             if (o instanceof SingleIndexConfig) ((SingleIndexConfig)o).xslt=t;
             /*else if (o instanceof Config) ((Config)o).xsltBeforeXPath=t; // the config itsself*/
             else throw new RuntimeException("A XSLT tree is not allowed here!");
@@ -455,6 +459,18 @@ public class Config {
 
             AttributesImpl atts=new AttributesImpl();
 
+            // generate prefixes to exclude
+            StringBuilder excludePrefixes=new StringBuilder(XSL_PREFIX);
+            Object o=digester.peek();
+            if (o instanceof FieldConfig && ((FieldConfig)o).datatype==FieldConfig.DataType.XHTML) {
+                for (String prefix : ((ExtendedDigester)digester).getCurrentPrefixMappings().keySet()) {
+                    excludePrefixes.append(' ');
+                    excludePrefixes.append(prefix);
+                }
+            }
+            atts.addAttribute(XMLConstants.NULL_NS_URI,"exclude-result-prefixes","exclude-result-prefixes",CNAME,excludePrefixes.toString());
+
+            // root tag
             atts.addAttribute(XMLConstants.NULL_NS_URI,"version","version",CNAME,"1.0");
             destContentHandler.startElement(XSL_NAMESPACE,"stylesheet",XSL_PREFIX+":stylesheet",atts);
             atts.clear();
@@ -492,7 +508,7 @@ public class Config {
 
         @Override
         protected void setResult(Templates t) {
-            Object o=dig.peek();
+            Object o=digester.peek();
             if (o instanceof ExpressionConfig) ((ExpressionConfig)o).setTemplate(t);
             else throw new RuntimeException("A XSLT template is not allowed here!");
         }

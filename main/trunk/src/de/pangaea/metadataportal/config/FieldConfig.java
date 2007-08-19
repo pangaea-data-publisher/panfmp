@@ -17,6 +17,8 @@
 package de.pangaea.metadataportal.config;
 
 import de.pangaea.metadataportal.utils.*;
+import org.apache.lucene.document.Field;
+import java.util.EnumSet;
 
 /**
  * Config element that contains the definition of a field. It contains its name and some
@@ -35,20 +37,29 @@ public class FieldConfig extends ExpressionConfig {
         try {
             datatype=DataType.valueOf(v.toUpperCase());
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Invalid value '"+v+"' for attribute datatype!");
+            throw new IllegalArgumentException("Invalid value '"+v+"' for attribute datatype, valid ones are: "+EnumSet.allOf(DataType.class).toString());
         }
     }
 
     @PublicForDigesterUse
     @Deprecated
     public void setLucenestorage(String v) {
-        lucenestorage=Boolean.parseBoolean(v);
+        if (v==null) return;
+        v=v.toUpperCase();
+        if ("TRUE".equals(v) || "YES".equals(v)) lucenestorage=Field.Store.YES;
+        else if ("FALSE".equals(v) || "NO".equals(v)) lucenestorage=Field.Store.NO;
+        else if ("COMPRESS".equals(v) || "COMPRESSED".equals(v)) lucenestorage=Field.Store.COMPRESS;
+        else throw new IllegalArgumentException("Attribute lucenestorage must be one of: [YES,TRUE]; [NO,FALSE]; [COMPRESS,COMPRESSED]");
     }
 
     @PublicForDigesterUse
     @Deprecated
     public void setLuceneindexed(String v) {
-        luceneindexed=Boolean.parseBoolean(v);
+        if (v==null) return;
+        v=v.toUpperCase();
+        if ("TRUE".equals(v) || "YES".equals(v)) luceneindexed=true;
+        else if ("FALSE".equals(v) || "NO".equals(v)) luceneindexed=false;
+        else throw new IllegalArgumentException("Attribute luceneindexed must be one of: [YES,TRUE]; [NO,FALSE]");
     }
 
     public void setDefault(String v) {
@@ -64,9 +75,9 @@ public class FieldConfig extends ExpressionConfig {
     public String name=null;
     public String defaultValue=null;
     public DataType datatype=DataType.TOKENIZEDTEXT;
-    public boolean lucenestorage=true;
+    public Field.Store lucenestorage=Field.Store.YES;
     public boolean luceneindexed=true;
 
-    public static enum DataType { TOKENIZEDTEXT,STRING,NUMBER,DATETIME };
+    public static enum DataType { TOKENIZEDTEXT,STRING,NUMBER,DATETIME,XML,XHTML };
 }
 

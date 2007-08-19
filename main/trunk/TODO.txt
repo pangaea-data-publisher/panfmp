@@ -3,5 +3,4 @@ Harvester:
 * Compression on/off for XML stored
 
 Search:
-* Testing of Collector API
-* Storing of Queries for retrieval my a hash.
+o/o
