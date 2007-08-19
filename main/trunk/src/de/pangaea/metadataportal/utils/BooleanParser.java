@@ -16,9 +16,6 @@
 
 package de.pangaea.metadataportal.utils;
 
-import javax.xml.XMLConstants;
-import javax.xml.namespace.*;
-
 public final class BooleanParser {
 
     private BooleanParser() {}
