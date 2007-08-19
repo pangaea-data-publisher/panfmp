@@ -72,7 +72,7 @@ public class SearchResultItem {
     public synchronized Object[] getField(String fieldName) {
         FieldConfig f=config.fields.get(fieldName);
         if (f==null) throw new IllegalFieldConfigException("Field name '"+fieldName+"' is unknown!");
-        if (!f.lucenestorage) throw new IllegalFieldConfigException("Field '"+fieldName+"' is not stored!");
+        if (f.lucenestorage==Field.Store.NO) throw new IllegalFieldConfigException("Field '"+fieldName+"' is not stored!");
 
         if (fieldCache!=null) return fieldCache.get(fieldName);
         else return getField(f);
@@ -88,7 +88,7 @@ public class SearchResultItem {
         if (fieldCache!=null) return Collections.unmodifiableMap(fieldCache);
 
         fieldCache=new HashMap<String,Object[]>();
-        for (FieldConfig f : config.fields.values()) if (f.lucenestorage) {
+        for (FieldConfig f : config.fields.values()) if (f.lucenestorage!=Field.Store.NO) {
             Object[] vals=getField(f);
             if (vals!=null) fieldCache.put(f.name,vals);
         }
@@ -103,6 +103,8 @@ public class SearchResultItem {
                 switch(f.datatype) {
                     case TOKENIZEDTEXT:
                     case STRING:
+                    case XML:
+                    case XHTML:
                         vals.add(val); break;
                     case NUMBER:
                         vals.add(new Double(LuceneConversions.luceneToDouble(val))); break;

@@ -288,43 +288,65 @@ public class MetadataDocument {
      */
     protected void addFields(Document ldoc) throws Exception {
         for (FieldConfig f : iconfig.parent.fields.values()) {
-            boolean needDefault=true;
-            Object value=null;
-            if (f.xPathExpr!=null) {
-                try {
-                    // First: try to get XPath result as Nodelist if that fails (because result is #STRING): fallback
-                    // TODO: Looking for a better system to detect return type of XPath :-( [slowdown by this?]
-                    value=f.xPathExpr.evaluate(dom, javax.xml.xpath.XPathConstants.NODESET);
-                } catch (javax.xml.xpath.XPathExpressionException ex) {
-                    // Fallback: if return type of XPath is a #STRING (for example from a substring() routine)
-                    value=f.xPathExpr.evaluate(dom, javax.xml.xpath.XPathConstants.STRING);
-                }
-            } else if (f.xslt!=null) {
-                value=evaluateTemplate(f);
-            } else throw new NullPointerException("Both XPath and template are NULL for field "+f.name);
+            if (f.datatype==FieldConfig.DataType.XHTML) {
+                addField(ldoc,f,evaluateTemplateAsXHTML(f));
+            } else {
+                boolean needDefault=(f.datatype==FieldConfig.DataType.NUMBER || f.datatype==FieldConfig.DataType.DATETIME);
+                Object value=null;
+                if (f.xPathExpr!=null) {
+                    try {
+                        // First: try to get XPath result as Nodelist if that fails (because result is #STRING): fallback
+                        // TODO: Looking for a better system to detect return type of XPath :-( [slowdown by this?]
+                        value=f.xPathExpr.evaluate(dom, javax.xml.xpath.XPathConstants.NODESET);
+                    } catch (javax.xml.xpath.XPathExpressionException ex) {
+                        // Fallback: if return type of XPath is a #STRING (for example from a substring() routine)
+                        value=f.xPathExpr.evaluate(dom, javax.xml.xpath.XPathConstants.STRING);
+                    }
+                } else if (f.xslt!=null) {
+                    value=evaluateTemplate(f);
+                } else throw new NullPointerException("Both XPath and template are NULL for field "+f.name);
 
-            // interpret result
-            if (value instanceof NodeList) {
-                NodeList nodes=(NodeList)value;
-                for (int i=0,c=nodes.getLength(); i<c; i++) {
-                    StringBuilder sb=new StringBuilder();
-                    walkNodeTexts(sb,nodes.item(i),true);
-                    String val=sb.toString().trim();
-                    if (!"".equals(val)) {
-                        addField(ldoc,f,val);
+                // interpret result
+                if (value instanceof NodeList) {
+                    Transformer trans=null;
+                    if (f.datatype==FieldConfig.DataType.XML) {
+                        trans=StaticFactories.transFactory.newTransformer();
+                        trans.setErrorListener(new LoggingErrorListener(getClass()));
+                        trans.setOutputProperty(OutputKeys.INDENT,"no");
+                        trans.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION,"yes");
+                    }
+                    NodeList nodes=(NodeList)value;
+                    for (int i=0,c=nodes.getLength(); i<c; i++) {
+                        if (f.datatype==FieldConfig.DataType.XML) {
+                            DOMSource in=new DOMSource(nodes.item(i));
+                            if (in.getNode().getNodeType()!=Node.ELEMENT_NODE) continue; // only element nodes are valid XML document roots!
+                            StringWriter xmlWriter=new StringWriter();
+                            StreamResult out=new StreamResult(xmlWriter);
+                            trans.transform(in,out);
+                            xmlWriter.close();
+                            addField(ldoc,f,xmlWriter.toString());
+                        } else {
+                            StringBuilder sb=new StringBuilder();
+                            walkNodeTexts(sb,nodes.item(i),true);
+                            String val=sb.toString().trim();
+                            if (!"".equals(val)) {
+                                addField(ldoc,f,val);
+                                needDefault=false;
+                            }
+                        }
+                    }
+                } else if (value instanceof String) {
+                    if (f.datatype==FieldConfig.DataType.XML) throw new UnsupportedOperationException("Fields with datatype XML may only return NODESETs on evaluation!");
+                    String s=(String)value;
+                    s=s.trim();
+                    if (!"".equals(s)) {
+                        addField(ldoc,f,s);
                         needDefault=false;
                     }
-                }
-            } else if (value instanceof String) {
-                String s=(String)value;
-                s=s.trim();
-                if (!"".equals(s)) {
-                    addField(ldoc,f,s);
-                    needDefault=false;
-                }
-            } else throw new UnsupportedOperationException("Invalid Java data type of expression result: "+value.getClass().getName());
+                } else throw new UnsupportedOperationException("Invalid Java data type of expression result: "+value.getClass().getName());
 
-            if (needDefault && f.defaultValue!=null) addField(ldoc,f,f.defaultValue);
+                if (needDefault && f.defaultValue!=null) addField(ldoc,f,f.defaultValue);
+            }
         }
     }
 
@@ -448,6 +470,33 @@ public class MetadataDocument {
     }
 
     /**
+     * Helper method to evaluate a template and return result as XHTML.
+     * This method is called by fields with datatype XHTML.
+     * <P>For internal use only!
+     */
+    protected String evaluateTemplateAsXHTML(FieldConfig expr) throws TransformerException,java.io.IOException {
+        if (expr.datatype!=FieldConfig.DataType.XHTML) throw new IllegalArgumentException("Datatype must be XHTML for evaluateTemplateAsXHTML()");
+        Transformer trans=expr.xslt.newTransformer();
+        trans.setErrorListener(new LoggingErrorListener(getClass()));
+        trans.setOutputProperty(OutputKeys.METHOD,"xml");
+        trans.setOutputProperty(OutputKeys.DOCTYPE_PUBLIC,"-//W3C//DTD XHTML 1.0 Transitional//EN");
+        trans.setOutputProperty(OutputKeys.INDENT,"no");
+        trans.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION,"yes");
+
+        // set variables in transformer
+        Map<QName,Object> vars=XPathResolverImpl.getInstance().getCurrentVariableMap();
+        for (Map.Entry<QName,Object> entry : vars.entrySet()) {
+            trans.setParameter(entry.getKey().toString(),entry.getValue());
+        }
+
+        StringWriter xmlWriter=new StringWriter();
+        StreamResult out=new StreamResult(xmlWriter);
+        trans.transform(new DOMSource(dom,identifier),out);
+        xmlWriter.close();
+        return xmlWriter.toString();
+    }
+
+    /**
      * Helper method to walk through a DOM tree node (n) and collect strings.
      * <P>For internal use only!
      */
@@ -490,7 +539,7 @@ public class MetadataDocument {
         }
         Field.Index in=Field.Index.NO;
         if (f.luceneindexed) in=token?Field.Index.TOKENIZED:Field.Index.UN_TOKENIZED;
-        ldoc.add(new Field(f.name, val, f.lucenestorage?Field.Store.YES:Field.Store.NO, in));
+        ldoc.add(new Field(f.name, val, f.lucenestorage, in));
         if (f.luceneindexed && (f.datatype==FieldConfig.DataType.NUMBER || f.datatype==FieldConfig.DataType.DATETIME))
             LuceneConversions.addTrieIndexEntries(ldoc,f.name,val);
     }
