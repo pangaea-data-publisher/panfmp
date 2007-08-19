@@ -29,7 +29,7 @@ import java.util.*;
 
 /**
  * This class is the main entry point to <b>panFMP</b>'s search engine.
- * <h3>To start a query with <b>panFMP<b> do the following:</h3>
+ * <h3>To start a query with panFMP do the following:</h3>
  * <pre>
  * import de.pangaea.metadataportal.search.*;
  * import org.apache.lucene.search.*;
