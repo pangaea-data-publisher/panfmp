@@ -101,15 +101,12 @@ public class SearchResultItem {
             java.util.ArrayList<Object> vals=new java.util.ArrayList<Object>(data.length);
             for (String val : data) try {
                 switch(f.datatype) {
-                    case TOKENIZEDTEXT:
-                    case STRING:
-                    case XML:
-                    case XHTML:
-                        vals.add(val); break;
                     case NUMBER:
                         vals.add(new Double(LuceneConversions.luceneToDouble(val))); break;
                     case DATETIME:
                         vals.add(LuceneConversions.luceneToDate(val)); break;
+                    default:
+                        vals.add(val); break;
                 }
             } catch (NumberFormatException ex) {
                 // ignore the field if conversion exception
