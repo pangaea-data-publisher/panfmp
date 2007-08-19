@@ -229,7 +229,11 @@ public class MetadataDocument {
             } finally {
                 XPathResolverImpl.getInstance().unsetVariables();
             }
-            ldoc.add(new Field(IndexConstants.FIELDNAME_XML, this.getXML(), Field.Store.COMPRESS, Field.Index.NO));
+            ldoc.add(new Field(IndexConstants.FIELDNAME_XML,
+                this.getXML(),
+                (BooleanParser.parseBoolean(iconfig.harvesterProperties.getProperty("compressXML","true")) ? Field.Store.COMPRESS : Field.Store.YES),
+                Field.Index.NO
+            ));
         }
         return ldoc;
     }

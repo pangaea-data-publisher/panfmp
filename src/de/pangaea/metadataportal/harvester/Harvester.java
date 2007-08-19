@@ -234,7 +234,9 @@ public abstract class Harvester {
             "maxIndexerQueue",
             "autoOptimize",
             // XMLConverter
-            "validate"
+            "validate",
+            // MetadataDocument
+            "compressXML"
         );
     }
 
