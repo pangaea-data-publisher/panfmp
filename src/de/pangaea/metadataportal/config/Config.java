@@ -459,11 +459,10 @@ public class Config {
 
             AttributesImpl atts=new AttributesImpl();
 
-            // generate prefixes to exclude
-            StringBuilder excludePrefixes=new StringBuilder(XSL_PREFIX);
-            Object o=digester.peek();
-            if (o instanceof FieldConfig && ((FieldConfig)o).datatype==FieldConfig.DataType.XHTML) {
-                for (String prefix : ((ExtendedDigester)digester).getCurrentPrefixMappings().keySet()) {
+            // generate prefixes to exclude (all currently defined; if they appear, they will be explicitely defined by processor)
+            StringBuilder excludePrefixes=new StringBuilder("#default "+XSL_PREFIX);
+            for (String prefix : ((ExtendedDigester)digester).getCurrentPrefixMappings().keySet()) {
+                if (!XMLConstants.DEFAULT_NS_PREFIX.equals(prefix)) {
                     excludePrefixes.append(' ');
                     excludePrefixes.append(prefix);
                 }
