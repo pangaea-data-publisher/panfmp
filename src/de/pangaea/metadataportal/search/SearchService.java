@@ -46,7 +46,9 @@ import java.util.*;
  * </pre>
  * <h3>You have two possibilities to start the search:</h3>
  * <ul>
- * <li><p>Retrieve sorted results as a listing (works good for web pages that display search results like Google with paging):</p><pre>
+ * <li><p>Retrieve sorted results as a listing (works good for web pages that display search results like Google with paging).
+ * If the query was previously executed, it may return the results from cache:</p>
+ * <pre>
  * // create a Sort, if you want standard sorting by relevance use sort=null
  * Sort sort=service.newSort(service.newFieldBasedSort(&quot;longitude&quot;, false));
  * // start search
@@ -372,7 +374,7 @@ public class SearchService {
     }
 
     /**
-     * Executes search and returns search results.
+     * Executes search and returns search results. If the query was previously executed, it may return the results from cache.
      * @param query the previously constructed query
      * @param sort if you want to sort search results supply a {@link Sort} instance that describes the search (use {@link #newSort} for that).
      * Supply <code>null</code> for default sorting (by relevance backwards).
@@ -387,7 +389,8 @@ public class SearchService {
     }
 
     /**
-     * Executes search and returns search results. This version uses VARARGs to list field names to return.
+     * Executes search and returns search results. If the query was previously executed, it may return the results from cache.
+     * This version uses VARARGs to list field names to return.
      * @see #search(Query,Sort,boolean,Collection)
      */
     public SearchResultList search(Query query, Sort sort, boolean loadXml, String... fieldName) throws IOException {
@@ -395,7 +398,8 @@ public class SearchService {
     }
 
     /**
-     * Executes search and returns search results. All fields are returned.
+     * Executes search and returns search results. If the query was previously executed, it may return the results from cache.
+     * All fields are returned.
      * @see #search(Query,Sort,boolean,Collection)
      */
     public SearchResultList search(Query query, Sort sort) throws IOException {
@@ -404,6 +408,7 @@ public class SearchService {
 
     /**
      * Executes search and returns search results with default sorting by relevance.
+     * If the query was previously executed, it may return the results from cache.
      * @see #search(Query,Sort,boolean,Collection)
      */
     public SearchResultList search(Query query, boolean loadXml, Collection<String> fieldsToLoad) throws IOException {
@@ -411,7 +416,9 @@ public class SearchService {
     }
 
     /**
-     * Executes search and returns search results with default sorting by relevance. This version uses VARARGs to list field names to return.
+     * Executes search and returns search results with default sorting by relevance.
+     * If the query was previously executed, it may return the results from cache.
+     * This version uses VARARGs to list field names to return.
      * @see #search(Query,Sort,boolean,String...)
      */
     public SearchResultList search(Query query, boolean loadXml, String... fieldName) throws IOException {
@@ -419,7 +426,9 @@ public class SearchService {
     }
 
     /**
-     * Executes search and returns search results with default sorting by relevance. All fields are returned.
+     * Executes search and returns search results with default sorting by relevance.
+     * If the query was previously executed, it may return the results from cache.
+     * All fields are returned.
      * @see #search(Query,Sort)
      */
     public SearchResultList search(Query query) throws IOException {
