@@ -73,7 +73,7 @@ public final class LuceneHitCollector extends HitCollector {
 
     private int count=0;
     private Item[] buffer;
-    SearchResultCollector coll;
+    private SearchResultCollector coll;
     private Config config;
     private Searcher searcher;
     private FieldSelector fields;
