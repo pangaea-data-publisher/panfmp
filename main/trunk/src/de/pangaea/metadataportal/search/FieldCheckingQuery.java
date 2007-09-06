@@ -68,7 +68,7 @@ public final class FieldCheckingQuery extends Query {
 
     /**
      * Expands query to native queries by calling the <code>rewrite</code>-method of the wrapped query.
-     * After that it extracts all terms in the query and checks the filed names.
+     * After that it extracts all terms in the query and checks the used field names.
      * @throws IllegalArgumentException if an invalid field name was detected.
      */
     @Override
@@ -77,6 +77,22 @@ public final class FieldCheckingQuery extends Query {
         q.extractTerms(new TermCheckerSet(field));
         return q;
     }
+	
+	/**
+	 * Sets the boost for this query clause to <code>b</code>. Delegated to wrapped <code>Query</code>.
+	 */
+	@Override
+	public void setBoost(float b) {
+		query.setBoost(b);
+	}
+	
+	/**
+	 * Delegated to wrapped <code>Query</code>
+	 */
+	@Override
+	public float getBoost() {
+		return query.getBoost();
+	}
 
     // members
     private String field;
