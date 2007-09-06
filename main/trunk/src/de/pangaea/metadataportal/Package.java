@@ -22,52 +22,52 @@ package de.pangaea.metadataportal;
  */
 public final class Package {
 
-    private Package() {}
+	private Package() {}
 
-    /** Gets package object from classloader. */
-    public static java.lang.Package get() {
-        return Package.class.getPackage();
-    }
+	/** Gets package object from classloader. */
+	public static java.lang.Package get() {
+		return Package.class.getPackage();
+	}
 
-    /** Gets version of panFMP. */
-    public static String getVersion() {
-        java.lang.Package pkg=get();
-        return (pkg==null) ? null : pkg.getImplementationVersion();
-    }
+	/** Gets version of panFMP. */
+	public static String getVersion() {
+		java.lang.Package pkg=get();
+		return (pkg==null) ? null : pkg.getImplementationVersion();
+	}
 
-    /** Gets product name ("panFMP"). */
-    public static String getProductName() {
-        java.lang.Package pkg=get();
-        return (pkg==null) ? null : pkg.getImplementationTitle();
-    }
+	/** Gets product name ("panFMP"). */
+	public static String getProductName() {
+		java.lang.Package pkg=get();
+		return (pkg==null) ? null : pkg.getImplementationTitle();
+	}
 
-    /** Gets product vendor (the developer team). */
-    public static String getProductVendor() {
-        java.lang.Package pkg=get();
-        return (pkg==null) ? null : pkg.getImplementationVendor();
-    }
+	/** Gets product vendor (the developer team). */
+	public static String getProductVendor() {
+		java.lang.Package pkg=get();
+		return (pkg==null) ? null : pkg.getImplementationVendor();
+	}
 
-    /** Gets a version string to print out. */
-    public static String getFullPackageDescription() {
-        java.lang.Package pkg=get();
-        if (pkg==null) return null;
-        StringBuilder sb=new StringBuilder();
-        sb.append(pkg.getImplementationTitle());
-        sb.append(" version ");
-        sb.append(pkg.getImplementationVersion());
-        sb.append(" (");
-        sb.append(pkg.getImplementationVendor());
-        sb.append(")");
-        return sb.toString();
-    }
+	/** Gets a version string to print out. */
+	public static String getFullPackageDescription() {
+		java.lang.Package pkg=get();
+		if (pkg==null) return null;
+		StringBuilder sb=new StringBuilder();
+		sb.append(pkg.getImplementationTitle());
+		sb.append(" version ");
+		sb.append(pkg.getImplementationVersion());
+		sb.append(" (");
+		sb.append(pkg.getImplementationVendor());
+		sb.append(")");
+		return sb.toString();
+	}
 
-    /** Checks the minimum requirements (Lucene package, etc.).
-     * @throws RuntimeException if the version of Lucene is too old.
-     */
-    public static void checkMinimumRequirements() {
-        java.lang.Package lpkg=org.apache.lucene.LucenePackage.get();
-        if (lpkg==null || !lpkg.isCompatibleWith("2.2.0"))
-            throw new RuntimeException(getProductName()+" only runs with Apache Lucene 2.2.0 as a minimum requirement!");
-    }
+	/** Checks the minimum requirements (Lucene package, etc.).
+	 * @throws RuntimeException if the version of Lucene is too old.
+	 */
+	public static void checkMinimumRequirements() {
+		java.lang.Package lpkg=org.apache.lucene.LucenePackage.get();
+		if (lpkg==null || !lpkg.isCompatibleWith("2.2.0"))
+			throw new RuntimeException(getProductName()+" only runs with Apache Lucene 2.2.0 as a minimum requirement!");
+	}
 
 }

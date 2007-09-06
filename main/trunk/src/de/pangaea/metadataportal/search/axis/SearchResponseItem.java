@@ -20,29 +20,29 @@ import de.pangaea.metadataportal.search.SearchResultItem;
 
 public final class SearchResponseItem {
 
-    protected SearchResponseItem(SearchResultItem item, boolean returnXML, boolean returnStoredFields) {
-        this.item=item;
-        this.returnXML=returnXML;
-        this.returnStoredFields=returnStoredFields;
-    }
+	protected SearchResponseItem(SearchResultItem item, boolean returnXML, boolean returnStoredFields) {
+		this.item=item;
+		this.returnXML=returnXML;
+		this.returnStoredFields=returnStoredFields;
+	}
 
-    public float getScore() {
-        return item.getScore();
-    }
+	public float getScore() {
+		return item.getScore();
+	}
 
-    public String getXml() {
-        return returnXML ? item.getXml() : null;
-    }
+	public String getXml() {
+		return returnXML ? item.getXml() : null;
+	}
 
-    public String getIdentifier() {
-        return item.getIdentifier();
-    }
+	public String getIdentifier() {
+		return item.getIdentifier();
+	}
 
-    public java.util.Map<String,Object[]> getFields() {
-        return returnStoredFields ? item.getFields() : null;
-    }
+	public java.util.Map<String,Object[]> getFields() {
+		return returnStoredFields ? item.getFields() : null;
+	}
 
-    // information
-    private SearchResultItem item;
-    private boolean returnXML,returnStoredFields;
+	// information
+	private SearchResultItem item;
+	private boolean returnXML,returnStoredFields;
 }

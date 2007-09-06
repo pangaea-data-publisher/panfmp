@@ -29,102 +29,102 @@ import java.util.*;
  */
 public class VirtualIndexConfig extends IndexConfig {
 
-    public VirtualIndexConfig() {
-        super();
-    }
+	public VirtualIndexConfig() {
+		super();
+	}
 
-    public void addIndex(String v) {
-        if (checked) throw new IllegalStateException("Virtual index configuration cannot be changed anymore!");
-        v=v.trim();
-        if (v==null || "".equals(v)) throw new IllegalArgumentException("The index list inside a virtual index must contain references to other index instances!");
-        if (indexIds.contains(v)) throw new IllegalArgumentException("Virtual index already contains index id=\""+v+"\"!");
-        indexIds.add(v);
-    }
+	public void addIndex(String v) {
+		if (checked) throw new IllegalStateException("Virtual index configuration cannot be changed anymore!");
+		v=v.trim();
+		if (v==null || "".equals(v)) throw new IllegalArgumentException("The index list inside a virtual index must contain references to other index instances!");
+		if (indexIds.contains(v)) throw new IllegalArgumentException("Virtual index already contains index id=\""+v+"\"!");
+		indexIds.add(v);
+	}
 
-    public void addIndexCollection(Collection<String> v) {
-        if (checked) throw new IllegalStateException("Virtual index configuration cannot be changed anymore!");
-        for (String s : v) addIndex(s);
-    }
+	public void addIndexCollection(Collection<String> v) {
+		if (checked) throw new IllegalStateException("Virtual index configuration cannot be changed anymore!");
+		for (String s : v) addIndex(s);
+	}
 
-    @PublicForDigesterUse
-    @Deprecated
-    public void setThreaded(String v) {
-        threaded=BooleanParser.parseBoolean(v.trim());
-    }
+	@PublicForDigesterUse
+	@Deprecated
+	public void setThreaded(String v) {
+		threaded=BooleanParser.parseBoolean(v.trim());
+	}
 
-    @Override
-    public void check() {
-        super.check();
-        if (indexIds.size()==0) throw new IllegalStateException("Virtual index with id=\""+id+"\" does not reference any index!");
-        indexes=new IndexConfig[indexIds.size()];
-        int i=0;
-        for (Iterator<String> it=indexIds.iterator(); it.hasNext(); i++) {
-            String s=it.next();
-            IndexConfig iconf=parent.indexes.get(s);
-            if (iconf==null) throw new IllegalStateException("Virtual index with id=\""+id+"\" references not existing index \""+s+"\"!");
-            if (iconf==this) throw new IllegalStateException("Virtual index with id=\""+id+"\" references itsself!");
-            iconf.check();
-            indexes[i]=iconf;
-        }
-    }
+	@Override
+	public void check() {
+		super.check();
+		if (indexIds.size()==0) throw new IllegalStateException("Virtual index with id=\""+id+"\" does not reference any index!");
+		indexes=new IndexConfig[indexIds.size()];
+		int i=0;
+		for (Iterator<String> it=indexIds.iterator(); it.hasNext(); i++) {
+			String s=it.next();
+			IndexConfig iconf=parent.indexes.get(s);
+			if (iconf==null) throw new IllegalStateException("Virtual index with id=\""+id+"\" references not existing index \""+s+"\"!");
+			if (iconf==this) throw new IllegalStateException("Virtual index with id=\""+id+"\" references itsself!");
+			iconf.check();
+			indexes[i]=iconf;
+		}
+	}
 
-    // Searcher
-    @Override
-    public org.apache.lucene.search.Searcher newSearcher() throws java.io.IOException {
-        if (indexes==null) throw new IllegalStateException("Virtual index configuration with id=\""+id+"\" not yet checked and initialized!");
-        org.apache.lucene.search.Searchable[] l=new org.apache.lucene.search.Searchable[indexes.length];
-        for (int i=0, c=indexes.length; i<c; i++) l[i]=indexes[i].newSearcher();
-        if (threaded) {
-            return new org.apache.lucene.search.ParallelMultiSearcher(l);
-        } else {
-            return new org.apache.lucene.search.MultiSearcher(l);
-        }
-    }
+	// Searcher
+	@Override
+	public org.apache.lucene.search.Searcher newSearcher() throws java.io.IOException {
+		if (indexes==null) throw new IllegalStateException("Virtual index configuration with id=\""+id+"\" not yet checked and initialized!");
+		org.apache.lucene.search.Searchable[] l=new org.apache.lucene.search.Searchable[indexes.length];
+		for (int i=0, c=indexes.length; i<c; i++) l[i]=indexes[i].newSearcher();
+		if (threaded) {
+			return new org.apache.lucene.search.ParallelMultiSearcher(l);
+		} else {
+			return new org.apache.lucene.search.MultiSearcher(l);
+		}
+	}
 
-    // Reader
-    @Override
-    public org.apache.lucene.index.IndexReader getIndexReader() throws java.io.IOException {
-        if (indexes==null) throw new IllegalStateException("Virtual index configuration with id=\""+id+"\" not yet checked and initialized!");
-        org.apache.lucene.index.IndexReader[] l=new org.apache.lucene.index.IndexReader[indexes.length];
-        for (int i=0, c=indexes.length; i<c; i++) l[i]=indexes[i].getIndexReader();
-        return new org.apache.lucene.index.MultiReader(l);
-    }
+	// Reader
+	@Override
+	public org.apache.lucene.index.IndexReader getIndexReader() throws java.io.IOException {
+		if (indexes==null) throw new IllegalStateException("Virtual index configuration with id=\""+id+"\" not yet checked and initialized!");
+		org.apache.lucene.index.IndexReader[] l=new org.apache.lucene.index.IndexReader[indexes.length];
+		for (int i=0, c=indexes.length; i<c; i++) l[i]=indexes[i].getIndexReader();
+		return new org.apache.lucene.index.MultiReader(l);
+	}
 
-    @Override
-    public org.apache.lucene.index.IndexReader getUncachedIndexReader() throws java.io.IOException {
-        if (indexes==null) throw new IllegalStateException("Virtual index configuration with id=\""+id+"\" not yet checked and initialized!");
-        org.apache.lucene.index.IndexReader[] l=new org.apache.lucene.index.IndexReader[indexes.length];
-        for (int i=0, c=indexes.length; i<c; i++) l[i]=indexes[i].getUncachedIndexReader();
-        return new org.apache.lucene.index.MultiReader(l);
-    }
+	@Override
+	public org.apache.lucene.index.IndexReader getUncachedIndexReader() throws java.io.IOException {
+		if (indexes==null) throw new IllegalStateException("Virtual index configuration with id=\""+id+"\" not yet checked and initialized!");
+		org.apache.lucene.index.IndexReader[] l=new org.apache.lucene.index.IndexReader[indexes.length];
+		for (int i=0, c=indexes.length; i<c; i++) l[i]=indexes[i].getUncachedIndexReader();
+		return new org.apache.lucene.index.MultiReader(l);
+	}
 
-    // check if current opened reader is current
-    @Override
-    public synchronized boolean isIndexCurrent() throws java.io.IOException {
-        if (indexes==null) throw new IllegalStateException("Virtual index configuration with id=\""+id+"\" not yet checked and initialized!");
-        boolean ok=true;
-        for (int i=0, c=indexes.length; i<c; i++) ok&=indexes[i].isIndexCurrent();
-        return ok;
-    }
+	// check if current opened reader is current
+	@Override
+	public synchronized boolean isIndexCurrent() throws java.io.IOException {
+		if (indexes==null) throw new IllegalStateException("Virtual index configuration with id=\""+id+"\" not yet checked and initialized!");
+		boolean ok=true;
+		for (int i=0, c=indexes.length; i<c; i++) ok&=indexes[i].isIndexCurrent();
+		return ok;
+	}
 
-    @Override
-    public boolean isIndexAvailable() throws java.io.IOException {
-        if (indexes==null) throw new IllegalStateException("Virtual index configuration with id=\""+id+"\" not yet checked and initialized!");
-        boolean ok=true;
-        for (int i=0, c=indexes.length; i<c; i++) ok&=indexes[i].isIndexAvailable();
-        return ok;
-    }
+	@Override
+	public boolean isIndexAvailable() throws java.io.IOException {
+		if (indexes==null) throw new IllegalStateException("Virtual index configuration with id=\""+id+"\" not yet checked and initialized!");
+		boolean ok=true;
+		for (int i=0, c=indexes.length; i<c; i++) ok&=indexes[i].isIndexAvailable();
+		return ok;
+	}
 
-    @Override
-    public synchronized void reopenIndex() throws java.io.IOException {
-        if (indexes==null) throw new IllegalStateException("Virtual index configuration with id=\""+id+"\" not yet checked and initialized!");
-        for (int i=0, c=indexes.length; i<c; i++) indexes[i].reopenIndex();
-        closeIndex();
-    }
+	@Override
+	public synchronized void reopenIndex() throws java.io.IOException {
+		if (indexes==null) throw new IllegalStateException("Virtual index configuration with id=\""+id+"\" not yet checked and initialized!");
+		for (int i=0, c=indexes.length; i<c; i++) indexes[i].reopenIndex();
+		closeIndex();
+	}
 
-    private Set<String> indexIds=new HashSet<String>();
+	private Set<String> indexIds=new HashSet<String>();
 
-    // members "the configuration"
-    public IndexConfig[] indexes=null;
-    public boolean threaded=false;
+	// members "the configuration"
+	public IndexConfig[] indexes=null;
+	public boolean threaded=false;
 }

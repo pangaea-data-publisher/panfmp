@@ -27,53 +27,53 @@ import org.apache.lucene.document.*;
  */
 public class OAIMetadataDocument extends MetadataDocument {
 
-    @PublicForDigesterUse
-    @Deprecated
-    public void setHeaderInfo(String status, String identifier, String datestampStr) throws java.text.ParseException {
-        setDeleted(status!=null && status.equals("deleted"));
-        setIdentifier(identifier);
-        setDatestamp(ISODateFormatter.parseDate(datestampStr));
-    }
+	@PublicForDigesterUse
+	@Deprecated
+	public void setHeaderInfo(String status, String identifier, String datestampStr) throws java.text.ParseException {
+		setDeleted(status!=null && status.equals("deleted"));
+		setIdentifier(identifier);
+		setDatestamp(ISODateFormatter.parseDate(datestampStr));
+	}
 
-    /**
-     * Adds an OAI set to the set {@link Set}.
-     */
-    public void addSet(String set) {
-        sets.add(set);
-    }
+	/**
+	 * Adds an OAI set to the set {@link Set}.
+	 */
+	public void addSet(String set) {
+		sets.add(set);
+	}
 
-    /**
-     * Returns all OAI sets as {@link Set}.
-     */
-    public Set<String> getSets() {
-        return sets;
-    }
+	/**
+	 * Returns all OAI sets as {@link Set}.
+	 */
+	public Set<String> getSets() {
+		return sets;
+	}
 
-    @Override
-    public void loadFromLucene(Document ldoc) throws Exception {
-        sets.clear();
-        super.loadFromLucene(ldoc);
-        String[] sets=ldoc.getValues(IndexConstants.FIELDNAME_SET);
-        if (sets!=null) for (String set : sets) if (set!=null) addSet(set);
-    }
+	@Override
+	public void loadFromLucene(Document ldoc) throws Exception {
+		sets.clear();
+		super.loadFromLucene(ldoc);
+		String[] sets=ldoc.getValues(IndexConstants.FIELDNAME_SET);
+		if (sets!=null) for (String set : sets) if (set!=null) addSet(set);
+	}
 
-    @Override
-    protected Document createEmptyDocument() throws Exception {
-        Document ldoc=super.createEmptyDocument();
-        if (ldoc!=null) {
-            for (String set : sets) ldoc.add(new Field(IndexConstants.FIELDNAME_SET, set, Field.Store.YES, Field.Index.UN_TOKENIZED));
-        }
-        return ldoc;
-    }
+	@Override
+	protected Document createEmptyDocument() throws Exception {
+		Document ldoc=super.createEmptyDocument();
+		if (ldoc!=null) {
+			for (String set : sets) ldoc.add(new Field(IndexConstants.FIELDNAME_SET, set, Field.Store.YES, Field.Index.UN_TOKENIZED));
+		}
+		return ldoc;
+	}
 
-    @Override
-    public String toString() {
-        return super.toString()+" sets="+sets;
-    }
+	@Override
+	public String toString() {
+		return super.toString()+" sets="+sets;
+	}
 
-    /**
-     * @see #getSets
-     */
-    protected HashSet<String> sets=new HashSet<String>();
+	/**
+	 * @see #getSets
+	 */
+	protected HashSet<String> sets=new HashSet<String>();
 
 }

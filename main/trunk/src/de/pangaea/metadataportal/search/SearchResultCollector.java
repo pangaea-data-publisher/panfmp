@@ -22,13 +22,13 @@ package de.pangaea.metadataportal.search;
  */
 public interface SearchResultCollector {
 
-    /**
-     * This method is called every time a search result item was found during search.
-     * @param item the found search result item (contained fields and XML blob depends on
-     * parameters of used search method in {@link SearchService})
-     * @return <code>true</code>, if further results should be collected &ndash;
-     * <code>false</code>, if collecting must be stopped (use this to signal that you got enough items)
-     */
-    public boolean collect(SearchResultItem item);
+	/**
+	 * This method is called every time a search result item was found during search.
+	 * @param item the found search result item (contained fields and XML blob depends on
+	 * parameters of used search method in {@link SearchService})
+	 * @return <code>true</code>, if further results should be collected &ndash;
+	 * <code>false</code>, if collecting must be stopped (use this to signal that you got enough items)
+	 */
+	public boolean collect(SearchResultItem item);
 
 }

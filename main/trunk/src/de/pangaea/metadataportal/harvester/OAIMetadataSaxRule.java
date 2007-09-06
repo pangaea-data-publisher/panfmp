@@ -27,30 +27,30 @@ import org.xml.sax.ContentHandler;
  */
 public class OAIMetadataSaxRule extends de.pangaea.metadataportal.utils.SaxRule {
 
-    private OAIMetadataDocument doc=null;
-    private XMLConverter trans=null;
+	private OAIMetadataDocument doc=null;
+	private XMLConverter trans=null;
 
-    public OAIMetadataSaxRule(XMLConverter trans) {
-        super();
-        this.trans=trans;
-    }
+	public OAIMetadataSaxRule(XMLConverter trans) {
+		super();
+		this.trans=trans;
+	}
 
-    // Digester rule part
+	// Digester rule part
 
-    @Override
-    public void begin(java.lang.String namespace, java.lang.String name, org.xml.sax.Attributes attributes) throws Exception {
-        doc=(OAIMetadataDocument)digester.peek(); // the OAIMetadataDocument is on the stack!!!
-        ContentHandler handler=trans.getTransformContentHandler(doc.getIdentifier());
-        setExcludeNamespaces(java.util.Collections.singleton(OAIHarvester.OAI_NS));
-        setContentHandler(handler);
-        super.begin(namespace,name,attributes);
-    }
+	@Override
+	public void begin(java.lang.String namespace, java.lang.String name, org.xml.sax.Attributes attributes) throws Exception {
+		doc=(OAIMetadataDocument)digester.peek(); // the OAIMetadataDocument is on the stack!!!
+		ContentHandler handler=trans.getTransformContentHandler(doc.getIdentifier());
+		setExcludeNamespaces(java.util.Collections.singleton(OAIHarvester.OAI_NS));
+		setContentHandler(handler);
+		super.begin(namespace,name,attributes);
+	}
 
-    @Override
-    public void end(java.lang.String namespace, java.lang.String name) throws Exception {
-        super.end(namespace,name);
-        doc.setDOM(trans.finishTransformation());
-        doc=null;
-    }
+	@Override
+	public void end(java.lang.String namespace, java.lang.String name) throws Exception {
+		super.end(namespace,name);
+		doc.setDOM(trans.finishTransformation());
+		doc=null;
+	}
 
 }

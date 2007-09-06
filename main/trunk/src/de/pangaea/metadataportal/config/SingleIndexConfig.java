@@ -26,100 +26,100 @@ import javax.xml.transform.*;
  */
 public class SingleIndexConfig extends IndexConfig {
 
-    public SingleIndexConfig() {
-        super();
-    }
+	public SingleIndexConfig() {
+		super();
+	}
 
-    public void setIndexDir(String v) throws java.io.IOException {
-        indexDir=v;
-    }
+	public void setIndexDir(String v) throws java.io.IOException {
+		indexDir=v;
+	}
 
-    @PublicForDigesterUse
-    @Deprecated
-    public void setHarvesterClass(String v) throws ClassNotFoundException {
-        harvesterClass=Class.forName(v).asSubclass(de.pangaea.metadataportal.harvester.Harvester.class);
-    }
+	@PublicForDigesterUse
+	@Deprecated
+	public void setHarvesterClass(String v) throws ClassNotFoundException {
+		harvesterClass=Class.forName(v).asSubclass(de.pangaea.metadataportal.harvester.Harvester.class);
+	}
 
-    @PublicForDigesterUse
-    @Deprecated
-    public void addHarvesterProperty(ExtendedDigester dig, String value) {
-        harvesterProperties.setProperty(dig.getCurrentElementName(),value);
-    }
+	@PublicForDigesterUse
+	@Deprecated
+	public void addHarvesterProperty(ExtendedDigester dig, String value) {
+		harvesterProperties.setProperty(dig.getCurrentElementName(),value);
+	}
 
-    @Override
-    public void check() {
-        super.check();
-        if (indexDir==null || harvesterClass==null)
-            throw new IllegalStateException("Some index configuration fields are missing for index with id=\""+id+"\"!");
-    }
+	@Override
+	public void check() {
+		super.check();
+		if (indexDir==null || harvesterClass==null)
+			throw new IllegalStateException("Some index configuration fields are missing for index with id=\""+id+"\"!");
+	}
 
-    public void checkProperties() throws Exception {
-        de.pangaea.metadataportal.harvester.Harvester h=harvesterClass.newInstance();
-        HashSet<String> validProperties=new HashSet<String>(h.getValidHarvesterPropertyNames());
-        @SuppressWarnings("unchecked") Enumeration<String> en=(Enumeration<String>)harvesterProperties.propertyNames();
-        while (en.hasMoreElements()) {
-            String prop=en.nextElement();
-            if (!validProperties.contains(prop))
-                throw new IllegalArgumentException("Harvester '"+harvesterClass.getName()+"' for index '"+id+"' does not support property '"+prop+"'! Supported properties are: "+validProperties);
-        }
-    }
+	public void checkProperties() throws Exception {
+		de.pangaea.metadataportal.harvester.Harvester h=harvesterClass.newInstance();
+		HashSet<String> validProperties=new HashSet<String>(h.getValidHarvesterPropertyNames());
+		@SuppressWarnings("unchecked") Enumeration<String> en=(Enumeration<String>)harvesterProperties.propertyNames();
+		while (en.hasMoreElements()) {
+			String prop=en.nextElement();
+			if (!validProperties.contains(prop))
+				throw new IllegalArgumentException("Harvester '"+harvesterClass.getName()+"' for index '"+id+"' does not support property '"+prop+"'! Supported properties are: "+validProperties);
+		}
+	}
 
-    // Searcher
-    @Override
-    public synchronized org.apache.lucene.search.Searcher newSearcher() throws java.io.IOException {
-        if (indexReader==null) indexReader=org.apache.lucene.index.IndexReader.open(getFullIndexPath());
-        return new org.apache.lucene.search.IndexSearcher(indexReader);
-    }
+	// Searcher
+	@Override
+	public synchronized org.apache.lucene.search.Searcher newSearcher() throws java.io.IOException {
+		if (indexReader==null) indexReader=org.apache.lucene.index.IndexReader.open(getFullIndexPath());
+		return new org.apache.lucene.search.IndexSearcher(indexReader);
+	}
 
-    // Reader
-    @Override
-    public synchronized org.apache.lucene.index.IndexReader getIndexReader() throws java.io.IOException {
-        if (indexReader==null) indexReader=org.apache.lucene.index.IndexReader.open(getFullIndexPath());
-        return indexReader;
-    }
+	// Reader
+	@Override
+	public synchronized org.apache.lucene.index.IndexReader getIndexReader() throws java.io.IOException {
+		if (indexReader==null) indexReader=org.apache.lucene.index.IndexReader.open(getFullIndexPath());
+		return indexReader;
+	}
 
-    @Override
-    public org.apache.lucene.index.IndexReader getUncachedIndexReader() throws java.io.IOException {
-        return org.apache.lucene.index.IndexReader.open(getFullIndexPath());
-    }
+	@Override
+	public org.apache.lucene.index.IndexReader getUncachedIndexReader() throws java.io.IOException {
+		return org.apache.lucene.index.IndexReader.open(getFullIndexPath());
+	}
 
-    @Override
-    public boolean isIndexAvailable() throws java.io.IOException {
-        return org.apache.lucene.index.IndexReader.indexExists(getFullIndexPath());
-    }
+	@Override
+	public boolean isIndexAvailable() throws java.io.IOException {
+		return org.apache.lucene.index.IndexReader.indexExists(getFullIndexPath());
+	}
 
-    public String getFullIndexPath() throws java.io.IOException {
-        return parent.makePathAbsolute(indexDir);
-    }
+	public String getFullIndexPath() throws java.io.IOException {
+		return parent.makePathAbsolute(indexDir);
+	}
 
-    // check if current opened reader is current
-    @Override
-    public synchronized boolean isIndexCurrent() throws java.io.IOException {
-        if (indexReader==null) return true;
-        return indexReader.isCurrent();
-    }
+	// check if current opened reader is current
+	@Override
+	public synchronized boolean isIndexCurrent() throws java.io.IOException {
+		if (indexReader==null) return true;
+		return indexReader.isCurrent();
+	}
 
-    @Override
-    public synchronized void reopenIndex() throws java.io.IOException {
-        closeIndex();
-    }
+	@Override
+	public synchronized void reopenIndex() throws java.io.IOException {
+		closeIndex();
+	}
 
-    @Override
-    protected void finalize() throws java.io.IOException {
-        closeIndex();
-    }
+	@Override
+	protected void finalize() throws java.io.IOException {
+		closeIndex();
+	}
 
-    @Override
-    public synchronized void closeIndex() throws java.io.IOException {
-        if (indexReader!=null) indexReader.close();
-        indexReader=null;
-    }
+	@Override
+	public synchronized void closeIndex() throws java.io.IOException {
+		if (indexReader!=null) indexReader.close();
+		indexReader=null;
+	}
 
-    protected org.apache.lucene.index.IndexReader indexReader=null;
+	protected org.apache.lucene.index.IndexReader indexReader=null;
 
-    // members "the configuration"
-    private String indexDir=null;
-    public Class<? extends de.pangaea.metadataportal.harvester.Harvester> harvesterClass=null;
-    public InheritedProperties harvesterProperties=new InheritedProperties();
-    public Templates xslt=null;
+	// members "the configuration"
+	private String indexDir=null;
+	public Class<? extends de.pangaea.metadataportal.harvester.Harvester> harvesterClass=null;
+	public InheritedProperties harvesterProperties=new InheritedProperties();
+	public Templates xslt=null;
 }

@@ -24,8 +24,8 @@ import java.util.Properties;
  */
 public final class InheritedProperties extends Properties {
 
-    public void setParentProperties(Properties props) {
-        this.defaults=props;
-    }
+	public void setParentProperties(Properties props) {
+		this.defaults=props;
+	}
 
 }

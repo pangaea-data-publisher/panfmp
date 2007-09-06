@@ -20,22 +20,22 @@ import javax.xml.transform.*;
 
 public final class LoggingErrorListener implements ErrorListener {
 
-    public LoggingErrorListener(Class c) {
-        log=org.apache.commons.logging.LogFactory.getLog(c);
-    }
+	public LoggingErrorListener(Class c) {
+		log=org.apache.commons.logging.LogFactory.getLog(c);
+	}
 
-    public void error(TransformerException e) throws TransformerException {
-        throw e;
-    }
+	public void error(TransformerException e) throws TransformerException {
+		throw e;
+	}
 
-    public void fatalError(TransformerException e) throws TransformerException {
-        throw e;
-    }
+	public void fatalError(TransformerException e) throws TransformerException {
+		throw e;
+	}
 
-    public void warning(TransformerException e) throws TransformerException {
-        log.warn(e.getMessage());
-    }
+	public void warning(TransformerException e) throws TransformerException {
+		log.warn(e.getMessage());
+	}
 
-    private org.apache.commons.logging.Log log;
+	private org.apache.commons.logging.Log log;
 
 }

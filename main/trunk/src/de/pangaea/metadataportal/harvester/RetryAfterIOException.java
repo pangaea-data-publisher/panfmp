@@ -18,15 +18,15 @@ package de.pangaea.metadataportal.harvester;
 
 public class RetryAfterIOException extends java.io.IOException {
 
-    public RetryAfterIOException(int retryAfter, java.io.IOException ioe) {
-        super();
-        initCause(ioe);
-        this.retryAfter=retryAfter;
-    }
+	public RetryAfterIOException(int retryAfter, java.io.IOException ioe) {
+		super();
+		initCause(ioe);
+		this.retryAfter=retryAfter;
+	}
 
-    public int getRetryAfter() {
-        return retryAfter;
-    }
+	public int getRetryAfter() {
+		return retryAfter;
+	}
 
-    private int retryAfter;
+	private int retryAfter;
 }

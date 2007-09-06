@@ -28,77 +28,77 @@ import java.util.*;
  */
 public final class LuceneHitCollector extends HitCollector {
 
-    private static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(LuceneHitCollector.class);
+	private static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(LuceneHitCollector.class);
 
-    /**
-     * Creates an instance using the specified buffer size wrapping the {@link SearchResultCollector}.
-     */
-    protected LuceneHitCollector(int bufferSize, SearchResultCollector coll, Config config, Searcher searcher, FieldSelector fields) {
-        if (bufferSize<=0) throw new IllegalArgumentException("Buffer must have a size >0");
-        buffer=new Item[bufferSize];
-        this.coll=coll;
-        this.config=config;
-        this.searcher=searcher;
-        this.fields=fields;
-    }
+	/**
+	 * Creates an instance using the specified buffer size wrapping the {@link SearchResultCollector}.
+	 */
+	protected LuceneHitCollector(int bufferSize, SearchResultCollector coll, Config config, Searcher searcher, FieldSelector fields) {
+		if (bufferSize<=0) throw new IllegalArgumentException("Buffer must have a size >0");
+		buffer=new Item[bufferSize];
+		this.coll=coll;
+		this.config=config;
+		this.searcher=searcher;
+		this.fields=fields;
+	}
 
-    /**
-     * Flushes the internal buffer by calling {@link SearchResultCollector#collect} with
-     * the loaded document instance for each buffer entry.
-     */
-    protected synchronized void flushBuffer() {
-        if (log.isDebugEnabled()) log.debug("Flushing buffer containing "+count+" search results...");
-        try {
-            // we do the buffer in index order which is less IO expensive!
-            Arrays.sort(buffer,0,count);
-            try {
-                for (int i=0; i<count; i++) {
-                    if (!coll.collect(new SearchResultItem(config, buffer[i].score, searcher.doc(buffer[i].doc, fields) ))) throw new StopException();
-                }
-            } finally {
-                count=0;
-            }
-        } catch (IOException ioe) {
-            throw new RuntimeException(ioe);
-        }
-    }
+	/**
+	 * Flushes the internal buffer by calling {@link SearchResultCollector#collect} with
+	 * the loaded document instance for each buffer entry.
+	 */
+	protected synchronized void flushBuffer() {
+		if (log.isDebugEnabled()) log.debug("Flushing buffer containing "+count+" search results...");
+		try {
+			// we do the buffer in index order which is less IO expensive!
+			Arrays.sort(buffer,0,count);
+			try {
+				for (int i=0; i<count; i++) {
+					if (!coll.collect(new SearchResultItem(config, buffer[i].score, searcher.doc(buffer[i].doc, fields) ))) throw new StopException();
+				}
+			} finally {
+				count=0;
+			}
+		} catch (IOException ioe) {
+			throw new RuntimeException(ioe);
+		}
+	}
 
-    /**
-     * Called by Lucene to collect search result items.
-     */
-    public synchronized void collect(int doc, float score) {
-        buffer[count++]=new Item(doc,score);
-        if (count==buffer.length) flushBuffer();
-    }
+	/**
+	 * Called by Lucene to collect search result items.
+	 */
+	public synchronized void collect(int doc, float score) {
+		buffer[count++]=new Item(doc,score);
+		if (count==buffer.length) flushBuffer();
+	}
 
-    private int count=0;
-    private Item[] buffer;
-    private SearchResultCollector coll;
-    private Config config;
-    private Searcher searcher;
-    private FieldSelector fields;
+	private int count=0;
+	private Item[] buffer;
+	private SearchResultCollector coll;
+	private Config config;
+	private Searcher searcher;
+	private FieldSelector fields;
 
-    /**
-     * Thrown to stop collecting of results when {@link SearchResultCollector#collect} returns <code>false</code>.
-     */
-    protected static final class StopException extends RuntimeException {
-        protected StopException() {
-            super();
-        }
-    }
+	/**
+	 * Thrown to stop collecting of results when {@link SearchResultCollector#collect} returns <code>false</code>.
+	 */
+	protected static final class StopException extends RuntimeException {
+		protected StopException() {
+			super();
+		}
+	}
 
-    private static final class Item implements Comparable<Item> {
-        protected int doc;
-        protected float score;
+	private static final class Item implements Comparable<Item> {
+		protected int doc;
+		protected float score;
 
-        protected Item(int doc, float score) {
-            this.doc=doc;
-            this.score=score;
-        }
+		protected Item(int doc, float score) {
+			this.doc=doc;
+			this.score=score;
+		}
 
-        public int compareTo(Item o) {
-            return Integer.valueOf(doc).compareTo(Integer.valueOf(o.doc));
-        }
-    }
+		public int compareTo(Item o) {
+			return Integer.valueOf(doc).compareTo(Integer.valueOf(o.doc));
+		}
+	}
 
 }

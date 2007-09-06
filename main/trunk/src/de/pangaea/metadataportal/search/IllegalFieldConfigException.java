@@ -24,8 +24,8 @@ package de.pangaea.metadataportal.search;
  */
 public class IllegalFieldConfigException extends IllegalArgumentException {
 
-    public IllegalFieldConfigException(String message) {
-        super(message);
-    }
+	public IllegalFieldConfigException(String message) {
+		super(message);
+	}
 
 }

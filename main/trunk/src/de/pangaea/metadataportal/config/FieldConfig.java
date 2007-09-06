@@ -27,54 +27,54 @@ import java.util.EnumSet;
  */
 public class FieldConfig extends ExpressionConfig {
 
-    public void setName(String v) {
-        name=v;
-    }
+	public void setName(String v) {
+		name=v;
+	}
 
-    @PublicForDigesterUse
-    @Deprecated
-    public void setDatatype(String v) {
-        try {
-            datatype=DataType.valueOf(v.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Invalid value '"+v+"' for attribute datatype, valid ones are: "+EnumSet.allOf(DataType.class).toString());
-        }
-    }
+	@PublicForDigesterUse
+	@Deprecated
+	public void setDatatype(String v) {
+		try {
+			datatype=DataType.valueOf(v.toUpperCase());
+		} catch (IllegalArgumentException e) {
+			throw new IllegalArgumentException("Invalid value '"+v+"' for attribute datatype, valid ones are: "+EnumSet.allOf(DataType.class).toString());
+		}
+	}
 
-    @PublicForDigesterUse
-    @Deprecated
-    public void setLucenestorage(String v) {
-        if (v==null) return;
-        v=v.toUpperCase();
-        if ("COMPRESS".equals(v) || "COMPRESSED".equals(v)) lucenestorage=Field.Store.COMPRESS;
-        else if ("TRUE".equals(v) || "YES".equals(v) || "ON".equals(v)) lucenestorage=Field.Store.YES;
-        else if ("FALSE".equals(v) || "NO".equals(v) || "OFF".equals(v)) lucenestorage=Field.Store.NO;
-        else throw new IllegalArgumentException("Attribute lucenestorage must be one of: [YES,TRUE,ON]; [NO,FALSE,OFF]; [COMPRESS,COMPRESSED]");
-    }
+	@PublicForDigesterUse
+	@Deprecated
+	public void setLucenestorage(String v) {
+		if (v==null) return;
+		v=v.toUpperCase();
+		if ("COMPRESS".equals(v) || "COMPRESSED".equals(v)) lucenestorage=Field.Store.COMPRESS;
+		else if ("TRUE".equals(v) || "YES".equals(v) || "ON".equals(v)) lucenestorage=Field.Store.YES;
+		else if ("FALSE".equals(v) || "NO".equals(v) || "OFF".equals(v)) lucenestorage=Field.Store.NO;
+		else throw new IllegalArgumentException("Attribute lucenestorage must be one of: [YES,TRUE,ON]; [NO,FALSE,OFF]; [COMPRESS,COMPRESSED]");
+	}
 
-    @PublicForDigesterUse
-    @Deprecated
-    public void setLuceneindexed(String v) {
-        if (v==null) return;
-        luceneindexed=BooleanParser.parseBoolean(v);
-    }
+	@PublicForDigesterUse
+	@Deprecated
+	public void setLuceneindexed(String v) {
+		if (v==null) return;
+		luceneindexed=BooleanParser.parseBoolean(v);
+	}
 
-    public void setDefault(String v) {
-        defaultValue=v;
-    }
+	public void setDefault(String v) {
+		defaultValue=v;
+	}
 
-    @Override
-    public String toString() {
-        return name;
-    }
+	@Override
+	public String toString() {
+		return name;
+	}
 
-    // members "the configuration"
-    public String name=null;
-    public String defaultValue=null;
-    public DataType datatype=DataType.TOKENIZEDTEXT;
-    public Field.Store lucenestorage=Field.Store.YES;
-    public boolean luceneindexed=true;
+	// members "the configuration"
+	public String name=null;
+	public String defaultValue=null;
+	public DataType datatype=DataType.TOKENIZEDTEXT;
+	public Field.Store lucenestorage=Field.Store.YES;
+	public boolean luceneindexed=true;
 
-    public static enum DataType { TOKENIZEDTEXT,STRING,NUMBER,DATETIME,XML,XHTML };
+	public static enum DataType { TOKENIZEDTEXT,STRING,NUMBER,DATETIME,XML,XHTML };
 }
 

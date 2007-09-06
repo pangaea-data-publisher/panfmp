@@ -21,38 +21,38 @@ import java.util.List;
 
 public final class SearchResponse {
 
-    protected SearchResponse(SearchResultList list, int offset, int count, boolean returnXML, boolean returnStoredFields) {
-        this.list=list;
-        this.offset=offset;
-        this.count=count;
-        this.returnXML=returnXML;
-        this.returnStoredFields=returnStoredFields;
-    }
+	protected SearchResponse(SearchResultList list, int offset, int count, boolean returnXML, boolean returnStoredFields) {
+		this.list=list;
+		this.offset=offset;
+		this.count=count;
+		this.returnXML=returnXML;
+		this.returnStoredFields=returnStoredFields;
+	}
 
-    public int getOffset() {
-        return offset;
-    }
+	public int getOffset() {
+		return offset;
+	}
 
-    public SearchResponseItem[] getResults() throws java.io.IOException {
-        List<SearchResultItem> page=list.subList(Math.min(offset,list.size()), Math.min(offset+count,list.size()));
-        SearchResponseItem[] results=new SearchResponseItem[page.size()];
-        int i=0;
-        for (SearchResultItem item : page) {
-            results[i++]=new SearchResponseItem(item,returnXML,returnStoredFields);
-        }
-        return results;
-    }
+	public SearchResponseItem[] getResults() throws java.io.IOException {
+		List<SearchResultItem> page=list.subList(Math.min(offset,list.size()), Math.min(offset+count,list.size()));
+		SearchResponseItem[] results=new SearchResponseItem[page.size()];
+		int i=0;
+		for (SearchResultItem item : page) {
+			results[i++]=new SearchResponseItem(item,returnXML,returnStoredFields);
+		}
+		return results;
+	}
 
-    public long getQueryTime() {
-        return list.getQueryTime();
-    }
+	public long getQueryTime() {
+		return list.getQueryTime();
+	}
 
-    public int getTotalCount() {
-        return list.size();
-    }
+	public int getTotalCount() {
+		return list.size();
+	}
 
-    // data
-    private int offset,count;
-    private SearchResultList list;
-    private boolean returnXML,returnStoredFields;
+	// data
+	private int offset,count;
+	private SearchResultList list;
+	private boolean returnXML,returnStoredFields;
 }

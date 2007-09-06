@@ -18,29 +18,29 @@ package de.pangaea.metadataportal.search.axis;
 
 public final class SearchRequestQuery implements java.io.Serializable {
 
-    // default for axis
-    public SearchRequestQuery() {
-    }
+	// default for axis
+	public SearchRequestQuery() {
+	}
 
-    // simple easy-to-use constructor
-    public SearchRequestQuery(String field, String query) {
-        this.fieldName=field.intern();
-        this.query=query;
-        this.anyof=false;
-    }
+	// simple easy-to-use constructor
+	public SearchRequestQuery(String field, String query) {
+		this.fieldName=field.intern();
+		this.query=query;
+		this.anyof=false;
+	}
 
-    public SearchRequestQuery(String field, String query, boolean anyof) {
-        this.fieldName=field.intern();
-        this.query=query;
-        this.anyof=anyof;
-    }
+	public SearchRequestQuery(String field, String query, boolean anyof) {
+		this.fieldName=field.intern();
+		this.query=query;
+		this.anyof=anyof;
+	}
 
-    public void setField(String v) { fieldName=v.intern(); }
-    public void setQuery(String v) { query=v; }
-    public void setAnyOf(boolean v) { anyof=v; }
+	public void setField(String v) { fieldName=v.intern(); }
+	public void setQuery(String v) { query=v; }
+	public void setAnyOf(boolean v) { anyof=v; }
 
-    // members
-    protected String fieldName=null,query=null;
-    protected boolean anyof=false;
+	// members
+	protected String fieldName=null,query=null;
+	protected boolean anyof=false;
 
 }

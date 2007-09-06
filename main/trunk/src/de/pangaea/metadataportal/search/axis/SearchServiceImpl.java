@@ -23,60 +23,60 @@ import java.util.*;
 
 public class SearchServiceImpl {
 
-    private static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(SearchServiceImpl.class);
+	private static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(SearchServiceImpl.class);
 
-    public SearchServiceImpl(String cfgFile) {
-        this.cfgFile=cfgFile;
-    }
+	public SearchServiceImpl(String cfgFile) {
+		this.cfgFile=cfgFile;
+	}
 
-    // Search
-    public SearchResponse search(SearchRequest req, int offset, int count) throws Exception {
-        SearchService service=new SearchService(cfgFile,req.indexName);
+	// Search
+	public SearchResponse search(SearchRequest req, int offset, int count) throws Exception {
+		SearchService service=new SearchService(cfgFile,req.indexName);
 
-        boolean returnXML=BooleanParser.parseBoolean(service.getConfig().searchProperties.getProperty("returnXML","true"));
-        boolean returnStoredFields=BooleanParser.parseBoolean(service.getConfig().searchProperties.getProperty("returnStoredFields","true"));
+		boolean returnXML=BooleanParser.parseBoolean(service.getConfig().searchProperties.getProperty("returnXML","true"));
+		boolean returnStoredFields=BooleanParser.parseBoolean(service.getConfig().searchProperties.getProperty("returnStoredFields","true"));
 
-        Query q=req.getLuceneQuery(service);
-        Sort sort=null;
-        if (req.sortFieldName!=null && req.sortReverse!=null) sort=service.newSort(service.newFieldBasedSort(req.sortFieldName,req.sortReverse));
+		Query q=req.getLuceneQuery(service);
+		Sort sort=null;
+		if (req.sortFieldName!=null && req.sortReverse!=null) sort=service.newSort(service.newFieldBasedSort(req.sortFieldName,req.sortReverse));
 
-        SearchResultList res=service.search(q, sort, returnXML, returnStoredFields ? null : Collections.<String>emptySet() );
-        SearchResponse resp=new SearchResponse(res, offset, count, returnXML, returnStoredFields);
-        return resp;
-    }
+		SearchResultList res=service.search(q, sort, returnXML, returnStoredFields ? null : Collections.<String>emptySet() );
+		SearchResponse resp=new SearchResponse(res, offset, count, returnXML, returnStoredFields);
+		return resp;
+	}
 
-    public SearchResponseItem getDocument(String indexName, String identifier) throws Exception {
-        SearchService service=new SearchService(cfgFile,indexName);
-        return new SearchResponseItem(service.getDocument(identifier),true,true);
-    }
+	public SearchResponseItem getDocument(String indexName, String identifier) throws Exception {
+		SearchService service=new SearchService(cfgFile,indexName);
+		return new SearchResponseItem(service.getDocument(identifier),true,true);
+	}
 
-    public String[] suggest(String indexName, SearchRequestQuery query, int count) throws Exception {
-        SearchService service=new SearchService(cfgFile,indexName);
-        List<String> sugg=service.suggest(query.fieldName,query.query,count);
-        if (sugg==null) return null;
-        else return sugg.toArray(new String[sugg.size()]);
-    }
+	public String[] suggest(String indexName, SearchRequestQuery query, int count) throws Exception {
+		SearchService service=new SearchService(cfgFile,indexName);
+		List<String> sugg=service.suggest(query.fieldName,query.query,count);
+		if (sugg==null) return null;
+		else return sugg.toArray(new String[sugg.size()]);
+	}
 
-    public String[] listTerms(String indexName, String fieldName, int count) throws Exception {
-        return listTerms(indexName,fieldName,"",count);
-    }
+	public String[] listTerms(String indexName, String fieldName, int count) throws Exception {
+		return listTerms(indexName,fieldName,"",count);
+	}
 
-    public String[] listTerms(String indexName, String fieldName, String prefix, int count) throws Exception {
-        SearchService service=new SearchService(cfgFile,indexName);
-        List<String> list=service.listTerms(fieldName,prefix,count);
-        if (list==null) return null;
-        else return list.toArray(new String[list.size()]);
-    }
+	public String[] listTerms(String indexName, String fieldName, String prefix, int count) throws Exception {
+		SearchService service=new SearchService(cfgFile,indexName);
+		List<String> list=service.listTerms(fieldName,prefix,count);
+		if (list==null) return null;
+		else return list.toArray(new String[list.size()]);
+	}
 
-    public String storeQuery(SearchRequest req) throws Exception {
-        SearchService service=new SearchService(cfgFile,req.indexName);
-        return service.storeQuery(req.getLuceneQuery(service));
-    }
+	public String storeQuery(SearchRequest req) throws Exception {
+		SearchService service=new SearchService(cfgFile,req.indexName);
+		return service.storeQuery(req.getLuceneQuery(service));
+	}
 
-    private String cfgFile;
+	private String cfgFile;
 
-    /* Config options:
-        <returnXML>true</returnXML>
-        <returnStoredFields>true</returnStoredFields>
-    */
+	/* Config options:
+		<returnXML>true</returnXML>
+		<returnStoredFields>true</returnStoredFields>
+	*/
 }

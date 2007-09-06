@@ -24,49 +24,49 @@ import java.util.*;
 
 public class Optimizer {
 
-    protected static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(Optimizer.class);
+	protected static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(Optimizer.class);
 
-    private Optimizer() {}
+	private Optimizer() {}
 
-    // main-Methode
-    public static void main (String[] args) {
-        if (args.length!=2) {
-            System.err.println("Command line: java "+Optimizer.class.getName()+" config.xml index-name|*");
-            return;
-        }
+	// main-Methode
+	public static void main (String[] args) {
+		if (args.length!=2) {
+			System.err.println("Command line: java "+Optimizer.class.getName()+" config.xml index-name|*");
+			return;
+		}
 
-        try {
-            Config conf=new Config(args[0],Config.ConfigMode.HARVESTING);
-            Collection<IndexConfig> indexList=null;
-            if ("*".equals(args[1])) {
-                indexList=conf.indexes.values();
-            } else {
-                IndexConfig iconf=conf.indexes.get(args[1]);
-                if (iconf==null || !(iconf instanceof SingleIndexConfig)) throw new IllegalArgumentException("There is no index defined with id=\""+args[1]+"\"!");
-                indexList=Collections.singletonList(iconf);
-            }
+		try {
+			Config conf=new Config(args[0],Config.ConfigMode.HARVESTING);
+			Collection<IndexConfig> indexList=null;
+			if ("*".equals(args[1])) {
+				indexList=conf.indexes.values();
+			} else {
+				IndexConfig iconf=conf.indexes.get(args[1]);
+				if (iconf==null || !(iconf instanceof SingleIndexConfig)) throw new IllegalArgumentException("There is no index defined with id=\""+args[1]+"\"!");
+				indexList=Collections.singletonList(iconf);
+			}
 
-            for (IndexConfig iconf : indexList) if (iconf instanceof SingleIndexConfig) {
-                IndexWriter writer=null;
-                SingleIndexConfig siconf=(SingleIndexConfig)iconf;
-                try {
-                    // und los gehts
-                    log.info("Opening index \""+iconf.id+"\" for optimizing...");
-                    FSDirectory dir=FSDirectory.getDirectory(siconf.getFullIndexPath());
-                    if (!siconf.isIndexAvailable()) throw new java.io.FileNotFoundException("Index directory with segments file does not exist: "+dir.toString());
-                    writer = new IndexWriter(dir, conf.getAnalyzer(), false);
-                    log.info("Optimizing...");
-                    writer.optimize();
-                    log.info("Finished index optimizing of index \""+iconf.id+"\".");
-                } catch (java.io.IOException e) {
-                    log.fatal("Exception during index optimization.",e);
-                } finally {
-                    if (writer!=null) writer.close();
-                }
-            }
-        } catch (Exception e) {
-            log.fatal("Optimizer general error:",e);
-        }
-    }
+			for (IndexConfig iconf : indexList) if (iconf instanceof SingleIndexConfig) {
+				IndexWriter writer=null;
+				SingleIndexConfig siconf=(SingleIndexConfig)iconf;
+				try {
+					// und los gehts
+					log.info("Opening index \""+iconf.id+"\" for optimizing...");
+					FSDirectory dir=FSDirectory.getDirectory(siconf.getFullIndexPath());
+					if (!siconf.isIndexAvailable()) throw new java.io.FileNotFoundException("Index directory with segments file does not exist: "+dir.toString());
+					writer = new IndexWriter(dir, conf.getAnalyzer(), false);
+					log.info("Optimizing...");
+					writer.optimize();
+					log.info("Finished index optimizing of index \""+iconf.id+"\".");
+				} catch (java.io.IOException e) {
+					log.fatal("Exception during index optimization.",e);
+				} finally {
+					if (writer!=null) writer.close();
+				}
+			}
+		} catch (Exception e) {
+			log.fatal("Optimizer general error:",e);
+		}
+	}
 
 }

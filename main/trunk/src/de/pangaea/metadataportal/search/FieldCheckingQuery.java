@@ -33,50 +33,50 @@ import java.util.*;
  */
 public final class FieldCheckingQuery extends Query {
 
-    /**
-     * Constructor that wraps a query with a check for a specific field name.
-     */
-    public FieldCheckingQuery(String field, Query query) {
-        this.field=field;
-        this.query=query;
-    }
+	/**
+	 * Constructor that wraps a query with a check for a specific field name.
+	 */
+	public FieldCheckingQuery(String field, Query query) {
+		this.field=field;
+		this.query=query;
+	}
 
-    /**
-     * Returns the wrapped query.
-     */
-    public Query getQuery() {
-        return query;
-    }
+	/**
+	 * Returns the wrapped query.
+	 */
+	public Query getQuery() {
+		return query;
+	}
 
-    @Override
-    public String toString(String field) {
-        return query.toString(field);
-    }
+	@Override
+	public String toString(String field) {
+		return query.toString(field);
+	}
 
-    @Override
-    public final boolean equals(Object o) {
-        if (o instanceof FieldCheckingQuery) {
-            FieldCheckingQuery q=(FieldCheckingQuery)o;
-            return this.query.equals(q.query) && this.field.equals(q.field);
-        } else return false;
-    }
+	@Override
+	public final boolean equals(Object o) {
+		if (o instanceof FieldCheckingQuery) {
+			FieldCheckingQuery q=(FieldCheckingQuery)o;
+			return this.query.equals(q.query) && this.field.equals(q.field);
+		} else return false;
+	}
 
-    @Override
-    public final int hashCode() {
-        return query.hashCode()^0x743fb1ae+field.hashCode()^0xd2dd34aa;
-    }
+	@Override
+	public final int hashCode() {
+		return query.hashCode()^0x743fb1ae+field.hashCode()^0xd2dd34aa;
+	}
 
-    /**
-     * Expands query to native queries by calling the <code>rewrite</code>-method of the wrapped query.
-     * After that it extracts all terms in the query and checks the used field names.
-     * @throws IllegalArgumentException if an invalid field name was detected.
-     */
-    @Override
-    public Query rewrite(IndexReader reader) throws java.io.IOException {
-        Query q = query.rewrite(reader);
-        q.extractTerms(new TermCheckerSet(field));
-        return q;
-    }
+	/**
+	 * Expands query to native queries by calling the <code>rewrite</code>-method of the wrapped query.
+	 * After that it extracts all terms in the query and checks the used field names.
+	 * @throws IllegalArgumentException if an invalid field name was detected.
+	 */
+	@Override
+	public Query rewrite(IndexReader reader) throws java.io.IOException {
+		Query q = query.rewrite(reader);
+		q.extractTerms(new TermCheckerSet(field));
+		return q;
+	}
 	
 	/**
 	 * Sets the boost for this query clause to <code>b</code>. Delegated to wrapped <code>Query</code>.
@@ -94,34 +94,34 @@ public final class FieldCheckingQuery extends Query {
 		return query.getBoost();
 	}
 
-    // members
-    private String field;
-    private Query query;
+	// members
+	private String field;
+	private Query query;
 
-    // this class is a helper for checking a query for invalid (wrong field) Terms. It implements a set but only tests
-    // in the add() method for invalid Terms. Nothing more is done, the Set is always empty!
-    private final class TermCheckerSet extends AbstractSet<Term> {
+	// this class is a helper for checking a query for invalid (wrong field) Terms. It implements a set but only tests
+	// in the add() method for invalid Terms. Nothing more is done, the Set is always empty!
+	private final class TermCheckerSet extends AbstractSet<Term> {
 
-        protected TermCheckerSet(String field) {
-            this.field=field.intern();
-        }
+		protected TermCheckerSet(String field) {
+			this.field=field.intern();
+		}
 
-        @Override
-        public int size() {
-            return 0;
-        }
+		@Override
+		public int size() {
+			return 0;
+		}
 
-        @Override
-        public Iterator<Term> iterator() {
-            return Collections.<Term>emptySet().iterator();
-        }
+		@Override
+		public Iterator<Term> iterator() {
+			return Collections.<Term>emptySet().iterator();
+		}
 
-        @Override
-        public boolean add(Term t) {
-            if (t.field()!=field) throw new IllegalArgumentException("A query on a specific field may not reference other fields by prefixing with 'fieldname:'!");
-            return false;
-        }
+		@Override
+		public boolean add(Term t) {
+			if (t.field()!=field) throw new IllegalArgumentException("A query on a specific field may not reference other fields by prefixing with 'fieldname:'!");
+			return false;
+		}
 
-        private String field;
-    }
+		private String field;
+	}
 }
