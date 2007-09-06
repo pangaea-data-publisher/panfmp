@@ -27,10 +27,10 @@ package de.pangaea.metadataportal.harvester;
  */
 public interface HarvesterCommitEvent {
 
-    /**
-     * Called with a {@link java.util.Set} of {@link String}s that are the commited document identifiers.
-     * Be warned, you should have some synchronization because this method is called from a different thread!
-     */
-    public void harvesterCommitted(java.util.Set<String> docIds);
+	/**
+	 * Called with a {@link java.util.Set} of {@link String}s that are the commited document identifiers.
+	 * Be warned, you should have some synchronization because this method is called from a different thread!
+	 */
+	public void harvesterCommitted(java.util.Set<String> docIds);
 
 }

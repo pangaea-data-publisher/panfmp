@@ -26,28 +26,28 @@ import javax.xml.transform.*;
  */
 public class FilterConfig extends ExpressionConfig {
 
-    @PublicForDigesterUse
-    @Deprecated
-    public void setType(String v) {
-        try {
-            type=FilterType.valueOf(v.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Invalid filter type: '"+v+"'");
-        }
-    }
+	@PublicForDigesterUse
+	@Deprecated
+	public void setType(String v) {
+		try {
+			type=FilterType.valueOf(v.toUpperCase());
+		} catch (IllegalArgumentException e) {
+			throw new IllegalArgumentException("Invalid filter type: '"+v+"'");
+		}
+	}
 
-    @Override
-    public void setTemplate(Templates xslt) {
-        throw new UnsupportedOperationException("Cannot assign a template to a filter!");
-    }
+	@Override
+	public void setTemplate(Templates xslt) {
+		throw new UnsupportedOperationException("Cannot assign a template to a filter!");
+	}
 
-    @Override
-    public String toString() {
-        return new StringBuilder().append(type).append('(').append(super.toString()).append(')').toString();
-    }
+	@Override
+	public String toString() {
+		return new StringBuilder().append(type).append('(').append(super.toString()).append(')').toString();
+	}
 
-    // members "the configuration"
-    public FilterType type=null;
+	// members "the configuration"
+	public FilterType type=null;
 
-    public static enum FilterType { ACCEPT,DENY };
+	public static enum FilterType { ACCEPT,DENY };
 }

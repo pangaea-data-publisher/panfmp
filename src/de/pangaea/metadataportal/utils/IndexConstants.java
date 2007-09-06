@@ -18,17 +18,17 @@ package de.pangaea.metadataportal.utils;
 
 public final class IndexConstants {
 
-    private IndexConstants() {} // no instance
+	private IndexConstants() {} // no instance
 
-    public static final String FIELD_PREFIX = "internal-";
+	public static final String FIELD_PREFIX = "internal-";
 
-    public static final String FIELDNAME_CONTENT    = "textcontent".intern();
+	public static final String FIELDNAME_CONTENT    = "textcontent".intern();
 
-    public static final String FIELDNAME_IDENTIFIER = (FIELD_PREFIX+"identifier").intern();
-    public static final String FIELDNAME_SET        = (FIELD_PREFIX+"set").intern();
-    public static final String FIELDNAME_DATESTAMP  = (FIELD_PREFIX+"datestamp").intern();
-    public static final String FIELDNAME_XML        = (FIELD_PREFIX+"xml").intern();
-    public static final String FIELDNAME_MDOC_IMPL  = (FIELD_PREFIX+"mdoc-impl").intern();
+	public static final String FIELDNAME_IDENTIFIER = (FIELD_PREFIX+"identifier").intern();
+	public static final String FIELDNAME_SET        = (FIELD_PREFIX+"set").intern();
+	public static final String FIELDNAME_DATESTAMP  = (FIELD_PREFIX+"datestamp").intern();
+	public static final String FIELDNAME_XML        = (FIELD_PREFIX+"xml").intern();
+	public static final String FIELDNAME_MDOC_IMPL  = (FIELD_PREFIX+"mdoc-impl").intern();
 
-    public static final String FILENAME_LASTHARVESTED="lastharvested";
+	public static final String FILENAME_LASTHARVESTED="lastharvested";
 }

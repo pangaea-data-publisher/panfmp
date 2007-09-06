@@ -18,13 +18,13 @@ package de.pangaea.metadataportal.utils;
 
 public final class BooleanParser {
 
-    private BooleanParser() {}
+	private BooleanParser() {}
 
-    public static boolean parseBoolean(String v) {
-        v=v.toUpperCase();
-        if ("TRUE".equals(v) || "YES".equals(v) || "ON".equals(v)) return true;
-        else if ("FALSE".equals(v) || "NO".equals(v) || "OFF".equals(v)) return false;
-        else throw new IllegalArgumentException("Boolean value must be one of: [YES,TRUE,ON]; [NO,FALSE,OFF]");
-    }
+	public static boolean parseBoolean(String v) {
+		v=v.toUpperCase();
+		if ("TRUE".equals(v) || "YES".equals(v) || "ON".equals(v)) return true;
+		else if ("FALSE".equals(v) || "NO".equals(v) || "OFF".equals(v)) return false;
+		else throw new IllegalArgumentException("Boolean value must be one of: [YES,TRUE,ON]; [NO,FALSE,OFF]");
+	}
 
 }

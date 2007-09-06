@@ -28,22 +28,22 @@ import javax.xml.namespace.QName;
  */
 public class VariableConfig extends ExpressionConfig {
 
-    @PublicForDigesterUse
-    @Deprecated
-    public void setName(ExtendedDigester dig, String nameStr) {
-        if ("".equals(nameStr)) return; // Exception throws the Config.addVariable() method
-        // current namespace context with strict=true (display errors when namespace declaration is missing [non-standard!])
-        // and with possibly declared default namespace is redefined/deleted to "" (according to XSLT specification,
-        // where this is also mandatory).
-        this.name=QNameParser.parseLexicalQName(nameStr,dig.getCurrentNamespaceContext(true,true));
-    }
+	@PublicForDigesterUse
+	@Deprecated
+	public void setName(ExtendedDigester dig, String nameStr) {
+		if ("".equals(nameStr)) return; // Exception throws the Config.addVariable() method
+		// current namespace context with strict=true (display errors when namespace declaration is missing [non-standard!])
+		// and with possibly declared default namespace is redefined/deleted to "" (according to XSLT specification,
+		// where this is also mandatory).
+		this.name=QNameParser.parseLexicalQName(nameStr,dig.getCurrentNamespaceContext(true,true));
+	}
 
-    @Override
-    public String toString() {
-        return new StringBuilder().append(name).append(" (").append(super.toString()).append(')').toString();
-    }
+	@Override
+	public String toString() {
+		return new StringBuilder().append(name).append(" (").append(super.toString()).append(')').toString();
+	}
 
-    // members "the configuration"
-    public QName name=null;
+	// members "the configuration"
+	public QName name=null;
 }
 

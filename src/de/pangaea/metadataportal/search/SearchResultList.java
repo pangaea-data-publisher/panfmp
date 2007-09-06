@@ -30,56 +30,56 @@ import java.util.*;
  */
 public class SearchResultList extends AbstractList<SearchResultItem> {
 
-    /**
-     * For internal use only!
-     */
-    protected SearchResultList(LuceneCache.Session session, FieldSelector fields) {
-        super();
-        this.session=session;
-        this.fields=fields;
-    }
+	/**
+	 * For internal use only!
+	 */
+	protected SearchResultList(LuceneCache.Session session, FieldSelector fields) {
+		super();
+		this.session=session;
+		this.fields=fields;
+	}
 
-    /**
-     * Gets search result at the supplied index.
-     * @throws RuntimeException wrapping an {@link IOException}. This is needed because the generic {@link List} interface does not allow us to throw exceptions.
-     * @see #getResult
-     */
-    @Override
-    public SearchResultItem get(int index) {
-        try {
-            return getResult(index);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
+	/**
+	 * Gets search result at the supplied index.
+	 * @throws RuntimeException wrapping an {@link IOException}. This is needed because the generic {@link List} interface does not allow us to throw exceptions.
+	 * @see #getResult
+	 */
+	@Override
+	public SearchResultItem get(int index) {
+		try {
+			return getResult(index);
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+	}
 
-    /**
-     * Returns the number of search results.
-     */
-    @Override
-    public int size() {
-        return session.hits.length();
-    }
+	/**
+	 * Returns the number of search results.
+	 */
+	@Override
+	public int size() {
+		return session.hits.length();
+	}
 
-    /**
-     * Gets search result at the supplied index. Use this method in not {@link List}-specific code because you can catch the {@link IOException}.
-     */
-    public SearchResultItem getResult(int index) throws IOException {
-        if (index<0 || index>=size()) throw new IndexOutOfBoundsException();
-        return new SearchResultItem(
-            session.parent.config,
-            session.hits.score(index),
-            session.searcher.doc(session.hits.id(index),fields)
-        );
-    }
+	/**
+	 * Gets search result at the supplied index. Use this method in not {@link List}-specific code because you can catch the {@link IOException}.
+	 */
+	public SearchResultItem getResult(int index) throws IOException {
+		if (index<0 || index>=size()) throw new IndexOutOfBoundsException();
+		return new SearchResultItem(
+			session.parent.config,
+			session.hits.score(index),
+			session.searcher.doc(session.hits.id(index),fields)
+		);
+	}
 
-    /**
-     * Gets the duration of the query in milliseconds.
-     */
-    public long getQueryTime() {
-        return session.queryTime;
-    }
+	/**
+	 * Gets the duration of the query in milliseconds.
+	 */
+	public long getQueryTime() {
+		return session.queryTime;
+	}
 
-    protected LuceneCache.Session session;
-    protected FieldSelector fields;
+	protected LuceneCache.Session session;
+	protected FieldSelector fields;
 }

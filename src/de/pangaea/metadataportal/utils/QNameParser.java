@@ -21,24 +21,24 @@ import javax.xml.namespace.*;
 
 public final class QNameParser {
 
-    private QNameParser() {}
+	private QNameParser() {}
 
-    public static QName parseLexicalQName(String nameStr, NamespaceContext ctx) {
-        String prefix,localPart;
-        String[] parts=nameStr.split(":");
-        switch (parts.length) {
-            case 1:
-                prefix=XMLConstants.DEFAULT_NS_PREFIX;
-                localPart=parts[0];
-                break;
-            case 2:
-                prefix=parts[0];
-                localPart=parts[1];
-                break;
-            default:
-                throw new IllegalArgumentException("Invalid formatted QName: "+nameStr);
-        }
-        return new QName(ctx.getNamespaceURI(prefix), localPart, prefix);
-    }
+	public static QName parseLexicalQName(String nameStr, NamespaceContext ctx) {
+		String prefix,localPart;
+		String[] parts=nameStr.split(":");
+		switch (parts.length) {
+			case 1:
+				prefix=XMLConstants.DEFAULT_NS_PREFIX;
+				localPart=parts[0];
+				break;
+			case 2:
+				prefix=parts[0];
+				localPart=parts[1];
+				break;
+			default:
+				throw new IllegalArgumentException("Invalid formatted QName: "+nameStr);
+		}
+		return new QName(ctx.getNamespaceURI(prefix), localPart, prefix);
+	}
 
 }

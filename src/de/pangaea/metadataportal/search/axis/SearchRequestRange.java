@@ -18,23 +18,23 @@ package de.pangaea.metadataportal.search.axis;
 
 public final class SearchRequestRange implements java.io.Serializable {
 
-    // default for axis
-    public SearchRequestRange() {
-    }
+	// default for axis
+	public SearchRequestRange() {
+	}
 
-    // simple easy-to-use constructor
-    public SearchRequestRange(String field, Object min, Object max) {
-        this.fieldName=field.intern();
-        this.min=min;
-        this.max=max;
-    }
+	// simple easy-to-use constructor
+	public SearchRequestRange(String field, Object min, Object max) {
+		this.fieldName=field.intern();
+		this.min=min;
+		this.max=max;
+	}
 
-    public void setField(String v) { fieldName=v.intern(); }
-    public void setMin(Object v) { min=v; }
-    public void setMax(Object v) { max=v; }
+	public void setField(String v) { fieldName=v.intern(); }
+	public void setMin(Object v) { min=v; }
+	public void setMax(Object v) { max=v; }
 
-    // members
-    protected String fieldName=null;
-    protected Object min=null,max=null;
+	// members
+	protected String fieldName=null;
+	protected Object min=null,max=null;
 
 }

@@ -18,25 +18,25 @@ package de.pangaea.metadataportal.harvester;
 
 public class OAIException extends java.lang.Exception {
 
-    public OAIException(String code, String message) {
-        super("".equals(message)?null:message);
-        this.code=("".equals(code)?null:code);
-    }
+	public OAIException(String code, String message) {
+		super("".equals(message)?null:message);
+		this.code=("".equals(code)?null:code);
+	}
 
-    @Override
-    public String getMessage() {
-        StringBuilder sb=new StringBuilder((code==null)?"default":code);
-        String s=super.getMessage();
-        if (s!=null) {
-            sb.append(": ");
-            sb.append(s);
-        }
-        return sb.toString();
-    }
+	@Override
+	public String getMessage() {
+		StringBuilder sb=new StringBuilder((code==null)?"default":code);
+		String s=super.getMessage();
+		if (s!=null) {
+			sb.append(": ");
+			sb.append(s);
+		}
+		return sb.toString();
+	}
 
-    public String getCode() {
-        return code;
-    }
+	public String getCode() {
+		return code;
+	}
 
-    private String code;
+	private String code;
 }

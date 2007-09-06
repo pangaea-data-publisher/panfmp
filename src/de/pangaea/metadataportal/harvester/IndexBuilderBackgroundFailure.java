@@ -18,9 +18,9 @@ package de.pangaea.metadataportal.harvester;
 
 public class IndexBuilderBackgroundFailure extends java.lang.Exception {
 
-    public IndexBuilderBackgroundFailure(Exception e) {
-        super();
-        initCause(e);
-    }
+	public IndexBuilderBackgroundFailure(Exception e) {
+		super();
+		initCause(e);
+	}
 
 }

@@ -22,41 +22,41 @@ import javax.xml.xpath.*;
 
 public final class StaticFactories {
 
-    private static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(StaticFactories.class);
+	private static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(StaticFactories.class);
 
-    private StaticFactories() {} // no instance
+	private StaticFactories() {} // no instance
 
-    public static final XPathFactory xpathFactory;
-    public static final SAXTransformerFactory transFactory;
-    public static final SAXParserFactory xinclSaxFactory;
-    public static final DocumentBuilderFactory dbf;
-    public static final DocumentBuilder dombuilder;
-    static {
-        try {
-            xpathFactory=XPathFactory.newInstance();
+	public static final XPathFactory xpathFactory;
+	public static final SAXTransformerFactory transFactory;
+	public static final SAXParserFactory xinclSaxFactory;
+	public static final DocumentBuilderFactory dbf;
+	public static final DocumentBuilder dombuilder;
+	static {
+		try {
+			xpathFactory=XPathFactory.newInstance();
 
-            xinclSaxFactory=SAXParserFactory.newInstance();
-            xinclSaxFactory.setNamespaceAware(true);
-            xinclSaxFactory.setValidating(false);
-            try {
-                xinclSaxFactory.setXIncludeAware(true);
-            } catch (UnsupportedOperationException e) {
-                log.warn("Your XML parser is not XInclude aware! Please update it to a Java 1.5 compatible one for full functionality!");
-            }
+			xinclSaxFactory=SAXParserFactory.newInstance();
+			xinclSaxFactory.setNamespaceAware(true);
+			xinclSaxFactory.setValidating(false);
+			try {
+				xinclSaxFactory.setXIncludeAware(true);
+			} catch (UnsupportedOperationException e) {
+				log.warn("Your XML parser is not XInclude aware! Please update it to a Java 1.5 compatible one for full functionality!");
+			}
 
-            transFactory=(SAXTransformerFactory)SAXTransformerFactory.newInstance();
-            transFactory.setErrorListener(new LoggingErrorListener(transFactory.getClass()));
+			transFactory=(SAXTransformerFactory)SAXTransformerFactory.newInstance();
+			transFactory.setErrorListener(new LoggingErrorListener(transFactory.getClass()));
 
-            dbf=DocumentBuilderFactory.newInstance();
-            dbf.setNamespaceAware(true);
-            dbf.setCoalescing(true);
-            dbf.setExpandEntityReferences(true);
-            dbf.setIgnoringComments(true);
-            dbf.setIgnoringElementContentWhitespace(true);
-            dombuilder = dbf.newDocumentBuilder();
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to initialize XML components",e);
-        }
-    }
+			dbf=DocumentBuilderFactory.newInstance();
+			dbf.setNamespaceAware(true);
+			dbf.setCoalescing(true);
+			dbf.setExpandEntityReferences(true);
+			dbf.setIgnoringComments(true);
+			dbf.setIgnoringElementContentWhitespace(true);
+			dombuilder = dbf.newDocumentBuilder();
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to initialize XML components",e);
+		}
+	}
 
 }
