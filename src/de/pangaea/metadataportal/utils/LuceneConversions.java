@@ -20,13 +20,29 @@ import java.util.Date;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 
+/**
+ *This is a helper class to construct the trie-based index entries for numerical values.
+ * <p>This is part of the central implementation of <b>panFMP</b>'s
+ * high performance range queries on numeric and date/time fields using &quot;trie memory&quot; structures
+ * (see the publication about <b>panFMP</b>:
+ * <em>Schindler, U, Diepenbroek, M, 2007. Generic Framework for Metadata Portals. Computers &amp; Geosciences, submitted.</em>).
+ * This query type works only with indexes created by <b>panFMP</b>'s index builder.
+ * <p>TODO: Describe the format of converted values!
+ * @author Uwe Schindler
+ */
 public final class LuceneConversions {
 
+	/** Marker (PADDING)  before lower-precision (LOOSE) trie entries to signal the precision value */
 	public static final char LUCENE_LOOSE_PADDING_START='0';
+
+	/** Characters used as lower end ['a' to ('a'+0x0f)] */
 	public static final char LUCENE_SYMBOL_MIN='a';
+	/** Characters used as upper end ['a' to ('a'+0x0f)] */
 	public static final char LUCENE_SYMBOL_MAX=(char)(LUCENE_SYMBOL_MIN+0x0f);
 
+	/** minimum encoded value of a numerical index entry: {@link Long#MIN_VALUE} */
 	public static String LUCENE_NUMERIC_MIN=longToLucene(Long.MIN_VALUE);
+	/** maximum encoded value of a numerical index entry: {@link Long#MAX_VALUE} */
 	public static String LUCENE_NUMERIC_MAX=longToLucene(Long.MAX_VALUE);
 
 	private static final String ERR_STRING = "Invalid Lucene numerical value representation: ";
@@ -58,16 +74,19 @@ public final class LuceneConversions {
 
 	// Long's
 
+	/** Converts a <code>long</code> value encoded to a <code>String</code> (with 16 bytes). This data type is currently not used by <b>panFMP</b>. */
 	public static String longToLucene(long l) {
 		return internalLongToLucene(l ^ 0x8000000000000000L);
 	}
 
+	/** Converts a encoded <code>String</code> (16 bytes) value back to a <code>long</code>. This data type is currently not used by <b>panFMP</b>. */
 	public static long luceneToLong(String s) throws NumberFormatException {
 		return internalLuceneToLong(s) ^ 0x8000000000000000L;
 	}
 
 	// Double's
 
+	/** Converts a <code>double</code> value encoded to a <code>String</code> (with 16 bytes). */
 	public static String doubleToLucene(double d) {
 		long l=Double.doubleToLongBits(d);
 		if ((l & 0x8000000000000000L) == 0L) {
@@ -80,6 +99,7 @@ public final class LuceneConversions {
 		return internalLongToLucene(l);
 	}
 
+	/** Converts a encoded <code>String</code> (16 bytes) value back to a <code>double</code>. */
 	public static double luceneToDouble(String s) {
 		long l=internalLuceneToLong(s);
 		if ((l & 0x8000000000000000L) != 0L) {
@@ -94,16 +114,19 @@ public final class LuceneConversions {
 
 	// Date's
 
+	/** Converts a <code>Date</code> value encoded to a <code>String</code> (with 16 bytes). */
 	public static String dateToLucene(Date d) {
 		return longToLucene(d.getTime());
 	}
 
+	/** Converts a encoded <code>String</code> (16 bytes) value back to a <code>Date</code>. */
 	public static Date luceneToDate(String s) {
 		return new Date(luceneToLong(s));
 	}
 
 	// increment / decrement
 
+	/** Increments a encoded String value by 1. Needed by {@link de.pangaea.metadataportal.search.TrieRangeQuery}. */
 	public static String incrementLucene(String v) {
 		int l=v.length();
 		StringBuilder sb=new StringBuilder(l);
@@ -117,6 +140,7 @@ public final class LuceneConversions {
 		return sb.toString();
 	}
 
+	/** Decrements a encoded String value by 1. Needed by {@link de.pangaea.metadataportal.search.TrieRangeQuery}. */
 	public static String decrementLucene(String v) {
 		int l=v.length();
 		StringBuilder sb=new StringBuilder(l);
@@ -130,8 +154,12 @@ public final class LuceneConversions {
 		return sb.toString();
 	}
 
-	// helpers for searches for shorter lucene converted numeric values
-
+	/**
+	 * Stores a numerical value (must be converted by <code>xxxToLucene()</code> methods before) in trie-form in document.
+	 * This is done by stripping off 1 to 7 (decoded) bytes from the end and adding each stripped value as a new
+	 * term with a marker prefix {@link #LUCENE_LOOSE_PADDING_START} marking its precision to the document.
+	 * Full precision is <b>not</b> stored by this method. This must be done before by one of the default Lucene {@link Field} methods with correct field properties.
+	 */
 	public static void addTrieIndexEntries(Document ldoc, String fieldname, String val) {
 		for (int i=7; i>0; i--)
 			ldoc.add(new Field(fieldname, new StringBuilder(i*2+1).append((char)(LUCENE_LOOSE_PADDING_START+i)).append(val.substring(0,i*2)).toString(), Field.Store.NO, Field.Index.UN_TOKENIZED));
