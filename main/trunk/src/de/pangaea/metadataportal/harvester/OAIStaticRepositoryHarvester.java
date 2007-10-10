@@ -72,7 +72,7 @@ public class OAIStaticRepositoryHarvester extends OAIHarvesterBase {
 			public void begin(String namespace, String name, Attributes attributes) throws Exception {
 				currMetadataPrefix=attributes.getValue("metadataPrefix");
 				if (currMetadataPrefix==null) throw new SAXException("Missing attribute 'metadataPrefix' at '"+digester.getMatch()+"'");
-				metadataSaxRule.setEnabled(true);
+				metadataSaxRule.setEnabled(metadataPrefix.equals(currMetadataPrefix));
 			}
 			public void end(String namespace, String name) throws Exception {
 				currMetadataPrefix=null;
