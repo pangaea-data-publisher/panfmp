@@ -51,13 +51,13 @@ public final class OAIDownload {
 	public static InputSource getInputSource(URL url) throws IOException {
 		String proto=url.getProtocol().toLowerCase();
 		if (!("http".equals(proto) || "https".equals(proto)))
-			throw new IllegalArgumentException("OAI-PMH only allows HTTP(S) as network protocol!");
+			throw new IllegalArgumentException("OAI only allows HTTP(S) as network protocol!");
 		HttpURLConnection conn=(HttpURLConnection)url.openConnection();
 
 		StringBuilder ua=new StringBuilder("Java/");
 		ua.append(System.getProperty("java.version"));
 		ua.append(" (");
-		ua.append(OAIHarvester.class.getName());
+		ua.append(OAIDownload.class.getName());
 		ua.append(')');
 		conn.setRequestProperty("User-Agent",ua.toString());
 

@@ -21,12 +21,9 @@ import de.pangaea.metadataportal.config.*;
 import java.util.*;
 import java.io.*;
 import java.net.URLEncoder;
-import java.net.URL;
-import org.xml.sax.*;
 import org.apache.commons.digester.*;
-import javax.xml.transform.sax.*;
 
-public class OAIHarvester extends Harvester {
+public class OAIHarvester extends OAIHarvesterBase {
 	// Class members
 	private static final String[] requestVariables=new String[]{
 		"verb",
@@ -37,9 +34,6 @@ public class OAIHarvester extends Harvester {
 		"set",
 		"resumptionToken"
 	};
-	public static final String OAI_NS="http://www.openarchives.org/OAI/2.0/";
-	public static final int DEFAULT_RETRY_TIME = 60; // seconds
-	public static final int DEFAULT_RETRY_COUNT = 5;
 
 	// Object members
 	private ExtendedDigester listRecordsDig=null,identifyDig=null;
@@ -47,27 +41,12 @@ public class OAIHarvester extends Harvester {
 	private long currResumptionExpiration=-1L;
 	private Date currResponseDate=null;
 	private Map<String,String> currRequest=null;
-	private Set<String> sets=null;
-	private int retryCount=DEFAULT_RETRY_COUNT;
-	private int retryTime=DEFAULT_RETRY_TIME;
 	private boolean fineGranularity=false; // default for OAI 2.0
 
 	// construtor
 	@Override
 	public void open(SingleIndexConfig iconfig) throws Exception {
 		super.open(iconfig);
-
-		String setSpec=iconfig.harvesterProperties.getProperty("setSpec");
-		if (setSpec!=null) {
-			sets=new HashSet<String>();
-			Collections.addAll(sets,setSpec.split("[\\,\\;\\s]+"));
-			if (sets.size()==0) sets=null;
-		}
-
-		String retryCountStr=iconfig.harvesterProperties.getProperty("retryCount");
-		if (retryCountStr!=null) retryCount=Integer.parseInt(retryCountStr);
-		String retryTimeStr=iconfig.harvesterProperties.getProperty("retryAfterSeconds");
-		if (retryTimeStr!=null) retryTime=Integer.parseInt(retryTimeStr);
 
 		//*** ListRecords ***
 		listRecordsDig=new ExtendedDigester();
@@ -183,49 +162,7 @@ public class OAIHarvester extends Harvester {
 		currRequest=req;
 	}
 
-	@Override
-	public void addDocument(MetadataDocument mdoc) throws IndexBuilderBackgroundFailure,InterruptedException {
-		if (sets!=null) {
-			if (Collections.disjoint(((OAIMetadataDocument)mdoc).getSets(),sets)) mdoc.setDeleted(true);
-		}
-		super.addDocument(mdoc);
-	}
-
 	// harvester code
-
-	protected void doParse(ExtendedDigester dig, String url, int retryCount) throws Exception {
-		URL u=new URL(url);
-		try {
-			dig.clear();
-			dig.resetRoot();
-			dig.push(this);
-			dig.parse(OAIDownload.getInputSource(u));
-		} catch (org.xml.sax.SAXException saxe) {
-			// throw the real Exception not the digester one
-			if (saxe.getException()!=null) throw saxe.getException();
-			else throw saxe;
-		} catch (IOException ioe) {
-			int after=retryTime;
-			if (ioe instanceof RetryAfterIOException) {
-				if (retryCount==0) throw (IOException)ioe.getCause();
-				log.warn("OAI-PMH server returned '503 Service Unavailable' with a 'Retry-After' value being set.");
-				after=((RetryAfterIOException)ioe).getRetryAfter();
-			} else {
-				if (retryCount==0) throw ioe;
-				log.error("OAI-PMH server access failed with exception: ",ioe);
-			}
-			log.info("Retrying after "+after+" seconds ("+retryCount+" retries left)...");
-			try { Thread.sleep(1000L*after); } catch (InterruptedException ie) {}
-			doParse(dig,url,retryCount-1);
-		}
-	}
-
-	protected void reset() {
-		currResumptionToken=null;
-		currResponseDate=null;
-		currRequest=null;
-	}
-
 	protected void readStream(String url) throws Exception {
 		log.info("Harvesting \""+url+"\"...");
 		doParse(listRecordsDig,url,retryCount);
@@ -240,8 +177,15 @@ public class OAIHarvester extends Harvester {
 	}
 
 	@Override
+	protected void reset() {
+		super.reset();
+		currResponseDate=null;
+		currResumptionToken=null;
+		currRequest=null;
+	}
+
+	@Override
 	public void close() throws Exception {
-		reset();
 		listRecordsDig=null;
 		identifyDig=null;
 		super.close();
@@ -257,10 +201,8 @@ public class OAIHarvester extends Harvester {
 		reset();
 
 		StringBuilder url=new StringBuilder(baseUrl);
-		String prefix=iconfig.harvesterProperties.getProperty("metadataPrefix");
-		if (prefix==null) throw new NullPointerException("No metadataPrefix for the OAI repository was given!");
 		url.append("?verb=ListRecords&metadataPrefix=");
-		url.append(URLEncoder.encode(prefix,"UTF-8"));
+		url.append(URLEncoder.encode(metadataPrefix,"UTF-8"));
 		if (sets!=null) {
 			if (sets.size()==1) {
 				url.append("&set=");
@@ -293,13 +235,7 @@ public class OAIHarvester extends Harvester {
 	@Override
 	public List<String> getValidHarvesterPropertyNames() {
 		ArrayList<String> l=new ArrayList<String>(super.getValidHarvesterPropertyNames());
-		l.addAll(Arrays.<String>asList(
-			"setSpec",
-			"retryCount",
-			"retryAfterSeconds",
-			"baseUrl",
-			"metadataPrefix"
-		));
+		l.add("baseUrl");
 		return l;
 	}
 
