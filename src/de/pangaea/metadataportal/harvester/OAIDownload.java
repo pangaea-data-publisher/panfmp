@@ -20,6 +20,8 @@ import java.net.*;
 import java.io.*;
 import java.util.zip.*;
 import org.xml.sax.*;
+import java.util.Date;
+import java.util.concurrent.atomic.AtomicReference;
 
 public final class OAIDownload {
 
@@ -49,6 +51,10 @@ public final class OAIDownload {
 	}
 
 	public static InputSource getInputSource(URL url) throws IOException {
+		return getInputSource(url,null);
+	}
+	
+	public static InputSource getInputSource(URL url, AtomicReference<Date> checkModifiedDate) throws IOException {
 		String proto=url.getProtocol().toLowerCase();
 		if (!("http".equals(proto) || "https".equals(proto)))
 			throw new IllegalArgumentException("OAI only allows HTTP(S) as network protocol!");
@@ -64,6 +70,8 @@ public final class OAIDownload {
 		conn.setRequestProperty("Accept-Encoding","gzip, deflate, identity;q=0.3, *;q=0");
 		conn.setRequestProperty("Accept-Charset","utf-8, *;q=0.1");
 		conn.setRequestProperty("Accept","text/xml, application/xml, *;q=0.1");
+		
+		if (checkModifiedDate!=null && checkModifiedDate.get()!=null) conn.setIfModifiedSince(checkModifiedDate.get().getTime());
 
 		conn.setUseCaches(false);
 		conn.setFollowRedirects(true);
@@ -83,10 +91,19 @@ public final class OAIDownload {
 			if (code==HttpURLConnection.HTTP_UNAVAILABLE && after>0) throw new RetryAfterIOException(after,ioe);
 			throw ioe;
 		}
+		
+		if (checkModifiedDate!=null) {
+			if (conn.getResponseCode()==HttpURLConnection.HTTP_NOT_MODIFIED) {
+				log.debug("File not modified since "+checkModifiedDate.get());
+				return null;
+			}
+			long d=conn.getLastModified();
+			checkModifiedDate.set( (d==0) ? null : new Date(d) );
+		}
+		
 		String encoding=conn.getContentEncoding();
 		if (encoding==null) encoding="identity";
 		encoding=encoding.toLowerCase();
-
 		log.debug("HTTP server uses "+encoding+" content encoding.");
 		if ("gzip".equals(encoding)) in=new GZIPInputStream(in);
 		else if ("deflate".equals(encoding)) in=new InflaterInputStream(in);
