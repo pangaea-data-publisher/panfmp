@@ -21,6 +21,8 @@ import de.pangaea.metadataportal.config.*;
 import java.util.*;
 import java.net.URL;
 import java.io.*;
+import java.util.concurrent.atomic.AtomicReference;
+import org.xml.sax.InputSource;
 
 public abstract class OAIHarvesterBase extends Harvester {
 	// Class members
@@ -67,13 +69,15 @@ public abstract class OAIHarvesterBase extends Harvester {
 
 	// harvester code
 
-	protected void doParse(ExtendedDigester dig, String url, int retryCount) throws Exception {
+	protected boolean doParse(ExtendedDigester dig, String url, int retryCount, AtomicReference<Date> checkModifiedDate) throws Exception {
 		URL u=new URL(url);
 		try {
 			dig.clear();
 			dig.resetRoot();
 			dig.push(this);
-			dig.parse(OAIDownload.getInputSource(u));
+			InputSource is=OAIDownload.getInputSource(u,checkModifiedDate);
+			if (checkModifiedDate!=null && is==null) return false;
+			dig.parse(is);
 		} catch (org.xml.sax.SAXException saxe) {
 			// throw the real Exception not the digester one
 			if (saxe.getException()!=null) throw saxe.getException();
@@ -90,8 +94,9 @@ public abstract class OAIHarvesterBase extends Harvester {
 			}
 			log.info("Retrying after "+after+" seconds ("+retryCount+" retries left)...");
 			try { Thread.sleep(1000L*after); } catch (InterruptedException ie) {}
-			doParse(dig,url,retryCount-1);
+			return doParse(dig,url,retryCount-1,checkModifiedDate);
 		}
+		return true;
 	}
 
 	protected void reset() {

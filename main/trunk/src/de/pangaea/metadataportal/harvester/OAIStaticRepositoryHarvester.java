@@ -22,6 +22,7 @@ import java.util.*;
 import org.apache.commons.digester.*;
 import org.xml.sax.*;
 import javax.xml.XMLConstants;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class OAIStaticRepositoryHarvester extends OAIHarvesterBase {
 	// Object members
@@ -122,11 +123,14 @@ public class OAIStaticRepositoryHarvester extends OAIHarvesterBase {
 		if (url==null) throw new NullPointerException("No URL of the OAI static repository was given!");
 
 		log.info("Harvesting static repository at \""+url+"\"...");
-		doParse(dig,url,retryCount);
-
-		// set the date for next harvesting
-		thisHarvestDateReference=null;
-		setValidIdentifiers(validIdentifiers);		
+		AtomicReference<Date> modifiedDate=new AtomicReference<Date>(fromDateReference);
+		if (doParse(dig,url,retryCount,modifiedDate)) {
+			// set the date for next harvesting
+			thisHarvestDateReference=modifiedDate.get();
+			setValidIdentifiers(validIdentifiers);
+		} else {
+			log.info("Static OAI repository file was not modified since last harvesting, no need for re-harvesting!");		
+		}
 	}
 
 	@Override

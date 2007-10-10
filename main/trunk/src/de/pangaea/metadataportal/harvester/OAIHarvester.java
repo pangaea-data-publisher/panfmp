@@ -165,14 +165,14 @@ public class OAIHarvester extends OAIHarvesterBase {
 	// harvester code
 	protected void readStream(String url) throws Exception {
 		log.info("Harvesting \""+url+"\"...");
-		doParse(listRecordsDig,url,retryCount);
+		doParse(listRecordsDig,url,retryCount,null);
 	}
 
 	public void checkIdentify(String baseURL) throws Exception {
 		StringBuilder url=new StringBuilder(baseURL);
 		url.append("?verb=Identify");
 		log.info("Reading identify response from \""+url+"\"...");
-		doParse(identifyDig,url.toString(),retryCount);
+		doParse(identifyDig,url.toString(),retryCount,null);
 		log.info("Repository supports "+(fineGranularity?"seconds":"days")+"-granularity in selective harvesting.");
 	}
 
