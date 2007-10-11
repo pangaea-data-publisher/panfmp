@@ -24,6 +24,10 @@ import org.xml.sax.*;
 import javax.xml.XMLConstants;
 import java.util.concurrent.atomic.AtomicReference;
 
+/**
+ * Harvester for OAI static repositories.
+ * @author Uwe Schindler
+ */
 public class OAIStaticRepositoryHarvester extends OAIHarvesterBase {
 	// Object members
 	private ExtendedDigester dig=null;
@@ -124,7 +128,7 @@ public class OAIStaticRepositoryHarvester extends OAIHarvesterBase {
 
 		log.info("Harvesting static repository at \""+url+"\"...");
 		AtomicReference<Date> modifiedDate=new AtomicReference<Date>(fromDateReference);
-		if (doParse(dig,url,retryCount,modifiedDate)) {
+		if (doParse(dig,url,modifiedDate)) {
 			// set the date for next harvesting
 			thisHarvestDateReference=modifiedDate.get();
 			setValidIdentifiers(validIdentifiers);

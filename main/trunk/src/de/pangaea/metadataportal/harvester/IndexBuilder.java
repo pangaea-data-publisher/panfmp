@@ -26,6 +26,10 @@ import org.apache.lucene.index.*;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.store.FSDirectory;
 
+/**
+ * Component of <b>panFMP</b> that analyzes and indexes harvested documents in different threads.
+ * @author Uwe Schindler
+ */
 public class IndexBuilder {
 	private static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(IndexBuilder.class);
 

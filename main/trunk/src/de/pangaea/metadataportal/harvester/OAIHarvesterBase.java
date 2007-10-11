@@ -24,6 +24,11 @@ import java.io.*;
 import java.util.concurrent.atomic.AtomicReference;
 import org.xml.sax.InputSource;
 
+/**
+ * Abstract base class for OAI harvesting support in panFMP.
+ * Use one of the subclasses for harvesting OAI-PMH or OAI Static Repositories.
+ * @author Uwe Schindler
+ */
 public abstract class OAIHarvesterBase extends Harvester {
 	// Class members
 	public static final String OAI_NS="http://www.openarchives.org/OAI/2.0/";
@@ -32,10 +37,13 @@ public abstract class OAIHarvesterBase extends Harvester {
 	public static final int DEFAULT_RETRY_TIME = 60; // seconds
 	public static final int DEFAULT_RETRY_COUNT = 5;
 
-	// Object members
+	/** the used metadata prefix  from the configuration */
 	protected String metadataPrefix=null;
+	/** the sets to harvest from the configuration, <code>null</code> to harvest all */
 	protected Set<String> sets=null;
+	/** the retryCount from configuration */
 	protected int retryCount=DEFAULT_RETRY_COUNT;
+	/** the retryTime from configuration */
 	protected int retryTime=DEFAULT_RETRY_TIME;
 
 	// construtor
@@ -66,10 +74,19 @@ public abstract class OAIHarvesterBase extends Harvester {
 		super.addDocument(mdoc);
 	}
 
-
-	// harvester code
-
-	protected boolean doParse(ExtendedDigester dig, String url, int retryCount, AtomicReference<Date> checkModifiedDate) throws Exception {
+	/** Harvests a URL using the suplied digester.
+	 * @param dig the digester instance.
+	 * @param url the URL is parsed by this digester instance.
+	 * @param checkModifiedDate for static repositories, it is possible to give a reference to a {@link Date} for checking the last modification, in this case
+	 * <code>false</code> is returned, if the URL was not modified. If it was modified, the reference contains a new <code>Date</code> object with the new modification date.
+	 * Supply <code>null</code> for no checking of last modification, a last modification date is then not returned back (as there is no reference).
+	 * @return <code>true</code> if harvested, <code>false</code> if not modified and no harvesting was done.
+	 */
+	protected boolean doParse(ExtendedDigester dig, String url, AtomicReference<Date> checkModifiedDate) throws Exception {
+		return doParse(dig,url,this.retryCount,checkModifiedDate);
+	}
+	
+	private boolean doParse(ExtendedDigester dig, String url, int retryCount, AtomicReference<Date> checkModifiedDate) throws Exception {
 		URL u=new URL(url);
 		try {
 			dig.clear();
@@ -99,6 +116,7 @@ public abstract class OAIHarvesterBase extends Harvester {
 		return true;
 	}
 
+	/** Resets the internal variables. */
 	protected void reset() {
 	}
 

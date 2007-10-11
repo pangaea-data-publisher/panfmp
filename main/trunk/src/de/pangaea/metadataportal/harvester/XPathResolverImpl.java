@@ -25,6 +25,11 @@ import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.TermDocs;
 import org.apache.lucene.index.Term;
 
+/**
+ * Helper class that implements several XPath interfaces to supply variables and functions to XPath expressions.
+ * This is a singleton!
+ * @author Uwe Schindler
+ */
 public final class XPathResolverImpl implements XPathFunctionResolver,XPathVariableResolver {
 
 	private static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(XPathResolverImpl.class);
