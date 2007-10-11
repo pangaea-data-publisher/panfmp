@@ -28,6 +28,13 @@ import javax.xml.transform.sax.SAXSource;
 import org.xml.sax.*;
 import org.xml.sax.helpers.DefaultHandler;
 
+/**
+ * Harvester for traversing websites and harvesting XML documents.
+ * If the <code>baseURL</code> (from config) contains a XML file with the correct MIME type, it is directly harvested.
+ * A html webpage is analyzed and all links are followed and checked for XML files with correct MIME type.
+ * This is done recursively, but harvesting does not escape the server and <code>baseURL</code> directory.
+ * @author Uwe Schindler
+ */
 public class WebCrawlingHarvester extends Harvester {
 
 	public static final int DEFAULT_RETRY_TIME = 60; // seconds
@@ -166,9 +173,9 @@ public class WebCrawlingHarvester extends Harvester {
 
 			StringBuilder ua=new StringBuilder("Java/");
 			ua.append(System.getProperty("java.version"));
-			ua.append(" (");
-			ua.append(getClass().getName());
-			ua.append(')');
+			String version=de.pangaea.metadataportal.Package.getProductName();
+			ua.append(" (").append(de.pangaea.metadataportal.Package.getProductName()).append('/');
+			ua.append(de.pangaea.metadataportal.Package.getVersion()).append("; WebCrawlingHarvester)");
 			conn.setRequestProperty("User-Agent",ua.toString());
 
 			conn.setRequestProperty("Accept-Encoding","gzip, deflate, identity;q=0.3, *;q=0");

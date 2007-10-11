@@ -23,6 +23,13 @@ import org.apache.lucene.index.*;
 import org.apache.lucene.store.FSDirectory;
 import java.util.*;
 
+/**
+ * Index rebuilder implemented as harvester that reads all documents from an index and pushes them back into the index.
+ * Only the XML blobs and control fields are read, all other info is rebuild like in the normal harvester.
+ * This helps during restructuring the index fields. This can be done without re-harvesting from the original metadata providers.
+ * This class is called from command line or using {@link Harvester#runHarvester} with this class as harvester class parameter.
+ * @author Uwe Schindler
+ */
 public class Rebuilder extends Harvester {
 
 	private static org.apache.commons.logging.Log staticLog = org.apache.commons.logging.LogFactory.getLog(Rebuilder.class);

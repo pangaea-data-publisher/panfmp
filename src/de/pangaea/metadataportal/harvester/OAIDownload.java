@@ -23,6 +23,10 @@ import org.xml.sax.*;
 import java.util.Date;
 import java.util.concurrent.atomic.AtomicReference;
 
+/**
+ * Static helper class for downloading OAI documents.
+ * @author Uwe Schindler
+ */
 public final class OAIDownload {
 
 	private static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(OAIDownload.class);
@@ -31,8 +35,8 @@ public final class OAIDownload {
 
 	// ** public API **
 
-	public static InputStream getInputStream(URL url) throws IOException {
-		return getInputSource(url).getByteStream();
+	public static InputStream getInputStream(URL url, AtomicReference<Date> checkModifiedDate) throws IOException {
+		return getInputSource(url,checkModifiedDate).getByteStream();
 	}
 
 	public static EntityResolver getEntityResolver(final EntityResolver parent) {
@@ -41,7 +45,7 @@ public final class OAIDownload {
 				try {
 				   URL url=new URL(systemId);
 				   String proto=url.getProtocol().toLowerCase();
-				   if ("http".equals(proto) || "https".equals(proto)) return getInputSource(url);
+				   if ("http".equals(proto) || "https".equals(proto)) return getInputSource(url,null);
 				   else return (parent==null)?null:parent.resolveEntity(publicId,systemId);
 				} catch (MalformedURLException malu) {
 					return (parent==null)?null:parent.resolveEntity(publicId,systemId);
@@ -50,10 +54,6 @@ public final class OAIDownload {
 		};
 	}
 
-	public static InputSource getInputSource(URL url) throws IOException {
-		return getInputSource(url,null);
-	}
-	
 	public static InputSource getInputSource(URL url, AtomicReference<Date> checkModifiedDate) throws IOException {
 		String proto=url.getProtocol().toLowerCase();
 		if (!("http".equals(proto) || "https".equals(proto)))
@@ -62,9 +62,8 @@ public final class OAIDownload {
 
 		StringBuilder ua=new StringBuilder("Java/");
 		ua.append(System.getProperty("java.version"));
-		ua.append(" (");
-		ua.append(OAIDownload.class.getName());
-		ua.append(')');
+		ua.append(" (").append(de.pangaea.metadataportal.Package.getProductName()).append('/');
+		ua.append(de.pangaea.metadataportal.Package.getVersion()).append("; OAI downloader)");
 		conn.setRequestProperty("User-Agent",ua.toString());
 
 		conn.setRequestProperty("Accept-Encoding","gzip, deflate, identity;q=0.3, *;q=0");
@@ -123,7 +122,7 @@ public final class OAIDownload {
 				charset=contentType.substring(charsetStart,charsetEnd).trim();
 			}
 		}
-			log.debug("Charset from Content-Type: '"+charset+"'");
+		log.debug("Charset from Content-Type: '"+charset+"'");
 
 		InputSource src=new InputSource(in);
 		src.setSystemId(url.toString());

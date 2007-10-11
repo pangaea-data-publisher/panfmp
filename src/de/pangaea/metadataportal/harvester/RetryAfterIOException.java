@@ -16,6 +16,10 @@
 
 package de.pangaea.metadataportal.harvester;
 
+/**
+ * Thrown by {@link OAIDownload} when the OAI repository responds with {@link java.net.HttpURLConnection#HTTP_UNAVAILABLE}.
+ * @author Uwe Schindler
+ */
 public class RetryAfterIOException extends java.io.IOException {
 
 	public RetryAfterIOException(int retryAfter, java.io.IOException ioe) {

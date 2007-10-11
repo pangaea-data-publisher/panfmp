@@ -22,6 +22,10 @@ import org.apache.lucene.index.*;
 import org.apache.lucene.store.FSDirectory;
 import java.util.*;
 
+/**
+ * Index optimizer. To be called from command line.
+ * @author Uwe Schindler
+ */
 public class Optimizer {
 
 	protected static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(Optimizer.class);

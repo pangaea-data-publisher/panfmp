@@ -16,6 +16,10 @@
 
 package de.pangaea.metadataportal.harvester;
 
+/**
+ * {@link IndexBuilder} throws this exception, if an error occurs in the indexer/converter threads.
+ * @author Uwe Schindler
+ */
 public class IndexBuilderBackgroundFailure extends java.lang.Exception {
 
 	public IndexBuilderBackgroundFailure(Exception e) {

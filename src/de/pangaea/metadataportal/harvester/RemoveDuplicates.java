@@ -22,6 +22,10 @@ import org.apache.lucene.index.*;
 import org.apache.lucene.document.*;
 import java.util.*;
 
+/**
+ * Maintenance component for removing duplicate documents in index. Called from command line.
+ * @author Uwe Schindler
+ */
 public class RemoveDuplicates {
 
 	protected static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(RemoveDuplicates.class);

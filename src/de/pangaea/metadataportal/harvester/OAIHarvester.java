@@ -23,6 +23,10 @@ import java.io.*;
 import java.net.URLEncoder;
 import org.apache.commons.digester.*;
 
+/**
+ * Harvester for OAI-PMH repositories.
+ * @author Uwe Schindler
+ */
 public class OAIHarvester extends OAIHarvesterBase {
 	// Class members
 	private static final String[] requestVariables=new String[]{
@@ -90,7 +94,7 @@ public class OAIHarvester extends OAIHarvesterBase {
 		identifyDig.addDoNothing("OAI-PMH/Identify/*");
 	}
 
-	protected void digesterAddGeneralOAIRules(ExtendedDigester dig) throws Exception {
+	private void digesterAddGeneralOAIRules(ExtendedDigester dig) throws Exception {
 		dig.setEntityResolver(OAIDownload.getEntityResolver(dig.getEntityResolver()));
 		dig.setNamespaceAware(true);
 		dig.setValidating(false);
@@ -163,16 +167,16 @@ public class OAIHarvester extends OAIHarvesterBase {
 	}
 
 	// harvester code
-	protected void readStream(String url) throws Exception {
+	private void readStream(String url) throws Exception {
 		log.info("Harvesting \""+url+"\"...");
-		doParse(listRecordsDig,url,retryCount,null);
+		doParse(listRecordsDig,url,null);
 	}
 
-	public void checkIdentify(String baseURL) throws Exception {
+	private void checkIdentify(String baseURL) throws Exception {
 		StringBuilder url=new StringBuilder(baseURL);
 		url.append("?verb=Identify");
 		log.info("Reading identify response from \""+url+"\"...");
-		doParse(identifyDig,url.toString(),retryCount,null);
+		doParse(identifyDig,url.toString(),null);
 		log.info("Repository supports "+(fineGranularity?"seconds":"days")+"-granularity in selective harvesting.");
 	}
 

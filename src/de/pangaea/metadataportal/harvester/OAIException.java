@@ -16,6 +16,10 @@
 
 package de.pangaea.metadataportal.harvester;
 
+/**
+ * This exception is thrown on an OAI protocol error, which is triggered by an <code>&lt;error&gt;</code> response from the repository.
+ * @author Uwe Schindler
+ */
 public class OAIException extends java.lang.Exception {
 
 	public OAIException(String code, String message) {

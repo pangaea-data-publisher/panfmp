@@ -24,6 +24,10 @@ import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import javax.xml.transform.stream.StreamSource;
 
+/**
+ * Harvester for traversing file system directories.
+ * @author Uwe Schindler
+ */
 public class DirectoryHarvester extends Harvester implements FilenameFilter {
 
 	// Class members
