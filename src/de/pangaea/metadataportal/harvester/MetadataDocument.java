@@ -256,11 +256,7 @@ public class MetadataDocument {
 			Document ldoc = new Document();
 			ldoc.add(new Field(IndexConstants.FIELDNAME_IDENTIFIER, identifier, Field.Store.YES, Field.Index.UN_TOKENIZED));
 			ldoc.add(new Field(IndexConstants.FIELDNAME_MDOC_IMPL, getClass().getName(), Field.Store.YES, Field.Index.NO));
-			if (datestamp!=null) {
-				String val;
-				ldoc.add(new Field(IndexConstants.FIELDNAME_DATESTAMP, val=LuceneConversions.dateToLucene(datestamp), Field.Store.YES, Field.Index.UN_TOKENIZED));
-				LuceneConversions.addTrieIndexEntries(ldoc,IndexConstants.FIELDNAME_DATESTAMP,val);
-			}
+			if (datestamp!=null) LuceneConversions.addTrieDocumentField(ldoc,IndexConstants.FIELDNAME_DATESTAMP,datestamp,true,Field.Store.YES);
 			return ldoc;
 		}
 	}
@@ -537,15 +533,20 @@ public class MetadataDocument {
 		if (log.isTraceEnabled()) log.trace("AddField: "+f.name+'='+val);
 		boolean token=false;
 		switch(f.datatype) {
-			case NUMBER: val=LuceneConversions.doubleToLucene(Double.parseDouble(val));break;
-			case DATETIME: val=LuceneConversions.dateToLucene(LenientDateParser.parseDate(val));break;
-			case TOKENIZEDTEXT: token=true;
+			case NUMBER:
+				LuceneConversions.addTrieDocumentField(ldoc, f.name, Double.parseDouble(val), f.luceneindexed, f.lucenestorage);
+				break;
+			case DATETIME:
+				LuceneConversions.addTrieDocumentField(ldoc, f.name, LenientDateParser.parseDate(val), f.luceneindexed, f.lucenestorage);
+				break;
+			case TOKENIZEDTEXT: 
+				token=true;
+				// fall-through
+			default:
+				Field.Index in=Field.Index.NO;
+				if (f.luceneindexed) in=token?Field.Index.TOKENIZED:Field.Index.UN_TOKENIZED;
+				ldoc.add(new Field(f.name, val, f.lucenestorage, in));
 		}
-		Field.Index in=Field.Index.NO;
-		if (f.luceneindexed) in=token?Field.Index.TOKENIZED:Field.Index.UN_TOKENIZED;
-		ldoc.add(new Field(f.name, val, f.lucenestorage, in));
-		if (f.luceneindexed && (f.datatype==FieldConfig.DataType.NUMBER || f.datatype==FieldConfig.DataType.DATETIME))
-			LuceneConversions.addTrieIndexEntries(ldoc,f.name,val);
 	}
 
 	/**

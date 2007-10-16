@@ -26,7 +26,7 @@ import org.apache.lucene.document.Field;
  * high performance range queries on numeric and date/time fields using &quot;trie memory&quot; structures
  * (see the publication about <b>panFMP</b>:
  * <em>Schindler, U, Diepenbroek, M, 2007. Generic Framework for Metadata Portals. Computers &amp; Geosciences, submitted.</em>).
- * This query type works only with indexes created by <b>panFMP</b>'s index builder.
+ * This query type works only with indexes created by <b>panFMP</b>'s index builder. This class helps on creating correct fields in a Lucene index.
  * <p>TODO: Describe the format of converted values!
  * @author Uwe Schindler
  */
@@ -80,7 +80,7 @@ public final class LuceneConversions {
 	}
 
 	/** Converts a encoded <code>String</code> (16 bytes) value back to a <code>long</code>. This data type is currently not used by <b>panFMP</b>. */
-	public static long luceneToLong(String s) throws NumberFormatException {
+	public static long luceneToLong(String s) {
 		return internalLuceneToLong(s) ^ 0x8000000000000000L;
 	}
 
@@ -155,13 +155,44 @@ public final class LuceneConversions {
 	}
 
 	/**
+	 * Stores a double value in trie-form in document for indexing.
+	 * Fields added to a document using this method can be queried by {@link de.pangaea.metadataportal.search.TrieRangeQuery}
+	 * @see #addConvertedTrieDocumentField
+	 */
+	public static void addTrieDocumentField(Document ldoc, String fieldname, double val, boolean index, Field.Store store) {
+		addConvertedTrieDocumentField(ldoc, fieldname, doubleToLucene(val), index, store);
+	}
+
+	/**
+	 * Stores a Date value in trie-form in document for indexing.
+	 * Fields added to a document using this method can be queried by {@link de.pangaea.metadataportal.search.TrieRangeQuery}
+	 * @see #addConvertedTrieDocumentField
+	 */
+	public static void addTrieDocumentField(Document ldoc, String fieldname, Date val, boolean index, Field.Store store) {
+		addConvertedTrieDocumentField(ldoc, fieldname, dateToLucene(val), index, store);
+	}
+
+	/**
+	 * Stores a long (this data type is currently not used by <b>panFMP</b>) value in trie-form in document for indexing.
+	 * Fields added to a document using this method can be queried by {@link de.pangaea.metadataportal.search.TrieRangeQuery}
+	 * @see #addConvertedTrieDocumentField
+	 */
+	public static void addTrieDocumentField(Document ldoc, String fieldname, long val, boolean index, Field.Store store) {
+		addConvertedTrieDocumentField(ldoc, fieldname, longToLucene(val), index, store);
+	}
+
+	/**
 	 * Stores a numerical value (must be converted by <code>xxxToLucene()</code> methods before) in trie-form in document.
 	 * This is done by stripping off 1 to 7 (decoded) bytes from the end and adding each stripped value as a new
 	 * term with a marker prefix {@link #LUCENE_LOOSE_PADDING_START} marking its precision to the document.
-	 * Full precision is <b>not</b> stored by this method. This must be done before by one of the default Lucene {@link Field} methods with correct field properties.
+	 * The full-precision value is indexed without a marker value and is also stored as given by the <code>store</code> parameter.
+	 * If the field should not be searchable, set <code>index</code> to <code>false</code>. It is then only stored (for convenience).
+	 * Fields added to a document using this method can be queried by {@link de.pangaea.metadataportal.search.TrieRangeQuery}
+	 * @note This method is for internal use only because it does not check validity of supplied values. It is public for testing.
 	 */
-	public static void addTrieIndexEntries(Document ldoc, String fieldname, String val) {
-		for (int i=7; i>0; i--)
+	public static void addConvertedTrieDocumentField(Document ldoc, String fieldname, String val, boolean index, Field.Store store) {
+		ldoc.add(new Field(fieldname, val, store, index?Field.Index.UN_TOKENIZED:Field.Index.NO));
+		if (index) for (int i=7; i>0; i--)
 			ldoc.add(new Field(fieldname, new StringBuilder(i*2+1).append((char)(LUCENE_LOOSE_PADDING_START+i)).append(val.substring(0,i*2)).toString(), Field.Store.NO, Field.Index.UN_TOKENIZED));
 	}
 
