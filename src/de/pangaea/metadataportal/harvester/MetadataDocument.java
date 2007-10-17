@@ -256,7 +256,7 @@ public class MetadataDocument {
 			Document ldoc = new Document();
 			ldoc.add(new Field(IndexConstants.FIELDNAME_IDENTIFIER, identifier, Field.Store.YES, Field.Index.UN_TOKENIZED));
 			ldoc.add(new Field(IndexConstants.FIELDNAME_MDOC_IMPL, getClass().getName(), Field.Store.YES, Field.Index.NO));
-			if (datestamp!=null) LuceneConversions.addTrieDocumentField(ldoc,IndexConstants.FIELDNAME_DATESTAMP,datestamp,true,Field.Store.YES);
+			if (datestamp!=null) LuceneConversions.addDateTrieDocumentField(ldoc,IndexConstants.FIELDNAME_DATESTAMP,datestamp,true,Field.Store.YES);
 			return ldoc;
 		}
 	}
@@ -534,10 +534,10 @@ public class MetadataDocument {
 		boolean token=false;
 		switch(f.datatype) {
 			case NUMBER:
-				LuceneConversions.addTrieDocumentField(ldoc, f.name, Double.parseDouble(val), f.luceneindexed, f.lucenestorage);
+				LuceneConversions.addDoubleTrieDocumentField(ldoc, f.name, Double.parseDouble(val), f.luceneindexed, f.lucenestorage);
 				break;
 			case DATETIME:
-				LuceneConversions.addTrieDocumentField(ldoc, f.name, LenientDateParser.parseDate(val), f.luceneindexed, f.lucenestorage);
+				LuceneConversions.addDateTrieDocumentField(ldoc, f.name, LenientDateParser.parseDate(val), f.luceneindexed, f.lucenestorage);
 				break;
 			case TOKENIZEDTEXT: 
 				token=true;

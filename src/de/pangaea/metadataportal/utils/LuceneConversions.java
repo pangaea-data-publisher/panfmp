@@ -33,7 +33,7 @@ import org.apache.lucene.document.Field;
 public final class LuceneConversions {
 
 	/** Marker (PADDING)  before lower-precision (LOOSE) trie entries to signal the precision value */
-	public static final char LUCENE_LOOSE_PADDING_START='0';
+	public static final char LUCENE_PADDING_START='0';
 
 	/** Characters used as lower end ['a' to ('a'+0x0f)] */
 	public static final char LUCENE_SYMBOL_MIN='a';
@@ -44,8 +44,6 @@ public final class LuceneConversions {
 	public static String LUCENE_NUMERIC_MIN=longToLucene(Long.MIN_VALUE);
 	/** maximum encoded value of a numerical index entry: {@link Long#MAX_VALUE} */
 	public static String LUCENE_NUMERIC_MAX=longToLucene(Long.MAX_VALUE);
-
-	private static final String ERR_STRING = "Invalid Lucene numerical value representation: ";
 
 	private LuceneConversions() {} // no instance
 
@@ -58,15 +56,15 @@ public final class LuceneConversions {
 	}
 
 	private static long internalLuceneToLong(String s) {
-		if (s==null) throw new NumberFormatException(ERR_STRING+s);
+		if (s==null) throw new NullPointerException("Lucene encoded String may not be NULL");
 		int len=s.length();
-		if (len!=16) throw new NumberFormatException(ERR_STRING+s);
+		if (len!=16) throw new NumberFormatException("Invalid Lucene numerical value representation: "+s+" (incompatible length, must be 16)");
 		long l=0L;
 		for (int i=0; i<len; i++) {
 			char ch=s.charAt(i);
 			int b;
 			if (ch>=LUCENE_SYMBOL_MIN && ch<=LUCENE_SYMBOL_MAX) b=(int)(ch-LUCENE_SYMBOL_MIN);
-			else throw new NumberFormatException(ERR_STRING+s);
+			else throw new NumberFormatException("Invalid Lucene numerical value representation: "+s+" (char '"+ch+"' is invalid)");
 			l = (l << 4) | b;
 		}
 		return l;
@@ -154,46 +152,46 @@ public final class LuceneConversions {
 		return sb.toString();
 	}
 
+	private static void addConvertedTrieDocumentField(Document ldoc, String fieldname, String val, boolean index, Field.Store store) {
+		ldoc.add(new Field(fieldname, val, store, index?Field.Index.UN_TOKENIZED:Field.Index.NO));
+		if (index) for (int i=7; i>0; i--)
+			ldoc.add(new Field(fieldname, new StringBuilder(i*2+1).append((char)(LUCENE_PADDING_START+i)).append(val.substring(0,i*2)).toString(), Field.Store.NO, Field.Index.UN_TOKENIZED));
+	}
+
 	/**
 	 * Stores a double value in trie-form in document for indexing.
+	 * This is done by stripping off 1 to 7 words from the end and adding each stripped value as a new
+	 * term with a marker prefix {@link #LUCENE_PADDING_START} marking its precision to the document.
+	 * The full-precision value is indexed without a marker value and is also stored as given by the <code>store</code> parameter.
+	 * If the field should not be searchable, set <code>index</code> to <code>false</code>. It is then only stored (for convenience).
 	 * Fields added to a document using this method can be queried by {@link de.pangaea.metadataportal.search.TrieRangeQuery}
-	 * @see #addConvertedTrieDocumentField
 	 */
-	public static void addTrieDocumentField(Document ldoc, String fieldname, double val, boolean index, Field.Store store) {
+	public static void addDoubleTrieDocumentField(Document ldoc, String fieldname, double val, boolean index, Field.Store store) {
 		addConvertedTrieDocumentField(ldoc, fieldname, doubleToLucene(val), index, store);
 	}
 
 	/**
 	 * Stores a Date value in trie-form in document for indexing.
+	 * This is done by stripping off 1 to 7 words from the end and adding each stripped value as a new
+	 * term with a marker prefix {@link #LUCENE_PADDING_START} marking its precision to the document.
+	 * The full-precision value is indexed without a marker value and is also stored as given by the <code>store</code> parameter.
+	 * If the field should not be searchable, set <code>index</code> to <code>false</code>. It is then only stored (for convenience).
 	 * Fields added to a document using this method can be queried by {@link de.pangaea.metadataportal.search.TrieRangeQuery}
-	 * @see #addConvertedTrieDocumentField
 	 */
-	public static void addTrieDocumentField(Document ldoc, String fieldname, Date val, boolean index, Field.Store store) {
+	public static void addDateTrieDocumentField(Document ldoc, String fieldname, Date val, boolean index, Field.Store store) {
 		addConvertedTrieDocumentField(ldoc, fieldname, dateToLucene(val), index, store);
 	}
 
 	/**
 	 * Stores a long (this data type is currently not used by <b>panFMP</b>) value in trie-form in document for indexing.
-	 * Fields added to a document using this method can be queried by {@link de.pangaea.metadataportal.search.TrieRangeQuery}
-	 * @see #addConvertedTrieDocumentField
-	 */
-	public static void addTrieDocumentField(Document ldoc, String fieldname, long val, boolean index, Field.Store store) {
-		addConvertedTrieDocumentField(ldoc, fieldname, longToLucene(val), index, store);
-	}
-
-	/**
-	 * Stores a numerical value (must be converted by <code>xxxToLucene()</code> methods before) in trie-form in document.
-	 * This is done by stripping off 1 to 7 (decoded) bytes from the end and adding each stripped value as a new
-	 * term with a marker prefix {@link #LUCENE_LOOSE_PADDING_START} marking its precision to the document.
+	 * This is done by stripping off 1 to 7 words from the end and adding each stripped value as a new
+	 * term with a marker prefix {@link #LUCENE_PADDING_START} marking its precision to the document.
 	 * The full-precision value is indexed without a marker value and is also stored as given by the <code>store</code> parameter.
 	 * If the field should not be searchable, set <code>index</code> to <code>false</code>. It is then only stored (for convenience).
 	 * Fields added to a document using this method can be queried by {@link de.pangaea.metadataportal.search.TrieRangeQuery}
-	 * @note This method is for internal use only because it does not check validity of supplied values. It is public for testing.
 	 */
-	public static void addConvertedTrieDocumentField(Document ldoc, String fieldname, String val, boolean index, Field.Store store) {
-		ldoc.add(new Field(fieldname, val, store, index?Field.Index.UN_TOKENIZED:Field.Index.NO));
-		if (index) for (int i=7; i>0; i--)
-			ldoc.add(new Field(fieldname, new StringBuilder(i*2+1).append((char)(LUCENE_LOOSE_PADDING_START+i)).append(val.substring(0,i*2)).toString(), Field.Store.NO, Field.Index.UN_TOKENIZED));
+	public static void addLongTrieDocumentField(Document ldoc, String fieldname, long val, boolean index, Field.Store store) {
+		addConvertedTrieDocumentField(ldoc, fieldname, longToLucene(val), index, store);
 	}
 
 	// test
