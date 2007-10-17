@@ -144,8 +144,8 @@ public class TrieRangeQuery extends Query {
 			// add padding before loose/inprecise values to group them
 			if (len<16) {
 				len++; // length is longer by 1 char because of padding
-				lowerTerm=new StringBuilder(len).append((char)(LuceneConversions.LUCENE_LOOSE_PADDING_START+(len/2))).append(lowerTerm).toString();
-				upperTerm=new StringBuilder(len).append((char)(LuceneConversions.LUCENE_LOOSE_PADDING_START+(len/2))).append(upperTerm).toString();
+				lowerTerm=new StringBuilder(len).append((char)(LuceneConversions.LUCENE_PADDING_START+(len/2))).append(lowerTerm).toString();
+				upperTerm=new StringBuilder(len).append((char)(LuceneConversions.LUCENE_PADDING_START+(len/2))).append(upperTerm).toString();
 			}
 			TermEnum enumerator = reader.terms(new Term(field, lowerTerm));
 			try {
