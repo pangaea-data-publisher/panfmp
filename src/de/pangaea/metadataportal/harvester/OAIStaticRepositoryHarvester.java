@@ -26,7 +26,10 @@ import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Harvester for OAI static repositories.
- * @author Uwe Schindler
+ * <p>This harvester supports the following additional <b>harvester properties</b> (please look into {@link OAIHarvesterBase} for further OAI-specific properties):<ul>
+ * <li><code>url</code>: URL of static repository</li>
+ * </ul> 
+* @author Uwe Schindler
  */
 public class OAIStaticRepositoryHarvester extends OAIHarvesterBase {
 	// Object members
