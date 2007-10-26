@@ -25,6 +25,9 @@ import org.apache.commons.digester.*;
 
 /**
  * Harvester for OAI-PMH repositories.
+ * <p>This harvester supports the following additional <b>harvester properties</b> (please look into {@link OAIHarvesterBase} for further OAI-specific properties):<ul>
+ * <li><code>baseUrl</code>: Base URL of OAI-PMH repository.</li>
+ * </ul> 
  * @author Uwe Schindler
  */
 public class OAIHarvester extends OAIHarvesterBase {

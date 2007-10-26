@@ -25,8 +25,15 @@ import java.util.regex.Matcher;
 import javax.xml.transform.stream.StreamSource;
 
 /**
- * Harvester for traversing file system directories.
- * @author Uwe Schindler
+ * Harvester for traversing file system directories. Identifiers are build from the relative path of files against the base directory.
+ * <p>This harvester supports the following additional <b>harvester properties</b>:<ul>
+ * <li><code>directory</code>: file system directory to harvest</li>
+ * <li><code>recursive</code>: traverse in subdirs (default: false)</li>
+ * <li><code>identifierPrefix</code>: This prefix is appended before all relative file system pathes (that are the identifiers of the documents) (default: "")</li>
+ * <li><code>filenameFilter</code>: regex to match the filename (default: none)</li>
+ * <li><code>deleteMissingDocuments</code>: remove documents after harvesting that were deleted from the directory (maybe a heavy operation). (default: true)</li>
+ * </ul>
+* @author Uwe Schindler
  */
 public class DirectoryHarvester extends Harvester implements FilenameFilter {
 
