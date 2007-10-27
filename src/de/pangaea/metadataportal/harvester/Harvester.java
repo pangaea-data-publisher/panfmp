@@ -27,12 +27,12 @@ import de.pangaea.metadataportal.config.*;
  * <li><code>changesBeforeIndexCommit</code>: how many documents should be harvested before the index changes are commit? (default: 1000)</li>
  * <li><code>numConverterThreads</code>: how many threads should convert documents (XPath queries and XSL templates)? (default: 1)
  * Raise this value, if the indexer waits to often for more documents and you have more than one processor. The optimal value is one lower than the number of processors. If you have very simple
- * metadata documents (simple XML schmema) and few fields, lower values are optimal. The optimal value could only be found by testing.</li>
+ * metadata documents (simple XML schmema) and few fields, lower values may be enough. The optimal value could only be found by testing.</li>
  * <li><code>maxConverterQueue</code>: size of queue for converter threads. (default 250 metadata documents)</li>
  * <li><code>maxIndexerQueue</code>: size of queue for indexer thread. (default 250 metadata documents)</li>
  * <li><code>autoOptimize</code>: should the index be optimzed after harvesting is finished? (default: false)</li>
- * <li><code>validate</code>: validate harvested documents against schema from configuration? (default: true, if schema given)</li>
- * <li><code>compressXML</code>: compress the harvested XML blod when storing in index? (default: true)</li>
+ * <li><code>validate</code>: validate harvested documents against schema given in configuration? (default: true, if schema given)</li>
+ * <li><code>compressXML</code>: compress the harvested XML blob when storing in index? (default: true)</li>
  * </ul>
  * @author Uwe Schindler
  */
