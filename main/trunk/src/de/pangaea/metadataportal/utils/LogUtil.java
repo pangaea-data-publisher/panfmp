@@ -91,7 +91,7 @@ public class LogUtil {
 					} catch (Exception e) { 
 						log.fatal("Cannot log with method [" + method + "]", e); 
 					}
-					for (; scan<count && (buf[scan]=='\n' || buf[scan]=='\r'); scan++);
+					while (scan<count && (buf[scan]=='\n' || buf[scan]=='\r')) scan++;
 					byte[] b=toByteArray();
 					reset();
 					write(b,scan,b.length-scan);
