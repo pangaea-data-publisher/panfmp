@@ -25,13 +25,15 @@ import java.io.IOException;
 import org.apache.lucene.index.*;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.store.FSDirectory;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * Component of <b>panFMP</b> that analyzes and indexes harvested documents in different threads.
  * @author Uwe Schindler
  */
 public class IndexBuilder {
-	private static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(IndexBuilder.class);
+	private static Log log = LogFactory.getLog(IndexBuilder.class);
 
 	protected SingleIndexConfig iconfig;
 
@@ -237,7 +239,8 @@ public class IndexBuilder {
 		boolean finished=false;
 		try {
 			writer=new IndexWriter(dir, true, iconfig.parent.getAnalyzer(), create);
-			//writer.setInfoStream(System.err);
+			Log iwlog=LogFactory.getLog(writer.getClass());
+			if (iwlog.isDebugEnabled()) writer.setInfoStream(LogUtil.getDebugStream(iwlog));
 			writer.setMaxFieldLength(Integer.MAX_VALUE);
 			writer.setMaxBufferedDocs(changesBeforeCommit);
 			writer.setMaxBufferedDeleteTerms(changesBeforeCommit);
