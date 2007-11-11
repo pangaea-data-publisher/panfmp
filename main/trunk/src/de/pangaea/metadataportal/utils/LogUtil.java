@@ -95,7 +95,8 @@ public class LogUtil {
 					byte[] b=toByteArray();
 					reset();
 					write(b,scan,b.length-scan);
-					scan=0; 
+					scan=0;
+					flush();
 				} 
 				
 				@Override
