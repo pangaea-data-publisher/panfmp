@@ -21,6 +21,8 @@ import de.pangaea.metadataportal.utils.*;
 import org.apache.lucene.index.*;
 import org.apache.lucene.store.FSDirectory;
 import java.util.*;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * Index optimizer. To be called from command line.
@@ -28,7 +30,7 @@ import java.util.*;
  */
 public class Optimizer {
 
-	protected static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(Optimizer.class);
+	protected static Log log = LogFactory.getLog(Optimizer.class);
 
 	private Optimizer() {}
 
@@ -59,6 +61,8 @@ public class Optimizer {
 					FSDirectory dir=FSDirectory.getDirectory(siconf.getFullIndexPath());
 					if (!siconf.isIndexAvailable()) throw new java.io.FileNotFoundException("Index directory with segments file does not exist: "+dir.toString());
 					writer = new IndexWriter(dir, conf.getAnalyzer(), false);
+					Log iwlog=LogFactory.getLog(writer.getClass());
+					if (iwlog.isDebugEnabled()) writer.setInfoStream(LogUtil.getDebugStream(iwlog));
 					log.info("Optimizing...");
 					writer.optimize();
 					log.info("Finished index optimizing of index \""+iconf.id+"\".");
