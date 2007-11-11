@@ -77,16 +77,15 @@ public class DirectoryHarvester extends Harvester implements FilenameFilter {
 	}
 
 	@Override
-	public List<String> getValidHarvesterPropertyNames() {
-		ArrayList<String> l=new ArrayList<String>(super.getValidHarvesterPropertyNames());
-		l.addAll(Arrays.<String>asList(
+	protected void enumerateValidHarvesterPropertyNames(Set<String> props) {
+		super.enumerateValidHarvesterPropertyNames(props);
+		props.addAll(Arrays.<String>asList(
 			"directory",
 			"recursive",
 			"identifierPrefix",
 			"filenameFilter",
 			"deleteMissingDocuments"
 		));
-		return l;
 	}
 
 	public boolean accept(File dir, String name) {

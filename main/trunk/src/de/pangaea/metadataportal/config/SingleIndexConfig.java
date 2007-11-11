@@ -55,7 +55,7 @@ public class SingleIndexConfig extends IndexConfig {
 
 	public void checkProperties() throws Exception {
 		de.pangaea.metadataportal.harvester.Harvester h=harvesterClass.newInstance();
-		HashSet<String> validProperties=new HashSet<String>(h.getValidHarvesterPropertyNames());
+		Set<String> validProperties=h.getValidHarvesterPropertyNames();
 		@SuppressWarnings("unchecked") Enumeration<String> en=(Enumeration<String>)harvesterProperties.propertyNames();
 		while (en.hasMoreElements()) {
 			String prop=en.nextElement();

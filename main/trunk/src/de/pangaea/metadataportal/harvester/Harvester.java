@@ -230,13 +230,13 @@ public abstract class Harvester {
 	}
 
 	/**
-	 * Return the list of harvester property names that this harvester supports.
-	 * This method is called on {@link Config} loading to check if all property names in the config file are correct.
-	 * Overwrite this method in your own implementation and create a new {@link List} with the <code>List</code> returned by
-	 * the superclass as basis.
+	 * This method is used by subclasses to enumerate all available harvester properties that are implemented by them.
+	 * Overwrite this method in your own implementation and append all harvester names to the supplied <code>Set</code>.
+	 * The public API for client code requesting property names is {@link #getValidHarvesterPropertyNames}.
+	 * @see #getValidHarvesterPropertyNames
 	 */
-	public List<String> getValidHarvesterPropertyNames() {
-		return Arrays.<String>asList(
+	protected void enumerateValidHarvesterPropertyNames(Set<String> props) {
+		props.addAll(Arrays.<String>asList(
 			// own
 			"harvestMessageStep",
 			// IndexBuilder
@@ -249,7 +249,21 @@ public abstract class Harvester {
 			"validate",
 			// MetadataDocument
 			"compressXML"
-		);
+		));
+	}
+
+	/**
+	 * Return the <code>Set</code> of harvester property names that this harvester supports.
+	 * This method is called on {@link Config} loading to check if all property names in the config file are correct.
+	 * You cannot override this method in your own implementation, as this method is
+	 * responsible for returning an unmodifieable <code>Set</code>.
+	 * For custom harvesters, append your property names in {@link #enumerateValidHarvesterPropertyNames}.
+	 * @see #enumerateValidHarvesterPropertyNames
+	 */
+	public final Set<String> getValidHarvesterPropertyNames() {
+		TreeSet<String> props=new TreeSet<String>();
+		enumerateValidHarvesterPropertyNames(props);
+		return Collections.unmodifiableSet(props);
 	}
 
 	/**

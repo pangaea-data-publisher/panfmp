@@ -141,10 +141,9 @@ public class OAIStaticRepositoryHarvester extends OAIHarvesterBase {
 	}
 
 	@Override
-	public List<String> getValidHarvesterPropertyNames() {
-		ArrayList<String> l=new ArrayList<String>(super.getValidHarvesterPropertyNames());
-		l.add("url");
-		return l;
+	protected void enumerateValidHarvesterPropertyNames(Set<String> props) {
+		super.enumerateValidHarvesterPropertyNames(props);
+		props.add("url");
 	}
 
 }
