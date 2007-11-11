@@ -240,10 +240,9 @@ public class OAIHarvester extends OAIHarvesterBase {
 	}
 
 	@Override
-	public List<String> getValidHarvesterPropertyNames() {
-		ArrayList<String> l=new ArrayList<String>(super.getValidHarvesterPropertyNames());
-		l.add("baseUrl");
-		return l;
+	protected void enumerateValidHarvesterPropertyNames(Set<String> props) {
+		super.enumerateValidHarvesterPropertyNames(props);
+		props.add("baseUrl");
 	}
 
 }

@@ -150,9 +150,9 @@ public class WebCrawlingHarvester extends Harvester {
 	}
 
 	@Override
-	public List<String> getValidHarvesterPropertyNames() {
-		ArrayList<String> l=new ArrayList<String>(super.getValidHarvesterPropertyNames());
-		l.addAll(Arrays.<String>asList(
+	protected void enumerateValidHarvesterPropertyNames(Set<String> props) {
+		super.enumerateValidHarvesterPropertyNames(props);
+		props.addAll(Arrays.<String>asList(
 			"baseUrl",
 			"retryCount",
 			"retryAfterSeconds",
@@ -161,7 +161,6 @@ public class WebCrawlingHarvester extends Harvester {
 			"deleteMissingDocuments",
 			"pauseBetweenRequests" /* in milliseconds */
 		));
-		return l;
 	}
 
 	// internal implementation
