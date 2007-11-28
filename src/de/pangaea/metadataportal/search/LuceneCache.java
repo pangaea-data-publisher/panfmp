@@ -134,7 +134,7 @@ public class LuceneCache {
 					
 					sessions.clear();
 					indexChanged=false;
-				} else { // synchronize agains the session LRU map which is not synchronized itsself
+				} else {
 					// now really clean up sessions (if too old, as this is not handled by LRUMap -- and if reload of indexes occurred)
 					for (Iterator<Session> entries=sessions.values().iterator(); entries.hasNext(); ) {
 						Session e=entries.next();
