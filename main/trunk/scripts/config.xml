@@ -111,10 +111,13 @@
 		</cfg:virtualIndex>
 	</cfg:indexes>
 	<cfg:search>
-		<cfg:returnXML>true</cfg:returnXML>
-		<cfg:returnStoredFields>true</cfg:returnStoredFields>
+		<!-- default SearchService properties -->
 		<cfg:cacheMaxAge>300</cfg:cacheMaxAge>
 		<cfg:cacheMaxSessions>10</cfg:cacheMaxSessions>
 		<cfg:reloadIndexIfChangedAfter>60</cfg:reloadIndexIfChangedAfter>
+		<cfg:maxStoredQueries>200</cfg:maxStoredQueries>
+		<!-- AXIS special properties -->
+		<cfg:returnXML>true</cfg:returnXML>
+		<cfg:returnStoredFields>true</cfg:returnStoredFields>
 	</cfg:search>
 </cfg:config>
