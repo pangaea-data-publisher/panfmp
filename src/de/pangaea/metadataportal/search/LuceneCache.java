@@ -43,9 +43,14 @@ public class LuceneCache {
 
 	private LuceneCache(Config config) {
 		this.config=config;
+		
 		int maxStoredQueries=Integer.parseInt(config.searchProperties.getProperty("maxStoredQueries",Integer.toString(DEFAULT_MAX_STORED_QUERIES)));
 		@SuppressWarnings("unchecked") Map<String,Query> storedQueries=(Map<String,Query>)new LRUMap(maxStoredQueries);
 		this.storedQueries=Collections.synchronizedMap(storedQueries);
+		
+		int cacheMaxSessions=Integer.parseInt(config.searchProperties.getProperty("cacheMaxSessions",Integer.toString(DEFAULT_CACHE_MAX_SESSIONS)));
+		@SuppressWarnings("unchecked") Map<String,Session> sessions=(Map<String,Session>)new LRUMap(cacheMaxSessions);
+		this.sessions=sessions;
 	}
 
 	private static final Map<String,LuceneCache> instances=new HashMap<String,LuceneCache>();
@@ -74,83 +79,65 @@ public class LuceneCache {
 	}
 
 	// Cache of Hits
-	public synchronized Session getSession(IndexConfig index, Query query, Sort sort) throws java.io.IOException {
-		// generate an unique identifier
-		String id="index="+index.id+"\000query="+query.toString(IndexConstants.FIELDNAME_CONTENT)+"\000sort="+sort;
-		// look for identifier in cache
-		Session sess=sessions.get(id);
-		if (sess==null) {
-			sess=new Session(this,index.newSearcher(),query,sort);
-			sessions.put(id,sess);
-			log.info("Created session: "+sess);
-		} else {
-			sess.logAccess();
+	public Session getSession(IndexConfig index, Query query, Sort sort) throws java.io.IOException {
+		synchronized(sessions) {
+			// generate an unique identifier
+			String id="index="+index.id+"\000query="+query.toString(IndexConstants.FIELDNAME_CONTENT)+"\000sort="+sort;
+			// look for identifier in cache
+			Session sess=sessions.get(id);
+			if (sess==null) {
+				sess=new Session(this,index.newSearcher(),query,sort);
+				sessions.put(id,sess);
+				log.info("Created session: "+sess);
+			} else {
+				sess.logAccess();
+			}
+			return sess;
 		}
-		return sess;
 	}
 
-	public synchronized void cleanupCache() throws java.io.IOException {
+	public void cleanupCache() throws java.io.IOException {
 		// get defaults for cache age etc.
 		int cacheMaxAge=Integer.parseInt(config.searchProperties.getProperty("cacheMaxAge",Integer.toString(DEFAULT_CACHE_MAX_AGE)));
-		int cacheMaxSessions=Integer.parseInt(config.searchProperties.getProperty("cacheMaxSessions",Integer.toString(DEFAULT_CACHE_MAX_SESSIONS)));
 		int reloadIndexIfChangedAfter=Integer.parseInt(config.searchProperties.getProperty("reloadIndexIfChangedAfter",Integer.toString(DEFAULT_RELOAD_AFTER)));
 
 		long now=new java.util.Date().getTime();
 
-		// check indexes for changes and queue re-open
-		if (!indexChanged) {
-			boolean changed=false;
-			for (IndexConfig cfg : config.indexes.values()) {
-				if (cfg instanceof SingleIndexConfig && !cfg.isIndexCurrent()) {
-					changed=true;
-					break;
+		synchronized(sessions) { // synchronize agains the session LRU map which is not synchronized itsself
+			// check indexes for changes and queue re-open
+			if (!indexChanged) {
+				boolean changed=false;
+				for (IndexConfig cfg : config.indexes.values()) {
+					if (cfg instanceof SingleIndexConfig && !cfg.isIndexCurrent()) {
+						changed=true;
+						break;
+					}
 				}
+				if (changed) {
+					indexChangedAt=now;
+					log.info("Detected change in one of the configured indexes. Preparing for reload in "+reloadIndexIfChangedAfter+"s.");
+				}
+				indexChanged=changed;
 			}
-			if (changed) {
-				indexChangedAt=now;
-				log.info("Detected change in one of the configured indexes. Preparing for reload in "+reloadIndexIfChangedAfter+"s.");
-			}
-			indexChanged=changed;
-		}
 
-		// reopen indexes after RELOAD_AFTER secs. from detection of change
-		boolean doReopen=(indexChanged && now-indexChangedAt>((long)reloadIndexIfChangedAfter)*1000L);
+			// reopen indexes after RELOAD_AFTER secs. from detection of change
+			boolean doReopen=(indexChanged && now-indexChangedAt>((long)reloadIndexIfChangedAfter)*1000L);
 
-		if (doReopen) {
-			for (IndexConfig cfg : config.indexes.values()) {
+			if (doReopen) for (IndexConfig cfg : config.indexes.values()) {
 				// only scan real indexes, the others will be implicitely reopened
 				if (cfg instanceof SingleIndexConfig) {
 					log.info("Reopening index '"+cfg.id+"'.");
 					cfg.reopenIndex();
 				}
 			}
-		}
 
-		// now really clean up sessions
-		Session oldest=null;
-		while (oldest==null /* always for first time */ || sessions.size()>cacheMaxSessions /* when too many sessions */ ) {
-			// iterate over sessions and look for oldest one, delete outdated ones
-			Iterator<Session> entries=sessions.values().iterator();
-			while (entries.hasNext()) {
+			// now really clean up sessions (if too old, as this is not handled by LRUMap -- and if reload of indexes occurred)
+			for (Iterator<Session> entries=sessions.values().iterator(); entries.hasNext(); ) {
 				Session e=entries.next();
-				if (doReopen || now-e.lastAccess>((long)cacheMaxAge)*1000L) {
-					entries.remove();
-					log.info("Removed session: "+e);
-				} else {
-					if (oldest==null || e.lastAccess<oldest.lastAccess) oldest=e;
-				}
-			}
-			// delete oldest if needed
-			if (oldest==null) break;
-			if (sessions.size()>cacheMaxSessions) {
-				sessions.values().remove(oldest);
-				log.info("Removed session: "+oldest);
-			}
+				if (doReopen || now-e.lastAccess>((long)cacheMaxAge)*1000L) entries.remove();
+			}		
+			if (doReopen) indexChanged=false; // reset flag
 		}
-
-		if (doReopen) indexChanged=false; // reset flag
-
-		if (log.isDebugEnabled()) log.debug("Session cache after cleanup: "+sessions);
 	}
 
 	public FieldSelector getFieldSelector(boolean loadXml, Collection<String> fieldsToLoad) {
@@ -174,7 +161,7 @@ public class LuceneCache {
 	private boolean indexChanged=false;
 	private long indexChangedAt;
 	private Map<String,Query> storedQueries;
-	private Map<String,Session> sessions=new HashMap<String,Session>();
+	private Map<String,Session> sessions;
 
 	protected Config config;
 
