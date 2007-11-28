@@ -24,6 +24,7 @@ import org.apache.lucene.index.*;
 import org.apache.lucene.search.*;
 import org.apache.lucene.document.*;
 import org.apache.commons.collections.map.LRUMap;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Implementation of the caching algorithm behind the <b>panFMP</b> search engine.
@@ -50,7 +51,7 @@ public class LuceneCache {
 		
 		int cacheMaxSessions=Integer.parseInt(config.searchProperties.getProperty("cacheMaxSessions",Integer.toString(DEFAULT_CACHE_MAX_SESSIONS)));
 		@SuppressWarnings("unchecked") Map<String,Session> sessions=(Map<String,Session>)new LRUMap(cacheMaxSessions);
-		this.sessions=sessions;
+		this.sessions=Collections.synchronizedMap(sessions);
 	}
 
 	private static final Map<String,LuceneCache> instances=new HashMap<String,LuceneCache>();
@@ -80,30 +81,30 @@ public class LuceneCache {
 
 	// Cache of Hits
 	public Session getSession(IndexConfig index, Query query, Sort sort) throws java.io.IOException {
-		synchronized(sessions) {
-			// generate an unique identifier
-			String id="index="+index.id+"\000query="+query.toString(IndexConstants.FIELDNAME_CONTENT)+"\000sort="+sort;
-			// look for identifier in cache
-			Session sess=sessions.get(id);
-			if (sess==null) {
-				sess=new Session(this,index.newSearcher(),query,sort);
-				sessions.put(id,sess);
-				log.info("Created session: "+sess);
-			} else {
-				sess.logAccess();
-			}
-			return sess;
+		// generate an unique identifier
+		String id="index="+index.id+"\000query="+query.toString(IndexConstants.FIELDNAME_CONTENT)+"\000sort="+sort;
+		Session sess=sessions.get(id);
+		if (sess==null) {
+			// create new session
+			sess=new Session(this,index.newSearcher(),query,sort);
+			sessions.put(id,sess);
+			log.info("Created session: "+sess);
+		} else {
+			// return old one
+			sess.logAccess();
 		}
+		return sess;
 	}
 
 	public void cleanupCache() throws java.io.IOException {
-		// get defaults for cache age etc.
-		int cacheMaxAge=Integer.parseInt(config.searchProperties.getProperty("cacheMaxAge",Integer.toString(DEFAULT_CACHE_MAX_AGE)));
-		int reloadIndexIfChangedAfter=Integer.parseInt(config.searchProperties.getProperty("reloadIndexIfChangedAfter",Integer.toString(DEFAULT_RELOAD_AFTER)));
+		// if a cleanup is currently running (lock is active), we do nothing
+		if (cleanupLock.tryLock()) try {
+			// get defaults for cache age etc.
+			int cacheMaxAge=Integer.parseInt(config.searchProperties.getProperty("cacheMaxAge",Integer.toString(DEFAULT_CACHE_MAX_AGE)));
+			int reloadIndexIfChangedAfter=Integer.parseInt(config.searchProperties.getProperty("reloadIndexIfChangedAfter",Integer.toString(DEFAULT_RELOAD_AFTER)));
 
-		long now=new java.util.Date().getTime();
+			long now=new java.util.Date().getTime();
 
-		synchronized(sessions) { // synchronize agains the session LRU map which is not synchronized itsself
 			// check indexes for changes and queue re-open
 			if (!indexChanged) {
 				boolean changed=false;
@@ -120,23 +121,29 @@ public class LuceneCache {
 				indexChanged=changed;
 			}
 
-			// reopen indexes after RELOAD_AFTER secs. from detection of change
-			boolean doReopen=(indexChanged && now-indexChangedAt>((long)reloadIndexIfChangedAfter)*1000L);
-
-			if (doReopen) for (IndexConfig cfg : config.indexes.values()) {
-				// only scan real indexes, the others will be implicitely reopened
-				if (cfg instanceof SingleIndexConfig) {
-					log.info("Reopening index '"+cfg.id+"'.");
-					cfg.reopenIndex();
+			synchronized(sessions) {
+				// reopen indexes after RELOAD_AFTER secs. from detection of change
+				if (indexChanged && now-indexChangedAt>((long)reloadIndexIfChangedAfter)*1000L) {
+					for (IndexConfig cfg : config.indexes.values()) {
+						// only scan real indexes, the others will be implicitely reopened
+						if (cfg instanceof SingleIndexConfig) {
+							log.info("Reopening index '"+cfg.id+"'.");
+							cfg.reopenIndex();
+						}
+					}
+					
+					sessions.clear();
+					indexChanged=false;
+				} else { // synchronize agains the session LRU map which is not synchronized itsself
+					// now really clean up sessions (if too old, as this is not handled by LRUMap -- and if reload of indexes occurred)
+					for (Iterator<Session> entries=sessions.values().iterator(); entries.hasNext(); ) {
+						Session e=entries.next();
+						if (now-e.lastAccess>((long)cacheMaxAge)*1000L) entries.remove();
+					}		
 				}
 			}
-
-			// now really clean up sessions (if too old, as this is not handled by LRUMap -- and if reload of indexes occurred)
-			for (Iterator<Session> entries=sessions.values().iterator(); entries.hasNext(); ) {
-				Session e=entries.next();
-				if (doReopen || now-e.lastAccess>((long)cacheMaxAge)*1000L) entries.remove();
-			}		
-			if (doReopen) indexChanged=false; // reset flag
+		} finally {
+			cleanupLock.unlock();
 		}
 	}
 
@@ -158,6 +165,7 @@ public class LuceneCache {
 		return new SetBasedFieldSelector(set,Collections.<String>emptySet());
 	}
 
+	private final ReentrantLock cleanupLock=new ReentrantLock();
 	private boolean indexChanged=false;
 	private long indexChangedAt;
 	private Map<String,Query> storedQueries;
