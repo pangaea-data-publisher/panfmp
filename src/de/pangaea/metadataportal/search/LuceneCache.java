@@ -52,6 +52,9 @@ public class LuceneCache {
 		int cacheMaxSessions=Integer.parseInt(config.searchProperties.getProperty("cacheMaxSessions",Integer.toString(DEFAULT_CACHE_MAX_SESSIONS)));
 		@SuppressWarnings("unchecked") Map<String,Session> sessions=(Map<String,Session>)new LRUMap(cacheMaxSessions);
 		this.sessions=Collections.synchronizedMap(sessions);
+		
+		cacheMaxAge=Integer.parseInt(config.searchProperties.getProperty("cacheMaxAge",Integer.toString(DEFAULT_CACHE_MAX_AGE)));
+		reloadIndexIfChangedAfter=Integer.parseInt(config.searchProperties.getProperty("reloadIndexIfChangedAfter",Integer.toString(DEFAULT_RELOAD_AFTER)));		
 	}
 
 	private static final Map<String,LuceneCache> instances=new HashMap<String,LuceneCache>();
@@ -83,26 +86,26 @@ public class LuceneCache {
 	public Session getSession(IndexConfig index, Query query, Sort sort) throws java.io.IOException {
 		// generate an unique identifier
 		String id="index="+index.id+"\000query="+query.toString(IndexConstants.FIELDNAME_CONTENT)+"\000sort="+sort;
-		Session sess=sessions.get(id);
-		if (sess==null) {
-			// create new session
-			sess=new Session(this,index.newSearcher(),query,sort);
-			sessions.put(id,sess);
-			log.info("Created session: "+sess);
-		} else {
-			// return old one
-			sess.logAccess();
+		Session sess;
+		synchronized(sessions) {
+			sess=sessions.get(id);
+			if (sess==null) {
+				// create new session
+				sess=new Session(this,index.newSearcher(),query,sort);
+				sessions.put(id,sess);
+				log.info("Created session: "+sess);
+			} else {
+				// return old one
+				sess.logAccess();
+			}
 		}
+		sess.init();
 		return sess;
 	}
 
 	public void cleanupCache() throws java.io.IOException {
 		// if a cleanup is currently running (lock is active), we do nothing
 		if (cleanupLock.tryLock()) try {
-			// get defaults for cache age etc.
-			int cacheMaxAge=Integer.parseInt(config.searchProperties.getProperty("cacheMaxAge",Integer.toString(DEFAULT_CACHE_MAX_AGE)));
-			int reloadIndexIfChangedAfter=Integer.parseInt(config.searchProperties.getProperty("reloadIndexIfChangedAfter",Integer.toString(DEFAULT_RELOAD_AFTER)));
-
 			long now=new java.util.Date().getTime();
 
 			// check indexes for changes and queue re-open
@@ -168,6 +171,8 @@ public class LuceneCache {
 	private final ReentrantLock cleanupLock=new ReentrantLock();
 	private boolean indexChanged=false;
 	private long indexChangedAt;
+	private int cacheMaxAge=DEFAULT_CACHE_MAX_AGE;
+	private int reloadIndexIfChangedAfter=DEFAULT_RELOAD_AFTER;		
 	private Map<String,Query> storedQueries;
 	private Map<String,Session> sessions;
 
@@ -190,14 +195,21 @@ public class LuceneCache {
 	 */
 	protected static final class Session {
 
-		protected Session(LuceneCache parent, Searcher searcher, Query query, Sort sort) throws java.io.IOException {
+		protected Session(LuceneCache parent, Searcher searcher, Query query, Sort sort) {
 			identifier="query={"+query.toString(IndexConstants.FIELDNAME_CONTENT)+"}; sorting={"+sort+"}";
-			lastAccess=queryTime=new java.util.Date().getTime();
 			this.parent=parent;
 			this.searcher=searcher;
-			if (sort!=null) hits=searcher.search(query,sort);
-			else hits=searcher.search(query);
-			queryTime=new java.util.Date().getTime()-queryTime;
+			this.query=query;
+			this.sort=sort;
+			lastAccess=new java.util.Date().getTime();
+		}
+		
+		protected synchronized void init() throws java.io.IOException {
+			if (hits==null) {
+				if (sort!=null) hits=searcher.search(query,sort);
+				else hits=searcher.search(query);
+				queryTime=new java.util.Date().getTime()-lastAccess;			
+			}
 		}
 
 		protected synchronized void logAccess() {
@@ -218,7 +230,9 @@ public class LuceneCache {
 		protected Searcher searcher;
 		protected Hits hits;
 		protected long lastAccess;
-		protected long queryTime;
+		protected long queryTime=0L;
+		private Query query;
+		private Sort sort;
 	}
 
 }
