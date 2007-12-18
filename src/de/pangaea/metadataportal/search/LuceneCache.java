@@ -154,14 +154,14 @@ public class LuceneCache {
 		HashSet<String> set=new HashSet<String>(loadXml?FIELDS_XML:FIELDS_DEFAULT);
 		if (fieldsToLoad==null) {
 			for (FieldConfig f : config.fields.values()) {
-				if (f.lucenestorage!=Field.Store.NO) set.add(f.name);
+				if (f.storage!=Field.Store.NO) set.add(f.name);
 			}
 		} else {
 			// check fields
 			for (String fieldName : fieldsToLoad) {
 				FieldConfig f=config.fields.get(fieldName);
 				if (f==null) throw new IllegalFieldConfigException("Field name '"+fieldName+"' is unknown!");
-				if (f.lucenestorage==Field.Store.NO) throw new IllegalFieldConfigException("Field '"+fieldName+"' is not a stored field!");
+				if (f.storage==Field.Store.NO) throw new IllegalFieldConfigException("Field '"+fieldName+"' is not a stored field!");
 			}
 			set.addAll(fieldsToLoad);
 		}

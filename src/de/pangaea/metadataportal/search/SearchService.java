@@ -119,7 +119,7 @@ public class SearchService {
 	public Query newTextQuery(String fieldName, String query) throws ParseException {
 		FieldConfig f=cache.config.fields.get(fieldName);
 		if (f==null) throw new IllegalFieldConfigException("Field name '"+fieldName+"' is unknown!");
-		if (!f.luceneindexed) throw new IllegalFieldConfigException("Field '"+fieldName+"' is not searchable!");
+		if (!f.indexed) throw new IllegalFieldConfigException("Field '"+fieldName+"' is not searchable!");
 		if (query==null) throw new NullPointerException("A query string must be given for field '"+fieldName+"'!");
 
 		switch (f.datatype) {
@@ -150,7 +150,7 @@ public class SearchService {
 	public Query newDateRangeQuery(String fieldName, Date min, Date max) {
 		FieldConfig f=cache.config.fields.get(fieldName);
 		if (f==null) throw new IllegalFieldConfigException("Field name '"+fieldName+"' is unknown!");
-		if (!f.luceneindexed) throw new IllegalFieldConfigException("Field '"+fieldName+"' is not searchable!");
+		if (!f.indexed) throw new IllegalFieldConfigException("Field '"+fieldName+"' is not searchable!");
 		if (f.datatype!=FieldConfig.DataType.DATETIME) throw new NullPointerException("The data type of field '"+fieldName+"' must be DATETIME!");
 		if (min==null && max==null) throw new NullPointerException("A min or max value must be given for field '"+fieldName+"'!");
 		return new TrieRangeQuery(fieldName,min,max);
@@ -186,7 +186,7 @@ public class SearchService {
 	public Query newNumericRangeQuery(String fieldName, Double min, Double max) {
 		FieldConfig f=cache.config.fields.get(fieldName);
 		if (f==null) throw new IllegalFieldConfigException("Field name '"+fieldName+"' is unknown!");
-		if (!f.luceneindexed) throw new IllegalFieldConfigException("Field '"+fieldName+"' is not searchable!");
+		if (!f.indexed) throw new IllegalFieldConfigException("Field '"+fieldName+"' is not searchable!");
 		if (f.datatype!=FieldConfig.DataType.NUMBER) throw new NullPointerException("The data type of field '"+fieldName+"' must be NUMBER!");
 		if (min==null && max==null) throw new NullPointerException("A min or max value must be given for field '"+fieldName+"'!");
 		return new TrieRangeQuery(fieldName,min,max);
@@ -245,7 +245,7 @@ public class SearchService {
 		// TODO: create a SortComparator or something like that to help sorting less memory expensive! (needs further investigation)
 		FieldConfig f=cache.config.fields.get(fieldName);
 		if (f==null) throw new IllegalFieldConfigException("Field name '"+fieldName+"' is unknown!");
-		if (!f.luceneindexed) throw new IllegalFieldConfigException("Field '"+fieldName+"' is not searchable!");
+		if (!f.indexed) throw new IllegalFieldConfigException("Field '"+fieldName+"' is not searchable!");
 		if (f.datatype==FieldConfig.DataType.TOKENIZEDTEXT) throw new NullPointerException("A field used for sorting may not be tokenized!");
 		return new SortField(fieldName,SortField.STRING,reverse);
 	}
@@ -279,7 +279,7 @@ public class SearchService {
 		if (fieldName!=null) {
 			FieldConfig f=cache.config.fields.get(fieldName);
 			if (f==null) throw new IllegalFieldConfigException("Field name '"+fieldName+"' is unknown!");
-			if (!f.luceneindexed) throw new IllegalFieldConfigException("Field '"+fieldName+"' is not searchable!");
+			if (!f.indexed) throw new IllegalFieldConfigException("Field '"+fieldName+"' is not searchable!");
 			if (f.datatype!=FieldConfig.DataType.TOKENIZEDTEXT) throw new IllegalFieldConfigException("Field '"+fieldName+"' is not of data type TOKENIZEDTEXT!");
 		} else fieldName=IndexConstants.FIELDNAME_CONTENT;
 		if (query==null) throw new NullPointerException("A query string must be given!");
@@ -342,7 +342,7 @@ public class SearchService {
 		// check field
 		FieldConfig f=cache.config.fields.get(fieldName);
 		if (f==null) throw new IllegalFieldConfigException("Field name '"+fieldName+"' is unknown!");
-		if (!f.luceneindexed) throw new IllegalFieldConfigException("Field '"+fieldName+"' is not searchable!");
+		if (!f.indexed) throw new IllegalFieldConfigException("Field '"+fieldName+"' is not searchable!");
 		if (f.datatype!=FieldConfig.DataType.STRING)
 			throw new IllegalFieldConfigException("Field '"+fieldName+"' is not of type STRING!");
 

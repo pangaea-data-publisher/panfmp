@@ -27,13 +27,16 @@ import java.util.EnumSet;
  */
 public class FieldConfig extends ExpressionConfig {
 
-	public void setName(String v) {
-		name=v;
-	}
+	public void setName(String v) { name=v; }
+	public String getName() { return name; }
+	
+	/* NOT YET USED
+	public void setDataType(DataType v) { datatype=v; }
+	public DataType getDataType() { return datatype; }*/
 
 	@PublicForDigesterUse
 	@Deprecated
-	public void setDatatype(String v) {
+	public void setDataType(String v) {
 		try {
 			datatype=DataType.valueOf(v.toUpperCase());
 		} catch (IllegalArgumentException e) {
@@ -41,27 +44,49 @@ public class FieldConfig extends ExpressionConfig {
 		}
 	}
 
+	/* NOT YET USED
+	public void setStorage(Field.Store v) { storage=v; }
+	public Field.Store getStorage() { return storage; }*/
+
 	@PublicForDigesterUse
 	@Deprecated
-	public void setLucenestorage(String v) {
+	public void setStorage(String v) {
 		if (v==null) return;
 		v=v.toUpperCase();
-		if ("COMPRESS".equals(v) || "COMPRESSED".equals(v)) lucenestorage=Field.Store.COMPRESS;
-		else if ("TRUE".equals(v) || "YES".equals(v) || "ON".equals(v)) lucenestorage=Field.Store.YES;
-		else if ("FALSE".equals(v) || "NO".equals(v) || "OFF".equals(v)) lucenestorage=Field.Store.NO;
+		if ("COMPRESS".equals(v) || "COMPRESSED".equals(v)) storage=Field.Store.COMPRESS;
+		else if ("TRUE".equals(v) || "YES".equals(v) || "ON".equals(v)) storage=Field.Store.YES;
+		else if ("FALSE".equals(v) || "NO".equals(v) || "OFF".equals(v)) storage=Field.Store.NO;
 		else throw new IllegalArgumentException("Attribute lucenestorage must be one of: [YES,TRUE,ON]; [NO,FALSE,OFF]; [COMPRESS,COMPRESSED]");
 	}
 
+	/* NOT YET USED
+	public void setTermVectors(Field.TermVector v) { termVectors=v; }
+	public Field.TermVector getTermVectors() { return termVectors; }*/
+
 	@PublicForDigesterUse
 	@Deprecated
-	public void setLuceneindexed(String v) {
+	public void setTermVectors(String v) {
 		if (v==null) return;
-		luceneindexed=BooleanParser.parseBoolean(v);
+		v=v.toUpperCase();
+		if ("TERMPOSITIONS".equals(v)) termVectors=Field.TermVector.WITH_POSITIONS_OFFSETS;
+		else if ("TRUE".equals(v) || "YES".equals(v) || "ON".equals(v)) termVectors=Field.TermVector.YES;
+		else if ("FALSE".equals(v) || "NO".equals(v) || "OFF".equals(v)) termVectors=Field.TermVector.NO;
+		else throw new IllegalArgumentException("Attribute lucenetermvectors must be one of: [YES,TRUE,ON]; [NO,FALSE,OFF]; TERMPOSITIONS");
 	}
 
-	public void setDefault(String v) {
-		defaultValue=v;
+	/* NOT YET USED
+	public void setIndexed(boolean v) { indexed=v; }
+	public boolean isIndexed() { return indexed; }*/
+
+	@PublicForDigesterUse
+	@Deprecated
+	public void setIndexed(String v) {
+		if (v==null) return;
+		indexed=BooleanParser.parseBoolean(v);
 	}
+
+	public void setDefault(String v) { defaultValue=v; }
+	public String getDefault() { return defaultValue; }
 
 	@Override
 	public String toString() {
@@ -72,8 +97,9 @@ public class FieldConfig extends ExpressionConfig {
 	public String name=null;
 	public String defaultValue=null;
 	public DataType datatype=DataType.TOKENIZEDTEXT;
-	public Field.Store lucenestorage=Field.Store.YES;
-	public boolean luceneindexed=true;
+	public Field.Store storage=Field.Store.YES;
+	public Field.TermVector termVectors=Field.TermVector.NO;
+	public boolean indexed=true;
 
 	public static enum DataType { TOKENIZEDTEXT,STRING,NUMBER,DATETIME,XML,XHTML };
 }
