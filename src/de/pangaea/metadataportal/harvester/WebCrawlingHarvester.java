@@ -37,8 +37,9 @@ import org.xml.sax.helpers.DefaultHandler;
  * <li><code>baseUrl</code>: URL to start crawling (should point to a HTML page).</li>
  * <li><code>retryCount</code>: how often retry on HTTP errors? (default: 5) </li>
  * <li><code>retryAfterSeconds</code>: time between retries in seconds (default: 60)</li>
- * <li><code>filenameFilter</code>: regex to match the filename (default: none)</li>
+ * <li><code>filenameFilter</code>: regex to match the filename. The regex is applied against the whole filename (this is like ^pattern$)! (default: none)</li>
  * <li><code>contentTypes</code>: MIME types of documents to index (maybe additionally limited by <code>filenameFilter</code>). (default: "text/xml,application/xml")</li>
+ * <li><code>excludeUrlPattern</code>: A regex that is applied to all URLs appearing during harvesting process. URLs with matching patterns (partial matches allowed, use ^,$ for start/end matches) are excluded and not further traversed. (default: none)</li>
  * <li><code>deleteMissingDocuments</code>: remove documents after harvesting that were deleted from the web page (maybe a heavy operation). (default: true)</li>
  * <li><code>pauseBetweenRequests</code>: to not overload server that is harvested, wait XX milliseconds after each HTTP request (default: none)</li>
  * </ul>
@@ -59,7 +60,7 @@ public class WebCrawlingHarvester extends Harvester {
 
 	// Class members
 	private String baseURL=null;
-	private Pattern filenameFilter=null;
+	private Pattern filenameFilter=null,excludeUrlPattern=null;
 	private Set<String> contentTypes=new HashSet<String>();
 	private Set<String> validIdentifiers=null;
 	private int retryCount=DEFAULT_RETRY_COUNT;
@@ -99,6 +100,9 @@ public class WebCrawlingHarvester extends Harvester {
 
 		s=iconfig.harvesterProperties.getProperty("filenameFilter");
 		filenameFilter=(s==null) ? null : Pattern.compile(s);
+
+		s=iconfig.harvesterProperties.getProperty("excludeUrlPattern");
+		excludeUrlPattern=(s==null) ? null : Pattern.compile(s);
 
 		validIdentifiers=null;
 		if (BooleanParser.parseBoolean(iconfig.harvesterProperties.getProperty("deleteMissingDocuments","true"))) validIdentifiers=new HashSet<String>();
@@ -158,6 +162,7 @@ public class WebCrawlingHarvester extends Harvester {
 			"retryAfterSeconds",
 			"filenameFilter",
 			"contentTypes",
+			"excludeUrlPattern",
 			"deleteMissingDocuments",
 			"pauseBetweenRequests" /* in milliseconds */
 		));
@@ -172,6 +177,11 @@ public class WebCrawlingHarvester extends Harvester {
 		if (!url.startsWith(baseURL)) return;
 		// was it already harvested?
 		if (harvested.contains(url)) return;
+		// check pattern
+		if (excludeUrlPattern!=null) {
+			Matcher m=excludeUrlPattern.matcher(url);
+			if (m.find()) return;
+		}
 		needsHarvest.add(url);
 	}
 
