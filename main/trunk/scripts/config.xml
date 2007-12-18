@@ -26,7 +26,7 @@
 			<cfg:deny>not(ib:isDocIdentifierUnique())</cfg:deny>
 		</cfg:filters>
 		<cfg:fields>
-			<cfg:field name="citation" datatype="tokenizedText" lucenestorage="false" luceneindexed="true">/dif:DIF/dif:Data_Set_Citation|/dif:DIF/dif:Entry_Title|/dif:DIF/dif:Entry_ID</cfg:field>
+			<cfg:field name="citation" datatype="tokenizedText" lucenestorage="false" luceneindexed="true" lucenetermvectors="true">/dif:DIF/dif:Data_Set_Citation|/dif:DIF/dif:Entry_Title|/dif:DIF/dif:Entry_ID</cfg:field>
 			<cfg:field name="investigator" datatype="tokenizedText" lucenestorage="false" luceneindexed="true">/dif:DIF/dif:Personnel[contains(dif:Role,'nvestigat')]</cfg:field>
 			<cfg:field name="parameter" datatype="tokenizedText" lucenestorage="false" luceneindexed="true">/dif:DIF/dif:Parameters</cfg:field>
 			<cfg:field name="method" datatype="tokenizedText" lucenestorage="false" luceneindexed="true">/dif:DIF/dif:Sensor_Name</cfg:field>
@@ -42,7 +42,7 @@
 			<cfg:field name="maxMonth" datatype="number" lucenestorage="true" luceneindexed="true">substring-before(substring-after($enddate,'-'),'-')</cfg:field>
 			<cfg:field name="dataCenter" datatype="tokenizedText" lucenestorage="false" luceneindexed="true">/dif:DIF/dif:Data_Center/dif:Data_Center_Name</cfg:field>
 			<cfg:field name="dataCenterFull" datatype="string" lucenestorage="true" luceneindexed="true">/dif:DIF/dif:Data_Center/dif:Data_Center_Name/dif:Short_Name</cfg:field>
-			<cfg:default>.</cfg:default>
+			<cfg:default lucenetermvectors="termPositions">.</cfg:default>
 		</cfg:fields>
 		<cfg:documentBoost>number($boost)</cfg:documentBoost>
 		<cfg:schema>

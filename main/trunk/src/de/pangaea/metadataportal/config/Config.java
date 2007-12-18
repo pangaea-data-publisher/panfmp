@@ -102,7 +102,11 @@ public class Config {
 
 			dig.addObjectCreate("config/metadata/fields/field", FieldConfig.class);
 			dig.addSetNext("config/metadata/fields/field", "addField");
-			SetPropertiesRule r=new SetPropertiesRule();
+			String[] propAttr,propMapping;
+			SetPropertiesRule r=new SetPropertiesRule(
+				propAttr   =new String[]{"lucenestorage", "luceneindexed", "lucenetermvectors", "datatype"},
+				propMapping=new String[]{"storage",       "indexed",       "termVectors",       "dataType"}
+			);
 			r.setIgnoreMissingProperty(false);
 			dig.addRule("config/metadata/fields/field",r);
 			if (configMode==ConfigMode.HARVESTING) {
@@ -113,12 +117,15 @@ public class Config {
 
 			dig.addObjectCreate("config/metadata/fields/field-template", FieldConfig.class);
 			dig.addSetNext("config/metadata/fields/field-template", "addField");
-			r=new SetPropertiesRule();
+			r=new SetPropertiesRule(propAttr,propMapping);
 			r.setIgnoreMissingProperty(false);
 			dig.addRule("config/metadata/fields/field-template",r);
 			dig.addRule("config/metadata/fields/field-template", (configMode==ConfigMode.HARVESTING) ? new TemplateSaxRule() : SaxRule.emptyRule());
 
-			dig.addCallMethod("config/metadata/fields/default", "setDefaultField", 0);
+			// default field
+			dig.addCallMethod("config/metadata/fields/default", "setDefaultField", 2);
+			dig.addCallParam("config/metadata/fields/default", 0, "lucenetermvectors");
+			dig.addCallParam("config/metadata/fields/default", 1);
 
 			// document boost
 			dig.addCallMethod("config/metadata/documentBoost", "setDocumentBoost", 0);
@@ -211,10 +218,12 @@ public class Config {
 			if (f.xPathExpr!=null && f.xslt!=null) throw new IllegalArgumentException("It may not both XPath and template be defined");
 			if (f.datatype==FieldConfig.DataType.XHTML && f.xslt==null) throw new IllegalArgumentException("XHTML fields may only be declared as a XSLT template (using <field-template/>)");
 		}
-		if (f.lucenestorage==Field.Store.NO && !f.luceneindexed) throw new IllegalArgumentException("A field must be at least indexed and/or stored");
+		if (f.storage==Field.Store.NO && !f.indexed) throw new IllegalArgumentException("A field must be at least indexed and/or stored");
+		if (f.termVectors!=Field.TermVector.NO && (!f.indexed || f.datatype!=FieldConfig.DataType.TOKENIZEDTEXT))
+			throw new IllegalArgumentException("A field with term vectors enabled must be at least indexed and tokenized");
 		if (f.defaultValue!=null && f.datatype!=FieldConfig.DataType.NUMBER && f.datatype!=FieldConfig.DataType.DATETIME)
 			throw new IllegalArgumentException("A default value can only be given for NUMBER or DATETIME fields");
-		if ((f.datatype==FieldConfig.DataType.XML || f.datatype==FieldConfig.DataType.XHTML) && (f.luceneindexed || f.lucenestorage==Field.Store.NO))
+		if ((f.datatype==FieldConfig.DataType.XML || f.datatype==FieldConfig.DataType.XHTML) && (f.indexed || f.storage==Field.Store.NO))
 			throw new IllegalArgumentException("Fields with datatype XML or XHTML must be stored, but not indexed");
 		fields.put(f.name,f);
 	}
@@ -259,17 +268,24 @@ public class Config {
 
 	@PublicForDigesterUse
 	@Deprecated
-	public void setDefaultField(String v) throws Exception {
-		if (v==null) {
+	public void setDefaultField(String termVectors, String xpath) throws Exception {
+		// Term Vectors
+		if (termVectors!=null) {
+			FieldConfig f=new FieldConfig();
+			f.setTermVectors(termVectors);
+			defaultFieldTermVectors=f.termVectors;
+		}
+		// XPath
+		if (xpath==null) {
 			defaultField=null;
 			return;
 		}
-		v=v.trim();
-		if (".".equals(v) || "/".equals(v) || "/*".equals(v)) {
+		xpath=xpath.trim();
+		if (".".equals(xpath) || "/".equals(xpath) || "/*".equals(xpath)) {
 			defaultField=null; // all fields from SAX parser
 		} else {
 			defaultField=new ExpressionConfig();
-			defaultField.setXPath(dig,v);
+			defaultField.setXPath(dig,xpath);
 		}
 	}
 
@@ -382,6 +398,7 @@ public class Config {
 
 	public Map<String,FieldConfig> fields=new LinkedHashMap<String,FieldConfig>();
 	public ExpressionConfig defaultField=null;
+	public Field.TermVector defaultFieldTermVectors=Field.TermVector.NO;
 
 	// filters
 	public FilterConfig.FilterType filterDefault=FilterConfig.FilterType.ACCEPT;

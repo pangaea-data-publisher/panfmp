@@ -278,7 +278,7 @@ public class MetadataDocument {
 			}
 		}
 		if (log.isTraceEnabled()) log.trace("DefaultField: "+sb.toString());
-		ldoc.add(new Field(IndexConstants.FIELDNAME_CONTENT, sb.toString(), Field.Store.NO, Field.Index.TOKENIZED));
+		ldoc.add(new Field(IndexConstants.FIELDNAME_CONTENT, sb.toString(), Field.Store.NO, Field.Index.TOKENIZED, iconfig.parent.defaultFieldTermVectors));
 	}
 
 	/**
@@ -534,18 +534,18 @@ public class MetadataDocument {
 		boolean token=false;
 		switch(f.datatype) {
 			case NUMBER:
-				LuceneConversions.addDoubleTrieDocumentField(ldoc, f.name, Double.parseDouble(val), f.luceneindexed, f.lucenestorage);
+				LuceneConversions.addDoubleTrieDocumentField(ldoc, f.name, Double.parseDouble(val), f.indexed, f.storage);
 				break;
 			case DATETIME:
-				LuceneConversions.addDateTrieDocumentField(ldoc, f.name, LenientDateParser.parseDate(val), f.luceneindexed, f.lucenestorage);
+				LuceneConversions.addDateTrieDocumentField(ldoc, f.name, LenientDateParser.parseDate(val), f.indexed, f.storage);
 				break;
 			case TOKENIZEDTEXT: 
 				token=true;
 				// fall-through
 			default:
 				Field.Index in=Field.Index.NO;
-				if (f.luceneindexed) in=token?Field.Index.TOKENIZED:Field.Index.UN_TOKENIZED;
-				ldoc.add(new Field(f.name, val, f.lucenestorage, in));
+				if (f.indexed) in=token?Field.Index.TOKENIZED:Field.Index.UN_TOKENIZED;
+				ldoc.add(new Field(f.name, val, f.storage, in, f.termVectors));
 		}
 	}
 
