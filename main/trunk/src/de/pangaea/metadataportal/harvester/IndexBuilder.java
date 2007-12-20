@@ -212,13 +212,20 @@ public class IndexBuilder {
 
 				if (log.isDebugEnabled()) log.debug("Converting document: "+mdoc.toString());
 				if (log.isTraceEnabled()) log.trace("XML: "+mdoc.getXML());
-				ldocBuffer.put(new IndexerQueueEntry(mdoc.getIdentifier(),mdoc.getLuceneDocument()));
+				IndexerQueueEntry en=null;
+				try {
+					en=new IndexerQueueEntry(mdoc.getIdentifier(),mdoc.getLuceneDocument());
+				} catch (Exception e) {
+					log.error("Conversion XML to Lucene document failed for '"+mdoc.getIdentifier()+"', because: "+e);
+					throw e;
+				}
+				ldocBuffer.put(en);
 			}
 		} catch (InterruptedException ie) {
 			log.debug(ie);
 		} catch (Exception e) {
-			log.debug(e);
-			failure.set(e);
+			// only store the first error in failure variable, other errors are logged only
+			if (failure.compareAndSet(null,e)) log.debug(e); else log.error(e);
 		} finally {
 			if (runningConverters.decrementAndGet()==0) try {
 				mdocBuffer.clear();
@@ -339,9 +346,9 @@ public class IndexBuilder {
 				log.info("Index optimized.");
 			}
 		} catch (IOException e) {
-			log.debug(e);
 			if (!finished) log.warn("Only "+deleted+" docs presumably deleted (only if existent) and "+updated+" docs (re-)indexed before the following error occurred: "+e);
-			failure.set(e);
+			// only store the first error in failure variable, other errors are logged only
+			if (!failure.compareAndSet(null,e)) log.error(e);
 		} finally {
 			ldocBuffer.clear();
 			// notify eventually waiting checkIndexerBuffer() calls
