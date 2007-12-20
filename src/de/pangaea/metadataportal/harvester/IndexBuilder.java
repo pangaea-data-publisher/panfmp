@@ -339,6 +339,7 @@ public class IndexBuilder {
 			if (BooleanParser.parseBoolean(iconfig.harvesterProperties.getProperty("autoOptimize","false"))) {
 				if (writer==null) {
 					writer=new IndexWriter(dir, true, iconfig.parent.getAnalyzer(), false);
+					if (iwlog.isDebugEnabled()) writer.setInfoStream(LogUtil.getDebugStream(iwlog));					
 					writer.setMaxFieldLength(Integer.MAX_VALUE);
 				}
 				log.info("Optimizing index...");
