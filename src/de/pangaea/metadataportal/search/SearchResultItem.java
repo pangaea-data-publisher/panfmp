@@ -102,7 +102,7 @@ public class SearchResultItem {
 			for (String val : data) try {
 				switch(f.datatype) {
 					case NUMBER:
-						vals.add(new Double(LuceneConversions.luceneToDouble(val))); break;
+						vals.add(Double.valueOf(LuceneConversions.luceneToDouble(val))); break;
 					case DATETIME:
 						vals.add(LuceneConversions.luceneToDate(val)); break;
 					default:
