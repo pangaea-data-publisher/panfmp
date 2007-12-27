@@ -119,13 +119,13 @@ public final class XPathResolverImpl implements XPathFunctionResolver,XPathVaria
 				}
 			}
 			// if no other indexes present, identifier is unique!
-			if (indexIds.isEmpty()) return new Boolean(true);
+			if (indexIds.isEmpty()) return Boolean.TRUE;
 			// fetch a MultiReader from cache to search for identifiers
 			IndexReader reader=openIndexReader(index.iconfig.parent,indexIds);
 			Term t=new Term(IndexConstants.FIELDNAME_IDENTIFIER,identifier);
 			TermDocs td=reader.termDocs(t);
 			try {
-				return new Boolean(!td.next());
+				return Boolean.valueOf(!td.next());
 			} finally {
 				td.close();
 			}
