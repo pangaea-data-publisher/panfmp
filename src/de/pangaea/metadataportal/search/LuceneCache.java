@@ -93,7 +93,7 @@ public class LuceneCache {
 				// create new session
 				sess=new Session(this,index.newSearcher(),query,sort);
 				sessions.put(id,sess);
-				log.info("Created session: "+sess);
+				log.info("Created session: index={"+index.id+"}; query={"+query.toString(IndexConstants.FIELDNAME_CONTENT)+"}; sorting={"+sort+"}");
 			} else {
 				// return old one
 				sess.logAccess();
@@ -196,7 +196,6 @@ public class LuceneCache {
 	protected static final class Session {
 
 		protected Session(LuceneCache parent, Searcher searcher, Query query, Sort sort) {
-			identifier="query={"+query.toString(IndexConstants.FIELDNAME_CONTENT)+"}; sorting={"+sort+"}";
 			this.parent=parent;
 			this.searcher=searcher;
 			this.query=query;
@@ -220,13 +219,7 @@ public class LuceneCache {
 			return new SearchResultList(this, parent.getFieldSelector(loadXml,fieldsToLoad));
 		}
 
-		@Override
-		public String toString() {
-			return identifier;
-		}
-
 		protected LuceneCache parent;
-		protected String identifier;
 		protected Searcher searcher;
 		protected Hits hits;
 		protected long lastAccess;
