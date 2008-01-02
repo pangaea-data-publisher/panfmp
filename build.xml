@@ -13,7 +13,7 @@
 	<property name="versionsuffix" value="-${version}"/>
 	<property name="pkgname" value="${ant.project.name}${versionsuffix}"/>
 	
-	<property name="year" value="2007"/>
+	<property name="year" value="2007-2008"/>
 	
 	<property name="javadoc.projectWebSite" value="http://www.panFMP.org/" />
 	<property name="javadoc.link.sun" value="http://java.sun.com/j2se/1.5/docs/api/" />
