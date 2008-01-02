@@ -19,10 +19,13 @@ package de.pangaea.metadataportal.harvester;
 import de.pangaea.metadataportal.utils.*;
 import de.pangaea.metadataportal.config.*;
 import java.util.*;
-import java.net.URL;
+import java.net.*;
 import java.io.*;
+import java.util.zip.*;
 import java.util.concurrent.atomic.AtomicReference;
 import org.xml.sax.InputSource;
+import org.xml.sax.EntityResolver;
+import org.xml.sax.SAXException;
 
 /**
  * Abstract base class for OAI harvesting support in panFMP.
@@ -42,6 +45,7 @@ public abstract class OAIHarvesterBase extends Harvester {
 
 	public static final int DEFAULT_RETRY_TIME = 60; // seconds
 	public static final int DEFAULT_RETRY_COUNT = 5;
+	public static final int DEFAULT_TIMEOUT = 180; // seconds
 
 	/** the used metadata prefix  from the configuration */
 	protected String metadataPrefix=null;
@@ -51,23 +55,24 @@ public abstract class OAIHarvesterBase extends Harvester {
 	protected int retryCount=DEFAULT_RETRY_COUNT;
 	/** the retryTime from configuration */
 	protected int retryTime=DEFAULT_RETRY_TIME;
+	/** the oai download component to be used */
+	protected int timeout=DEFAULT_TIMEOUT;
 
 	// construtor
 	@Override
 	public void open(SingleIndexConfig iconfig) throws Exception {
 		super.open(iconfig);
 
-		String setSpec=iconfig.harvesterProperties.getProperty("setSpec");
-		if (setSpec!=null) {
+		String s=iconfig.harvesterProperties.getProperty("setSpec");
+		if (s!=null) {
 			sets=new HashSet<String>();
-			Collections.addAll(sets,setSpec.split("[\\,\\;\\s]+"));
+			Collections.addAll(sets,s.split("[\\,\\;\\s]+"));
 			if (sets.size()==0) sets=null;
 		}
 
-		String retryCountStr=iconfig.harvesterProperties.getProperty("retryCount");
-		if (retryCountStr!=null) retryCount=Integer.parseInt(retryCountStr);
-		String retryTimeStr=iconfig.harvesterProperties.getProperty("retryAfterSeconds");
-		if (retryTimeStr!=null) retryTime=Integer.parseInt(retryTimeStr);
+		if ((s=iconfig.harvesterProperties.getProperty("retryCount"))!=null) retryCount=Integer.parseInt(s);
+		if ((s=iconfig.harvesterProperties.getProperty("retryAfterSeconds"))!=null) retryTime=Integer.parseInt(s);
+		if ((s=iconfig.harvesterProperties.getProperty("timeoutAfterSeconds"))!=null) timeout=Integer.parseInt(s);
 		metadataPrefix=iconfig.harvesterProperties.getProperty("metadataPrefix");
 		if (metadataPrefix==null) throw new NullPointerException("No metadataPrefix for the OAI repository was given!");
 	}
@@ -89,37 +94,139 @@ public abstract class OAIHarvesterBase extends Harvester {
 	 * @return <code>true</code> if harvested, <code>false</code> if not modified and no harvesting was done.
 	 */
 	protected boolean doParse(ExtendedDigester dig, String url, AtomicReference<Date> checkModifiedDate) throws Exception {
-		return doParse(dig,url,this.retryCount,checkModifiedDate);
-	}
-	
-	private boolean doParse(ExtendedDigester dig, String url, int retryCount, AtomicReference<Date> checkModifiedDate) throws Exception {
 		URL u=new URL(url);
-		try {
-			dig.clear();
-			dig.resetRoot();
-			dig.push(this);
-			InputSource is=OAIDownload.getInputSource(u,checkModifiedDate);
-			if (checkModifiedDate!=null && is==null) return false;
-			dig.parse(is);
-		} catch (org.xml.sax.SAXException saxe) {
-			// throw the real Exception not the digester one
-			if (saxe.getException()!=null) throw saxe.getException();
-			else throw saxe;
-		} catch (IOException ioe) {
-			int after=retryTime;
-			if (ioe instanceof RetryAfterIOException) {
-				if (retryCount==0) throw (IOException)ioe.getCause();
-				log.warn("OAI server returned '503 Service Unavailable' with a 'Retry-After' value being set.");
-				after=((RetryAfterIOException)ioe).getRetryAfter();
-			} else {
-				if (retryCount==0) throw ioe;
-				log.error("OAI server access failed with exception: ",ioe);
+		for (int retry=0; retry<=retryCount; retry++) {
+			try {
+				dig.clear();
+				dig.resetRoot();
+				dig.push(this);
+				InputSource is=getInputSource(u,checkModifiedDate);
+				if (checkModifiedDate!=null && is==null) return false;
+				dig.parse(is);
+				return true;
+			} catch (org.xml.sax.SAXException saxe) {
+				// throw the real Exception not the digester one
+				if (saxe.getException()!=null) throw saxe.getException();
+				else throw saxe;
+			} catch (IOException ioe) {
+				int after=retryTime;
+				if (ioe instanceof RetryAfterIOException) {
+					if (retry>=retryCount) throw (IOException)ioe.getCause();
+					log.warn("OAI server returned '503 Service Unavailable' with a 'Retry-After' value being set.");
+					after=((RetryAfterIOException)ioe).getRetryAfter();
+				} else {
+					if (retry>=retryCount) throw ioe;
+					log.error("OAI server access failed with exception: ",ioe);
+				}
+				log.info("Retrying after "+after+" seconds ("+(retryCount-retry)+" retries left)...");
+				try { Thread.sleep(1000L*after); } catch (InterruptedException ie) {}
 			}
-			log.info("Retrying after "+after+" seconds ("+retryCount+" retries left)...");
-			try { Thread.sleep(1000L*after); } catch (InterruptedException ie) {}
-			return doParse(dig,url,retryCount-1,checkModifiedDate);
 		}
-		return true;
+		throw new IOException("Unable to properly connect OAI server.");
+	}
+
+	/** Returns an <code>EntityResolver</code> that resolves all HTTP-URLS using {@link #getInputSource}.
+	 * @param parent an <code>EntityResolver</code> that receives all unprocessed requests
+	 * @see #getInputSource
+	 */
+	protected EntityResolver getEntityResolver(final EntityResolver parent) {
+		return new EntityResolver() {
+			public InputSource resolveEntity(String publicId, String systemId) throws IOException,SAXException {
+				try {
+				   URL url=new URL(systemId);
+				   String proto=url.getProtocol().toLowerCase();
+				   if ("http".equals(proto) || "https".equals(proto)) return getInputSource(url,null);
+				   else return (parent==null)?null:parent.resolveEntity(publicId,systemId);
+				} catch (MalformedURLException malu) {
+					return (parent==null)?null:parent.resolveEntity(publicId,systemId);
+				}
+			}
+		};
+	}
+
+	/** Returns a SAX <code>InputSource</code> for retrieving stream data of an URL. It is optimized for compression of the HTTP(S) protocol and timeout checking.
+	 * @param url the URL to open
+	 * @param checkModifiedDate for static repositories, it is possible to give a reference to a {@link Date} for checking the last modification, in this case
+	 * <code>false</code> is returned, if the URL was not modified. If it was modified, the reference contains a new <code>Date</code> object with the new modification date.
+	 * Supply <code>null</code> for no checking of last modification, a last modification date is then not returned back (as there is no reference).
+	 * @see #getEntityResolver
+	 */
+	protected InputSource getInputSource(URL url, AtomicReference<Date> checkModifiedDate) throws IOException {
+		String proto=url.getProtocol().toLowerCase();
+		if (!("http".equals(proto) || "https".equals(proto)))
+			throw new IllegalArgumentException("OAI only allows HTTP(S) as network protocol!");
+		HttpURLConnection conn=(HttpURLConnection)url.openConnection();
+		conn.setConnectTimeout(timeout*1000);
+		conn.setReadTimeout(timeout*1000);		
+
+		StringBuilder ua=new StringBuilder("Java/");
+		ua.append(System.getProperty("java.version"));
+		ua.append(" (").append(de.pangaea.metadataportal.Package.getProductName()).append('/');
+		ua.append(de.pangaea.metadataportal.Package.getVersion()).append("; OAI downloader)");
+		conn.setRequestProperty("User-Agent",ua.toString());
+
+		conn.setRequestProperty("Accept-Encoding","gzip, deflate, identity;q=0.3, *;q=0");
+		conn.setRequestProperty("Accept-Charset","utf-8, *;q=0.1");
+		conn.setRequestProperty("Accept","text/xml, application/xml, *;q=0.1");
+		
+		if (checkModifiedDate!=null && checkModifiedDate.get()!=null) conn.setIfModifiedSince(checkModifiedDate.get().getTime());
+
+		conn.setUseCaches(false);
+		conn.setFollowRedirects(true);
+		log.debug("Opening connection...");
+		InputStream in=null;
+		try {
+			conn.connect();
+			in=conn.getInputStream();
+		} catch (IOException ioe) {
+			int after,code;
+			try {
+				after=conn.getHeaderFieldInt("Retry-After",-1);
+				code=conn.getResponseCode();
+			} catch (IOException ioe2) {
+				after=-1; code=-1;
+			}
+			if (code==HttpURLConnection.HTTP_UNAVAILABLE && after>0) throw new RetryAfterIOException(after,ioe);
+			throw ioe;
+		}
+		
+		if (checkModifiedDate!=null) {
+			if (conn.getResponseCode()==HttpURLConnection.HTTP_NOT_MODIFIED) {
+				log.debug("File not modified since "+checkModifiedDate.get());
+				return null;
+			}
+			long d=conn.getLastModified();
+			checkModifiedDate.set( (d==0) ? null : new Date(d) );
+		}
+		
+		String encoding=conn.getContentEncoding();
+		if (encoding==null) encoding="identity";
+		encoding=encoding.toLowerCase();
+		log.debug("HTTP server uses "+encoding+" content encoding.");
+		if ("gzip".equals(encoding)) in=new GZIPInputStream(in);
+		else if ("deflate".equals(encoding)) in=new InflaterInputStream(in);
+		else if (!"identity".equals(encoding)) throw new IOException("Server uses an invalid content encoding: "+encoding);
+
+		// get charset from content-type to fill into InputSource to prevent SAXParser from guessing it
+		// if charset is superseded by <?xml ?> declaration, it is changed later by parser
+		String contentType=conn.getContentType();
+		String charset=null;
+		if (contentType!=null) {
+			contentType=contentType.toLowerCase();
+			int charsetStart=contentType.indexOf("charset=");
+			if (charsetStart>=0) {
+				int charsetEnd=contentType.indexOf(";",charsetStart);
+				if (charsetEnd==-1) charsetEnd=contentType.length();
+				charsetStart+="charset=".length();
+				charset=contentType.substring(charsetStart,charsetEnd).trim();
+			}
+		}
+		log.debug("Charset from Content-Type: '"+charset+"'");
+
+		InputSource src=new InputSource(in);
+		src.setSystemId(url.toString());
+		src.setEncoding(charset);
+		return src;
 	}
 
 	/** Resets the internal variables. */
@@ -139,6 +246,7 @@ public abstract class OAIHarvesterBase extends Harvester {
 			"setSpec",
 			"retryCount",
 			"retryAfterSeconds",
+			"timeoutAfterSeconds",
 			"metadataPrefix"
 		));
 	}
