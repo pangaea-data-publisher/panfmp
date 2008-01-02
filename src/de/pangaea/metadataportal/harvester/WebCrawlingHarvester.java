@@ -49,6 +49,7 @@ public class WebCrawlingHarvester extends Harvester {
 
 	public static final int DEFAULT_RETRY_TIME = 60; // seconds
 	public static final int DEFAULT_RETRY_COUNT = 5;
+	public static final int DEFAULT_TIMEOUT = 180; // seconds
 
 	/**
 	 * This is the parser class used to parse HTML documents to collect URLs for crawling.
@@ -65,6 +66,7 @@ public class WebCrawlingHarvester extends Harvester {
 	private Set<String> validIdentifiers=null;
 	private int retryCount=DEFAULT_RETRY_COUNT;
 	private int retryTime=DEFAULT_RETRY_TIME;
+	private int timeout=DEFAULT_TIMEOUT;
 	private long pauseBetweenRequests=0;
 
 	private Set<String> harvested=new HashSet<String>();
@@ -91,12 +93,10 @@ public class WebCrawlingHarvester extends Harvester {
 			if (!"".equals(c)) contentTypes.add(c);
 		}
 
-		String retryCountStr=iconfig.harvesterProperties.getProperty("retryCount");
-		if (retryCountStr!=null) retryCount=Integer.parseInt(retryCountStr);
-		String retryTimeStr=iconfig.harvesterProperties.getProperty("retryAfterSeconds");
-		if (retryTimeStr!=null) retryTime=Integer.parseInt(retryTimeStr);
-		String pauseBetweenRequestsStr=iconfig.harvesterProperties.getProperty("pauseBetweenRequests");
-		if (pauseBetweenRequestsStr!=null) pauseBetweenRequests=Long.parseLong(pauseBetweenRequestsStr);
+		if ((s=iconfig.harvesterProperties.getProperty("retryCount"))!=null) retryCount=Integer.parseInt(s);
+		if ((s=iconfig.harvesterProperties.getProperty("retryAfterSeconds"))!=null) retryTime=Integer.parseInt(s);
+		if ((s=iconfig.harvesterProperties.getProperty("timeoutAfterSeconds"))!=null) timeout=Integer.parseInt(s);
+		if ((s=iconfig.harvesterProperties.getProperty("pauseBetweenRequests"))!=null) pauseBetweenRequests=Long.parseLong(s);
 
 		s=iconfig.harvesterProperties.getProperty("filenameFilter");
 		filenameFilter=(s==null) ? null : Pattern.compile(s);
@@ -122,7 +122,7 @@ public class WebCrawlingHarvester extends Harvester {
 		// process this URL directly and save possible redirect as new base
 		String urlStr=baseURL; baseURL=""; // disable base checking for the entry point to follow a initial redirect for sure
 		harvested.add(urlStr);
-		URL newbaseURL=processURL(new URL(urlStr),retryCount);
+		URL newbaseURL=processURL(new URL(urlStr));
 
 		// get an URL that points to the current directory
 		// from now on this is used as baseURL
@@ -145,7 +145,7 @@ public class WebCrawlingHarvester extends Harvester {
 			urlStr=needsHarvest.first();
 			needsHarvest.remove(urlStr);
 			harvested.add(urlStr);
-			processURL(new URL(urlStr),retryCount);
+			processURL(new URL(urlStr));
 		}
 
 		// update this for next harvesting
@@ -160,6 +160,7 @@ public class WebCrawlingHarvester extends Harvester {
 			"baseUrl",
 			"retryCount",
 			"retryAfterSeconds",
+			"timeoutAfterSeconds",
 			"filenameFilter",
 			"contentTypes",
 			"excludeUrlPattern",
@@ -187,6 +188,8 @@ public class WebCrawlingHarvester extends Harvester {
 
 	private InputStream sendHTTPRequest(HttpURLConnection conn, String method) throws IOException {
 		try {
+			conn.setConnectTimeout(timeout*1000);
+			conn.setReadTimeout(timeout*1000);
 			conn.setRequestMethod(method);
 
 			StringBuilder ua=new StringBuilder("Java/");
@@ -336,115 +339,116 @@ public class WebCrawlingHarvester extends Harvester {
 		return m.matches();
 	}
 
-	private URL processURL(URL url, int retryCount) throws Exception {
-		log.info("Requesting props of '"+url+"'...");
+	private URL processURL(URL url) throws Exception {
+		for (int retry=0; retry<=retryCount; retry++) {
+			log.info("Requesting props of '"+url+"'...");
+			try {
+				HttpURLConnection conn=(HttpURLConnection)url.openConnection();
+				InputStream in=sendHTTPRequest(conn,"HEAD");
+				if (in==null) return url;
+				in.close(); // it is empty
 
-		try {
-			HttpURLConnection conn=(HttpURLConnection)url.openConnection();
-			InputStream in=sendHTTPRequest(conn,"HEAD");
-			if (in==null) return url;
-			in.close(); // it is empty
+				// set the harvest date to the first received timestamp from server
+				if (firstDateFound==null && conn.getDate()!=0L) firstDateFound=new java.util.Date(conn.getDate());
 
-			// set the harvest date to the first received timestamp from server
-			if (firstDateFound==null && conn.getDate()!=0L) firstDateFound=new java.util.Date(conn.getDate());
-
-			// check connection properties
-			String contentType=conn.getContentType();
-			String charset=null;
-			if (contentType!=null) {
-				contentType=contentType.toLowerCase();
-				int charsetStart=contentType.indexOf("charset=");
-				if (charsetStart>=0) {
-					int charsetEnd=contentType.indexOf(";",charsetStart);
-					if (charsetEnd==-1) charsetEnd=contentType.length();
-					charsetStart+="charset=".length();
-					charset=contentType.substring(charsetStart,charsetEnd).trim();
+				// check connection properties
+				String contentType=conn.getContentType();
+				String charset=null;
+				if (contentType!=null) {
+					contentType=contentType.toLowerCase();
+					int charsetStart=contentType.indexOf("charset=");
+					if (charsetStart>=0) {
+						int charsetEnd=contentType.indexOf(";",charsetStart);
+						if (charsetEnd==-1) charsetEnd=contentType.length();
+						charsetStart+="charset=".length();
+						charset=contentType.substring(charsetStart,charsetEnd).trim();
+					}
+					int contentEnd=contentType.indexOf(';');
+					if (contentEnd>=0) contentType=contentType.substring(0,contentEnd);
+					contentType=contentType.trim();
 				}
-				int contentEnd=contentType.indexOf(';');
-				if (contentEnd>=0) contentType=contentType.substring(0,contentEnd);
-				contentType=contentType.trim();
-			}
-			log.debug("Charset from Content-Type: '"+charset+"'; Type from Content-Type: '"+contentType+"'");
-			if (contentType==null) {
-				log.warn("Connection to URL '"+url+"' did not return a content-type, skipping.");
-				return url;
-			}
-
-			// if we got a redirect the new URL is now needed
-			URL newurl=conn.getURL();
-			if (!url.toString().equals(newurl.toString())) {
-				log.debug("Got redirect to: "+newurl);
-				url=newurl;
-				// check if it is below base
-				if (!url.toString().startsWith(baseURL)) return url;
-				// was it already harvested?
-				if (harvested.contains(url.toString())) return url;
-				// clean this new url from lists
-				needsHarvest.remove(url.toString());
-				harvested.add(url.toString());
-			}
-
-			if ("text/html".equals(contentType)) {
-				log.info("Analyzing HTML links in '"+url+"'...");
-
-				// reopen for GET
-				conn=(HttpURLConnection)url.openConnection();
-				in=sendHTTPRequest(conn,"GET");
-				if (in!=null) try {
-					InputSource src=new InputSource(in);
-					src.setSystemId(url.toString());
-					src.setEncoding(charset);
-					analyzeHTML(url,src);
-				} finally {
-					in.close();
+				log.debug("Charset from Content-Type: '"+charset+"'; Type from Content-Type: '"+contentType+"'");
+				if (contentType==null) {
+					log.warn("Connection to URL '"+url+"' did not return a content-type, skipping.");
+					return url;
 				}
-			} else if (contentTypes.contains(contentType)) {
-				if (acceptFile(url)) {
-					if (validIdentifiers!=null) validIdentifiers.add(url.toString());
 
-					Date lastModified=null;
-					if (conn.getLastModified()!=0L) lastModified=new java.util.Date(conn.getLastModified());
-					if (lastModified!=null && fromDateReference!=null && lastModified.getTime()<fromDateReference.getTime()) return url;
+				// if we got a redirect the new URL is now needed
+				URL newurl=conn.getURL();
+				if (!url.toString().equals(newurl.toString())) {
+					log.debug("Got redirect to: "+newurl);
+					url=newurl;
+					// check if it is below base
+					if (!url.toString().startsWith(baseURL)) return url;
+					// was it already harvested?
+					if (harvested.contains(url.toString())) return url;
+					// clean this new url from lists
+					needsHarvest.remove(url.toString());
+					harvested.add(url.toString());
+				}
 
-					log.info("Harvesting '"+url+"'...");
+				if ("text/html".equals(contentType)) {
+					log.info("Analyzing HTML links in '"+url+"'...");
 
-					// reopen for GET and parse as XML
+					// reopen for GET
 					conn=(HttpURLConnection)url.openConnection();
 					in=sendHTTPRequest(conn,"GET");
 					if (in!=null) try {
-						MetadataDocument mdoc=new MetadataDocument();
-						mdoc.setIdentifier(url.toString());
-						mdoc.setDatestamp(lastModified);
-
-						// a SAX InputSource is used because we can set the default encoding from the HTTP headers
-						// if charset is superseded by <?xml ?> declaration, it is changed later by parser
 						InputSource src=new InputSource(in);
 						src.setSystemId(url.toString());
 						src.setEncoding(charset);
-						SAXSource ss=new SAXSource(StaticFactories.xinclSaxFactory.newSAXParser().getXMLReader(), src);
-						mdoc.setDOM(xmlConverter.transform(ss));
-
-						addDocument(mdoc);
+						analyzeHTML(url,src);
 					} finally {
 						in.close();
 					}
+				} else if (contentTypes.contains(contentType)) {
+					if (acceptFile(url)) {
+						if (validIdentifiers!=null) validIdentifiers.add(url.toString());
+
+						Date lastModified=null;
+						if (conn.getLastModified()!=0L) lastModified=new java.util.Date(conn.getLastModified());
+						if (lastModified!=null && fromDateReference!=null && lastModified.getTime()<fromDateReference.getTime()) return url;
+
+						log.info("Harvesting '"+url+"'...");
+
+						// reopen for GET and parse as XML
+						conn=(HttpURLConnection)url.openConnection();
+						in=sendHTTPRequest(conn,"GET");
+						if (in!=null) try {
+							MetadataDocument mdoc=new MetadataDocument();
+							mdoc.setIdentifier(url.toString());
+							mdoc.setDatestamp(lastModified);
+
+							// a SAX InputSource is used because we can set the default encoding from the HTTP headers
+							// if charset is superseded by <?xml ?> declaration, it is changed later by parser
+							InputSource src=new InputSource(in);
+							src.setSystemId(url.toString());
+							src.setEncoding(charset);
+							SAXSource ss=new SAXSource(StaticFactories.xinclSaxFactory.newSAXParser().getXMLReader(), src);
+							mdoc.setDOM(xmlConverter.transform(ss));
+
+							addDocument(mdoc);
+						} finally {
+							in.close();
+						}
+					}
 				}
+				return url;
+			} catch (IOException ioe) {
+				int after=retryTime;
+				if (ioe instanceof RetryAfterIOException) {
+					if (retry>=retryCount) throw (IOException)ioe.getCause();
+					log.warn("HTTP server returned '503 Service Unavailable' with a 'Retry-After' value being set.");
+					after=((RetryAfterIOException)ioe).getRetryAfter();
+				} else {
+					if (retry>=retryCount) throw ioe;
+					log.error("HTTP server access failed with exception: ",ioe);
+				}
+				log.info("Retrying after "+after+" seconds ("+(retryCount-retry)+" retries left)...");
+				try { Thread.sleep(1000L*after); } catch (InterruptedException ie) {}
 			}
-		} catch (IOException ioe) {
-			int after=retryTime;
-			if (ioe instanceof RetryAfterIOException) {
-				if (retryCount==0) throw (IOException)ioe.getCause();
-				log.warn("HTTP server returned '503 Service Unavailable' with a 'Retry-After' value being set.");
-				after=((RetryAfterIOException)ioe).getRetryAfter();
-			} else {
-				if (retryCount==0) throw ioe;
-				log.error("HTTP server access failed with exception: ",ioe);
-			}
-			log.info("Retrying after "+after+" seconds ("+retryCount+" retries left)...");
-			try { Thread.sleep(1000L*after); } catch (InterruptedException ie) {}
-			return processURL(url,retryCount-1);
 		}
-		return url;
+		throw new IOException("Unable to properly connect HTTP server.");		
 	}
 
 }
