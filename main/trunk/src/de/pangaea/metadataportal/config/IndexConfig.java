@@ -37,6 +37,11 @@ public abstract class IndexConfig {
 		if (displayName==null || "".equals(displayName)) throw new IllegalStateException("Index with id=\""+id+"\" has no displayName!");
 		checked=true;
 	}
+	
+	@Override
+	protected void finalize() throws java.io.IOException {
+		closeIndex();
+	}	
 
 	// Searcher
 	public abstract org.apache.lucene.search.Searcher newSearcher() throws java.io.IOException;
@@ -47,9 +52,7 @@ public abstract class IndexConfig {
 	public abstract boolean isIndexAvailable() throws java.io.IOException;
 	public abstract boolean isIndexCurrent() throws java.io.IOException;
 	public abstract void reopenIndex() throws java.io.IOException;
-
-	public void closeIndex() throws java.io.IOException {
-	}
+	public abstract void closeIndex() throws java.io.IOException;
 
 	protected boolean checked=false;
 

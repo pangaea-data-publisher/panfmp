@@ -116,11 +116,16 @@ public class VirtualIndexConfig extends IndexConfig {
 	}
 
 	@Override
-	public synchronized void reopenIndex() throws java.io.IOException {
+	public void reopenIndex() throws java.io.IOException {
 		if (indexes==null) throw new IllegalStateException("Virtual index configuration with id=\""+id+"\" not yet checked and initialized!");
 		for (int i=0, c=indexes.length; i<c; i++) indexes[i].reopenIndex();
 	}
 
+	@Override
+	public void closeIndex() throws java.io.IOException {
+		// nothing to do here
+	}
+		
 	private Set<String> indexIds=new HashSet<String>();
 
 	// members "the configuration"
