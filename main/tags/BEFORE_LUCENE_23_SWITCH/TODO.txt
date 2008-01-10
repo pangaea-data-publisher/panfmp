@@ -1,0 +1,5 @@
+Harvester:
+* Completely rebuilding index from source without deleting old one having readers online (new commit lock-less usage!)
+
+Search:
+o/o
