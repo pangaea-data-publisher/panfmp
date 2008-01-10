@@ -101,7 +101,7 @@ public class SingleIndexConfig extends IndexConfig {
 
 	@Override
 	public synchronized void reopenIndex() throws java.io.IOException {
-		closeIndex();
+		if (indexReader!=null) indexReader=indexReader.reopen();
 	}
 
 	@Override
