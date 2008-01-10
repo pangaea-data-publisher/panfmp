@@ -66,7 +66,7 @@ public final class Package {
 	 */
 	public static void checkMinimumRequirements() {
 		java.lang.Package lpkg=org.apache.lucene.LucenePackage.get();
-		if (lpkg==null || !lpkg.isCompatibleWith("2.2.0"))
+		if (lpkg==null || !lpkg.isCompatibleWith("2.3"))
 			throw new RuntimeException(getProductName()+" only runs with Apache Lucene 2.2.0 as a minimum requirement!");
 	}
 
