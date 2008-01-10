@@ -101,12 +101,15 @@ public class SingleIndexConfig extends IndexConfig {
 
 	@Override
 	public synchronized void reopenIndex() throws java.io.IOException {
-		if (indexReader!=null) indexReader=indexReader.reopen();
-	}
-
-	@Override
-	protected void finalize() throws java.io.IOException {
-		closeIndex();
+		if (indexReader!=null) {
+			org.apache.lucene.index.IndexReader n=indexReader.reopen();
+			if (n!=indexReader) try {
+				// reader was really reopened
+				indexReader.close();
+			} finally {
+				indexReader=n;
+			}
+		}
 	}
 
 	@Override
