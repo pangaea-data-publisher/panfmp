@@ -128,11 +128,8 @@ public class LuceneCache {
 				// reopen indexes after RELOAD_AFTER secs. from detection of change
 				if (indexChanged && now-indexChangedAt>((long)reloadIndexIfChangedAfter)*1000L) {
 					for (IndexConfig cfg : config.indexes.values()) {
-						// only scan real indexes, the others will be implicitely reopened
-						if (cfg instanceof SingleIndexConfig) {
-							log.info("Reopening index '"+cfg.id+"'.");
-							cfg.reopenIndex();
-						}
+						log.info("Reopening index '"+cfg.id+"'.");
+						cfg.reopenIndex();
 					}
 					
 					sessions.clear();
