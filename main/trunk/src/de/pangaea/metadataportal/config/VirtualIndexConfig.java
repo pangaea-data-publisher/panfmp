@@ -72,12 +72,12 @@ public class VirtualIndexConfig extends IndexConfig {
 	@Override
 	public org.apache.lucene.search.Searcher newSearcher() throws java.io.IOException {
 		if (indexes==null) throw new IllegalStateException("Virtual index configuration with id=\""+id+"\" not yet checked and initialized!");
-		org.apache.lucene.search.Searchable[] l=new org.apache.lucene.search.Searchable[indexes.length];
-		for (int i=0, c=indexes.length; i<c; i++) l[i]=indexes[i].newSearcher();
 		if (threaded) {
+			org.apache.lucene.search.Searchable[] l=new org.apache.lucene.search.Searchable[indexes.length];
+			for (int i=0, c=indexes.length; i<c; i++) l[i]=indexes[i].newSearcher();
 			return new org.apache.lucene.search.ParallelMultiSearcher(l);
 		} else {
-			return new org.apache.lucene.search.MultiSearcher(l);
+			return new org.apache.lucene.search.IndexSearcher(getIndexReader());
 		}
 	}
 
