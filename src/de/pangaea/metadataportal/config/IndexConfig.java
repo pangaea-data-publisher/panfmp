@@ -16,6 +16,10 @@
 
 package de.pangaea.metadataportal.config;
 
+import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.search.Searcher;
+import org.apache.lucene.search.IndexSearcher;
+
 /**
  * Abstract configuration of an panFMP index. It not only configures its properties like name/id,
  * it also contains methods to get some index access objects (IndexReader, Searcher) and status information.
@@ -44,11 +48,13 @@ public abstract class IndexConfig {
 	}	
 
 	// Searcher
-	public abstract org.apache.lucene.search.Searcher newSearcher() throws java.io.IOException;
+	public Searcher newSearcher() throws java.io.IOException {
+		return new IndexSearcher(getIndexReader());
+	}
+
 	// Reader
-	public abstract org.apache.lucene.index.IndexReader getIndexReader() throws java.io.IOException;
-	public abstract org.apache.lucene.index.IndexReader getUncachedIndexReader() throws java.io.IOException;
-	// check if current opened reader is current
+	public abstract IndexReader getIndexReader() throws java.io.IOException;
+	public abstract IndexReader getUncachedIndexReader() throws java.io.IOException;
 	public abstract boolean isIndexAvailable() throws java.io.IOException;
 	public abstract boolean isIndexCurrent() throws java.io.IOException;
 	public abstract void reopenIndex() throws java.io.IOException;

@@ -18,6 +18,8 @@ package de.pangaea.metadataportal.config;
 
 import de.pangaea.metadataportal.utils.PublicForDigesterUse;
 import de.pangaea.metadataportal.utils.BooleanParser;
+import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.MultiReader;
 import java.util.*;
 
 /**
@@ -46,12 +48,6 @@ public class VirtualIndexConfig extends IndexConfig {
 		for (String s : v) addIndex(s);
 	}
 
-	@PublicForDigesterUse
-	@Deprecated
-	public void setThreaded(String v) {
-		threaded=BooleanParser.parseBoolean(v.trim());
-	}
-
 	@Override
 	public void check() {
 		super.check();
@@ -68,43 +64,23 @@ public class VirtualIndexConfig extends IndexConfig {
 		}
 	}
 
-	// Searcher
 	@Override
-	public org.apache.lucene.search.Searcher newSearcher() throws java.io.IOException {
+	public synchronized IndexReader getIndexReader() throws java.io.IOException {
 		if (indexes==null) throw new IllegalStateException("Virtual index configuration with id=\""+id+"\" not yet checked and initialized!");
-		if (threaded) {
-			org.apache.lucene.search.Searchable[] l=new org.apache.lucene.search.Searchable[indexes.length];
-			for (int i=0, c=indexes.length; i<c; i++) l[i]=indexes[i].newSearcher();
-			return new org.apache.lucene.search.ParallelMultiSearcher(l);
-		} else {
-			return new org.apache.lucene.search.IndexSearcher(getIndexReader());
+		if (indexReader==null) {
+			IndexReader[] l=new IndexReader[indexes.length];
+			for (int i=0, c=indexes.length; i<c; i++) l[i]=indexes[i].getIndexReader();
+			indexReader=new MultiReader(l,false);
 		}
-	}
-
-	// Reader
-	@Override
-	public org.apache.lucene.index.IndexReader getIndexReader() throws java.io.IOException {
-		if (indexes==null) throw new IllegalStateException("Virtual index configuration with id=\""+id+"\" not yet checked and initialized!");
-		org.apache.lucene.index.IndexReader[] l=new org.apache.lucene.index.IndexReader[indexes.length];
-		for (int i=0, c=indexes.length; i<c; i++) l[i]=indexes[i].getIndexReader();
-		return new org.apache.lucene.index.MultiReader(l,false);
+		return indexReader;
 	}
 
 	@Override
-	public org.apache.lucene.index.IndexReader getUncachedIndexReader() throws java.io.IOException {
+	public IndexReader getUncachedIndexReader() throws java.io.IOException {
 		if (indexes==null) throw new IllegalStateException("Virtual index configuration with id=\""+id+"\" not yet checked and initialized!");
-		org.apache.lucene.index.IndexReader[] l=new org.apache.lucene.index.IndexReader[indexes.length];
+		IndexReader[] l=new IndexReader[indexes.length];
 		for (int i=0, c=indexes.length; i<c; i++) l[i]=indexes[i].getUncachedIndexReader();
-		return new org.apache.lucene.index.MultiReader(l,true);
-	}
-
-	// check if current opened reader is current
-	@Override
-	public synchronized boolean isIndexCurrent() throws java.io.IOException {
-		if (indexes==null) throw new IllegalStateException("Virtual index configuration with id=\""+id+"\" not yet checked and initialized!");
-		boolean ok=true;
-		for (int i=0, c=indexes.length; i<c; i++) ok&=indexes[i].isIndexCurrent();
-		return ok;
+		return new MultiReader(l,true);
 	}
 
 	@Override
@@ -116,19 +92,36 @@ public class VirtualIndexConfig extends IndexConfig {
 	}
 
 	@Override
-	public void reopenIndex() throws java.io.IOException {
+	public synchronized boolean isIndexCurrent() throws java.io.IOException {
 		if (indexes==null) throw new IllegalStateException("Virtual index configuration with id=\""+id+"\" not yet checked and initialized!");
-		for (int i=0, c=indexes.length; i<c; i++) indexes[i].reopenIndex();
+		if (indexReader==null) return true;
+		boolean ok=true;
+		for (int i=0, c=indexes.length; i<c; i++) ok&=indexes[i].isIndexCurrent();
+		return ok;
 	}
 
 	@Override
-	public void closeIndex() throws java.io.IOException {
-		// nothing to do here
+	public synchronized void reopenIndex() throws java.io.IOException {
+		if (indexReader!=null) {
+			IndexReader n=indexReader.reopen();
+			if (n!=indexReader) try {
+				// reader was really reopened
+				indexReader.close();
+			} finally {
+				indexReader=n;
+			}
+		}
+	}
+
+	@Override
+	public synchronized void closeIndex() throws java.io.IOException {
+		if (indexReader!=null) indexReader.close();
+		indexReader=null;
 	}
 		
 	private Set<String> indexIds=new HashSet<String>();
+	protected IndexReader indexReader=null;
 
 	// members "the configuration"
 	public IndexConfig[] indexes=null;
-	public boolean threaded=false;
 }

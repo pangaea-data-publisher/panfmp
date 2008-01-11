@@ -18,7 +18,8 @@ package de.pangaea.metadataportal.config;
 
 import java.util.*;
 import de.pangaea.metadataportal.utils.*;
-import javax.xml.transform.*;
+import javax.xml.transform.Templates;
+import org.apache.lucene.index.IndexReader;
 
 /**
  * Configuration of a real lucene index. Such indexes can be the target of a harvest operation.
@@ -64,32 +65,24 @@ public class SingleIndexConfig extends IndexConfig {
 		}
 	}
 
-	// Searcher
-	@Override
-	public synchronized org.apache.lucene.search.Searcher newSearcher() throws java.io.IOException {
-		if (indexReader==null) indexReader=org.apache.lucene.index.IndexReader.open(getFullIndexPath());
-		return new org.apache.lucene.search.IndexSearcher(indexReader);
+	public String getFullIndexPath() throws java.io.IOException {
+		return parent.makePathAbsolute(indexDir);
 	}
 
-	// Reader
 	@Override
-	public synchronized org.apache.lucene.index.IndexReader getIndexReader() throws java.io.IOException {
-		if (indexReader==null) indexReader=org.apache.lucene.index.IndexReader.open(getFullIndexPath());
+	public synchronized IndexReader getIndexReader() throws java.io.IOException {
+		if (indexReader==null) indexReader=IndexReader.open(getFullIndexPath());
 		return indexReader;
 	}
 
 	@Override
-	public org.apache.lucene.index.IndexReader getUncachedIndexReader() throws java.io.IOException {
-		return org.apache.lucene.index.IndexReader.open(getFullIndexPath());
+	public IndexReader getUncachedIndexReader() throws java.io.IOException {
+		return IndexReader.open(getFullIndexPath());
 	}
 
 	@Override
 	public boolean isIndexAvailable() throws java.io.IOException {
-		return org.apache.lucene.index.IndexReader.indexExists(getFullIndexPath());
-	}
-
-	public String getFullIndexPath() throws java.io.IOException {
-		return parent.makePathAbsolute(indexDir);
+		return IndexReader.indexExists(getFullIndexPath());
 	}
 
 	// check if current opened reader is current
@@ -102,7 +95,7 @@ public class SingleIndexConfig extends IndexConfig {
 	@Override
 	public synchronized void reopenIndex() throws java.io.IOException {
 		if (indexReader!=null) {
-			org.apache.lucene.index.IndexReader n=indexReader.reopen();
+			IndexReader n=indexReader.reopen();
 			if (n!=indexReader) try {
 				// reader was really reopened
 				indexReader.close();
@@ -118,7 +111,7 @@ public class SingleIndexConfig extends IndexConfig {
 		indexReader=null;
 	}
 
-	protected org.apache.lucene.index.IndexReader indexReader=null;
+	protected IndexReader indexReader=null;
 
 	// members "the configuration"
 	private String indexDir=null;

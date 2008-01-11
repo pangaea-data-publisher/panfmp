@@ -173,7 +173,6 @@ public class Config {
 			dig.addCallParam("config/indexes/virtualIndex", 0, "id");
 
 			dig.addCallMethod("config/indexes/virtualIndex/displayName","setDisplayName",0);
-			dig.addCallMethod("config/indexes/virtualIndex/threaded","setThreaded",0);
 			dig.addCallMethod("config/indexes/virtualIndex/index","addIndex",1);
 			dig.addCallParam("config/indexes/virtualIndex/index", 0, "ref");
 

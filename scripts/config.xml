@@ -104,7 +104,6 @@
 		</cfg:index>
 		<cfg:virtualIndex id="dataportal">
 			<cfg:displayName>Test Dataportal</cfg:displayName>
-			<cfg:threaded>true</cfg:threaded>
 			<cfg:index ref="pangaea-carboocean"/>
 			<cfg:index ref="ifremer"/>
 			<cfg:index ref="copepod"/>
