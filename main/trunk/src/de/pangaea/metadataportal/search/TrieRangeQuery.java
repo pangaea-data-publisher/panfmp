@@ -22,6 +22,7 @@ import org.apache.lucene.index.*;
 import java.io.IOException;
 import java.util.BitSet;
 import java.util.Date;
+import org.apache.lucene.util.ToStringUtils;
 
 /**
  * Low-level implementation of a Lucene {@link Query} that implements a trie-based range query.
@@ -97,20 +98,20 @@ public final class TrieRangeQuery extends Query {
 		sb.append(" TO ");
 		sb.append(maxUnconverted);
 		sb.append(']');
-		return sb.toString();
+		return sb.append(ToStringUtils.boost(getBoost())).toString();
 	}
 
 	@Override
 	public final boolean equals(Object o) {
 		if (o instanceof TrieRangeQuery) {
 			TrieRangeQuery q=(TrieRangeQuery)o;
-			return (field==q.field && min.equals(q.min) && max.equals(q.max));
+			return (field==q.field && min.equals(q.min) && max.equals(q.max) && getBoost()==q.getBoost());
 		} else return false;
 	}
 
 	@Override
 	public final int hashCode() {
-		return field.hashCode()+(min.hashCode()^0x14fa55fb)+(max.hashCode()^0x733fa5fe);
+		return field.hashCode()+(min.hashCode()^0x14fa55fb)+(max.hashCode()^0x733fa5fe)+Float.floatToIntBits(getBoost());
 	}
 
 	/**
