@@ -34,7 +34,7 @@ import java.util.Date;
  * This query type works only with indexes created by <b>panFMP</b>'s index builder.
  * @author Uwe Schindler
  */
-public class TrieRangeQuery extends Query {
+public final class TrieRangeQuery extends Query {
 
 	private static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(TrieRangeQuery.class);
 
