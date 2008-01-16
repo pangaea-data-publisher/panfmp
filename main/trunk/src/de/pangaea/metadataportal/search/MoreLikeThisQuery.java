@@ -34,8 +34,9 @@ import java.util.Map;
 import java.io.IOException;
 
 /**
- * This implementation of a "more like this" is based on an algorithm from Lucene Contrib and optimized for use with <b>panFMP</b>.
- * The constructor needs a <b>panFMP</b> document ID and optional a field name (which must have term vectors enabled).
+ * This implementation of a "more like this" is based on an algorithm from Lucene Contrib and
+ * optimized for use with <b>panFMP</b>. The constructor needs a <b>panFMP</b> document ID
+ * and optional a field name (which must have term vectors enabled).
  * If you use the default field for similarity calculation, the default field must have term vectors.
  *
  * <p>Lucene does let you access the document frequency of terms, with IndexReader.docFreq().
@@ -124,7 +125,7 @@ public final class MoreLikeThisQuery extends Query {
 	 * @see #isBoostByScore
 	 * @see #setBoostByScore
 	 */
-    public static final boolean DEFAULT_BOOST_BY_SCORE = true;
+	public static final boolean DEFAULT_BOOST_BY_SCORE = true;
 
 	/**
 	 * How many terms must match a similar document (fraction, 1.0 means all).
