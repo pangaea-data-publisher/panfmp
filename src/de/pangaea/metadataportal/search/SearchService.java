@@ -22,6 +22,7 @@ import de.pangaea.metadataportal.utils.LenientDateParser;
 import org.apache.lucene.search.*;
 import org.apache.lucene.queryParser.*;
 import org.apache.lucene.index.*;
+import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.FieldSelector;
 import java.io.IOException;
@@ -139,6 +140,32 @@ public class SearchService {
 	public Query newDefaultFieldQuery(String query) throws ParseException {
 		if (query==null) throw new NullPointerException("A query string must be given!");
 		return parseQuery(IndexConstants.FIELDNAME_CONTENT,query);
+	}
+
+	/**
+	 * Constructs a {@link Query} for matching all documents similar to the given one (by identifier).
+	 *  The default field must have term vectors enabled.
+	 * The query may be configured by setting its properties after creation.
+	 * @see #newFieldedMoreLikeThisQuery
+	 */
+	public MoreLikeThisQuery newDefaultMoreLikeThisQuery(String identifier) {
+		if (cache.config.defaultFieldTermVectors==Field.TermVector.NO)
+			throw new IllegalFieldConfigException("The default field must have term vectors enabled to use 'More like this' queries.");
+		return new MoreLikeThisQuery(identifier);
+	}
+
+	/**
+	 * Constructs a {@link Query} for matching all documents whose contents on a specific field are similar to the given document's one (by identifier).
+	 * This is based on the indexed terms in the given field name. The field must have term vectors enabled.
+	 * The query may be configured by setting its properties after creation.
+	 * @see #newDefaultMoreLikeThisQuery
+	 */
+	public MoreLikeThisQuery newFieldedMoreLikeThisQuery(String identifier, String fieldName) {
+		FieldConfig f=cache.config.fields.get(fieldName);
+		if (f==null) throw new IllegalFieldConfigException("Field name '"+fieldName+"' is unknown!");
+		if (f.termVectors==Field.TermVector.NO)
+			throw new IllegalFieldConfigException("Field "+fieldName+" must have term vectors enabled to use 'More like this' queries on it.");
+		return new MoreLikeThisQuery(identifier,fieldName);
 	}
 
 	/**
