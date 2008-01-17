@@ -60,10 +60,10 @@ public class Rebuilder extends Harvester {
 	}
 
 	@Override
-	public void close() throws Exception {
+	public void close(boolean cleanShutdown) throws Exception {
 		if (reader!=null) reader.close();
 		reader=null;
-		super.close();
+		super.close(cleanShutdown);
 	}
 
 	@Override

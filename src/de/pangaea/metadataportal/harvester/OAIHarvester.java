@@ -192,16 +192,14 @@ public class OAIHarvester extends OAIHarvesterBase {
 	}
 
 	@Override
-	public void close() throws Exception {
+	public void close(boolean cleanShutdown) throws Exception {
 		listRecordsDig=null;
 		identifyDig=null;
-		super.close();
+		super.close(cleanShutdown);
 	}
 
 	@Override
 	public void harvest() throws Exception {
-		if (index==null) throw new IllegalStateException("Index not yet opened");
-
 		String baseUrl=iconfig.harvesterProperties.getProperty("baseUrl");
 		if (baseUrl==null) throw new NullPointerException("No baseUrl of the OAI repository was given!");
 		checkIdentify(baseUrl);

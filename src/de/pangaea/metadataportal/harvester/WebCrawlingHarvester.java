@@ -37,15 +37,15 @@ import org.xml.sax.helpers.DefaultHandler;
  * <li><code>baseUrl</code>: URL to start crawling (should point to a HTML page).</li>
  * <li><code>retryCount</code>: how often retry on HTTP errors? (default: 5) </li>
  * <li><code>retryAfterSeconds</code>: time between retries in seconds (default: 60)</li>
+ * <li><code>timeoutAfterSeconds</code>: HTTP Timeout for harvesting in seconds</li>
  * <li><code>filenameFilter</code>: regex to match the filename. The regex is applied against the whole filename (this is like ^pattern$)! (default: none)</li>
  * <li><code>contentTypes</code>: MIME types of documents to index (maybe additionally limited by <code>filenameFilter</code>). (default: "text/xml,application/xml")</li>
  * <li><code>excludeUrlPattern</code>: A regex that is applied to all URLs appearing during harvesting process. URLs with matching patterns (partial matches allowed, use ^,$ for start/end matches) are excluded and not further traversed. (default: none)</li>
- * <li><code>deleteMissingDocuments</code>: remove documents after harvesting that were deleted from the web page (maybe a heavy operation). (default: true)</li>
  * <li><code>pauseBetweenRequests</code>: to not overload server that is harvested, wait XX milliseconds after each HTTP request (default: none)</li>
  * </ul>
  * @author Uwe Schindler
  */
-public class WebCrawlingHarvester extends Harvester {
+public class WebCrawlingHarvester extends SingleFileEntitiesHarvester {
 
 	public static final int DEFAULT_RETRY_TIME = 60; // seconds
 	public static final int DEFAULT_RETRY_COUNT = 5;
@@ -63,7 +63,6 @@ public class WebCrawlingHarvester extends Harvester {
 	private String baseURL=null;
 	private Pattern filenameFilter=null,excludeUrlPattern=null;
 	private Set<String> contentTypes=new HashSet<String>();
-	private Set<String> validIdentifiers=null;
 	private int retryCount=DEFAULT_RETRY_COUNT;
 	private int retryTime=DEFAULT_RETRY_TIME;
 	private int timeout=DEFAULT_TIMEOUT;
@@ -71,7 +70,6 @@ public class WebCrawlingHarvester extends Harvester {
 
 	private Set<String> harvested=new HashSet<String>();
 	private SortedSet<String> needsHarvest=new TreeSet<String>();
-	private Date firstDateFound=null;
 
 	private Class<? extends XMLReader> htmlReaderClass=null;
 
@@ -104,9 +102,6 @@ public class WebCrawlingHarvester extends Harvester {
 		s=iconfig.harvesterProperties.getProperty("excludeUrlPattern");
 		excludeUrlPattern=(s==null) ? null : Pattern.compile(s);
 
-		validIdentifiers=null;
-		if (BooleanParser.parseBoolean(iconfig.harvesterProperties.getProperty("deleteMissingDocuments","true"))) validIdentifiers=new HashSet<String>();
-
 		// initialize and test for HTML SAX Parser
 		try {
 			htmlReaderClass=Class.forName(HTML_SAX_PARSER_CLASS).asSubclass(XMLReader.class);
@@ -117,8 +112,6 @@ public class WebCrawlingHarvester extends Harvester {
 
 	@Override
 	public void harvest() throws Exception {
-		if (index==null) throw new IllegalStateException("Index not yet opened");
-
 		// process this URL directly and save possible redirect as new base
 		String urlStr=baseURL; baseURL=""; // disable base checking for the entry point to follow a initial redirect for sure
 		harvested.add(urlStr);
@@ -147,10 +140,6 @@ public class WebCrawlingHarvester extends Harvester {
 			harvested.add(urlStr);
 			processURL(new URL(urlStr));
 		}
-
-		// update this for next harvesting
-		setValidIdentifiers(validIdentifiers);
-		thisHarvestDateReference=firstDateFound;
 	}
 
 	@Override
@@ -164,7 +153,6 @@ public class WebCrawlingHarvester extends Harvester {
 			"filenameFilter",
 			"contentTypes",
 			"excludeUrlPattern",
-			"deleteMissingDocuments",
 			"pauseBetweenRequests" /* in milliseconds */
 		));
 	}
@@ -348,9 +336,6 @@ public class WebCrawlingHarvester extends Harvester {
 				if (in==null) return url;
 				in.close(); // it is empty
 
-				// set the harvest date to the first received timestamp from server
-				if (firstDateFound==null && conn.getDate()!=0L) firstDateFound=new java.util.Date(conn.getDate());
-
 				// check connection properties
 				String contentType=conn.getContentType();
 				String charset=null;
@@ -403,33 +388,24 @@ public class WebCrawlingHarvester extends Harvester {
 					}
 				} else if (contentTypes.contains(contentType)) {
 					if (acceptFile(url)) {
-						if (validIdentifiers!=null) validIdentifiers.add(url.toString());
+						long lastModified=conn.getLastModified();
+						if (lastModified>0 && fromDateReference!=null && fromDateReference.getTime()>lastModified) {
+							addDocument(url.toString(),lastModified,null);
+						} else {
+							log.info("Harvesting '"+url+"'...");
 
-						Date lastModified=null;
-						if (conn.getLastModified()!=0L) lastModified=new java.util.Date(conn.getLastModified());
-						if (lastModified!=null && fromDateReference!=null && lastModified.getTime()<fromDateReference.getTime()) return url;
-
-						log.info("Harvesting '"+url+"'...");
-
-						// reopen for GET and parse as XML
-						conn=(HttpURLConnection)url.openConnection();
-						in=sendHTTPRequest(conn,"GET");
-						if (in!=null) try {
-							MetadataDocument mdoc=new MetadataDocument();
-							mdoc.setIdentifier(url.toString());
-							mdoc.setDatestamp(lastModified);
-
-							// a SAX InputSource is used because we can set the default encoding from the HTTP headers
-							// if charset is superseded by <?xml ?> declaration, it is changed later by parser
-							InputSource src=new InputSource(in);
-							src.setSystemId(url.toString());
-							src.setEncoding(charset);
-							SAXSource ss=new SAXSource(StaticFactories.xinclSaxFactory.newSAXParser().getXMLReader(), src);
-							mdoc.setDOM(xmlConverter.transform(ss));
-
-							addDocument(mdoc);
-						} finally {
-							in.close();
+							// reopen for GET and parse as XML
+							conn=(HttpURLConnection)url.openConnection();
+							in=sendHTTPRequest(conn,"GET");
+							if (in!=null) try {
+								InputSource src=new InputSource(in);
+								src.setSystemId(url.toString());
+								src.setEncoding(charset);
+								SAXSource saxsrc=new SAXSource(StaticFactories.xinclSaxFactory.newSAXParser().getXMLReader(), src);
+								addDocument(url.toString(),lastModified,saxsrc);
+							} finally {
+								in.close();
+							}
 						}
 					}
 				}

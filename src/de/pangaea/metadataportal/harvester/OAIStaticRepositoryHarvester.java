@@ -117,15 +117,16 @@ public class OAIStaticRepositoryHarvester extends OAIHarvesterBase {
 	}
 
 	@Override
-	public void close() throws Exception {
+	public void close(boolean cleanShutdown) throws Exception {
+		if (cleanShutdown) {
+			setValidIdentifiers(validIdentifiers);
+		}
 		dig=null;
-		super.close();
+		super.close(cleanShutdown);
 	}
 
 	@Override
 	public void harvest() throws Exception {
-		if (index==null) throw new IllegalStateException("Index not yet opened");
-
 		String url=iconfig.harvesterProperties.getProperty("url");
 		if (url==null) throw new NullPointerException("No URL of the OAI static repository was given!");
 
@@ -134,7 +135,6 @@ public class OAIStaticRepositoryHarvester extends OAIHarvesterBase {
 		if (doParse(dig,url,modifiedDate)) {
 			// set the date for next harvesting
 			thisHarvestDateReference=modifiedDate.get();
-			setValidIdentifiers(validIdentifiers);
 		} else {
 			log.info("Static OAI repository file was not modified since last harvesting, no need for re-harvesting!");		
 		}
