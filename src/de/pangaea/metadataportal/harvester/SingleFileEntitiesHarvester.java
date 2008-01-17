@@ -72,21 +72,6 @@ public abstract class SingleFileEntitiesHarvester extends Harvester {
 		addDocument(identifier,lastModified.getTime(),xml);
 	}
 	
-	private final void doParseException(String errstr, Exception e, MetadataDocument mdoc) throws Exception {
-		switch (parseErrorAction) {
-			case FATALEXIT:
-				throw e;
-			case IGNOREDOCUMENT: 
-				log.error(errstr+" (object ignored):",e);
-				return;
-			case DELETEDOCUMENT:
-				log.error(errstr+" (object marked deleted):",e);
-				mdoc.setDOM(null);
-				mdoc.deleted=true;
-				// fall-through
-		}
-	}
-	
 	/**
 	 * Adds a document to the {@link #index} working in the background.
 	 * @see #addDocument(String,Date,Source)
