@@ -99,15 +99,13 @@ public abstract class Harvester {
 				cleanShutdown=true;
 			} catch (IndexBuilderBackgroundFailure ibf) {
 				// do nothing, this exception is only to break out, real exception is thrown on close
+			} catch (SAXParseException saxe) {
+				staticLog.fatal("Harvesting documents into index \""+siconf.id+"\" failed due to SAX parse error in \""+saxe.getSystemId()+"\", line "+saxe.getLineNumber()+", column "+saxe.getColumnNumber()+":",saxe);
+			} catch (TransformerException transfe) {
+				String loc=transfe.getLocationAsString();
+				staticLog.fatal("Harvesting documents into index \""+siconf.id+"\" failed due to transformer/parse error"+((loc!=null)?(" at "+loc):"")+":",transfe);
 			} catch (Exception e) {
-				if (e instanceof SAXParseException) {
-					SAXParseException saxe=(SAXParseException)e;
-					staticLog.fatal("Harvesting documents into index \""+siconf.id+"\" failed due to SAX parse error in \""+saxe.getSystemId()+"\", line "+saxe.getLineNumber()+", column "+saxe.getColumnNumber()+":",saxe);
-				} else if (e instanceof TransformerException) {
-					TransformerException transfe=(TransformerException)e;
-					String loc=transfe.getLocationAsString();
-					staticLog.fatal("Harvesting documents into index \""+siconf.id+"\" failed due to transformer/parse error"+((loc!=null)?(" at "+loc):"")+".",transfe);
-				} else staticLog.fatal("Harvesting documents into index \""+siconf.id+"\" failed!",e);
+				staticLog.fatal("Harvesting documents into index \""+siconf.id+"\" failed!",e);
 			}
 			// cleanup
 			if (h!=null && !h.isClosed()) try {
