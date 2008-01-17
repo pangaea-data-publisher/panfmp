@@ -18,6 +18,8 @@ package de.pangaea.metadataportal.harvester;
 
 import java.util.*;
 import de.pangaea.metadataportal.config.*;
+import javax.xml.transform.TransformerException;
+import org.xml.sax.SAXParseException;
 
 /**
  * Harvester interface to panFMP. This class is the abstract superclass of all harvesters.
@@ -88,23 +90,28 @@ public abstract class Harvester {
 			Class<? extends Harvester> hc=(harvesterClass==null) ? siconf.harvesterClass : harvesterClass;
 			staticLog.info("Harvesting documents into index \""+siconf.id+"\" using harvester \""+hc.getName()+"\"...");
 			Harvester h=null;
+			boolean cleanShutdown=false;
 			try {
 				h=hc.newInstance();
 				h.open(siconf);
 				h.harvest();
+				// everything OK => clean shutdown with storing all infos
+				cleanShutdown=true;
 			} catch (IndexBuilderBackgroundFailure ibf) {
 				// do nothing, this exception is only to break out, real exception is thrown on close
-			} catch (org.xml.sax.SAXParseException saxe) {
-				staticLog.fatal("Harvesting documents into index \""+siconf.id+"\" failed due to SAX parse error in \""+saxe.getSystemId()+"\", line "+saxe.getLineNumber()+", column "+saxe.getColumnNumber()+":",saxe);
 			} catch (Exception e) {
-				if (e.getCause() instanceof org.xml.sax.SAXParseException) {
-					org.xml.sax.SAXParseException saxe=(org.xml.sax.SAXParseException)e.getCause();
+				if (e instanceof SAXParseException) {
+					SAXParseException saxe=(SAXParseException)e;
 					staticLog.fatal("Harvesting documents into index \""+siconf.id+"\" failed due to SAX parse error in \""+saxe.getSystemId()+"\", line "+saxe.getLineNumber()+", column "+saxe.getColumnNumber()+":",saxe);
+				} else if (e instanceof TransformerException) {
+					TransformerException transfe=(TransformerException)e;
+					String loc=transfe.getLocationAsString();
+					staticLog.fatal("Harvesting documents into index \""+siconf.id+"\" failed due to transformer/parse error"+((loc!=null)?(" at "+loc):"")+".",transfe);
 				} else staticLog.fatal("Harvesting documents into index \""+siconf.id+"\" failed!",e);
 			}
 			// cleanup
 			if (h!=null && !h.isClosed()) try {
-				h.close();
+				h.close(cleanShutdown);
 				staticLog.info("Harvester for index \""+siconf.id+"\" closed.");
 			} catch (Exception e) {
 				staticLog.fatal("Error during harvesting into index \""+siconf.id+"\" occurred:",e);
@@ -153,7 +160,6 @@ public abstract class Harvester {
 	/**
 	 * Reference date of this harvesting event (in time reference of the original server).
 	 * This date is used on the next harvesting in variable {@link #fromDateReference}.
-	 * Be sure to set this variable only <b>after</b> the successful harvesting, probably at the end of {@link #harvest}.
 	 * As long as this variable is null, the harvester will not write or update the value in the index directory.
 	 */
 	protected Date thisHarvestDateReference=null;
@@ -188,18 +194,22 @@ public abstract class Harvester {
 
 	/**
 	 * Closes harvester. All ressources are freed and the {@link #index} is closed.
+	 * @param cleanShutdown enables writing of status information to the index for the next harvesting. If an error occured during harvesting this should not be done.
 	 * @throws Exception if an exception occurs during closing (various types of exceptions can be thrown).
 	 * Exceptions can be thrown asynchronous and may not affect the currect document.
 	 */
-	public void close() throws Exception {
-		if (index==null) throw new IllegalStateException("Harvester must be opened before using");
+	public void close(boolean cleanShutdown) throws Exception {
+		if (index==null) throw new IllegalStateException("Harvester must be opened before closing");
 
-		if (thisHarvestDateReference!=null) index.setLastHarvested(thisHarvestDateReference);
+		if (cleanShutdown && thisHarvestDateReference!=null) index.setLastHarvested(thisHarvestDateReference);
 
 		if (!index.isClosed()) index.close();
 		index=null;
 
-		log.info("Harvested "+harvestCount+" objects - finished.");
+		if (cleanShutdown)
+			log.info("Harvested "+harvestCount+" objects - finished.");
+		else
+			log.warn("Harvesting stopped unexspected, but "+harvestCount+" objects harvested - finished.");
 	}
 
 	/**

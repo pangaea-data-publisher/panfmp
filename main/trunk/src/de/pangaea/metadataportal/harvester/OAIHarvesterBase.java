@@ -34,6 +34,7 @@ import org.xml.sax.SAXException;
  * <li><code>setSpec</code>: OAI set to harvest (default: none)</li>
  * <li><code>retryCount</code>: how often retry on HTTP errors? (default: 5) </li>
  * <li><code>retryAfterSeconds</code>: time between retries in seconds (default: 60)</li>
+ * <li><code>timeoutAfterSeconds</code>: HTTP Timeout for harvesting in seconds</li>
  * <li><code>metadataPrefix</code>: OAI metadata prefix to harvest</li>
  * </ul> 
  * @author Uwe Schindler
@@ -234,9 +235,9 @@ public abstract class OAIHarvesterBase extends Harvester {
 	}
 
 	@Override
-	public void close() throws Exception {
+	public void close(boolean cleanShutdown) throws Exception {
 		reset();
-		super.close();
+		super.close(cleanShutdown);
 	}
 	
 	@Override

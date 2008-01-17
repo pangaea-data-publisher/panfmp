@@ -31,19 +31,16 @@ import javax.xml.transform.stream.StreamSource;
  * <li><code>recursive</code>: traverse in subdirs (default: false)</li>
  * <li><code>identifierPrefix</code>: This prefix is appended before all relative file system pathes (that are the identifiers of the documents) (default: "")</li>
  * <li><code>filenameFilter</code>: regex to match the filename (default: none)</li>
- * <li><code>deleteMissingDocuments</code>: remove documents after harvesting that were deleted from the directory (maybe a heavy operation). (default: true)</li>
  * </ul>
 * @author Uwe Schindler
  */
-public class DirectoryHarvester extends Harvester implements FilenameFilter {
+public class DirectoryHarvester extends SingleFileEntitiesHarvester implements FilenameFilter {
 
 	// Class members
 	private File directory=null;
 	private boolean recursive=false;
 	private Pattern filenameFilter=null;
 	private String identifierPrefix="";
-
-	private Set<String> validIdentifiers=null;
 
 	@Override
 	public void open(SingleIndexConfig iconfig) throws Exception {
@@ -58,22 +55,11 @@ public class DirectoryHarvester extends Harvester implements FilenameFilter {
 
 		s=iconfig.harvesterProperties.getProperty("filenameFilter");
 		filenameFilter=(s==null) ? null : Pattern.compile(s);
-
-		validIdentifiers=null;
-		if (BooleanParser.parseBoolean(iconfig.harvesterProperties.getProperty("deleteMissingDocuments","true"))) validIdentifiers=new HashSet<String>();
 	}
 
 	@Override
 	public void harvest() throws Exception {
-		if (index==null) throw new IllegalStateException("Index not yet opened");
-
-		java.util.Date startDate=new java.util.Date(); // store reference date of first harvesting step, to be set at end
-
 		processDirectory(directory);
-
-		// set the this for next harvesting
-		setValidIdentifiers(validIdentifiers);
-		thisHarvestDateReference=startDate;
 	}
 
 	@Override
@@ -83,8 +69,7 @@ public class DirectoryHarvester extends Harvester implements FilenameFilter {
 			"directory",
 			"recursive",
 			"identifierPrefix",
-			"filenameFilter",
-			"deleteMissingDocuments"
+			"filenameFilter"
 		));
 	}
 
@@ -98,15 +83,7 @@ public class DirectoryHarvester extends Harvester implements FilenameFilter {
 
 	private void processFile(File file) throws Exception {
 		String identifier="file:"+identifierPrefix+directory.toURI().normalize().relativize(file.toURI().normalize()).toString();
-		if (validIdentifiers!=null) validIdentifiers.add(identifier);
-
-		if (fromDateReference!=null && fromDateReference.getTime()>file.lastModified()) return;
-
-		MetadataDocument mdoc=new MetadataDocument();
-		mdoc.setIdentifier(identifier);
-		mdoc.setDatestamp(new java.util.Date(file.lastModified()));
-		mdoc.setDOM(xmlConverter.transform(new StreamSource(file)));
-		addDocument(mdoc);
+		addDocument(identifier,file.lastModified(),new StreamSource(file));
 	}
 
 	private void processDirectory(File dir) throws Exception {
