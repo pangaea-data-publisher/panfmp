@@ -119,7 +119,7 @@ public class OAIStaticRepositoryHarvester extends OAIHarvesterBase {
 	@Override
 	public void close(boolean cleanShutdown) throws Exception {
 		if (cleanShutdown) {
-			setValidIdentifiers(validIdentifiers);
+			index.setValidIdentifiers(validIdentifiers);
 		}
 		dig=null;
 		super.close(cleanShutdown);
@@ -134,7 +134,7 @@ public class OAIStaticRepositoryHarvester extends OAIHarvesterBase {
 		AtomicReference<Date> modifiedDate=new AtomicReference<Date>(fromDateReference);
 		if (doParse(dig,url,modifiedDate)) {
 			// set the date for next harvesting
-			thisHarvestDateReference=modifiedDate.get();
+			setHarvestingDateReference(modifiedDate.get());
 		} else {
 			log.info("Static OAI repository file was not modified since last harvesting, no need for re-harvesting!");		
 		}

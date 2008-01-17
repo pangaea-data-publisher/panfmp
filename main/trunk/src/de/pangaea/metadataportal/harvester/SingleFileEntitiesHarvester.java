@@ -42,6 +42,7 @@ public abstract class SingleFileEntitiesHarvester extends Harvester {
 	
 	private ParseErrorAction parseErrorAction=ParseErrorAction.IGNOREDOCUMENT;
 	private Set<String> validIdentifiers=null;
+	private long newestDatestamp=-1;
 
 	@Override
 	public void open(SingleIndexConfig iconfig) throws Exception {
@@ -61,7 +62,7 @@ public abstract class SingleFileEntitiesHarvester extends Harvester {
 	@Override
 	public void close(boolean cleanShutdown) throws Exception {
 		if (cleanShutdown) {
-			setValidIdentifiers(validIdentifiers);
+			index.setValidIdentifiers(validIdentifiers);
 		}
 		super.close(cleanShutdown);
 	}
@@ -85,8 +86,8 @@ public abstract class SingleFileEntitiesHarvester extends Harvester {
 	protected void addDocument(String identifier, long lastModified, Source xml) throws Exception {
 		if (validIdentifiers!=null) validIdentifiers.add(identifier);
 		
-		if (lastModified>0) {
-			if (thisHarvestDateReference==null || (thisHarvestDateReference.getTime()-1L)<lastModified) thisHarvestDateReference=new Date(lastModified+1L);
+		if (lastModified>0L) {
+			if (newestDatestamp<=0L || newestDatestamp<lastModified) setHarvestingDateReference(new Date(newestDatestamp=lastModified));
 			if (fromDateReference!=null && fromDateReference.getTime()>lastModified) return;
 		}
 		

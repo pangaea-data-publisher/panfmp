@@ -219,7 +219,7 @@ public class OAIHarvester extends OAIHarvesterBase {
 			url.append(URLEncoder.encode(fineGranularity?ISODateFormatter.formatLong(fromDateReference):ISODateFormatter.formatShort(fromDateReference),"UTF-8"));
 		}
 		readStream(url.toString());
-		Date lastHarvested=currResponseDate; // store reference date of first harvesting step, to be set at end
+		setHarvestingDateReference(currResponseDate);
 
 		while (currResumptionToken!=null) {
 			// checkIndexerBuffer or harvester should max. wait for 1/2 resumption Token expiration!!!
@@ -232,9 +232,6 @@ public class OAIHarvester extends OAIHarvesterBase {
 			readStream(url.toString());
 		}
 		reset();
-
-		// set the date for next harvesting
-		thisHarvestDateReference=lastHarvested;
 	}
 
 	@Override

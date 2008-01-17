@@ -156,13 +156,6 @@ public abstract class Harvester {
 	protected Date fromDateReference=null;
 
 	/**
-	 * Reference date of this harvesting event (in time reference of the original server).
-	 * This date is used on the next harvesting in variable {@link #fromDateReference}.
-	 * As long as this variable is null, the harvester will not write or update the value in the index directory.
-	 */
-	protected Date thisHarvestDateReference=null;
-
-	/**
 	 * Default constructor.
 	 */
 	public Harvester() {}
@@ -199,7 +192,7 @@ public abstract class Harvester {
 	public void close(boolean cleanShutdown) throws Exception {
 		if (index==null) throw new IllegalStateException("Harvester must be opened before closing");
 
-		if (cleanShutdown && thisHarvestDateReference!=null) index.setLastHarvested(thisHarvestDateReference);
+		if (cleanShutdown && harvestingDateReference!=null) index.setLastHarvested(harvestingDateReference);
 
 		if (!index.isClosed()) index.close();
 		index=null;
@@ -224,17 +217,14 @@ public abstract class Harvester {
 		harvestCount++;
 		if (harvestCount%harvestMessageStep==0) log.info("Harvested "+harvestCount+" objects so far.");
 	}
-
+	
 	/**
-	 * Optional method: Assigns a {@link Set} of valid identifiers observed during harvesting.
-	 * {@link IndexBuilder} will check all documents in index with this set and delete
-	 * all documents that are missing in it.
-	 * <B>Only assign this set after harvesting is finished and before closing the index.
-	 * A set, that does not contain really all valid identifiers, deletes unwanted ones from the index!</B>
+	 * Reference date of this harvesting event (in time reference of the original server).
+	 * This date is used on the next harvesting in variable {@link #fromDateReference}.
+	 * As long as this is null, the harvester will not write or update the value in the index directory.
 	 */
-	protected void setValidIdentifiers(Set<String> validIdentifiers) {
-		if (index==null && !index.isClosed()) throw new IllegalStateException("Harvester must be opened before using");
-		index.setValidIdentifiers(validIdentifiers);
+	protected void setHarvestingDateReference(Date harvestingDateReference) {
+		this.harvestingDateReference=harvestingDateReference;
 	}
 
 	/**
@@ -282,4 +272,8 @@ public abstract class Harvester {
 	 * @throws Exception of any type.
 	 */
 	public abstract void harvest() throws Exception;
+
+	// private mebers
+	private Date harvestingDateReference=null;
+
 }
