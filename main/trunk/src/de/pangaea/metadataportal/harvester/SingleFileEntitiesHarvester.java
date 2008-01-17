@@ -46,7 +46,13 @@ public abstract class SingleFileEntitiesHarvester extends Harvester {
 	@Override
 	public void open(SingleIndexConfig iconfig) throws Exception {
 		super.open(iconfig);
-		parseErrorAction=ParseErrorAction.valueOf(iconfig.harvesterProperties.getProperty("parseErrorAction","IGNOREDOCUMENT").toUpperCase());
+		
+		String s=iconfig.harvesterProperties.getProperty("parseErrorAction");
+		if (s!=null) try {
+			parseErrorAction=ParseErrorAction.valueOf(s.toUpperCase());
+		} catch (IllegalArgumentException e) {
+			throw new IllegalArgumentException("Invalid value '"+s+"' for harvester property 'parseErrorAction', valid ones are: "+EnumSet.allOf(ParseErrorAction.class).toString());
+		}
 
 		validIdentifiers=null;
 		if (BooleanParser.parseBoolean(iconfig.harvesterProperties.getProperty("deleteMissingDocuments","true"))) validIdentifiers=new HashSet<String>();
