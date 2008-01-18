@@ -140,13 +140,13 @@ public abstract class Harvester {
 	protected XMLConverter xmlConverter=null;
 
 	/**
-	 * Count of harvested documents. Incremented by {@link #addDocument}. Can be changed by
-	 * the harvester property <code>harvestMessageStep</code>.
+	 * Count of harvested documents. Incremented by {@link #addDocument}.
 	 */
 	protected int harvestCount=0;
 
 	/**
-	 * Step at which {@link #addDocument} prints log messages.
+	 * Step at which {@link #addDocument} prints log messages. Can be changed by
+	 * the harvester property <code>harvestMessageStep</code>.
 	 */
 	protected int harvestMessageStep=100;
 
