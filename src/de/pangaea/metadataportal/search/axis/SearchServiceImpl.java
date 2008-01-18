@@ -45,6 +45,28 @@ public class SearchServiceImpl {
 		return resp;
 	}
 
+	public SearchResponse defaultMoreLikeThis(String indexName, String identifier, int offset, int count) throws Exception {
+		SearchService service=new SearchService(cfgFile,indexName);
+
+		boolean returnXML=BooleanParser.parseBoolean(service.getConfig().searchProperties.getProperty("returnXML","true"));
+		boolean returnStoredFields=BooleanParser.parseBoolean(service.getConfig().searchProperties.getProperty("returnStoredFields","true"));
+
+		SearchResultList res=service.search(service.newDefaultMoreLikeThisQuery(identifier), returnXML, returnStoredFields ? null : Collections.<String>emptySet() );
+		SearchResponse resp=new SearchResponse(res, offset, count, returnXML, returnStoredFields);
+		return resp;
+	}
+
+	public SearchResponse fieldedMoreLikeThis(String indexName, String identifier, String fieldName, int offset, int count) throws Exception {
+		SearchService service=new SearchService(cfgFile,indexName);
+
+		boolean returnXML=BooleanParser.parseBoolean(service.getConfig().searchProperties.getProperty("returnXML","true"));
+		boolean returnStoredFields=BooleanParser.parseBoolean(service.getConfig().searchProperties.getProperty("returnStoredFields","true"));
+
+		SearchResultList res=service.search(service.newFieldedMoreLikeThisQuery(identifier,fieldName), returnXML, returnStoredFields ? null : Collections.<String>emptySet() );
+		SearchResponse resp=new SearchResponse(res, offset, count, returnXML, returnStoredFields);
+		return resp;
+	}
+
 	public SearchResponseItem getDocument(String indexName, String identifier) throws Exception {
 		SearchService service=new SearchService(cfgFile,indexName);
 		return new SearchResponseItem(service.getDocument(identifier),true,true);

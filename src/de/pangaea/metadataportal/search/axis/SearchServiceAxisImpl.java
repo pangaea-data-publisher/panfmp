@@ -65,7 +65,25 @@ public class SearchServiceAxisImpl {
 			throw new RemoteException("Error during Lucene query",e);
 		}
 	}
-
+	
+	public SearchResponse defaultMoreLikeThis(String indexName, String identifier, int offset, int count) throws RemoteException {
+		try {
+			return searchService.defaultMoreLikeThis(indexName,identifier,offset,count);
+		} catch (Exception e) {
+			log.error("Error during Lucene query",e);
+			throw new RemoteException("Error during Lucene query",e);
+		}
+	}
+	
+	public SearchResponse fieldedMoreLikeThis(String indexName, String identifier, String fieldName, int offset, int count) throws RemoteException {
+		try {
+			return searchService.fieldedMoreLikeThis(indexName,identifier,fieldName,offset,count);
+		} catch (Exception e) {
+			log.error("Error during Lucene query",e);
+			throw new RemoteException("Error during Lucene query",e);
+		}
+	}
+	
 	public SearchResponseItem getDocument(String index, String identifier)  throws RemoteException {
 		try {
 			return searchService.getDocument(index,identifier);
