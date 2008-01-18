@@ -110,7 +110,7 @@ public abstract class SingleFileEntitiesHarvester extends Harvester {
 		}
 		
 		// handle exception
-		if (e!=null &&errstr!=null) switch (parseErrorAction) {
+		if (e!=null && errstr!=null) switch (parseErrorAction) {
 			case IGNOREDOCUMENT: 
 				log.error(errstr+" (object ignored):",e);
 				return;
