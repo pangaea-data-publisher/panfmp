@@ -29,8 +29,6 @@ import org.apache.lucene.util.ToStringUtils;
 import org.apache.lucene.index.*;
 import org.apache.lucene.search.*;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.io.IOException;
 
 /**
@@ -339,24 +337,19 @@ public final class MoreLikeThisQuery extends Query {
 			if (minDocFreq > 0 && docFreq < minDocFreq) continue; // filter out words that don't occur in enough docs
 			if (docFreq == 0) continue; // index update problem?
 			
-			float idf = similarity.idf(docFreq, numDocs);
-			float score = freqs[i] * idf;
-
-			q.insert(new Object[]{ terms[i],Float.valueOf(score) });
+			q.insert(new Freq(terms[i], freqs[i] * similarity.idf(docFreq, numDocs)));
 		}
 
 		int qterms = 0;
 		float bestScore = 0;
 		BooleanQuery query=new BooleanQuery();
 
-		for (Object[] ar=(Object[])(q.pop()); ar!=null; ) {
-			TermQuery tq = new TermQuery(new Term(matchingField, (String) ar[0]));
+		for (Freq ar=(Freq)(q.pop()); ar!=null; ) {
+			TermQuery tq = new TermQuery(new Term(matchingField, ar.term));
 
 			if (boostByScore) {
-				if (qterms == 0)  bestScore = ((Float) ar[1]).floatValue();
-				float myScore = ((Float) ar[1]).floatValue();
-
-				tq.setBoost(myScore / bestScore);
+				if (qterms==0) bestScore=ar.score;
+				tq.setBoost(ar.score / bestScore);
 			}
 
 			try {
@@ -379,7 +372,7 @@ public final class MoreLikeThisQuery extends Query {
 		StringBuilder sb=new StringBuilder("moreLikeThis{");
 		sb.append(docIdentifier);
 		if (!matchingField.equals(field)) sb.append(",matchingField=").append(matchingField);
-		sb.append(",boostByScore=").append(boostByScore);
+		if (boostByScore) sb.append(",boostByScore");
 		if (minTermFreq!=DEFAULT_MIN_TERM_FREQ) sb.append(",minTermFreq=").append(minTermFreq);
 		if (minDocFreq!=DEFAULT_MIN_DOC_FREQ) sb.append(",minDocFreq=").append(minDocFreq);
 		if (minWordLen!=DEFAULT_MIN_WORD_LENGTH) sb.append(",minWordLen=").append(minWordLen);
@@ -430,12 +423,21 @@ public final class MoreLikeThisQuery extends Query {
 		}
 
 		protected boolean lessThan(Object a, Object b) {
-			Object[] aa = (Object[]) a;
-			Object[] bb = (Object[]) b;
-			Float fa = (Float) aa[1];
-			Float fb = (Float) bb[1];
-			return fa.floatValue() > fb.floatValue();
+			return ((Freq)a).score > ((Freq)b).score;
 		}
+	}    
+	
+	/**
+	 * Frequency item
+	 */
+	private static final class Freq {
+		Freq(String term, float score) {
+			this.term=term;
+			this.score=score;
+		}
+
+		public String term;
+		public float score;
 	}    
 	
 }
