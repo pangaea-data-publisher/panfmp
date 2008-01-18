@@ -38,7 +38,7 @@ public abstract class SingleFileEntitiesHarvester extends Harvester {
 	 * Enumeration that specifies what action should be taken on a parse error. 
 	 * @see #parseErrorAction
 	 */
-	public static enum ParseErrorAction { FATALEXIT, IGNOREDOCUMENT, DELETEDOCUMENT };
+	public static enum ParseErrorAction { STOP, IGNOREDOCUMENT, DELETEDOCUMENT };
 	
 	private ParseErrorAction parseErrorAction=ParseErrorAction.IGNOREDOCUMENT;
 	private Set<String> validIdentifiers=null;
@@ -52,7 +52,7 @@ public abstract class SingleFileEntitiesHarvester extends Harvester {
 		if (s!=null) try {
 			parseErrorAction=ParseErrorAction.valueOf(s.toUpperCase());
 		} catch (IllegalArgumentException e) {
-			throw new IllegalArgumentException("Invalid value '"+s+"' for harvester property 'parseErrorAction', valid ones are: "+EnumSet.allOf(ParseErrorAction.class).toString());
+			throw new IllegalArgumentException("Invalid value '"+s+"' for harvester property 'parseErrorAction', valid ones are: "+Arrays.asList(ParseErrorAction.values()).toString());
 		}
 
 		validIdentifiers=null;

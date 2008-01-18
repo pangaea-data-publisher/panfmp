@@ -16,9 +16,9 @@
 
 package de.pangaea.metadataportal.config;
 
+import java.util.Arrays;
 import de.pangaea.metadataportal.utils.*;
 import org.apache.lucene.document.Field;
-import java.util.EnumSet;
 
 /**
  * Config element that contains the definition of a field. It contains its name and some
@@ -40,7 +40,7 @@ public class FieldConfig extends ExpressionConfig {
 		try {
 			datatype=DataType.valueOf(v.toUpperCase());
 		} catch (IllegalArgumentException e) {
-			throw new IllegalArgumentException("Invalid value '"+v+"' for attribute datatype, valid ones are: "+EnumSet.allOf(DataType.class).toString());
+			throw new IllegalArgumentException("Invalid value '"+v+"' for attribute datatype, valid ones are: "+Arrays.asList(DataType.values()).toString());
 		}
 	}
 
