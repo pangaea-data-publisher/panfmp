@@ -52,7 +52,7 @@ public abstract class SingleFileEntitiesHarvester extends Harvester {
 		if (s!=null) try {
 			parseErrorAction=ParseErrorAction.valueOf(s.toUpperCase());
 		} catch (IllegalArgumentException e) {
-			throw new IllegalArgumentException("Invalid value '"+s+"' for harvester property 'parseErrorAction', valid ones are: "+Arrays.asList(ParseErrorAction.values()).toString());
+			throw new IllegalArgumentException("Invalid value '"+s+"' for harvester property 'parseErrorAction', valid ones are: "+Arrays.toString(ParseErrorAction.values()));
 		}
 
 		validIdentifiers=null;

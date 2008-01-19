@@ -40,7 +40,7 @@ public class FieldConfig extends ExpressionConfig {
 		try {
 			datatype=DataType.valueOf(v.toUpperCase());
 		} catch (IllegalArgumentException e) {
-			throw new IllegalArgumentException("Invalid value '"+v+"' for attribute datatype, valid ones are: "+Arrays.asList(DataType.values()).toString());
+			throw new IllegalArgumentException("Invalid value '"+v+"' for attribute datatype, valid ones are: "+Arrays.toString(DataType.values()));
 		}
 	}
 
