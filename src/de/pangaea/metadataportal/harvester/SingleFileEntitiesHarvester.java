@@ -76,7 +76,7 @@ public abstract class SingleFileEntitiesHarvester extends Harvester {
 	 * @see #addDocument(MetadataDocument)
 	 */
 	protected void addDocument(String identifier, Date lastModified, Source xml) throws Exception {
-		addDocument(identifier,lastModified.getTime(),xml);
+		addDocument(identifier, (lastModified==null)?-1L:lastModified.getTime(), xml);
 	}
 	
 	/**
