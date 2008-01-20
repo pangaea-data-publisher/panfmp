@@ -22,6 +22,8 @@ package de.pangaea.metadataportal;
  */
 public final class Package {
 
+	private static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(Package.class);
+
 	private Package() {}
 
 	/** Gets package object from classloader. */
@@ -60,14 +62,51 @@ public final class Package {
 		sb.append(")");
 		return sb.toString();
 	}
+	
+	private static boolean isVersionCompatible(String pkgVersion, String desired) {
+		if (pkgVersion == null || pkgVersion.length() < 1) return false;
+
+		// pkgVersion may be bad formatted (may contain suffixes with letters etc.)
+		String [] sa = pkgVersion.split("\\.", -1);
+		int [] si = new int[sa.length];
+		for (int i = 0; i < sa.length; i++) {
+			sa[i]=sa[i].replaceFirst("\\D.*$","");
+			si[i]=(sa[i].length()>0) ? Integer.parseInt(sa[i]) : 0;
+			if (si[i]<0) si[i]=0;
+		}
+
+		// desired is always formatted correctly
+		String [] da = desired.split("\\.", -1);
+		int [] di = new int[da.length];
+		for (int i = 0; i < da.length; i++) di[i]=Integer.parseInt(da[i]);
+		
+		for (int i = 0, len = Math.max(di.length, si.length); i < len; i++) {
+			int d = (i<di.length) ? di[i] : 0;
+			int s = (i<si.length) ? si[i] : 0;
+			if (s < d) return false;
+			if (s > d) return true;
+		}
+		return true;
+	}
+	
+	private static void checkPackage(java.lang.Package pkg, String name, String desired) {
+		if (pkg==null) {
+			log.warn(
+				"Cannot determine version of component '"+name+"'. "+getProductName()+
+				" may work, but it would be better to check that version "+desired+" is installed in classpath!"
+			);
+		} else if (!(
+			isVersionCompatible(pkg.getSpecificationVersion(),desired) ||
+			isVersionCompatible(pkg.getImplementationVersion(),desired)
+		)) throw new RuntimeException(getProductName()+" only runs with '"+name+"' version "+desired+" as a minimum requirement!");
+	}
 
 	/** Checks the minimum requirements (Lucene package, etc.).
 	 * @throws RuntimeException if the version of Lucene is too old.
 	 */
 	public static void checkMinimumRequirements() {
-		java.lang.Package lpkg=org.apache.lucene.LucenePackage.get();
-		if (lpkg==null || !lpkg.isCompatibleWith("2.3"))
-			throw new RuntimeException(getProductName()+" only runs with Apache Lucene 2.3 as a minimum requirement!");
+		checkPackage(org.apache.lucene.LucenePackage.get(),"Apache Lucene","2.3");
+		checkPackage(java.lang.Package.getPackage("org.apache.commons.digester"),"Apache Commons Digester","1.7");
 	}
 
 }
