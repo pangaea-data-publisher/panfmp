@@ -16,6 +16,8 @@
 
 package de.pangaea.metadataportal;
 
+import de.pangaea.metadataportal.utils.BooleanParser;
+
 /**
  * Class to get version information about panFMP.
  * @author Uwe Schindler
@@ -25,6 +27,8 @@ public final class Package {
 	private static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(Package.class);
 
 	private Package() {}
+	
+	public static final String SKIP_VERSION_CHECK_PROPERTY="de.pangaea.metadataportal.skipVersionChecks";
 
 	/** Gets package object from classloader. */
 	public static java.lang.Package get() {
@@ -89,24 +93,48 @@ public final class Package {
 		return true;
 	}
 	
-	private static void checkPackage(java.lang.Package pkg, String name, String desired) {
-		if (pkg==null) {
+	private static void throwVersionException(String name, String desired) {
+		throw new RuntimeException(
+			getProductName()+" only runs with '"+name+"' version "+desired+" as a minimum requirement! "+
+			"If you are sure, that all is correct, you may disable this version checking by setting the Java system property '"+SKIP_VERSION_CHECK_PROPERTY+"' to 'true'."
+		);
+	}
+	
+	private static void checkPackage(java.lang.Package pkg, String name, String nameMatch, String desired) {
+		String s;
+		if (pkg==null || !(
+			((s=pkg.getSpecificationTitle())!=null && s.toLowerCase().indexOf(nameMatch)>=0) ||
+			((s=pkg.getImplementationTitle())!=null && s.toLowerCase().indexOf(nameMatch)>=0)
+		)) {
 			log.warn(
 				"Cannot determine version of component '"+name+"'. "+getProductName()+
-				" may work, but it would be better to check that version "+desired+" is installed in classpath!"
+				" may work, but it would be better to check that a minimum version "+desired+" is installed in classpath!"
 			);
 		} else if (!(
 			isVersionCompatible(pkg.getSpecificationVersion(),desired) ||
 			isVersionCompatible(pkg.getImplementationVersion(),desired)
-		)) throw new RuntimeException(getProductName()+" only runs with '"+name+"' version "+desired+" as a minimum requirement!");
+		)) throwVersionException(name,desired);
+
+	}
+
+	private static void checkPackage(String clazz, String name, String nameMatch, String desired) {
+		try {
+			checkPackage(Class.forName(clazz).getPackage(),name,nameMatch,desired);
+		} catch (ClassNotFoundException ce) {
+			throwVersionException(name,desired);
+		}
 	}
 
 	/** Checks the minimum requirements (Lucene package, etc.).
-	 * @throws RuntimeException if the version of Lucene is too old.
+	 * @throws RuntimeException if the version of Lucene and other components is too old.
 	 */
 	public static void checkMinimumRequirements() {
-		checkPackage(org.apache.lucene.LucenePackage.get(),"Apache Lucene","2.3");
-		checkPackage(java.lang.Package.getPackage("org.apache.commons.digester"),"Apache Commons Digester","1.7");
+		if (!BooleanParser.parseBoolean(System.getProperty(SKIP_VERSION_CHECK_PROPERTY,"false"))) {
+			checkPackage(org.apache.lucene.LucenePackage.get(),"Apache Lucene","lucene","2.3");
+			checkPackage("org.apache.commons.collections.map.LRUMap","Apache Commons Collections","collections","3.0");
+			checkPackage("org.apache.commons.beanutils.BeanUtils","Apache Commons BeanUtils","beanutils","1.6");
+			checkPackage("org.apache.commons.digester.Digester","Apache Commons Digester","digester","1.7");
+		}
 	}
 
 }
