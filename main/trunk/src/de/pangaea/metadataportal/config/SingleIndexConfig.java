@@ -71,47 +71,22 @@ public class SingleIndexConfig extends IndexConfig {
 
 	@Override
 	public synchronized IndexReader getIndexReader() throws java.io.IOException {
+		if (!checked) throw new IllegalStateException("Index config not initialized and checked!");
 		if (indexReader==null) indexReader=IndexReader.open(getFullIndexPath());
 		return indexReader;
 	}
 
 	@Override
 	public IndexReader getUncachedIndexReader() throws java.io.IOException {
+		if (!checked) throw new IllegalStateException("Index config not initialized and checked!");
 		return IndexReader.open(getFullIndexPath());
 	}
 
 	@Override
 	public boolean isIndexAvailable() throws java.io.IOException {
+		if (!checked) throw new IllegalStateException("Index config not initialized and checked!");
 		return IndexReader.indexExists(getFullIndexPath());
 	}
-
-	// check if current opened reader is current
-	@Override
-	public synchronized boolean isIndexCurrent() throws java.io.IOException {
-		if (indexReader==null) return true;
-		return indexReader.isCurrent();
-	}
-
-	@Override
-	public synchronized void reopenIndex() throws java.io.IOException {
-		if (indexReader!=null) {
-			IndexReader n=indexReader.reopen();
-			if (n!=indexReader) try {
-				// reader was really reopened
-				indexReader.close();
-			} finally {
-				indexReader=n;
-			}
-		}
-	}
-
-	@Override
-	public synchronized void closeIndex() throws java.io.IOException {
-		if (indexReader!=null) indexReader.close();
-		indexReader=null;
-	}
-
-	protected IndexReader indexReader=null;
 
 	// members "the configuration"
 	private String indexDir=null;
