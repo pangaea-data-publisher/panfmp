@@ -91,36 +91,7 @@ public class VirtualIndexConfig extends IndexConfig {
 		return ok;
 	}
 
-	@Override
-	public synchronized boolean isIndexCurrent() throws java.io.IOException {
-		if (indexes==null) throw new IllegalStateException("Virtual index configuration with id=\""+id+"\" not yet checked and initialized!");
-		if (indexReader==null) return true;
-		boolean ok=true;
-		for (int i=0, c=indexes.length; i<c; i++) ok&=indexes[i].isIndexCurrent();
-		return ok;
-	}
-
-	@Override
-	public synchronized void reopenIndex() throws java.io.IOException {
-		if (indexReader!=null) {
-			IndexReader n=indexReader.reopen();
-			if (n!=indexReader) try {
-				// reader was really reopened
-				indexReader.close();
-			} finally {
-				indexReader=n;
-			}
-		}
-	}
-
-	@Override
-	public synchronized void closeIndex() throws java.io.IOException {
-		if (indexReader!=null) indexReader.close();
-		indexReader=null;
-	}
-		
 	private Set<String> indexIds=new HashSet<String>();
-	protected IndexReader indexReader=null;
 
 	// members "the configuration"
 	public IndexConfig[] indexes=null;
