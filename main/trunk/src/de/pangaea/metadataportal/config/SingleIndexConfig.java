@@ -87,6 +87,20 @@ public class SingleIndexConfig extends IndexConfig {
 		if (!checked) throw new IllegalStateException("Index config not initialized and checked!");
 		return IndexReader.indexExists(getFullIndexPath());
 	}
+	
+	@Override
+	public synchronized void reopenIndex() throws java.io.IOException {
+		if (!checked) throw new IllegalStateException("Index config not initialized and checked!");
+		if (indexReader!=null) {
+			IndexReader n=indexReader.reopen();
+			if (n!=indexReader) try {
+				// reader was really reopened
+				indexReader.close();
+			} finally {
+				indexReader=n;
+			}
+		}
+	}	
 
 	// members "the configuration"
 	private String indexDir=null;

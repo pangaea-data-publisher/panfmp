@@ -90,6 +90,11 @@ public class VirtualIndexConfig extends IndexConfig {
 		for (int i=0, c=indexes.length; i<c; i++) ok&=indexes[i].isIndexAvailable();
 		return ok;
 	}
+	
+	@Override
+	public synchronized void reopenIndex() throws java.io.IOException {
+		closeIndex();
+	}	
 
 	private Set<String> indexIds=new HashSet<String>();
 
