@@ -20,7 +20,9 @@ import de.pangaea.metadataportal.config.*;
 import de.pangaea.metadataportal.utils.IndexConstants;
 import de.pangaea.metadataportal.utils.LenientDateParser;
 import org.apache.lucene.search.*;
-import org.apache.lucene.queryParser.*;
+import org.apache.lucene.queryParser.QueryParser;
+import org.apache.lucene.queryParser.ParseException;
+import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.index.*;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Document;
@@ -96,6 +98,10 @@ public class SearchService {
 		cache=LuceneCache.getInstance(cfgFile);
 		index=cache.config.indexes.get(indexId);
 		if (index==null) throw new IllegalArgumentException("Index '"+indexId+"' does not exist!");
+		// detect query parser
+		Class<?> c=Class.forName(cache.config.searchProperties.getProperty("queryParserClass",QueryParser.class.getName()));
+		queryParserClass=c.asSubclass(QueryParser.class);
+		queryParserConstructor=queryParserClass.getConstructor(String.class,Analyzer.class);
 	}
 
 	/**
@@ -609,7 +615,13 @@ public class SearchService {
 	 * @see QueryParser
 	 */
 	protected Query parseQuery(String fieldName, String query) throws ParseException {
-		QueryParser p=new QueryParser(fieldName, cache.config.getAnalyzer());
+		Analyzer a=cache.config.getAnalyzer();
+		QueryParser p;
+		try {
+			p=queryParserConstructor.newInstance(fieldName, a);
+		} catch (Exception e) {
+			throw new RuntimeException("Cannot instantiate query parser (this should never happen).");
+		}
 		p.setDefaultOperator(QueryParser.AND_OPERATOR);
 		Query q=p.parse(query);
 		return q;
@@ -635,6 +647,9 @@ public class SearchService {
 
 	protected LuceneCache cache=null;
 	protected IndexConfig index=null;
-
+	
+	protected Class<? extends QueryParser> queryParserClass=null;
+	protected java.lang.reflect.Constructor<? extends QueryParser> queryParserConstructor=null;
+	
 	protected int collectorBufferSize=32768;
 }

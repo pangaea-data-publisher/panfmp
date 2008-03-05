@@ -139,6 +139,7 @@ public class Config {
 			dig.addCallParam("config/metadata/schema/url", 0, "namespace");
 			dig.addCallParam("config/metadata/schema/url", 1);
 			dig.addCallMethod("config/metadata/schema/haltOnError", "setHaltOnSchemaError", 0);
+			dig.addCallMethod("config/metadata/schema/indexAugmentedDocument", "setIndexAugmentedDocument", 0);
 
 			// *** ANALYZER ***
 			dig.addDoNothing("config/analyzer");
@@ -375,6 +376,12 @@ public class Config {
 		haltOnSchemaError=BooleanParser.parseBoolean(v.trim());
 	}
 
+	@PublicForDigesterUse
+	@Deprecated
+	public void setIndexAugmentedDocument(String v) {
+		indexAugmentedDocument=BooleanParser.parseBoolean(v.trim());
+	}
+
 	// get configuration infos
 
 	public org.apache.lucene.analysis.Analyzer getAnalyzer() {
@@ -384,9 +391,9 @@ public class Config {
 
 				String[] sw=new String[luceneStopWords.size()];
 				sw=luceneStopWords.toArray(sw);
-				return (org.apache.lucene.analysis.Analyzer)analyzerConstructor.newInstance(new Object[]{sw});
+				return analyzerConstructor.newInstance(new Object[]{sw});
 			} else
-				return (org.apache.lucene.analysis.Analyzer)analyzerClass.newInstance();
+				return analyzerClass.newInstance();
 		} catch (Exception e) {
 			throw new RuntimeException("Error instantiating analyzer (this should never happen)!",e);
 		}
@@ -408,7 +415,7 @@ public class Config {
 
 	// schema etc
 	public Schema schema=null;
-	public boolean haltOnSchemaError=false;
+	public boolean haltOnSchemaError=false,indexAugmentedDocument=true;
 
 	// document boost
 	public ExpressionConfig documentBoost=null;

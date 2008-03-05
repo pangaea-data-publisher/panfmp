@@ -48,6 +48,8 @@
 		<cfg:schema>
 			<cfg:url>http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/dif_v9.4.xsd</cfg:url>
 			<cfg:haltOnError>false</cfg:haltOnError>
+			<!-- if the validator augments the source document (e.g., adds default attributes), use this as basis for indexing? -->
+			<cfg:indexAugmentedDocument>false</cfg:indexAugmentedDocument>
 		</cfg:schema>
 	</cfg:metadata>
 	<cfg:globalHarvesterProperties>
@@ -115,6 +117,7 @@
 		<cfg:cacheMaxSessions>10</cfg:cacheMaxSessions>
 		<cfg:reloadIndexIfChangedAfter>60</cfg:reloadIndexIfChangedAfter>
 		<cfg:maxStoredQueries>200</cfg:maxStoredQueries>
+		<cfg:queryParserClass>org.apache.lucene.queryParser.QueryParser</cfg:queryParserClass>
 		<!-- AXIS special properties -->
 		<cfg:returnXML>true</cfg:returnXML>
 		<cfg:returnStoredFields>true</cfg:returnStoredFields>
