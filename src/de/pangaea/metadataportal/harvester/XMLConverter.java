@@ -70,9 +70,9 @@ public class XMLConverter  {
 					throw new SAXException("Fatal validation error in "+(wasTransformed?"XSL transformed ":"")+"document '"+ds.getSystemId()+"': "+e.getMessage());
 				}
 			});
-			DOMResult dr=emptyDOMResult(ds.getSystemId());
+			DOMResult dr=(iconfig.parent.indexAugmentedDocument) ? emptyDOMResult(ds.getSystemId()) : null;
 			val.validate(ds,dr);
-			return dr;
+			return (dr==null) ? DOMSource2Result(ds) : dr;
 		}
 	}
 
