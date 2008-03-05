@@ -49,7 +49,7 @@
 			<cfg:url>http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/dif_v9.4.xsd</cfg:url>
 			<cfg:haltOnError>false</cfg:haltOnError>
 			<!-- if the validator augments the source document (e.g., adds default attributes), use this as basis for indexing? -->
-			<cfg:indexAugmentedDocument>false</cfg:indexAugmentedDocument>
+			<cfg:augmentation>false</cfg:augmentation>
 		</cfg:schema>
 	</cfg:metadata>
 	<cfg:globalHarvesterProperties>
