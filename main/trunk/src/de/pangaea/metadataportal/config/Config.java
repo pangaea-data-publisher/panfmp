@@ -139,7 +139,7 @@ public class Config {
 			dig.addCallParam("config/metadata/schema/url", 0, "namespace");
 			dig.addCallParam("config/metadata/schema/url", 1);
 			dig.addCallMethod("config/metadata/schema/haltOnError", "setHaltOnSchemaError", 0);
-			dig.addCallMethod("config/metadata/schema/indexAugmentedDocument", "setIndexAugmentedDocument", 0);
+			dig.addCallMethod("config/metadata/schema/augmentation", "setAugmentation", 0);
 
 			// *** ANALYZER ***
 			dig.addDoNothing("config/analyzer");
@@ -378,8 +378,8 @@ public class Config {
 
 	@PublicForDigesterUse
 	@Deprecated
-	public void setIndexAugmentedDocument(String v) {
-		indexAugmentedDocument=BooleanParser.parseBoolean(v.trim());
+	public void setAugmentation(String v) {
+		validateWithAugmentation=BooleanParser.parseBoolean(v.trim());
 	}
 
 	// get configuration infos
@@ -415,7 +415,7 @@ public class Config {
 
 	// schema etc
 	public Schema schema=null;
-	public boolean haltOnSchemaError=false,indexAugmentedDocument=true;
+	public boolean haltOnSchemaError=false,validateWithAugmentation=true;
 
 	// document boost
 	public ExpressionConfig documentBoost=null;
