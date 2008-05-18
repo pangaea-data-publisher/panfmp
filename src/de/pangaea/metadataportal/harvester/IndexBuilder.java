@@ -80,7 +80,7 @@ public class IndexBuilder {
 		mdocBuffer=new ArrayBlockingQueue<MetadataDocument>(size,true);
 
 		size=Integer.parseInt(iconfig.harvesterProperties.getProperty("maxIndexerQueue","250"));
-		if (size<1) throw new IllegalArgumentException("maxConverterQueue must be >=1!");
+		if (size<1) throw new IllegalArgumentException("maxIndexerQueue must be >=1!");
 		ldocBuffer=new ArrayBlockingQueue<IndexerQueueEntry>(size,false);
 
 		// converter threads
@@ -130,7 +130,7 @@ public class IndexBuilder {
 				if (t.isAlive()) t.join();
 			}
 
-			// in ldocBuffer not empty there were already some threads filling the queue
+			// if ldocBuffer not empty there were already some threads filling the queue
 			// => LDOC_EOF is queued by the threads
 			// explicitely putting a LDOC_EOF is only needed when converterThreads were never running!
 			if (ldocBuffer.size()==0) ldocBuffer.put(LDOC_EOF);
@@ -170,7 +170,8 @@ public class IndexBuilder {
 
 		if (ldocBuffer.remainingCapacity()*2<ldocBuffer.size()) {
 			log.warn("Harvester is too fast for indexer thread, that is blocked. Waiting...");
-			while (ldocBuffer.size()>0 && failure.get()==null) synchronized(indexerLock) {
+			// we use >=2, because there seems to be a synchronization bug. TODO: check this!!!
+			while (ldocBuffer.size()>=2 && failure.get()==null) synchronized(indexerLock) {
 				indexerLock.wait();
 			}
 		}
@@ -255,6 +256,11 @@ public class IndexBuilder {
 			HashSet<String> committedIdentifiers=new HashSet<String>(changesBeforeCommit);
 
 			while (failure.get()==null) {
+				// notify eventually waiting checkIndexerBuffer() calls
+				synchronized(indexerLock) {
+					indexerLock.notifyAll();
+				}
+
 				IndexerQueueEntry entry;
 				try {
 					entry=ldocBuffer.take();
@@ -288,13 +294,12 @@ public class IndexBuilder {
 					if (ce!=null) ce.harvesterCommitted(Collections.unmodifiableSet(committedIdentifiers));
 					committedIdentifiers.clear();
 				}
-
-				// notify eventually waiting checkIndexerBuffer() calls
-				synchronized(indexerLock) {
-					indexerLock.notifyAll();
-				}
 			}
 
+			// notify eventually waiting checkIndexerBuffer() calls & flush
+			synchronized(indexerLock) {
+				indexerLock.notifyAll();
+			}
 			writer.flush();
 
 			// check vor validIdentifiers Set and remove all unknown identifiers from index, if available (but not if new-created index)
