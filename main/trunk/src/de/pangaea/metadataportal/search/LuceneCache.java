@@ -212,6 +212,7 @@ public class LuceneCache {
 					count=fetchedCount;
 					while (neededDoc>=count) count*=parent.fetchFactor;
 				}
+				log.debug("Fetching "+count+" top docs...");
 				long start=new java.util.Date().getTime();
 				topDocs = (sort!=null) ? searcher.search(query,(Filter)null,count,sort) : searcher.search(query,(Filter)null,count);
 				queryTime=new java.util.Date().getTime()-start;
