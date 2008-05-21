@@ -223,8 +223,7 @@ public class LuceneCache {
 			lastAccess=new java.util.Date().getTime();
 		}
 
-		protected SearchResultList getSearchResultList(boolean loadXml, Collection<String> fieldsToLoad) throws java.io.IOException {
-			ensureFetchable(0);
+		protected SearchResultList getSearchResultList(boolean loadXml, Collection<String> fieldsToLoad) {
 			return new SearchResultList(this, parent.getFieldSelector(loadXml,fieldsToLoad));
 		}
 
