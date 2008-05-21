@@ -204,11 +204,11 @@ public class LuceneCache {
 		protected synchronized void ensureFetchable(int neededDoc) throws java.io.IOException {
 			if (topDocs==null || neededDoc>=fetchedCount) {
 				int count;
-				if (neededDoc>Integer.MAX_VALUE/2) {
+				if (neededDoc>=Integer.MAX_VALUE/2) {
 					count=Integer.MAX_VALUE;
 				} else {
 					count = (fetchedCount==0) ? parent.fetchFactor : fetchedCount;
-					while (neededDoc>=count) count*=parent.fetchFactor;
+					while (neededDoc>=count) count*=2;
 				}
 				log.debug("Fetching "+count+" top docs...");
 				long start=new java.util.Date().getTime();
