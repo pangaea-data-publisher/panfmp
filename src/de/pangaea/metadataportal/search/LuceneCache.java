@@ -218,11 +218,11 @@ public class LuceneCache {
 
 		protected LuceneCache parent;
 		protected Searcher searcher;
-		protected Hits hits;
-		protected long lastAccess;
-		protected long queryTime=0L;
 		private Query query;
 		private Sort sort;
+		protected long lastAccess;
+		protected long queryTime=0L;
+		protected Hits hits=null;
 	}
 
 }
