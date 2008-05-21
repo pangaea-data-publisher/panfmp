@@ -43,7 +43,7 @@ public final class SearchResponse {
 		return results;
 	}
 
-	public long getQueryTime() {
+	public long getQueryTime() throws java.io.IOException {
 		return list.getQueryTime();
 	}
 

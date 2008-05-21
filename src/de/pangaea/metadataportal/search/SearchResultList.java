@@ -20,6 +20,7 @@ import de.pangaea.metadataportal.config.*;
 import de.pangaea.metadataportal.utils.*;
 import java.io.IOException;
 import org.apache.lucene.document.*;
+import org.apache.lucene.search.ScoreDoc;
 import java.util.*;
 
 /**
@@ -37,10 +38,8 @@ public class SearchResultList extends AbstractList<SearchResultItem> {
 		super();
 		this.session=session;
 		this.fields=fields;
-		maxScore=session.topDocs.getMaxScore();
-		if (maxScore==0.0f) maxScore=1.0f;
 	}
-
+	
 	/**
 	 * Gets search result at the supplied index.
 	 * @throws RuntimeException wrapping an {@link IOException}. This is needed because the generic {@link List} interface does not allow us to throw exceptions.
@@ -60,31 +59,37 @@ public class SearchResultList extends AbstractList<SearchResultItem> {
 	 */
 	@Override
 	public int size() {
-		return session.topDocs.totalHits;
+		try {
+			session.ensureFetchable(0);
+			return session.topDocs.totalHits;
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	/**
 	 * Gets search result at the supplied index. Use this method in not {@link List}-specific code because you can catch the {@link IOException}.
 	 */
 	public SearchResultItem getResult(int index) throws IOException {
-		if (index<0 || index>=size()) throw new IndexOutOfBoundsException();
-		session.ensureFetchable(index);
-		return new SearchResultItem(
-			session.parent.config,
-			session.topDocs.scoreDocs[index].score/maxScore,
-			session.searcher.doc(session.topDocs.scoreDocs[index].doc,fields)
-		);
+		synchronized (session) {
+			session.ensureFetchable(index);
+			ScoreDoc sd=session.topDocs.scoreDocs[index];
+			return new SearchResultItem(
+				session.parent.config,
+				sd.score/session.topDocs.getMaxScore(),
+				session.searcher.doc(sd.doc,fields)
+			);
+		}
 	}
 
 	/**
 	 * Gets the duration of the query in milliseconds.
 	 */
-	public long getQueryTime() {
+	public long getQueryTime() throws IOException {
+		session.ensureFetchable(0);
 		return session.queryTime;
 	}
 
 	protected LuceneCache.Session session;
 	protected FieldSelector fields;
-	protected int fetchFactor;
-	protected float maxScore;
 }
