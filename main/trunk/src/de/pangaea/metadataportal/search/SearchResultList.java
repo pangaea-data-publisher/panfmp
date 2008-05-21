@@ -37,6 +37,8 @@ public class SearchResultList extends AbstractList<SearchResultItem> {
 		super();
 		this.session=session;
 		this.fields=fields;
+		maxScore=session.topDocs.getMaxScore();
+		if (maxScore==0.0f) maxScore=1.0f;
 	}
 
 	/**
@@ -58,7 +60,7 @@ public class SearchResultList extends AbstractList<SearchResultItem> {
 	 */
 	@Override
 	public int size() {
-		return session.hits.length();
+		return session.topDocs.totalHits;
 	}
 
 	/**
@@ -66,10 +68,11 @@ public class SearchResultList extends AbstractList<SearchResultItem> {
 	 */
 	public SearchResultItem getResult(int index) throws IOException {
 		if (index<0 || index>=size()) throw new IndexOutOfBoundsException();
+		session.ensureFetchable(index);
 		return new SearchResultItem(
 			session.parent.config,
-			session.hits.score(index),
-			session.searcher.doc(session.hits.id(index),fields)
+			session.topDocs.scoreDocs[index].score/maxScore,
+			session.searcher.doc(session.topDocs.scoreDocs[index].doc,fields)
 		);
 	}
 
@@ -82,4 +85,6 @@ public class SearchResultList extends AbstractList<SearchResultItem> {
 
 	protected LuceneCache.Session session;
 	protected FieldSelector fields;
+	protected int fetchFactor;
+	protected float maxScore;
 }
