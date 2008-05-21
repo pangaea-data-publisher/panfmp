@@ -206,10 +206,8 @@ public class LuceneCache {
 				int count;
 				if (neededDoc>Integer.MAX_VALUE/2) {
 					count=Integer.MAX_VALUE;
-				} else if (fetchedCount==0) {
-					count=parent.fetchFactor;
 				} else {
-					count=fetchedCount;
+					count = (fetchedCount==0) ? parent.fetchFactor : fetchedCount;
 					while (neededDoc>=count) count*=parent.fetchFactor;
 				}
 				log.debug("Fetching "+count+" top docs...");
