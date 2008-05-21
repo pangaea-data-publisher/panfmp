@@ -55,6 +55,7 @@ public class LuceneCache {
 		
 		cacheMaxAge=Integer.parseInt(config.searchProperties.getProperty("cacheMaxAge",Integer.toString(DEFAULT_CACHE_MAX_AGE)));
 		reloadIndexIfChangedAfter=Integer.parseInt(config.searchProperties.getProperty("reloadIndexIfChangedAfter",Integer.toString(DEFAULT_RELOAD_AFTER)));		
+		fetchFactor=Integer.parseInt(config.searchProperties.getProperty("fetchFactor",Integer.toString(DEFAULT_FETCH_FACTOR)));		
 	}
 
 	private static final Map<String,LuceneCache> instances=new HashMap<String,LuceneCache>();
@@ -82,7 +83,6 @@ public class LuceneCache {
 		return storedQueries.get(hash);
 	}
 
-	// Cache of Hits
 	public Session getSession(IndexConfig index, Query query, Sort sort) throws java.io.IOException {
 		// generate an unique identifier
 		String id="index="+index.id+"\000query="+query.toString(IndexConstants.FIELDNAME_CONTENT)+"\000sort="+sort;
@@ -99,7 +99,6 @@ public class LuceneCache {
 				sess.logAccess();
 			}
 		}
-		sess.init();
 		return sess;
 	}
 
@@ -170,6 +169,7 @@ public class LuceneCache {
 	private long indexChangedAt;
 	private int cacheMaxAge=DEFAULT_CACHE_MAX_AGE;
 	private int reloadIndexIfChangedAfter=DEFAULT_RELOAD_AFTER;		
+	private int fetchFactor=DEFAULT_FETCH_FACTOR;		
 	private Map<String,Query> storedQueries;
 	private Map<String,Session> sessions;
 
@@ -180,6 +180,7 @@ public class LuceneCache {
 
 	public static final int DEFAULT_MAX_STORED_QUERIES=200;
 	public static final int DEFAULT_CACHE_MAX_SESSIONS=30;
+	public static final int DEFAULT_FETCH_FACTOR=250;
 
 	private static final Set<String> FIELDS_DEFAULT=Collections.singleton(IndexConstants.FIELDNAME_IDENTIFIER);
 	private static final Set<String> FIELDS_XML=new TreeSet<String>(FIELDS_DEFAULT);
@@ -192,7 +193,7 @@ public class LuceneCache {
 	 */
 	protected static final class Session {
 
-		protected Session(LuceneCache parent, Searcher searcher, Query query, Sort sort) {
+		private Session(LuceneCache parent, Searcher searcher, Query query, Sort sort) {
 			this.parent=parent;
 			this.searcher=searcher;
 			this.query=query;
@@ -200,11 +201,21 @@ public class LuceneCache {
 			lastAccess=new java.util.Date().getTime();
 		}
 		
-		protected synchronized void init() throws java.io.IOException {
-			if (hits==null) {
-				if (sort!=null) hits=searcher.search(query,sort);
-				else hits=searcher.search(query);
-				queryTime=new java.util.Date().getTime()-lastAccess;			
+		protected synchronized void ensureFetchable(int neededDoc) throws java.io.IOException {
+			if (topDocs==null || neededDoc>=fetchedCount) {
+				int count;
+				if (neededDoc>Integer.MAX_VALUE/2) {
+					count=Integer.MAX_VALUE;
+				} else if (fetchedCount==0) {
+					count=parent.fetchFactor;
+				} else {
+					count=fetchedCount;
+					while (neededDoc>=count) count*=parent.fetchFactor;
+				}
+				long start=new java.util.Date().getTime();
+				topDocs = (sort!=null) ? searcher.search(query,(Filter)null,count,sort) : searcher.search(query,(Filter)null,count);
+				queryTime=new java.util.Date().getTime()-start;
+				fetchedCount=count;
 			}
 		}
 
@@ -212,7 +223,8 @@ public class LuceneCache {
 			lastAccess=new java.util.Date().getTime();
 		}
 
-		public SearchResultList getSearchResultList(boolean loadXml, Collection<String> fieldsToLoad) {
+		protected SearchResultList getSearchResultList(boolean loadXml, Collection<String> fieldsToLoad) throws java.io.IOException {
+			ensureFetchable(0);
 			return new SearchResultList(this, parent.getFieldSelector(loadXml,fieldsToLoad));
 		}
 
@@ -221,8 +233,10 @@ public class LuceneCache {
 		private Query query;
 		private Sort sort;
 		protected long lastAccess;
+		
 		protected long queryTime=0L;
-		protected Hits hits=null;
+		protected TopDocs topDocs=null;
+		protected int fetchedCount=0;
 	}
 
 }
