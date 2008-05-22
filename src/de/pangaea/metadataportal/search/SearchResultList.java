@@ -56,12 +56,12 @@ public class SearchResultList extends AbstractList<SearchResultItem> {
 
 	/**
 	 * Returns the number of search results.
+	 * @throws RuntimeException wrapping an {@link IOException}. This is needed because the generic {@link List} interface does not allow us to throw exceptions.
 	 */
 	@Override
 	public int size() {
 		try {
-			session.ensureFetchable(0);
-			return session.topDocs.totalHits;
+			return getResultCount();
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
@@ -80,6 +80,14 @@ public class SearchResultList extends AbstractList<SearchResultItem> {
 				session.searcher.doc(sd.doc,fields)
 			);
 		}
+	}
+
+	/**
+	 * Returns the number of search results. Use this method in not {@link List}-specific code because you can catch the {@link IOException}.
+	 */
+	public int getResultCount() throws IOException {
+		session.ensureFetchable(0);
+		return session.topDocs.totalHits;
 	}
 
 	/**
