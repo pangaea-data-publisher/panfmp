@@ -98,6 +98,6 @@ public class SearchResultList extends AbstractList<SearchResultItem> {
 		return session.queryTime;
 	}
 
-	protected LuceneCache.Session session;
-	protected FieldSelector fields;
+	private LuceneCache.Session session;
+	private FieldSelector fields;
 }
