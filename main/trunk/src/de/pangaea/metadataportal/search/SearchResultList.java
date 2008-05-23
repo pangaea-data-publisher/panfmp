@@ -86,16 +86,20 @@ public class SearchResultList extends AbstractList<SearchResultItem> {
 	 * Returns the number of search results. Use this method in not {@link List}-specific code because you can catch the {@link IOException}.
 	 */
 	public int getResultCount() throws IOException {
-		session.ensureFetchable(0);
-		return session.topDocs.totalHits;
+		synchronized (session) {
+			session.ensureFetchable(0);
+			return session.topDocs.totalHits;
+		}
 	}
 
 	/**
 	 * Gets the duration of the query in milliseconds.
 	 */
 	public long getQueryTime() throws IOException {
-		session.ensureFetchable(0);
-		return session.queryTime;
+		synchronized (session) {
+			session.ensureFetchable(0);
+			return session.queryTime;
+		}
 	}
 
 	private LuceneCache.Session session;
