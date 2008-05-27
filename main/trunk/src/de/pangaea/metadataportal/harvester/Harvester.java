@@ -35,13 +35,15 @@ import org.xml.sax.SAXParseException;
  * <li><code>autoOptimize</code>: should the index be optimzed after harvesting is finished? (default: false)</li>
  * <li><code>validate</code>: validate harvested documents against schema given in configuration? (default: true, if schema given)</li>
  * <li><code>compressXML</code>: compress the harvested XML blob when storing in index? (default: true)</li>
+ * <li><code>conversionErrorAction</code>: What to do if a conversion error occurs (e.g. number format error)?
+ *    Can be <code>STOP</code>, <code>IGNOREDOCUMENT</code>, <code>DELETEDOCUMENT</code> (default is to stop conversion)</li>
  * </ul>
  * @author Uwe Schindler
  */
 public abstract class Harvester {
 
 	private static org.apache.commons.logging.Log staticLog = org.apache.commons.logging.LogFactory.getLog(Harvester.class);
-
+	
 	/**
 	 * External entry point to the harvester interface. Called from the Java command line with two parameters (config file, index name)
 	 */
@@ -243,6 +245,7 @@ public abstract class Harvester {
 			"maxConverterQueue",
 			"maxIndexerQueue",
 			"autoOptimize",
+			"conversionErrorAction",
 			// XMLConverter
 			"validate",
 			// MetadataDocument
