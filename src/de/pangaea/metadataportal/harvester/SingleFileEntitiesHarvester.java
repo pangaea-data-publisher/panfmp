@@ -27,20 +27,14 @@ import javax.xml.transform.Source;
  * (like it would be with OAI-PMH), ignore the document, or delete it (if existent in index) depending on the harvester property "parseErrorAction".
  * <p>This panFMP harvester supports the following <b>harvester properties</b> in adidition to the default ones:<ul>
  * <li><code>parseErrorAction</code>: What to do if a parse error occurs?
- *    Can be <code>FATALEXIT</code>, <code>IGNOREDOCUMENT</code>, <code>DELETEDOCUMENT</code> (default is to ignore the document)</li>
+ *    Can be <code>STOP</code>, <code>IGNOREDOCUMENT</code>, <code>DELETEDOCUMENT</code> (default is to ignore the document)</li>
  * <li><code>deleteMissingDocuments</code>: remove documents after harvesting that were deleted from source (maybe a heavy operation). (default: true)</li>
  * </ul>
  * @author Uwe Schindler
  */
 public abstract class SingleFileEntitiesHarvester extends Harvester {
 
-	/** 
-	 * Enumeration that specifies what action should be taken on a parse error. 
-	 * @see #parseErrorAction
-	 */
-	public static enum ParseErrorAction { STOP, IGNOREDOCUMENT, DELETEDOCUMENT };
-	
-	private ParseErrorAction parseErrorAction=ParseErrorAction.IGNOREDOCUMENT;
+	private DocumentErrorAction parseErrorAction=DocumentErrorAction.IGNOREDOCUMENT;
 	private Set<String> validIdentifiers=null;
 	private long newestDatestamp=-1;
 
@@ -50,9 +44,9 @@ public abstract class SingleFileEntitiesHarvester extends Harvester {
 		
 		String s=iconfig.harvesterProperties.getProperty("parseErrorAction");
 		if (s!=null) try {
-			parseErrorAction=ParseErrorAction.valueOf(s.toUpperCase());
+			parseErrorAction=DocumentErrorAction.valueOf(s.toUpperCase());
 		} catch (IllegalArgumentException e) {
-			throw new IllegalArgumentException("Invalid value '"+s+"' for harvester property 'parseErrorAction', valid ones are: "+Arrays.toString(ParseErrorAction.values()));
+			throw new IllegalArgumentException("Invalid value '"+s+"' for harvester property 'parseErrorAction', valid ones are: "+Arrays.toString(DocumentErrorAction.values()));
 		}
 
 		validIdentifiers=null;

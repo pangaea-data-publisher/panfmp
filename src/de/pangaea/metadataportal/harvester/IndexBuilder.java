@@ -58,6 +58,7 @@ public class IndexBuilder {
 	private final Condition indexerLockCondition=indexerLock.newCondition(); 
 	
 	private int changesBeforeCommit;
+	private DocumentErrorAction conversionErrorAction=DocumentErrorAction.STOP;
 
 	private Thread indexerThread;
 	private ThreadGroup converterThreads;
@@ -74,6 +75,13 @@ public class IndexBuilder {
 		} catch (IOException e) {}
 
 		changesBeforeCommit=Integer.parseInt(iconfig.harvesterProperties.getProperty("changesBeforeIndexCommit","1000"));
+
+		String s=iconfig.harvesterProperties.getProperty("conversionErrorAction");
+		if (s!=null) try {
+			conversionErrorAction=DocumentErrorAction.valueOf(s.toUpperCase());
+		} catch (IllegalArgumentException e) {
+			throw new IllegalArgumentException("Invalid value '"+s+"' for harvester property 'conversionErrorAction', valid ones are: "+Arrays.toString(DocumentErrorAction.values()));
+		}
 
 		int threadCount=Integer.parseInt(iconfig.harvesterProperties.getProperty("numConverterThreads","1"));
 		if (threadCount<1) throw new IllegalArgumentException("numConverterThreads harvester-property must be >=1!");
@@ -220,14 +228,24 @@ public class IndexBuilder {
 
 				if (log.isDebugEnabled()) log.debug("Converting document: "+mdoc.toString());
 				if (log.isTraceEnabled()) log.trace("XML: "+mdoc.getXML());
-				IndexerQueueEntry en=null;
 				try {
-					en=new IndexerQueueEntry(mdoc.getIdentifier(),mdoc.getLuceneDocument());
+					IndexerQueueEntry en=new IndexerQueueEntry(mdoc.getIdentifier(),mdoc.getLuceneDocument());
+					ldocBuffer.put(en);
 				} catch (Exception e) {
-					log.error("Conversion XML to Lucene document failed for '"+mdoc.getIdentifier()+"', because: "+e);
-					throw e;
+					// handle exception
+					switch (conversionErrorAction) {
+						case IGNOREDOCUMENT: 
+							log.error("Conversion XML to Lucene document failed for '"+mdoc.getIdentifier()+"' (object ignored):",e);
+							break;
+						case DELETEDOCUMENT:
+							log.error("Conversion XML to Lucene document failed for '"+mdoc.getIdentifier()+"' (object marked deleted):",e);
+							ldocBuffer.put(new IndexerQueueEntry(mdoc.getIdentifier(),null));
+							break;
+						default:
+							log.fatal("Conversion XML to Lucene document failed for '"+mdoc.getIdentifier()+"' (fatal, stopping conversions).");
+							throw e;
+					}
 				}
-				ldocBuffer.put(en);
 			}
 		} catch (InterruptedException ie) {
 			log.debug(ie);
