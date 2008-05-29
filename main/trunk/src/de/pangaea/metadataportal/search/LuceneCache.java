@@ -64,7 +64,7 @@ public class LuceneCache {
 	public static synchronized LuceneCache getInstance(String cfgFile) throws Exception {
 		LuceneCache instance=instances.get(cfgFile);
 		if (instance==null) {
-			de.pangaea.metadataportal.config.Config cfg=new de.pangaea.metadataportal.config.Config(cfgFile,Config.ConfigMode.SEARCH);
+			Config cfg=new Config(cfgFile,Config.ConfigMode.SEARCH);
 			instance=new LuceneCache(cfg);
 			instances.put(cfgFile,instance);
 			log.info("New LuceneCache instance for config file '"+cfgFile+"' created.");
