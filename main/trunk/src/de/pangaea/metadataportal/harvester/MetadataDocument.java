@@ -506,9 +506,8 @@ public class MetadataDocument {
 			case Node.ELEMENT_NODE:
 			case Node.DOCUMENT_NODE:
 			case Node.DOCUMENT_FRAGMENT_NODE:
-				NodeList childs=n.getChildNodes();
-				for (int i=0,c=childs.getLength(); i<c; i++) {
-					walkNodeTexts(sb, childs.item(i),false);
+				for (Node nod=n.getFirstChild(); nod!=null; nod=nod.getNextSibling()) {
+					walkNodeTexts(sb,nod,false);
 					sb.append('\n');
 				}
 				break;
