@@ -102,8 +102,12 @@ public abstract class OAIHarvesterBase extends Harvester {
 				dig.resetRoot();
 				dig.push(this);
 				InputSource is=getInputSource(u,checkModifiedDate);
-				if (checkModifiedDate!=null && is==null) return false;
-				dig.parse(is);
+				try {
+					if (checkModifiedDate!=null && is==null) return false;
+					dig.parse(is);
+				} finally {
+					if (is!=null && is.getByteStream()!=null) is.getByteStream().close();
+				}
 				return true;
 			} catch (org.xml.sax.SAXException saxe) {
 				// throw the real Exception not the digester one
