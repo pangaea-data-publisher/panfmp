@@ -152,7 +152,7 @@ public abstract class OAIHarvesterBase extends Harvester {
 	/** Returns a SAX <code>InputSource</code> for retrieving stream data of an URL. It is optimized for compression of the HTTP(S) protocol and timeout checking.
 	 * @param url the URL to open
 	 * @param checkModifiedDate for static repositories, it is possible to give a reference to a {@link Date} for checking the last modification, in this case
-	 * <code>false</code> is returned, if the URL was not modified. If it was modified, the reference contains a new <code>Date</code> object with the new modification date.
+	 * <code>null</code> is returned, if the URL was not modified. If it was modified, the reference contains a new <code>Date</code> object with the new modification date.
 	 * Supply <code>null</code> for no checking of last modification, a last modification date is then not returned back (as there is no reference).
 	 * @see #getEntityResolver
 	 */
