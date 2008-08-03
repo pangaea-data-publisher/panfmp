@@ -231,6 +231,8 @@ public class IndexBuilder {
 				try {
 					IndexerQueueEntry en=new IndexerQueueEntry(mdoc.getIdentifier(),mdoc.getLuceneDocument());
 					ldocBuffer.put(en);
+				} catch (InterruptedException ie) {
+					throw ie; // no handling here
 				} catch (Exception e) {
 					// handle exception
 					switch (conversionErrorAction) {
