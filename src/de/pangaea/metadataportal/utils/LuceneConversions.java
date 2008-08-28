@@ -25,7 +25,7 @@ import org.apache.lucene.document.Field;
  * <p>This is part of the central implementation of <b>panFMP</b>'s
  * high performance range queries on numeric and date/time fields using &quot;trie memory&quot; structures
  * (see the publication about <b>panFMP</b>:
- * <em>Schindler, U, Diepenbroek, M, 2007. Generic Framework for Metadata Portals. Computers &amp; Geosciences, submitted.</em>).
+ * <em>Schindler, U, Diepenbroek, M, 2008. Generic XML-based Framework for Metadata Portals. Computers & Geosciences, in press. doi:10.1016/j.cageo.2008.02.023</em>).
  * This query type works only with indexes created by <b>panFMP</b>'s index builder. This class helps on creating correct fields in a Lucene index.
  * <p>TODO: Describe the format of converted values!
  * @author Uwe Schindler
@@ -49,15 +49,15 @@ public final class LuceneConversions {
 
 	// internal conversion to/from strings
 
-	private static String internalLongToLucene(long l) {
-		StringBuilder sb=new StringBuilder(16);
+	private static String internalLongToLucene(final long l) {
+		final StringBuilder sb=new StringBuilder(16);
 		for (int j=60; j>=0; j-=4) sb.append((char)(LUCENE_SYMBOL_MIN+((l >>> j) & 0x0f)));
 		return sb.toString();
 	}
 
-	private static long internalLuceneToLong(String s) {
+	private static long internalLuceneToLong(final String s) {
 		if (s==null) throw new NullPointerException("Lucene encoded String may not be NULL");
-		int len=s.length();
+		final int len=s.length();
 		if (len!=16) throw new NumberFormatException("Invalid Lucene numerical value representation: "+s+" (incompatible length, must be 16)");
 		long l=0L;
 		for (int i=0; i<len; i++) {
@@ -73,19 +73,19 @@ public final class LuceneConversions {
 	// Long's
 
 	/** Converts a <code>long</code> value encoded to a <code>String</code> (with 16 bytes). This data type is currently not used by <b>panFMP</b>. */
-	public static String longToLucene(long l) {
+	public static String longToLucene(final long l) {
 		return internalLongToLucene(l ^ 0x8000000000000000L);
 	}
 
 	/** Converts a encoded <code>String</code> (16 bytes) value back to a <code>long</code>. This data type is currently not used by <b>panFMP</b>. */
-	public static long luceneToLong(String s) {
+	public static long luceneToLong(final String s) {
 		return internalLuceneToLong(s) ^ 0x8000000000000000L;
 	}
 
 	// Double's
 
 	/** Converts a <code>double</code> value encoded to a <code>String</code> (with 16 bytes). */
-	public static String doubleToLucene(double d) {
+	public static String doubleToLucene(final double d) {
 		long l=Double.doubleToLongBits(d);
 		if ((l & 0x8000000000000000L) == 0L) {
 			// >0
@@ -98,7 +98,7 @@ public final class LuceneConversions {
 	}
 
 	/** Converts a encoded <code>String</code> (16 bytes) value back to a <code>double</code>. */
-	public static double luceneToDouble(String s) {
+	public static double luceneToDouble(final String s) {
 		long l=internalLuceneToLong(s);
 		if ((l & 0x8000000000000000L) != 0L) {
 			// >0
@@ -113,21 +113,21 @@ public final class LuceneConversions {
 	// Date's
 
 	/** Converts a <code>Date</code> value encoded to a <code>String</code> (with 16 bytes). */
-	public static String dateToLucene(Date d) {
+	public static String dateToLucene(final Date d) {
 		return longToLucene(d.getTime());
 	}
 
 	/** Converts a encoded <code>String</code> (16 bytes) value back to a <code>Date</code>. */
-	public static Date luceneToDate(String s) {
+	public static Date luceneToDate(final String s) {
 		return new Date(luceneToLong(s));
 	}
 
 	// increment / decrement
 
 	/** Increments a encoded String value by 1. Needed by {@link de.pangaea.metadataportal.search.TrieRangeQuery}. */
-	public static String incrementLucene(String v) {
-		int l=v.length();
-		StringBuilder sb=new StringBuilder(l);
+	public static String incrementLucene(final String v) {
+		final int l=v.length();
+		final StringBuilder sb=new StringBuilder(l);
 		boolean inc=true;
 		for (int i=l-1; i>=0; i--) {
 			int b=v.charAt(i)-LUCENE_SYMBOL_MIN;
@@ -139,9 +139,9 @@ public final class LuceneConversions {
 	}
 
 	/** Decrements a encoded String value by 1. Needed by {@link de.pangaea.metadataportal.search.TrieRangeQuery}. */
-	public static String decrementLucene(String v) {
-		int l=v.length();
-		StringBuilder sb=new StringBuilder(l);
+	public static String decrementLucene(final String v) {
+		final int l=v.length();
+		final StringBuilder sb=new StringBuilder(l);
 		boolean dec=true;
 		for (int i=l-1; i>=0; i--) {
 			int b=v.charAt(i)-LUCENE_SYMBOL_MIN;
@@ -152,7 +152,7 @@ public final class LuceneConversions {
 		return sb.toString();
 	}
 
-	private static void addConvertedTrieDocumentField(Document ldoc, String fieldname, String val, boolean index, Field.Store store) {
+	private static void addConvertedTrieDocumentField(final Document ldoc, final String fieldname, final String val, final boolean index, final Field.Store store) {
 		ldoc.add(new Field(fieldname, val, store, index?Field.Index.UN_TOKENIZED:Field.Index.NO));
 		if (index) for (int i=7; i>0; i--)
 			ldoc.add(new Field(fieldname, new StringBuilder(i*2+1).append((char)(LUCENE_PADDING_START+i)).append(val.substring(0,i*2)).toString(), Field.Store.NO, Field.Index.UN_TOKENIZED));
@@ -166,7 +166,7 @@ public final class LuceneConversions {
 	 * If the field should not be searchable, set <code>index</code> to <code>false</code>. It is then only stored (for convenience).
 	 * Fields added to a document using this method can be queried by {@link de.pangaea.metadataportal.search.TrieRangeQuery}
 	 */
-	public static void addDoubleTrieDocumentField(Document ldoc, String fieldname, double val, boolean index, Field.Store store) {
+	public static void addDoubleTrieDocumentField(final Document ldoc, final String fieldname, final double val, final boolean index, final Field.Store store) {
 		addConvertedTrieDocumentField(ldoc, fieldname, doubleToLucene(val), index, store);
 	}
 
@@ -178,7 +178,7 @@ public final class LuceneConversions {
 	 * If the field should not be searchable, set <code>index</code> to <code>false</code>. It is then only stored (for convenience).
 	 * Fields added to a document using this method can be queried by {@link de.pangaea.metadataportal.search.TrieRangeQuery}
 	 */
-	public static void addDateTrieDocumentField(Document ldoc, String fieldname, Date val, boolean index, Field.Store store) {
+	public static void addDateTrieDocumentField(final Document ldoc, final String fieldname, final Date val, final boolean index, final Field.Store store) {
 		addConvertedTrieDocumentField(ldoc, fieldname, dateToLucene(val), index, store);
 	}
 
@@ -190,7 +190,7 @@ public final class LuceneConversions {
 	 * If the field should not be searchable, set <code>index</code> to <code>false</code>. It is then only stored (for convenience).
 	 * Fields added to a document using this method can be queried by {@link de.pangaea.metadataportal.search.TrieRangeQuery}
 	 */
-	public static void addLongTrieDocumentField(Document ldoc, String fieldname, long val, boolean index, Field.Store store) {
+	public static void addLongTrieDocumentField(final Document ldoc, final String fieldname, final long val, final boolean index, final Field.Store store) {
 		addConvertedTrieDocumentField(ldoc, fieldname, longToLucene(val), index, store);
 	}
 
