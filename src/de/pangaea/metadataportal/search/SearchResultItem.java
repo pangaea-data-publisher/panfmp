@@ -102,9 +102,9 @@ public class SearchResultItem {
 			for (String val : data) try {
 				switch(f.datatype) {
 					case NUMBER:
-						vals.add(Double.valueOf(LuceneConversions.luceneToDouble(val))); break;
+						vals.add(Double.valueOf(TrieUtils.trieCodedToDouble(val))); break;
 					case DATETIME:
-						vals.add(LuceneConversions.luceneToDate(val)); break;
+						vals.add(TrieUtils.trieCodedToDate(val)); break;
 					default:
 						vals.add(val); break;
 				}

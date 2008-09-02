@@ -16,7 +16,7 @@
 
 package de.pangaea.metadataportal.search;
 
-import de.pangaea.metadataportal.utils.LuceneConversions;
+import de.pangaea.metadataportal.utils.TrieUtils;
 import org.apache.lucene.search.*;
 import org.apache.lucene.index.*;
 import java.io.IOException;
@@ -27,7 +27,7 @@ import org.apache.lucene.util.ToStringUtils;
 /**
  * Low-level implementation of a Lucene {@link Query} that implements a trie-based range query.
  * This query depends on a specific structure of terms in the index that can only be created
- * by {@link LuceneConversions} methods.
+ * by {@link TrieUtils} methods.
  * <p>This is the central implementation of <b>panFMP</b>'s
  * high performance range queries on numeric and date/time fields using &quot;trie memory&quot; structures
  * (see the publication about <b>panFMP</b>:
@@ -44,8 +44,8 @@ public final class TrieRangeQuery extends Query {
 		if (min==null && max==null) throw new IllegalArgumentException("The min and max values cannot be both null.");
 		this.minUnconverted=min;
 		this.maxUnconverted=max;
-		this.min=(min==null) ? LuceneConversions.LUCENE_NUMERIC_MIN : min;
-		this.max=(max==null) ? LuceneConversions.LUCENE_NUMERIC_MAX : max;
+		this.min=(min==null) ? TrieUtils.TRIE_CODED_NUMERIC_MIN : min;
+		this.max=(max==null) ? TrieUtils.TRIE_CODED_NUMERIC_MAX : max;
 		this.field=field.intern();
 	}
 
@@ -57,8 +57,8 @@ public final class TrieRangeQuery extends Query {
 		if (min==null && max==null) throw new IllegalArgumentException("The min and max double values cannot be both null.");
 		this.minUnconverted=min;
 		this.maxUnconverted=max;
-		this.min=(min==null) ? LuceneConversions.LUCENE_NUMERIC_MIN : LuceneConversions.doubleToLucene(min.doubleValue());
-		this.max=(max==null) ? LuceneConversions.LUCENE_NUMERIC_MAX : LuceneConversions.doubleToLucene(max.doubleValue());
+		this.min=(min==null) ? TrieUtils.TRIE_CODED_NUMERIC_MIN : TrieUtils.doubleToTrieCoded(min.doubleValue());
+		this.max=(max==null) ? TrieUtils.TRIE_CODED_NUMERIC_MAX : TrieUtils.doubleToTrieCoded(max.doubleValue());
 		this.field=field.intern();
 	}
 
@@ -70,8 +70,8 @@ public final class TrieRangeQuery extends Query {
 		if (min==null && max==null) throw new IllegalArgumentException("The min and max date values cannot be both null.");
 		this.minUnconverted=min;
 		this.maxUnconverted=max;
-		this.min=(min==null) ? LuceneConversions.LUCENE_NUMERIC_MIN : LuceneConversions.dateToLucene(min);
-		this.max=(max==null) ? LuceneConversions.LUCENE_NUMERIC_MAX : LuceneConversions.dateToLucene(max);
+		this.min=(min==null) ? TrieUtils.TRIE_CODED_NUMERIC_MIN : TrieUtils.dateToTrieCoded(min);
+		this.max=(max==null) ? TrieUtils.TRIE_CODED_NUMERIC_MAX : TrieUtils.dateToTrieCoded(max);
 		this.field=field.intern();
 	}
 
@@ -84,8 +84,8 @@ public final class TrieRangeQuery extends Query {
 		if (min==null && max==null) throw new IllegalArgumentException("The min and max long values cannot be both null.");
 		this.minUnconverted=min;
 		this.maxUnconverted=max;
-		this.min=(min==null) ? LuceneConversions.LUCENE_NUMERIC_MIN : LuceneConversions.longToLucene(min.longValue());
-		this.max=(max==null) ? LuceneConversions.LUCENE_NUMERIC_MAX : LuceneConversions.longToLucene(max.longValue());
+		this.min=(min==null) ? TrieUtils.TRIE_CODED_NUMERIC_MIN : TrieUtils.longToTrieCoded(min.longValue());
+		this.max=(max==null) ? TrieUtils.TRIE_CODED_NUMERIC_MAX : TrieUtils.longToTrieCoded(max.longValue());
 		this.field=field.intern();
 	}
 
@@ -131,7 +131,7 @@ public final class TrieRangeQuery extends Query {
 	/**
 	 * Internal implementation of a trie-based range query using a {@link Filter}.
 	 * This filter depends on a specific structure of terms in the index that can only be created
-	 * by {@link LuceneConversions} methods.
+	 * by {@link TrieUtils} methods.
 	 * <p>This is the base of the internal implementation of <b>panFMP</b>'s
 	 * high performance range queries on numeric and date/time fields using &quot;trie memory&quot; structures
 	 * (see the publication about <b>panFMP</b>:
@@ -145,8 +145,8 @@ public final class TrieRangeQuery extends Query {
 			// add padding before loose/inprecise values to group them
 			if (len<16) {
 				len++; // length is longer by 1 char because of padding
-				lowerTerm=new StringBuilder(len).append((char)(LuceneConversions.LUCENE_PADDING_START+(len/2))).append(lowerTerm).toString();
-				upperTerm=new StringBuilder(len).append((char)(LuceneConversions.LUCENE_PADDING_START+(len/2))).append(upperTerm).toString();
+				lowerTerm=new StringBuilder(len).append((char)(TrieUtils.TRIE_CODED_PADDING_START+(len/2))).append(lowerTerm).toString();
+				upperTerm=new StringBuilder(len).append((char)(TrieUtils.TRIE_CODED_PADDING_START+(len/2))).append(upperTerm).toString();
 			}
 			final TermEnum enumerator = reader.terms(new Term(field, lowerTerm));
 			try {
@@ -172,15 +172,15 @@ public final class TrieRangeQuery extends Query {
 		private int splitRange(final IndexReader reader, final TermDocs termDocs, final BitSet bits, final String min, final boolean lowerBoundOpen, final String max, final boolean upperBoundOpen) throws IOException {
 			int count=0;
 			final int length=min.length();
-			final String minShort=lowerBoundOpen ? min.substring(0,length-2) : LuceneConversions.incrementLucene(min.substring(0,length-2));
-			final String maxShort=upperBoundOpen ? max.substring(0,length-2) : LuceneConversions.decrementLucene(max.substring(0,length-2));
+			final String minShort=lowerBoundOpen ? min.substring(0,length-2) : TrieUtils.incrementTrieCoded(min.substring(0,length-2));
+			final String maxShort=upperBoundOpen ? max.substring(0,length-2) : TrieUtils.decrementTrieCoded(max.substring(0,length-2));
 
 			if (length==2 || minShort.compareTo(maxShort)>=0) {
 				count+=setBits(reader,termDocs,bits,min,max);
 			} else {
-				if (!lowerBoundOpen) count+=setBits(reader,termDocs,bits,min,minShort+LuceneConversions.LUCENE_SYMBOL_MIN+LuceneConversions.LUCENE_SYMBOL_MIN);
+				if (!lowerBoundOpen) count+=setBits(reader,termDocs,bits,min,minShort+TrieUtils.TRIE_CODED_SYMBOL_MIN+TrieUtils.TRIE_CODED_SYMBOL_MIN);
 				count+=splitRange(reader,termDocs,bits,minShort,lowerBoundOpen,maxShort,upperBoundOpen);
-				if (!upperBoundOpen) count+=setBits(reader,termDocs,bits,maxShort+LuceneConversions.LUCENE_SYMBOL_MAX+LuceneConversions.LUCENE_SYMBOL_MAX, max);
+				if (!upperBoundOpen) count+=setBits(reader,termDocs,bits,maxShort+TrieUtils.TRIE_CODED_SYMBOL_MAX+TrieUtils.TRIE_CODED_SYMBOL_MAX, max);
 			}
 			return count;
 		}
@@ -195,7 +195,7 @@ public final class TrieRangeQuery extends Query {
 			final BitSet bits = new BitSet(reader.maxDoc());
 			final TermDocs termDocs=reader.termDocs();
 			try {
-				final int count=splitRange(reader,termDocs,bits,min,LuceneConversions.LUCENE_NUMERIC_MIN.equals(min),max,LuceneConversions.LUCENE_NUMERIC_MAX.equals(max));
+				final int count=splitRange(reader,termDocs,bits,min,TrieUtils.TRIE_CODED_NUMERIC_MIN.equals(min),max,TrieUtils.TRIE_CODED_NUMERIC_MAX.equals(max));
 				if (log.isDebugEnabled()) log.debug("Found "+count+" distinct terms in filtered range for field '"+field+"'.");
 			} finally {
 				termDocs.close();
