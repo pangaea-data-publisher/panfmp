@@ -94,7 +94,7 @@ public class MetadataDocument {
 			log.warn("Loaded document without identifier from index.");
 		try {
 			String d=ldoc.get(IndexConstants.FIELDNAME_DATESTAMP);
-			if (d!=null) datestamp=LuceneConversions.luceneToDate(d);
+			if (d!=null) datestamp=TrieUtils.trieCodedToDate(d);
 		} catch (NumberFormatException ne) {
 			log.warn("Datestamp of document '"+identifier+"' is invalid. Deleting datestamp!",ne);
 		}
@@ -256,7 +256,7 @@ public class MetadataDocument {
 			Document ldoc = new Document();
 			ldoc.add(new Field(IndexConstants.FIELDNAME_IDENTIFIER, identifier, Field.Store.YES, Field.Index.UN_TOKENIZED));
 			ldoc.add(new Field(IndexConstants.FIELDNAME_MDOC_IMPL, getClass().getName(), Field.Store.YES, Field.Index.NO));
-			if (datestamp!=null) LuceneConversions.addDateTrieDocumentField(ldoc,IndexConstants.FIELDNAME_DATESTAMP,datestamp,true,Field.Store.YES);
+			if (datestamp!=null) TrieUtils.addDateTrieCodedDocumentField(ldoc,IndexConstants.FIELDNAME_DATESTAMP,datestamp,true,Field.Store.YES);
 			return ldoc;
 		}
 	}
@@ -533,10 +533,10 @@ public class MetadataDocument {
 		boolean token=false;
 		switch(f.datatype) {
 			case NUMBER:
-				LuceneConversions.addDoubleTrieDocumentField(ldoc, f.name, Double.parseDouble(val), f.indexed, f.storage);
+				TrieUtils.addDoubleTrieCodedDocumentField(ldoc, f.name, Double.parseDouble(val), f.indexed, f.storage);
 				break;
 			case DATETIME:
-				LuceneConversions.addDateTrieDocumentField(ldoc, f.name, LenientDateParser.parseDate(val), f.indexed, f.storage);
+				TrieUtils.addDateTrieCodedDocumentField(ldoc, f.name, LenientDateParser.parseDate(val), f.indexed, f.storage);
 				break;
 			case TOKENIZEDTEXT: 
 				token=true;
