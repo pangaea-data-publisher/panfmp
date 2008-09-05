@@ -27,6 +27,8 @@ import org.apache.lucene.search.IndexSearcher;
  */
 public abstract class IndexConfig {
 
+	private static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(IndexConfig.class);
+
 	public void setId(String v) {
 		if (checked) throw new IllegalStateException("Virtual index configuration cannot be changed anymore!");
 		id=v;
@@ -60,8 +62,11 @@ public abstract class IndexConfig {
 
 	public synchronized void closeIndex() throws java.io.IOException {
 		if (!checked) throw new IllegalStateException("Index config not initialized and checked!");
-		if (indexReader!=null) indexReader.close();
-		indexReader=null;
+		if (indexReader!=null) try {
+			indexReader.close();
+		} finally {
+			indexReader=null;
+		}
 	}
 	
 	// Reader

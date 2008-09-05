@@ -27,6 +27,8 @@ import org.apache.lucene.index.IndexReader;
  */
 public class SingleIndexConfig extends IndexConfig {
 
+	private static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(SingleIndexConfig.class);
+
 	public SingleIndexConfig() {
 		super();
 	}
@@ -93,11 +95,16 @@ public class SingleIndexConfig extends IndexConfig {
 		if (!checked) throw new IllegalStateException("Index config not initialized and checked!");
 		if (indexReader!=null) {
 			IndexReader n=indexReader.reopen();
-			if (n!=indexReader) try {
-				// reader was really reopened
-				indexReader.close();
-			} finally {
-				indexReader=n;
+			if (n!=indexReader) {
+				try {
+					// reader was really reopened
+					indexReader.close();
+				} finally {
+					indexReader=n;
+				}
+			} else if (!indexReader.isCurrent()) {
+				log.warn("Index '"+id+"' was reopened but is still not up-to-date (maybe a bug in Lucene, we try to investigate this). Doing a hard reopen (close & open later).");
+				closeIndex();
 			}
 		}
 	}	
