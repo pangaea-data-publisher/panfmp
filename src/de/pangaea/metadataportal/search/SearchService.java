@@ -479,7 +479,7 @@ public class SearchService {
 	public void search(SearchResultCollector collector, Query query, boolean loadXml, Collection<String> fieldsToLoad) throws IOException {
 		cache.cleanupCache();
 
-		log.info("Collecting results for query={"+query.toString(IndexConstants.FIELDNAME_CONTENT)+"}");
+		log.info("Collecting results for index={"+index.id+"}; query={"+query.toString(IndexConstants.FIELDNAME_CONTENT)+"}");
 
 		Searcher searcher=index.newSearcher();
 		LuceneHitCollector coll=new LuceneHitCollector(
