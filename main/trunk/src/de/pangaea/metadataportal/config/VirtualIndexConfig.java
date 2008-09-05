@@ -31,6 +31,8 @@ import java.util.*;
  */
 public class VirtualIndexConfig extends IndexConfig {
 
+	private static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(VirtualIndexConfig.class);
+
 	public VirtualIndexConfig() {
 		super();
 	}
