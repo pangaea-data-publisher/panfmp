@@ -1,4 +1,4 @@
 #!/bin/sh
 cd `dirname $0`
 source ./classpath.sh
-java -Xms64M -Xmx512M -Dlog4j.configuration=file:./default.log.properties de.pangaea.metadataportal.harvester.RemoveDuplicates "./config.xml" "*"
+java -Xms64M -Xmx512M -Dlog4j.configuration=file:./default.log.properties de.pangaea.metadataportal.harvester.RemoveDuplicates "./config.xml" "$@"
