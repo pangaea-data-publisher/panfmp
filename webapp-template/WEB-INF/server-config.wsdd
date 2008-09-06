@@ -10,7 +10,7 @@
    <parameter name="dotNetSoapEncFix" value="true"/>
    <parameter name="axis.servicesPath" value="/axis/"/>
    <!-- Configuration of Lucene Indices: -->
-   <parameter name="de.pangaea.metadataportal.search.axis.indexConfigFile" value="../../scripts/config.xml"/>
+   <parameter name="de.pangaea.metadataportal.search.axis.indexConfigFile" value="../../repository/config.xml"/>
  </globalConfiguration>
 
  <handler type="java:org.apache.axis.handlers.http.URLMapper" name="URLMapper"/>
