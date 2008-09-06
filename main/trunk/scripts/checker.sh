@@ -1,4 +1,8 @@
 #!/bin/sh
 cd `dirname $0`
-source ./classpath.sh
-java -Xms64M -Xmx512M -Dlog4j.configuration=file:./default.log.properties de.pangaea.metadataportal.harvester.Checker "./config.xml" "$@"
+. ./config.sh.inc
+. ./classpath.sh.inc
+java ${PANFMP_TOOLS_JAVA_OPTIONS} \
+	-Dlog4j.configuration="file:${PANFMP_TOOLS_LOG4J_CONFIG}" \
+	de.pangaea.metadataportal.harvester.Checker \
+	"${PANFMP_CONFIG}" "$@"
