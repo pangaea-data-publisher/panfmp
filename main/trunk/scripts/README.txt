@@ -4,6 +4,13 @@ each repository. The repository is located at "repository/" with
 its config file. In "scripts/" are files to mange it. Windows
 scripts end with ".cmd", Unix/Linux scripts with ".sh".
 
+The scripts currently have no parameter parsing, they pass the config file
+and all other parameters to the Java VM. If you miss parameters, e.g.
+just call "./harvest.sh", you will get a message from Java about missing
+parameters. The first parameter "config.xml" is always automatically passed
+by the scripts. Normally you only need to add an index ID or "*"
+for all indexes.
+
 To configure Java options, edit config.cmd/config.sh. These files
 contain variables with path specifications, used by the other scripts
 to startup the Java VM and use the correct parameters.
