@@ -15,7 +15,7 @@ PANFMP_TOOLS_JAVA_OPTIONS="-Xms64M -Xmx512M"
 PANFMP_TOOLS_LOG4J_CONFIG="./console.log.properties"
 
 # java options for jetty webserver (if installed)
-#  curr not used: PANFMP_JETTY_JAVA_OPTIONS="-Xms128M -Xmx1024"
+PANFMP_JETTY_JAVA_OPTIONS="-Xms128M -Xmx1024M -Djetty.port=8801 -Djetty.host=127.0.0.1"
 
 # log4j configuration file for jetty webserver
-#  curr not used: PANFMP_JETTY_LOG4J_CONFIG="./webserver.log.properties"
+PANFMP_JETTY_LOG4J_CONFIG="./webserver.log.properties"
