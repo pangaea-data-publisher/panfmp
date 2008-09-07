@@ -58,6 +58,9 @@ public class WebCrawlingHarvester extends SingleFileEntitiesHarvester {
 	 * change this. Do not forget to revisit the features for this parser in the parsing method.
 	 */
 	public static final String HTML_SAX_PARSER_CLASS="org.cyberneko.html.parsers.SAXParser";
+	public static final Set<String> HTML_CONTENT_TYPES=new HashSet<String>(Arrays.asList(
+		"text/html","application/xhtml+xml"
+	));
 
 	// Class members
 	private String baseURL=null;
@@ -192,7 +195,8 @@ public class WebCrawlingHarvester extends SingleFileEntitiesHarvester {
 
 			StringBuilder ac=new StringBuilder();
 			for (String c : contentTypes) ac.append(c+", ");
-			ac.append("text/html, *;q=0.1");
+			for (String c : HTML_CONTENT_TYPES) ac.append(c+", ");
+			ac.append("*;q=0.1");
 			conn.setRequestProperty("Accept",ac.toString());
 
 			conn.setUseCaches(false);
@@ -372,7 +376,7 @@ public class WebCrawlingHarvester extends SingleFileEntitiesHarvester {
 					harvested.add(url.toString());
 				}
 
-				if ("text/html".equals(contentType)) {
+				if (HTML_CONTENT_TYPES.contains(contentType)) {
 					log.info("Analyzing HTML links in '"+url+"'...");
 
 					// reopen for GET
