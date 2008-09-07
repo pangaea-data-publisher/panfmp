@@ -8,5 +8,6 @@ fi
 
 touch "${PANFMP_LOCK}"
 "$@"
+RET=$?
 rm -f "${PANFMP_LOCK}"
-exit 0
+exit $RET
