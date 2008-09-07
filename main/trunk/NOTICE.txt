@@ -9,3 +9,14 @@ The Apache Software Foundation (http://www.apache.org/).
 
 This product includes "CyberNeko HTML Parser" developed by
 Andy Clark (http://sourceforge.net/projects/nekohtml).
+It is also licensed under the Apache 2.0 license.
+
+This product includes "Jetty Web Container" which is
+Copyright Mort Bay Consulting Pty Ltd unless otherwise noted.
+It is also licensed under the Apache 2.0 license.
+
+The javax.servlet package used by Jetty/panFMP is copyright 
+Sun Microsystems, Inc and Apache Software Foundation. It is 
+distributed under the Common Development and Distribution License.
+You can obtain a copy of the license at 
+https://glassfish.dev.java.net/public/CDDLv1.0.html.

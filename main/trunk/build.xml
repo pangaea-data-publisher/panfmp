@@ -26,7 +26,10 @@
 	<!-- BUILD TARGETS -->
   	<path id="classpath">
 		<fileset dir="${libs}">
-			<include name="**/*.jar"/>
+			<include name="core/*.jar"/>
+			<include name="axis/*.jar"/>
+			<include name="optional/*.jar"/>
+			<include name="jetty/servlet-api-*.jar"/>
 			<!-- exclude local version of metadataportal itsself from compile classpath! -->
 			<exclude name="**/${ant.project.name}*.jar"/>
 		</fileset>
@@ -74,9 +77,10 @@
 			<zipfileset dir="${libs}/core" prefix="${pkgname}/libs/core"/>
 			<zipfileset dir="${dist}" prefix="${pkgname}/libs/core"/>
 			<zipfileset dir="${libs}/optional" prefix="${pkgname}/libs/optional"/>
+			<zipfileset dir="${libs}/jetty" prefix="${pkgname}/libs/jetty"/>
 			<zipfileset dir="${basedir}/repository" prefix="${pkgname}/repository"/>
 			<zipfileset dir="${basedir}/scripts" prefix="${pkgname}/scripts"/>
-			<zipfileset dir="${basedir}/webapp-template" prefix="${pkgname}/webapp-template"/>
+			<zipfileset dir="${basedir}/axis-webapp" prefix="${pkgname}/axis-webapp"/>
 			<zipfileset dir="${docs}" prefix="${pkgname}/javadocs"/>
 			<zipfileset dir="${basedir}" prefix="${pkgname}">
 				<include name="*.txt"/>
@@ -104,6 +108,7 @@
 		<delete dir="${docs}"/>
 		<delete includeEmptyDirs="true">
 			<fileset dir="${basedir}/repository/lucene-store" includes="**/*"/>
+			<fileset dir="${basedir}/repository" includes="**/*.log"/>
 		</delete>
 		<delete>
 			<fileset dir="${basedir}" includes="*.zip"/>
