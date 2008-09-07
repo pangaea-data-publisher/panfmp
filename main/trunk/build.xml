@@ -74,6 +74,7 @@
 			<zipfileset dir="${libs}/core" prefix="${pkgname}/libs/core"/>
 			<zipfileset dir="${dist}" prefix="${pkgname}/libs/core"/>
 			<zipfileset dir="${libs}/optional" prefix="${pkgname}/libs/optional"/>
+			<zipfileset dir="${basedir}/repository" prefix="${pkgname}/repository"/>
 			<zipfileset dir="${basedir}/scripts" prefix="${pkgname}/scripts"/>
 			<zipfileset dir="${basedir}/webapp-template" prefix="${pkgname}/webapp-template"/>
 			<zipfileset dir="${docs}" prefix="${pkgname}/javadocs"/>
@@ -101,6 +102,10 @@
 		<delete dir="${build}"/>
 		<delete dir="${dist}"/>
 		<delete dir="${docs}"/>
+		<delete>
+			<dirset dir="${basedir}/repository/lucene-store"/>
+			<fileset dir="${basedir}/repository/lucene-store"/>
+		</delete>
 		<delete>
 			<fileset dir="${basedir}" includes="*.zip"/>
 		</delete>
