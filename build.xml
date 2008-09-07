@@ -102,9 +102,8 @@
 		<delete dir="${build}"/>
 		<delete dir="${dist}"/>
 		<delete dir="${docs}"/>
-		<delete>
-			<dirset dir="${basedir}/repository/lucene-store"/>
-			<fileset dir="${basedir}/repository/lucene-store"/>
+		<delete includeEmptyDirs="true">
+			<fileset dir="${basedir}/repository/lucene-store" includes="**/*"/>
 		</delete>
 		<delete>
 			<fileset dir="${basedir}" includes="*.zip"/>
