@@ -11,6 +11,12 @@ if [ -x /usr/bin/cygpath ]; then
 fi
 export CLASSPATH
 
-exec java ${PANFMP_JETTY_JAVA_OPTIONS} \
-	-Dlog4j.configuration="file:${PANFMP_JETTY_LOG4J_CONFIG}" \
-	org.mortbay.xml.XmlConfiguration jetty.xml
+if [ "${PANFMP_JETTY_DETACH}" = "Yes" ]; then
+	java ${PANFMP_JETTY_JAVA_OPTIONS} \
+		-Dlog4j.configuration="file:${PANFMP_JETTY_LOG4J_CONFIG}" \
+		org.mortbay.xml.XmlConfiguration jetty.xml &
+else
+	exec java ${PANFMP_JETTY_JAVA_OPTIONS} \
+		-Dlog4j.configuration="file:${PANFMP_JETTY_LOG4J_CONFIG}" \
+		org.mortbay.xml.XmlConfiguration jetty.xml
+fi

@@ -36,14 +36,14 @@ public class Rebuilder extends Harvester {
 
 	// main-Methode
 	public static void main(String[] args) {
-		if (args.length!=2) {
-			System.err.println("Command line: java "+Rebuilder.class.getName()+" config.xml index-name|*");
+		if (args.length<1 || args.length>2) {
+			System.err.println("Command line: java "+Rebuilder.class.getName()+" config.xml [index-name|*]");
 			return;
 		}
 
 		try {
 			Config conf=new Config(args[0],Config.ConfigMode.HARVESTING);
-			runHarvester(conf,args[1],Rebuilder.class);
+			runHarvester(conf,(args.length==2)?args[1]:"*",Rebuilder.class);
 		} catch (Exception e) {
 			staticLog.fatal("Rebuilder general error:",e);
 		}

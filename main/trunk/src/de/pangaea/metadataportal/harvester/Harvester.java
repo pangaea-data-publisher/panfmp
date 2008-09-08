@@ -48,14 +48,14 @@ public abstract class Harvester {
 	 * External entry point to the harvester interface. Called from the Java command line with two parameters (config file, index name)
 	 */
 	public static void main(String[] args) {
-		if (args.length!=2) {
-			System.err.println("Command line: java "+Harvester.class.getName()+" config.xml index-name|*");
+		if (args.length<1 || args.length>2) {
+			System.err.println("Command line: java "+Harvester.class.getName()+" config.xml [index-name|*]");
 			return;
 		}
 
 		try {
 			Config conf=new Config(args[0],Config.ConfigMode.HARVESTING);
-			runHarvester(conf,args[1]);
+			runHarvester(conf,(args.length==2)?args[1]:"*");
 		} catch (Exception e) {
 			staticLog.fatal("Harvester general error:",e);
 		}

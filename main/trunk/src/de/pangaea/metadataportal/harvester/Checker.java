@@ -37,28 +37,26 @@ public class Checker {
 
 	// main-Methode
 	public static void main (String[] args) {
-		if (args.length<2 || args.length>3) {
-			System.err.println("Command line: java "+Checker.class.getName()+" config.xml index-name|* [-fix]");
-			return;
-		}
-
 		try {
-			boolean fix;
-			if (args.length==3) {
-				if (!"-fix".equals(args[2])) {
-					System.err.println("Third parameter must be either '-fix' or missing!");
+			boolean fix=false;
+			String configFile=null,indexId=null;
+			for (String arg : args) {
+				if ("-fix".equals(arg)) fix=true;
+				else if (configFile==null) configFile=arg;
+				else if (indexId==null) indexId=arg;
+				else {
+					System.err.println("Command line: java "+Checker.class.getName()+" [-fix] config.xml [index-name|*]");
 					return;
 				}
-				fix=true;
-			} else fix=false;
+			}
 
-			Config conf=new Config(args[0],Config.ConfigMode.HARVESTING);
+			Config conf=new Config(configFile,Config.ConfigMode.HARVESTING);
 			Collection<IndexConfig> indexList=null;
-			if ("*".equals(args[1])) {
+			if (indexId==null || "*".equals(indexId)) {
 				indexList=conf.indexes.values();
 			} else {
-				IndexConfig iconf=conf.indexes.get(args[1]);
-				if (iconf==null || !(iconf instanceof SingleIndexConfig)) throw new IllegalArgumentException("There is no index defined with id=\""+args[1]+"\"!");
+				IndexConfig iconf=conf.indexes.get(indexId);
+				if (iconf==null || !(iconf instanceof SingleIndexConfig)) throw new IllegalArgumentException("There is no index defined with id=\""+indexId+"\"!");
 				indexList=Collections.singletonList(iconf);
 			}
 			
@@ -71,7 +69,7 @@ public class Checker {
 					SingleIndexConfig siconf=(SingleIndexConfig)iconf;
 					try {
 						// und los gehts
-						log.info("Checking index \""+iconf.id+"\"...");
+						log.info("Checking index \""+iconf.id+'"'+(fix?" with repairing errors":"")+"...");
 						FSDirectory dir=FSDirectory.getDirectory(siconf.getFullIndexPath());
 						if (!siconf.isIndexAvailable()) throw new java.io.FileNotFoundException("Index directory with segments file does not exist: "+dir.toString());
 						boolean result=CheckIndex.check(dir,fix);

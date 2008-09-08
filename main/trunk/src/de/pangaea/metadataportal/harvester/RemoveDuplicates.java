@@ -64,15 +64,15 @@ public class RemoveDuplicates {
 
 	// main-Methode
 	public static void main (String[] args) {
-		if (args.length!=2) {
-			System.err.println("Command line: java "+RemoveDuplicates.class.getName()+" config.xml index-name|*");
+		if (args.length<1 || args.length>2) {
+			System.err.println("Command line: java "+RemoveDuplicates.class.getName()+" config.xml [index-name|*]");
 			return;
 		}
 
 		try {
 			Config conf=new Config(args[0],Config.ConfigMode.HARVESTING);
 			Collection<IndexConfig> indexList=null;
-			if ("*".equals(args[1])) {
+			if (args.length==1 || "*".equals(args[1])) {
 				indexList=conf.indexes.values();
 			} else {
 				IndexConfig iconf=conf.indexes.get(args[1]);
