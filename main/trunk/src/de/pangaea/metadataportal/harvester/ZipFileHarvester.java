@@ -110,7 +110,7 @@ public class ZipFileHarvester extends SingleFileEntitiesHarvester {
 
 	private void processFile(InputStream is, ZipEntry ze) throws Exception {
 		String identifier="zip:"+identifierPrefix+ze.getName();
-		addDocument(identifier,ze.getTime(),new StreamSource(is));
+		addDocument(identifier,ze.getTime(),new StreamSource(is,identifier));
 	}
 	
 	private static final class NoCloseInputStream extends FilterInputStream {
