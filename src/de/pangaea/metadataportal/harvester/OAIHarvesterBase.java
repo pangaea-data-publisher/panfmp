@@ -56,7 +56,7 @@ public abstract class OAIHarvesterBase extends Harvester {
 	protected int retryCount=DEFAULT_RETRY_COUNT;
 	/** the retryTime from configuration */
 	protected int retryTime=DEFAULT_RETRY_TIME;
-	/** the oai download component to be used */
+	/** the timeout from configuration */
 	protected int timeout=DEFAULT_TIMEOUT;
 
 	// construtor
@@ -201,7 +201,7 @@ public abstract class OAIHarvesterBase extends Harvester {
 				return null;
 			}
 			long d=conn.getLastModified();
-			checkModifiedDate.set( (d==0) ? null : new Date(d) );
+			checkModifiedDate.set( (d==0L) ? null : new Date(d) );
 		}
 		
 		String encoding=conn.getContentEncoding();
