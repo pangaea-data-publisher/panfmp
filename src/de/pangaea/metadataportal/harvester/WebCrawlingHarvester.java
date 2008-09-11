@@ -194,8 +194,8 @@ public class WebCrawlingHarvester extends SingleFileEntitiesHarvester {
 			conn.setRequestProperty("Accept-Charset","utf-8, *;q=0.5");
 
 			StringBuilder ac=new StringBuilder();
-			for (String c : contentTypes) ac.append(c+", ");
-			for (String c : HTML_CONTENT_TYPES) ac.append(c+", ");
+			for (String c : contentTypes) ac.append(c).append(", ");
+			for (String c : HTML_CONTENT_TYPES) ac.append(c).append(", ");
 			ac.append("*;q=0.1");
 			conn.setRequestProperty("Accept",ac.toString());
 
