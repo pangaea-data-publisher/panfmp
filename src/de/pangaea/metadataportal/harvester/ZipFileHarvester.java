@@ -17,6 +17,7 @@
 package de.pangaea.metadataportal.harvester;
 
 import de.pangaea.metadataportal.config.*;
+import de.pangaea.metadataportal.utils.BooleanParser;
 import java.io.*;
 import java.net.*;
 import java.util.*;
@@ -31,6 +32,12 @@ import java.util.zip.*;
  * <li><code>zipFile</code>: filename or URL of ZIP file to harvest</li>
  * <li><code>identifierPrefix</code>: This prefix is appended before all identifiers (that are the identifiers of the documents) (default: "")</li>
  * <li><code>filenameFilter</code>: regex to match the entry filename (default: none)</li>
+ * <li><code>useZipFileDate</code>: if "yes", check the modification date of the ZIP file and re-harvest in complete;
+ * if "no", look at each file in the archive and store its modification date in index. For ZIP files from network connections that seldom change
+ * use "yes" as it prevents scanning the ZIP file in complete. "No" is recommended for large local files with much modifications in only some files (default: yes)</li>
+ * <li><code>retryCount</code>: how often retry on HTTP errors? (default: 5) </li>
+ * <li><code>retryAfterSeconds</code>: time between retries in seconds (default: 60)</li>
+ * <li><code>timeoutAfterSeconds</code>: HTTP Timeout for harvesting in seconds</li>
  * </ul>
  * TODO: Check date stamp of ZIP file / ZIP URL directly and stop harvesting if older. Currently files are filtered by date-stamp in ZipEntry.
  * @author Uwe Schindler
@@ -41,6 +48,18 @@ public class ZipFileHarvester extends SingleFileEntitiesHarvester {
 	private String zipFile=null;
 	private Pattern filenameFilter=null;
 	private String identifierPrefix="";
+	private boolean useZipFileDate=true;
+
+	public static final int DEFAULT_RETRY_TIME = 60; // seconds
+	public static final int DEFAULT_RETRY_COUNT = 5;
+	public static final int DEFAULT_TIMEOUT = 180; // seconds
+
+	/** the retryCount from configuration */
+	protected int retryCount=DEFAULT_RETRY_COUNT;
+	/** the retryTime from configuration */
+	protected int retryTime=DEFAULT_RETRY_TIME;
+	/** the timeout from configuration */
+	protected int timeout=DEFAULT_TIMEOUT;
 
 	@Override
 	public void open(SingleIndexConfig iconfig) throws Exception {
@@ -59,6 +78,11 @@ public class ZipFileHarvester extends SingleFileEntitiesHarvester {
 
 		String s=iconfig.harvesterProperties.getProperty("filenameFilter");
 		filenameFilter=(s==null) ? null : Pattern.compile(s);
+
+		if ((s=iconfig.harvesterProperties.getProperty("retryCount"))!=null) retryCount=Integer.parseInt(s);
+		if ((s=iconfig.harvesterProperties.getProperty("retryAfterSeconds"))!=null) retryTime=Integer.parseInt(s);
+		if ((s=iconfig.harvesterProperties.getProperty("timeoutAfterSeconds"))!=null) timeout=Integer.parseInt(s);
+		if ((s=iconfig.harvesterProperties.getProperty("useZipFileDate"))!=null) useZipFileDate=BooleanParser.parseBoolean(s);
 	}
 
 	@Override
@@ -67,35 +91,36 @@ public class ZipFileHarvester extends SingleFileEntitiesHarvester {
 		InputStream is=null;
 		ZipInputStream zis=null;
 		try {
-			try {
-				is=new URL(zipFile).openStream();
-			} catch (MalformedURLException urle) {
-				is=new FileInputStream(zipFile);
+			is=openStream();
+			if (is!=null) {
+				zis=new ZipInputStream(is);
+				ZipEntry ze=null;
+				int count=0;
+				while ((ze=zis.getNextEntry())!=null) try {
+					count++;
+					if (ze.isDirectory()) continue;
+					if (filenameFilter!=null) {
+						String name=ze.getName();
+						int p=name.lastIndexOf('/');
+						if (p>=0) name=name.substring(p+1);
+						Matcher m=filenameFilter.matcher(name);
+						if (!m.matches()) continue;
+					} 
+					log.debug("Processing ZipEntry: "+ze);
+					processFile(new NoCloseInputStream(zis),ze);
+				} finally {
+					zis.closeEntry();
+				}
+				if (count<=0) throw new ZipException("The file seems to be no ZIP file, it contains no file entries.");
+				log.info("Finished reading contents of ZIP file '"+zipFile+"'.");
+			} else {
+				cancelMissingDocumentDelete();
+				log.info("ZIP file '"+zipFile+"' not modified!");
 			}
-			zis=new ZipInputStream(is);
-			ZipEntry ze=null;
-			int count=0;
-			while ((ze=zis.getNextEntry())!=null) try {
-				count++;
-				if (ze.isDirectory()) continue;
-				if (filenameFilter!=null) {
-					String name=ze.getName();
-					int p=name.lastIndexOf('/');
-					if (p>=0) name=name.substring(p+1);
-					Matcher m=filenameFilter.matcher(name);
-					if (!m.matches()) continue;
-				} 
-				log.debug("Processing ZipEntry: "+ze);
-				processFile(new NoCloseInputStream(zis),ze);
-			} finally {
-				zis.closeEntry();
-			}
-			if (count<=0) throw new ZipException("The file seems to be no ZIP file, it contains no file entries.");
 		} finally {
 			if (zis!=null) zis.close();
 			if (is!=null) is.close();
 		}
-		log.info("Finished reading contents of ZIP file '"+zipFile+"'.");
 	}
 
 	@Override
@@ -104,13 +129,94 @@ public class ZipFileHarvester extends SingleFileEntitiesHarvester {
 		props.addAll(Arrays.<String>asList(
 			"zipFile",
 			"identifierPrefix",
-			"filenameFilter"
+			"filenameFilter",
+			"useZipFileDate",
+			"retryCount",
+			"retryAfterSeconds",
+			"timeoutAfterSeconds"
 		));
 	}
 
+	private InputStream openStream() throws IOException {
+		for (int retry=0; retry<=retryCount; retry++) try {
+			URLConnection conn=(new URL(zipFile)).openConnection();
+			conn.setConnectTimeout(timeout*1000);
+			conn.setReadTimeout(timeout*1000);		
+
+			if (conn instanceof HttpURLConnection) {
+				StringBuilder ua=new StringBuilder("Java/");
+				ua.append(System.getProperty("java.version"));
+				ua.append(" (").append(de.pangaea.metadataportal.Package.getProductName()).append('/');
+				ua.append(de.pangaea.metadataportal.Package.getVersion()).append("; ZipFileHarvester)");
+				conn.setRequestProperty("User-Agent",ua.toString());
+
+				conn.setRequestProperty("Accept-Encoding","identity, *;q=0");
+				conn.setRequestProperty("Accept","application/zip, *;q=0.1");
+				((HttpURLConnection)conn).setFollowRedirects(true);
+				
+				// currently only for HTTP enabled
+				if (fromDateReference!=null && useZipFileDate) conn.setIfModifiedSince(fromDateReference.getTime());
+			}			
+
+			conn.setUseCaches(false);
+			log.debug("Opening connection...");
+			InputStream in=null;
+			try {
+				conn.connect();
+				in=conn.getInputStream();
+			} catch (IOException ioe) {
+				int after=-1,code=-1;
+				if (conn instanceof HttpURLConnection) try {
+					after=conn.getHeaderFieldInt("Retry-After",-1);
+					code=((HttpURLConnection)conn).getResponseCode();
+				} catch (IOException ioe2) {
+					after=-1; code=-1;
+				}
+				if (code==HttpURLConnection.HTTP_UNAVAILABLE && after>0) throw new RetryAfterIOException(after,ioe);
+				throw ioe;
+			}
+			
+			long lastModified=conn.getLastModified();
+			if (fromDateReference!=null && useZipFileDate) {
+				if (
+					(conn instanceof HttpURLConnection && ((HttpURLConnection)conn).getResponseCode()==HttpURLConnection.HTTP_NOT_MODIFIED)
+					|| (lastModified!=0L && lastModified<=fromDateReference.getTime())
+				) {
+					log.debug("File not modified since "+fromDateReference);
+					if (in!=null) in.close();
+					return null;
+				}
+			}
+			if (useZipFileDate) setHarvestingDateReference((lastModified==0L) ? null : new Date(lastModified));
+			return in;
+		} catch (MalformedURLException urle) {
+			// normal file
+			File f=new File(zipFile);
+			long lastModified=f.lastModified();
+			if (useZipFileDate) setHarvestingDateReference((lastModified==0L) ? null : new Date(lastModified));
+			if (useZipFileDate && fromDateReference!=null && lastModified>0L && lastModified<=fromDateReference.getTime()) return null;
+			return new FileInputStream(f);
+		} catch (FileNotFoundException fne) {
+			throw fne;
+		} catch (IOException ioe) {
+			int after=retryTime;
+			if (ioe instanceof RetryAfterIOException) {
+				if (retry>=retryCount) throw (IOException)ioe.getCause();
+				log.warn("HTTP server returned '503 Service Unavailable' with a 'Retry-After' value being set.");
+				after=((RetryAfterIOException)ioe).getRetryAfter();
+			} else {
+				if (retry>=retryCount) throw ioe;
+				log.error("Server access failed with exception: ",ioe);
+			}
+			log.info("Retrying after "+after+" seconds ("+(retryCount-retry)+" retries left)...");
+			try { Thread.sleep(1000L*after); } catch (InterruptedException ie) {}
+		}
+		throw new IOException("Could not open stream.");
+	}
+	
 	private void processFile(InputStream is, ZipEntry ze) throws Exception {
 		String identifier="zip:"+identifierPrefix+ze.getName();
-		addDocument(identifier,ze.getTime(),new StreamSource(is,identifier));
+		addDocument(identifier, useZipFileDate ? -1L : ze.getTime(), new StreamSource(is,identifier));
 	}
 	
 	private static final class NoCloseInputStream extends FilterInputStream {
