@@ -1,7 +1,6 @@
 Harvester:
 * Completely rebuilding index from source without deleting old one having readers online (new commit lock-less usage!)
 * Rewrite LenientDateParser and add some options to field definition (e.g. default timezone)
-* Check date stamp of ZIP file / ZIP URL directly and stop harvesting if older.
 
 Search:
 o/o
