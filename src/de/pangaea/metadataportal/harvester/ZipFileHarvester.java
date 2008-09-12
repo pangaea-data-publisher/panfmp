@@ -39,7 +39,6 @@ import java.util.zip.*;
  * <li><code>retryAfterSeconds</code>: time between retries in seconds (default: 60)</li>
  * <li><code>timeoutAfterSeconds</code>: HTTP Timeout for harvesting in seconds</li>
  * </ul>
- * TODO: Check date stamp of ZIP file / ZIP URL directly and stop harvesting if older. Currently files are filtered by date-stamp in ZipEntry.
  * @author Uwe Schindler
  */
 public class ZipFileHarvester extends SingleFileEntitiesHarvester {
