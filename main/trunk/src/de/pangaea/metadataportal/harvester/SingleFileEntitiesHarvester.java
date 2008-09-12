@@ -120,6 +120,14 @@ public abstract class SingleFileEntitiesHarvester extends Harvester {
 		addDocument(mdoc);
 	}
 
+	/**
+	 * disable the property "deleteMissingDocuments" for this instance. This can be used, when the container (like a ZIP file was not modified),
+	 * and all containing documents are not enumerated. To prevent deletion of all these documents call this.
+	 */
+	protected void cancelMissingDocumentDelete() {
+		validIdentifiers=null;
+	}
+
 	@Override
 	protected void enumerateValidHarvesterPropertyNames(Set<String> props) {
 		super.enumerateValidHarvesterPropertyNames(props);
