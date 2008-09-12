@@ -198,6 +198,7 @@ public abstract class OAIHarvesterBase extends Harvester {
 		if (checkModifiedDate!=null) {
 			if (conn.getResponseCode()==HttpURLConnection.HTTP_NOT_MODIFIED) {
 				log.debug("File not modified since "+checkModifiedDate.get());
+				if (in!=null) in.close();
 				return null;
 			}
 			long d=conn.getLastModified();

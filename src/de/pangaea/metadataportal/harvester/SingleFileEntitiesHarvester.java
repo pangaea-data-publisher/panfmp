@@ -81,15 +81,15 @@ public abstract class SingleFileEntitiesHarvester extends Harvester {
 		if (validIdentifiers!=null) validIdentifiers.add(identifier);
 		
 		if (lastModified>0L) {
-			if (newestDatestamp<=0L || newestDatestamp<lastModified) setHarvestingDateReference(new Date((newestDatestamp=lastModified)+1L));
-			if (fromDateReference!=null && fromDateReference.getTime()>lastModified) return;
+			if (newestDatestamp<=0L || newestDatestamp<lastModified) setHarvestingDateReference(new Date(newestDatestamp=lastModified));
+			if (fromDateReference!=null && fromDateReference.getTime()>=lastModified) return;
 		}
 		
 		if (xml==null) return;
 		
 		MetadataDocument mdoc=new MetadataDocument();
 		mdoc.setIdentifier(identifier);
-		mdoc.setDatestamp(new java.util.Date(lastModified));
+		mdoc.setDatestamp((lastModified>0L) ? new java.util.Date(lastModified) : null);
 		
 		Exception e=null; String errstr=null;
 		try {
