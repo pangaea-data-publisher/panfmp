@@ -393,7 +393,8 @@ public class WebCrawlingHarvester extends SingleFileEntitiesHarvester {
 				} else if (contentTypes.contains(contentType)) {
 					if (acceptFile(url)) {
 						long lastModified=conn.getLastModified();
-						if (lastModified>0 && fromDateReference!=null && fromDateReference.getTime()>lastModified) {
+						if (lastModified>0 && fromDateReference!=null && lastModified<=fromDateReference.getTime()) {
+							// add this empty doc here, to update datestamps for next harvesting
 							addDocument(url.toString(),lastModified,null);
 						} else {
 							log.info("Harvesting '"+url+"'...");
