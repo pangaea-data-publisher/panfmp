@@ -87,13 +87,18 @@ public class DirectoryHarvester extends SingleFileEntitiesHarvester implements F
 	}
 
 	private void processDirectory(File dir) throws Exception {
-		log.info("Walking into directory \""+dir+"\" (recursive="+recursive+",filter=\""+filenameFilter+"\")...");
+		StringBuilder logstr=new StringBuilder("Walking into directory \"").append(dir).append("\" (recursive=").append(recursive);
+		if (filenameFilter!=null) logstr.append(",filter=\"").append(filenameFilter).append("\"");
+		logstr.append(")...");
+		log.info(logstr);
+		
 		File[] files=dir.listFiles(this);
 		if (files==null) return;
 		for (File f : files) {
 			if (f.isDirectory()) processDirectory(f);
 			else if (f.isFile()) processFile(f);
 		}
+		
 		log.info("Finished directory \""+dir+"\".");
 	}
 

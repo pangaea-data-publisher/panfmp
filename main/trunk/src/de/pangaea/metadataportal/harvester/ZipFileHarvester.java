@@ -86,7 +86,11 @@ public class ZipFileHarvester extends SingleFileEntitiesHarvester {
 
 	@Override
 	public void harvest() throws Exception {
-		log.info("Harvesting contents of ZIP file '"+zipFile+"'...");
+		StringBuilder logstr=new StringBuilder("Opening and reading ZIP file \"").append(zipFile).append("\" (useZipFileDate=").append(useZipFileDate);
+		if (filenameFilter!=null) logstr.append(", filter=\"").append(filenameFilter).append("\"");
+		logstr.append(")...");
+		log.info(logstr);
+
 		InputStream is=null;
 		ZipInputStream zis=null;
 		try {
