@@ -47,6 +47,10 @@ public class LogUtil {
 		} 
 	} 
 	
+	private LogUtil() {
+		// no instance
+	}
+	
 	public static PrintStream getTraceStream(final Log logger) { 
 		return getLogStream(logger, TRACE); 
 	} 
