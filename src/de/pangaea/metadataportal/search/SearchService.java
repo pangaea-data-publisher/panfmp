@@ -85,6 +85,11 @@ import java.util.*;
  * This is not recommended especially when collecting a large number of results! It is better to fetch only fields
  * needed for processing (like a SQL <code>select column1,column2 from table</code>). This can be done by
  * special {@link #search(Query,Sort,boolean,Collection)} methods accepting lists of fields.
+ * <p>To configure this class, use search properties in your config file <em>(these are the defaults):</em></p>
+ *<pre>{@literal
+ *<queryParserClass>org.apache.lucene.queryParser.QueryParser</queryParserClass>
+ *<defaultQueryParserOperator>AND</defaultQueryParserOperator>
+ *}</pre>
  * @author Uwe Schindler
  */
 public class SearchService {
@@ -99,9 +104,14 @@ public class SearchService {
 		index=cache.config.indexes.get(indexId);
 		if (index==null) throw new IllegalArgumentException("Index '"+indexId+"' does not exist!");
 		// detect query parser
-		Class<?> c=Class.forName(cache.config.searchProperties.getProperty("queryParserClass",QueryParser.class.getName()));
+		final Class<?> c=Class.forName(cache.config.searchProperties.getProperty("queryParserClass",QueryParser.class.getName()));
 		queryParserClass=c.asSubclass(QueryParser.class);
 		queryParserConstructor=queryParserClass.getConstructor(String.class,Analyzer.class);
+		// default operator for query parser
+		final String operator=cache.config.searchProperties.getProperty("defaultQueryParserOperator","AND").toUpperCase();
+		if ("AND".equals(operator)) defaultQueryParserOperator=QueryParser.AND_OPERATOR;
+		else if ("OR".equals(operator)) defaultQueryParserOperator=QueryParser.OR_OPERATOR;
+		else throw new IllegalArgumentException("Search property 'defaultQueryParserOperator' is not 'AND'/'OR'");
 	}
 
 	/**
@@ -121,9 +131,10 @@ public class SearchService {
 	 * {@link de.pangaea.metadataportal.config.FieldConfig.DataType#STRING} field.
 	 * String fields are <b>not</b> parsed by the query parser. They will be matched exact.
 	 * Tokenized text fields are parsed by {@link #parseQuery} and expand to different query types combined by a {@link BooleanQuery}.
+	 * The query parser will use the given default operator.
 	 * @throws IllegalFieldConfigException if the configuration of <code>fieldName</code> does not match this query type or it is unknown
 	 */
-	public Query newTextQuery(String fieldName, String query) throws ParseException {
+	public Query newTextQuery(String fieldName, String query, QueryParser.Operator operator) throws ParseException {
 		FieldConfig f=cache.config.fields.get(fieldName);
 		if (f==null) throw new IllegalFieldConfigException("Field name '"+fieldName+"' is unknown!");
 		if (!f.indexed) throw new IllegalFieldConfigException("Field '"+fieldName+"' is not searchable!");
@@ -133,19 +144,41 @@ public class SearchService {
 			case STRING:
 				return new TermQuery(new Term(fieldName,query));
 			case TOKENIZEDTEXT:
-				return new FieldCheckingQuery(fieldName,parseQuery(fieldName,query));
+				return new FieldCheckingQuery(fieldName,parseQuery(fieldName,query,operator));
 			default:
 				throw new IllegalFieldConfigException("Field '"+fieldName+"' is not of data type STRING or TOKENIZEDTEXT!");
 		}
 	}
 
 	/**
+	 * Constructs a {@link Query} for querying a {@link de.pangaea.metadataportal.config.FieldConfig.DataType#TOKENIZEDTEXT} or
+	 * {@link de.pangaea.metadataportal.config.FieldConfig.DataType#STRING} field.
+	 * String fields are <b>not</b> parsed by the query parser. They will be matched exact.
+	 * Tokenized text fields are parsed by {@link #parseQuery} and expand to different query types combined by a {@link BooleanQuery}.
+	 * The query parser uses the default query operator (AND), which can be configured by the search property &quot;defaultQueryParserOperator&quot;
+	 * @throws IllegalFieldConfigException if the configuration of <code>fieldName</code> does not match this query type or it is unknown
+	 */
+	public Query newTextQuery(String fieldName, String query) throws ParseException {
+		return newTextQuery(fieldName,query,defaultQueryParserOperator);
+	}
+
+	/**
 	 * Constructs a {@link Query} for querying the default field.
 	 * The query is parsed by {@link #parseQuery} and expands to different query types combined by a {@link BooleanQuery}.
+	 * The query parser will use the given default operator.
+	 */
+	public Query newDefaultFieldQuery(String query, QueryParser.Operator operator) throws ParseException {
+		if (query==null) throw new NullPointerException("A query string must be given!");
+		return parseQuery(IndexConstants.FIELDNAME_CONTENT,query,operator);
+	}
+
+	/**
+	 * Constructs a {@link Query} for querying the default field.
+	 * The query is parsed by {@link #parseQuery} and expands to different query types combined by a {@link BooleanQuery}.
+	 * The query parser uses the default query operator (AND), which can be configured by the search property &quot;defaultQueryParserOperator&quot;
 	 */
 	public Query newDefaultFieldQuery(String query) throws ParseException {
-		if (query==null) throw new NullPointerException("A query string must be given!");
-		return parseQuery(IndexConstants.FIELDNAME_CONTENT,query);
+		return newDefaultFieldQuery(query,defaultQueryParserOperator);
 	}
 
 	/**
@@ -300,11 +333,12 @@ public class SearchService {
 	 * Returns a list of query strings that can be displayed as a &quot;suggest&quot; drop-down box in search interfaces.
 	 * @param fieldName contains the field name for a field-specific input field. If you want suggestion for the default field use {@link #suggest(String,int)}
 	 * @param query is the query string the user have typed in. It will be parsed and the last term found in it is expanded
+	 * @param operator is the default operator used by the query parser
 	 * @param count limits the number of results
 	 * @return a list of query strings correlated to the parameter <code>query</code>
 	 * @throws IllegalFieldConfigException if the configuration of <code>fieldName</code> does not match data type TOKENIZEDTEXT or it is unknown
 	 */
-	public List<String> suggest(String fieldName, String query, int count) throws IOException {
+	public List<String> suggest(String fieldName, String query, QueryParser.Operator operator, int count) throws IOException {
 		cache.cleanupCache();
 
 		if (count==0) return Collections.<String>emptyList();
@@ -317,7 +351,7 @@ public class SearchService {
 		} else fieldName=IndexConstants.FIELDNAME_CONTENT;
 		if (query==null) throw new NullPointerException("A query string must be given!");
 		try {
-			Query q=parseQuery(fieldName, query);
+			Query q=parseQuery(fieldName, query, operator);
 			Term base=findLastTerm(q);
 			if (base!=null) {
 				// get strings before and after this term
@@ -352,12 +386,37 @@ public class SearchService {
 
 	/**
 	 * Returns a list of query strings that can be displayed as a &quot;suggest&quot; drop-down box in search interfaces.
+	 * The query parser uses the default query operator (AND), which can be configured by the search property &quot;defaultQueryParserOperator&quot;
+	 * @param fieldName contains the field name for a field-specific input field. If you want suggestion for the default field use {@link #suggest(String,int)}
+	 * @param query is the query string the user have typed in. It will be parsed and the last term found in it is expanded
+	 * @param count limits the number of results
+	 * @return a list of query strings correlated to the parameter <code>query</code>
+	 * @throws IllegalFieldConfigException if the configuration of <code>fieldName</code> does not match data type TOKENIZEDTEXT or it is unknown
+	 */
+	public List<String> suggest(String fieldName, String query, int count) throws IOException {
+		return suggest(fieldName,query,defaultQueryParserOperator,count);
+	}
+
+	/**
+	 * Returns a list of query strings that can be displayed as a &quot;suggest&quot; drop-down box in search interfaces.
+	 * The query parser uses the default query operator (AND), which can be configured by the search property &quot;defaultQueryParserOperator&quot;
 	 * @param query is the query string the user have typed in. It will be parsed and the last term found in it is expanded
 	 * @param count limits the number of results
 	 * @return a list of query strings correlated to the parameter <code>query</code>
 	 */
 	public List<String> suggest(String query, int count) throws IOException {
-		return suggest(null,query,count);
+		return suggest(null,query,defaultQueryParserOperator,count);
+	}
+
+	/**
+	 * Returns a list of query strings that can be displayed as a &quot;suggest&quot; drop-down box in search interfaces.
+	 * @param query is the query string the user have typed in. It will be parsed and the last term found in it is expanded
+	 * @param operator is the default operator used by the query parser
+	 * @param count limits the number of results
+	 * @return a list of query strings correlated to the parameter <code>query</code>
+	 */
+	public List<String> suggest(String query, QueryParser.Operator operator, int count) throws IOException {
+		return suggest(null,query,operator,count);
 	}
 
 	/**
@@ -609,12 +668,13 @@ public class SearchService {
 	}
 
 	/**
-	 * Override in a subclass to use another query parser. This version uses the Lucene one with {@link QueryParser#AND_OPERATOR} as default operator.
+	 * Override in a subclass to use another query parser.
 	 * @param fieldName the expanded field name of the field that is used as default when creating queries (when no prefix-notation is used)
 	 * @param query the query string entered by the user
+	 * @param operator the default operator passed to {@link QueryParser}
 	 * @see QueryParser
 	 */
-	protected Query parseQuery(String fieldName, String query) throws ParseException {
+	protected Query parseQuery(String fieldName, String query, QueryParser.Operator operator) throws ParseException {
 		Analyzer a=cache.config.getAnalyzer();
 		QueryParser p;
 		try {
@@ -622,7 +682,7 @@ public class SearchService {
 		} catch (Exception e) {
 			throw new RuntimeException("Cannot instantiate query parser (this should never happen).");
 		}
-		p.setDefaultOperator(QueryParser.AND_OPERATOR);
+		p.setDefaultOperator(operator);
 		Query q=p.parse(query);
 		return q;
 	}
@@ -650,6 +710,7 @@ public class SearchService {
 	
 	protected Class<? extends QueryParser> queryParserClass=null;
 	protected java.lang.reflect.Constructor<? extends QueryParser> queryParserConstructor=null;
+	protected QueryParser.Operator defaultQueryParserOperator=QueryParser.AND_OPERATOR;
 	
 	protected int collectorBufferSize=32768;
 }
