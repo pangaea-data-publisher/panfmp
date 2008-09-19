@@ -90,6 +90,7 @@ import java.util.*;
  *<queryParserClass>org.apache.lucene.queryParser.QueryParser</queryParserClass>
  *<defaultQueryParserOperator>AND</defaultQueryParserOperator>
  *}</pre>
+ * More search properties are listed in {@link LuceneCache}.
  * @author Uwe Schindler
  */
 public class SearchService {
