@@ -18,6 +18,7 @@ package de.pangaea.metadataportal.config;
 
 import de.pangaea.metadataportal.utils.PublicForDigesterUse;
 import de.pangaea.metadataportal.utils.BooleanParser;
+import de.pangaea.metadataportal.utils.ReadOnlyAutoCloseIndexReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.MultiReader;
 import java.util.*;
@@ -72,7 +73,7 @@ public class VirtualIndexConfig extends IndexConfig {
 		if (indexReader==null) {
 			IndexReader[] l=new IndexReader[indexes.length];
 			for (int i=0, c=indexes.length; i<c; i++) l[i]=indexes[i].getIndexReader();
-			indexReader=new MultiReader(l,false);
+			indexReader=new ReadOnlyAutoCloseIndexReader(new MultiReader(l,false),id);
 		}
 		return indexReader;
 	}
@@ -95,7 +96,7 @@ public class VirtualIndexConfig extends IndexConfig {
 	
 	@Override
 	public synchronized void reopenIndex() throws java.io.IOException {
-		closeIndex();
+		indexReader=null;
 	}	
 
 	private Set<String> indexIds=new HashSet<String>();

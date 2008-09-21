@@ -45,10 +45,14 @@ public abstract class IndexConfig {
 	}
 	
 	@Override
-	protected void finalize() throws java.io.IOException {
-		closeIndex();
-	}	
-
+	protected void finalize() throws Throwable {
+		try {
+			indexReader=null;
+		} finally {
+			super.finalize();
+		}
+	}
+	
 	public Searcher newSearcher() throws java.io.IOException {
 		if (!checked) throw new IllegalStateException("Index config not initialized and checked!");
 		return new IndexSearcher(getIndexReader());
@@ -59,15 +63,6 @@ public abstract class IndexConfig {
 		if (indexReader==null) return true;
 		return indexReader.isCurrent();
 	}
-
-	public synchronized void closeIndex() throws java.io.IOException {
-		if (!checked) throw new IllegalStateException("Index config not initialized and checked!");
-		if (indexReader!=null) try {
-			indexReader.close();
-		} finally {
-			indexReader=null;
-		}
-	}
 	
 	// Reader
 	public abstract IndexReader getIndexReader() throws java.io.IOException;
@@ -75,7 +70,7 @@ public abstract class IndexConfig {
 	public abstract boolean isIndexAvailable() throws java.io.IOException;
 	public abstract void reopenIndex() throws java.io.IOException;
 	
-	protected IndexReader indexReader=null;
+	protected volatile IndexReader indexReader=null;
 	protected boolean checked=false;
 
 	// members "the configuration"

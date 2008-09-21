@@ -74,7 +74,7 @@ public class SingleIndexConfig extends IndexConfig {
 	@Override
 	public synchronized IndexReader getIndexReader() throws java.io.IOException {
 		if (!checked) throw new IllegalStateException("Index config not initialized and checked!");
-		if (indexReader==null) indexReader=IndexReader.open(getFullIndexPath());
+		if (indexReader==null) indexReader=new ReadOnlyAutoCloseIndexReader(IndexReader.open(getFullIndexPath()),id);
 		return indexReader;
 	}
 
@@ -96,15 +96,10 @@ public class SingleIndexConfig extends IndexConfig {
 		if (indexReader!=null) {
 			IndexReader n=indexReader.reopen();
 			if (n!=indexReader) {
-				try {
-					// reader was really reopened
-					indexReader.close();
-				} finally {
-					indexReader=n;
-				}
+				indexReader=n;
 			} else if (!indexReader.isCurrent()) {
 				log.warn("Index '"+id+"' was reopened but is still not up-to-date (maybe a bug in Lucene, we try to investigate this). Doing a hard reopen (close & open later).");
-				closeIndex();
+				indexReader=null;
 			}
 		}
 	}	
