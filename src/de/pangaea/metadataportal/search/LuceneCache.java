@@ -225,6 +225,16 @@ public class LuceneCache {
 		protected SearchResultList getSearchResultList(boolean loadXml, Collection<String> fieldsToLoad) {
 			return new SearchResultList(this, parent.getFieldSelector(loadXml,fieldsToLoad));
 		}
+		
+		@Override
+		protected void finalize() throws Throwable {
+			try {
+				searcher.close();
+				searcher=null;
+			} finally {
+				super.finalize();
+			}
+		}
 
 		protected LuceneCache parent;
 		protected Searcher searcher;

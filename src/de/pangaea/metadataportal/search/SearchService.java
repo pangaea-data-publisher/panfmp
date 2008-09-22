@@ -555,6 +555,8 @@ public class SearchService {
 		} catch (RuntimeException e) {
 			Throwable t=e.getCause();
 			if (t instanceof IOException) throw (IOException)t; else throw e;
+		} finally {
+			searcher.close();
 		}
 	}
 
