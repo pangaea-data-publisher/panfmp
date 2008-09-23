@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<cfg:config xmlns:cfg="urn:java:de.pangaea.metadataportal.config.Config" xmlns:ib="urn:java:de.pangaea.metadataportal.harvester.IndexBuilder">
+	<cfg:metadata xmlns:dif="http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/">
+		<cfg:variables>
+			<cfg:variable name="startdate">/dif:DIF/dif:Temporal_Coverage/dif:Start_Date</cfg:variable>
+			<cfg:variable name="enddate">/dif:DIF/dif:Temporal_Coverage/dif:Stop_Date</cfg:variable>
+			<cfg:variable-template name="boost" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+				<xsl:choose>
+					<xsl:when test="/dif:DIF/dif:Parent_DIF">1.0</xsl:when>
+					<xsl:otherwise>5.0</xsl:otherwise>
+				</xsl:choose>
+			</cfg:variable-template>
+		</cfg:variables>
+		<cfg:filters default="accept">
+			<!-- we want to remove all documents harvested into index 'pangaea-carboocean' that are from project 'JGOFS' -->
+			<cfg:deny>$ib:index='pangaea-carboocean' and /dif:DIF/dif:Project/dif:Short_Name[contains(.,'JGOFS')]</cfg:deny>
+			<!-- we want to remove all documents with wrong namespace -->
+			<cfg:deny>namespace-uri(/*)!='http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/'</cfg:deny>
+			<!--
+				We want to remove all duplicates; this is the simple approach: it checks if every harvested
+				identifier is in no other currently existing index.
+				Because of this every NEW document will stay in the index that was harvested first.
+				You can create more complicated dependencies by using the $ib:index variable and also IDs
+				as string parameters given to the ib:isDocIdentifierUnique() function.
+			-->
+			<cfg:deny>not(ib:isDocIdentifierUnique())</cfg:deny>
+		</cfg:filters>
+		<cfg:fields>
+			<cfg:field name="citation" datatype="tokenizedText" lucenestorage="false" luceneindexed="true" lucenetermvectors="true">/dif:DIF/dif:Data_Set_Citation|/dif:DIF/dif:Entry_Title|/dif:DIF/dif:Entry_ID</cfg:field>
+			<cfg:field name="investigator" datatype="tokenizedText" lucenestorage="false" luceneindexed="true">/dif:DIF/dif:Personnel[contains(dif:Role,'nvestigat')]</cfg:field>
+			<cfg:field name="parameter" datatype="tokenizedText" lucenestorage="false" luceneindexed="true">/dif:DIF/dif:Parameters</cfg:field>
+			<cfg:field name="method" datatype="tokenizedText" lucenestorage="false" luceneindexed="true">/dif:DIF/dif:Sensor_Name</cfg:field>
+			<cfg:field name="project" datatype="tokenizedText" lucenestorage="false" luceneindexed="true">/dif:DIF/dif:Project</cfg:field>
+			<cfg:field name="projectFull" datatype="string" lucenestorage="true" luceneindexed="true">/dif:DIF/dif:Project/dif:Short_Name</cfg:field>
+			<cfg:field name="minLatitude" datatype="number" lucenestorage="true" luceneindexed="true">/dif:DIF/dif:Spatial_Coverage/dif:Southernmost_Latitude</cfg:field>
+			<cfg:field name="maxLatitude" datatype="number" lucenestorage="true" luceneindexed="true">/dif:DIF/dif:Spatial_Coverage/dif:Northernmost_Latitude</cfg:field>
+			<cfg:field name="minLongitude" datatype="number" lucenestorage="true" luceneindexed="true">/dif:DIF/dif:Spatial_Coverage/dif:Westernmost_Longitude</cfg:field>
+			<cfg:field name="maxLongitude" datatype="number" lucenestorage="true" luceneindexed="true">/dif:DIF/dif:Spatial_Coverage/dif:Easternmost_Longitude</cfg:field>
+			<cfg:field name="minDateTime" datatype="dateTime" lucenestorage="true" luceneindexed="true" default="1900-01-01T00:00:00">$startdate</cfg:field>
+			<cfg:field name="maxDateTime" datatype="dateTime" lucenestorage="true" luceneindexed="true" default="2038-12-31T23:59:59">$enddate</cfg:field>
+			<cfg:field name="minMonth" datatype="number" lucenestorage="true" luceneindexed="true">substring-before(substring-after($startdate,'-'),'-')</cfg:field>
+			<cfg:field name="maxMonth" datatype="number" lucenestorage="true" luceneindexed="true">substring-before(substring-after($enddate,'-'),'-')</cfg:field>
+			<cfg:field name="dataCenter" datatype="tokenizedText" lucenestorage="false" luceneindexed="true">/dif:DIF/dif:Data_Center/dif:Data_Center_Name</cfg:field>
+			<cfg:field name="dataCenterFull" datatype="string" lucenestorage="true" luceneindexed="true">/dif:DIF/dif:Data_Center/dif:Data_Center_Name/dif:Short_Name</cfg:field>
+			<cfg:default lucenetermvectors="termPositions">.</cfg:default>
+		</cfg:fields>
+		<cfg:documentBoost>number($boost)</cfg:documentBoost>
+		<cfg:schema>
+			<cfg:url>http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/dif_v9.4.xsd</cfg:url>
+			<cfg:haltOnError>false</cfg:haltOnError>
+			<!-- if the validator augments the source document (e.g., adds default attributes), use this as basis for indexing? -->
+			<cfg:augmentation>false</cfg:augmentation>
+		</cfg:schema>
+	</cfg:metadata>
+	<cfg:globalHarvesterProperties>
+		<cfg:numConverterThreads>2</cfg:numConverterThreads>
+		<cfg:maxConverterQueue>250</cfg:maxConverterQueue>
+		<cfg:maxIndexerQueue>250</cfg:maxIndexerQueue>
+		<cfg:changesBeforeIndexCommit>1000</cfg:changesBeforeIndexCommit>
+	</cfg:globalHarvesterProperties>
+	<cfg:analyzer>
+		<cfg:class>org.apache.lucene.analysis.standard.StandardAnalyzer</cfg:class>
+		<cfg:importEnglishStopWords/>
+		<cfg:addStopWords>
+            latitude,longitude,elevation,depth,source,e-mail,north,south,east,west, 
+            area,location,geocode,method,parameter
+        </cfg:addStopWords>
+	</cfg:analyzer>
+	<cfg:indexes>
+		<cfg:index id="pangaea-carboocean">
+			<cfg:displayName>PANGAEA datasets for CARBOOCEAN</cfg:displayName>
+			<cfg:indexDir>./lucene-store/pangaea-carboocean</cfg:indexDir>
+			<cfg:harvesterClass>de.pangaea.metadataportal.harvester.OAIHarvester</cfg:harvesterClass>
+			<cfg:harvesterProperties>
+				<cfg:baseUrl>http://ws.pangaea.de/oai/</cfg:baseUrl>
+				<cfg:metadataPrefix>dif</cfg:metadataPrefix>
+				<cfg:setSpec>CARBOOCEAN</cfg:setSpec>
+				<cfg:autoOptimize>true</cfg:autoOptimize>
+				<cfg:validate>false</cfg:validate>
+			</cfg:harvesterProperties>
+		</cfg:index>
+		<cfg:index id="ifremer">
+			<cfg:displayName>IFREMER datasets</cfg:displayName>
+			<cfg:indexDir>./lucene-store/ifremer</cfg:indexDir>
+			<cfg:harvesterClass>de.pangaea.metadataportal.harvester.OAIHarvester</cfg:harvesterClass>
+			<cfg:harvesterProperties>
+				<cfg:baseUrl>http://www.ifremer.fr/oai/provider</cfg:baseUrl>
+				<cfg:metadataPrefix>dif</cfg:metadataPrefix>
+				<cfg:autoOptimize>true</cfg:autoOptimize>
+				<cfg:validate>true</cfg:validate>
+			</cfg:harvesterProperties>
+			<!--<cfg:transform>
+                <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="./ns-convert.xslt"/>
+            </cfg:transform>-->
+		</cfg:index>
+		<cfg:index id="copepod">
+			<cfg:displayName>COPEPOD</cfg:displayName>
+			<cfg:indexDir>./lucene-store/copepod</cfg:indexDir>
+			<cfg:harvesterClass>de.pangaea.metadataportal.harvester.WebCrawlingHarvester</cfg:harvesterClass>
+			<cfg:harvesterProperties>
+				<cfg:baseUrl>http://www.st.nmfs.gov/plankton/content/xml_src/</cfg:baseUrl>
+				<cfg:filenameFilter>.*\.xml</cfg:filenameFilter>
+				<cfg:autoOptimize>true</cfg:autoOptimize>
+				<cfg:validate>true</cfg:validate>
+			</cfg:harvesterProperties>
+		</cfg:index>
+		<cfg:virtualIndex id="dataportal">
+			<cfg:displayName>Test Dataportal</cfg:displayName>
+			<cfg:index ref="pangaea-carboocean"/>
+			<cfg:index ref="ifremer"/>
+			<cfg:index ref="copepod"/>
+		</cfg:virtualIndex>
+	</cfg:indexes>
+	<cfg:search>
+		<!-- default SearchService properties -->
+		<cfg:cacheMaxAge>300</cfg:cacheMaxAge>
+		<cfg:cacheMaxSessions>10</cfg:cacheMaxSessions>
+		<cfg:reloadIndexIfChangedAfter>60</cfg:reloadIndexIfChangedAfter>
+		<cfg:maxStoredQueries>200</cfg:maxStoredQueries>
+		<cfg:queryParserClass>org.apache.lucene.queryParser.QueryParser</cfg:queryParserClass>
+		<cfg:defaultQueryParserOperator>and</cfg:defaultQueryParserOperator>
+		<!-- AXIS special properties -->
+		<cfg:returnXML>true</cfg:returnXML>
+		<cfg:returnStoredFields>true</cfg:returnStoredFields>
+	</cfg:search>
+</cfg:config>
