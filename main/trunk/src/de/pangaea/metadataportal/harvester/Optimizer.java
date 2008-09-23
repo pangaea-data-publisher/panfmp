@@ -64,7 +64,7 @@ public class Optimizer {
 					Log iwlog=LogFactory.getLog(writer.getClass());
 					if (iwlog.isDebugEnabled()) writer.setInfoStream(LogUtil.getDebugStream(iwlog));
 					log.info("Optimizing...");
-					writer.optimize();
+					writer.optimize(true);
 					log.info("Finished index optimizing of index \""+iconf.id+"\".");
 				} catch (java.io.IOException e) {
 					log.fatal("Exception during index optimization.",e);
