@@ -86,7 +86,7 @@ public class SingleIndexConfig extends IndexConfig {
 	@Override
 	public synchronized IndexReader getSharedIndexReader() throws java.io.IOException {
 		if (!checked) throw new IllegalStateException("Index config not initialized and checked!");
-		if (indexReader==null) indexReader=new ReadOnlyAutoCloseIndexReader(IndexReader.open(getIndexDirectory(),true),id);
+		if (indexReader==null) indexReader=new AutoCloseIndexReader(IndexReader.open(getIndexDirectory(),true),id);
 		return indexReader;
 	}
 

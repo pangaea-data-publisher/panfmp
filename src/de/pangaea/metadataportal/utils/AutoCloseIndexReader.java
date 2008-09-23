@@ -20,15 +20,15 @@ import org.apache.lucene.index.*;
 import java.io.IOException;
 
 /**
- * <code>ReadOnlyAutoCloseIndexReader</code> prevents the target index to be modified. It is used by {@link de.pangaea.metadataportal.config.IndexConfig#getSharedIndexReader}
+ * <code>AutoCloseIndexReader</code> prevents the target index to be modified. It is used by {@link de.pangaea.metadataportal.config.IndexConfig#getSharedIndexReader}
  * to prevent index modification. To do reopens of indexes, the index cannot be closed by <code>IndexConfig</code>, so it is openend until finalized by GC.
  * @author Uwe Schindler
  */
-public final class ReadOnlyAutoCloseIndexReader extends FilterIndexReader {
+public final class AutoCloseIndexReader extends FilterIndexReader {
 
-	private static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(ReadOnlyAutoCloseIndexReader.class);
+	private static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(AutoCloseIndexReader.class);
 
-	public ReadOnlyAutoCloseIndexReader(final IndexReader in, final String name) {
+	public AutoCloseIndexReader(final IndexReader in, final String name) {
 		super(in);
 		this.name=name;
 	}
@@ -44,7 +44,7 @@ public final class ReadOnlyAutoCloseIndexReader extends FilterIndexReader {
 	@Override
 	public IndexReader reopen() throws CorruptIndexException, IOException {
 		final IndexReader n=in.reopen();
-		if (n!=in) return new ReadOnlyAutoCloseIndexReader(n,name);
+		if (n!=in) return new AutoCloseIndexReader(n,name);
 		return this;
 	}
 

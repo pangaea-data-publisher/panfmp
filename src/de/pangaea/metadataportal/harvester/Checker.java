@@ -70,11 +70,14 @@ public class Checker {
 						// und los gehts
 						log.info("Checking index \""+iconf.id+'"'+(fix?" with repairing errors":"")+"...");
 						if (!siconf.isIndexAvailable()) throw new java.io.FileNotFoundException("Index directory with segments file does not exist.");
-						boolean result=CheckIndex.check(siconf.getIndexDirectory(),fix).clean;
-						if (result)
+						CheckIndexStatus result=CheckIndex.check(siconf.getIndexDirectory(),false);
+						if (result.clean) {
 							log.info("Finished checking of index \""+iconf.id+"\": Index is clean.");
-						else 
-							log.warn("Finished checking of index \""+iconf.id+"\": Index "+(fix?"was":"is")+" corrupt.");
+						} else {
+							log.warn("Finished checking of index \""+iconf.id+"\": Index is corrupt - fixing...");
+							CheckIndex.fix(result);
+							log.info("Index \""+iconf.id+"\" was fixed.");
+						}
 					} catch (java.io.IOException e) {
 						log.fatal("Exception during index checking.",e);
 					} finally {
