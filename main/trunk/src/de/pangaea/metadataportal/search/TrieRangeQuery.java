@@ -19,10 +19,10 @@ package de.pangaea.metadataportal.search;
 import de.pangaea.metadataportal.utils.TrieUtils;
 import org.apache.lucene.search.*;
 import org.apache.lucene.index.*;
-import java.io.IOException;
-import java.util.BitSet;
-import java.util.Date;
+import org.apache.lucene.util.OpenBitSet;
 import org.apache.lucene.util.ToStringUtils;
+import java.io.IOException;
+import java.util.Date;
 
 /**
  * Low-level implementation of a Lucene {@link Query} that implements a trie-based range query.
@@ -140,7 +140,7 @@ public final class TrieRangeQuery extends Query {
 	protected final class TrieRangeFilter extends Filter {
 
 		// code borrowed from original RangeFilter and simplified (and returns number of terms)
-		private int setBits(final IndexReader reader, final TermDocs termDocs, final BitSet bits, String lowerTerm, String upperTerm) throws IOException {
+		private int setBits(final IndexReader reader, final TermDocs termDocs, final OpenBitSet bits, String lowerTerm, String upperTerm) throws IOException {
 			int count=0,len=lowerTerm.length();
 			// add padding before loose/inprecise values to group them
 			if (len<16) {
@@ -169,7 +169,7 @@ public final class TrieRangeQuery extends Query {
 		}
 
 		// splits range recursively (and returns number of terms)
-		private int splitRange(final IndexReader reader, final TermDocs termDocs, final BitSet bits, final String min, final boolean lowerBoundOpen, final String max, final boolean upperBoundOpen) throws IOException {
+		private int splitRange(final IndexReader reader, final TermDocs termDocs, final OpenBitSet bits, final String min, final boolean lowerBoundOpen, final String max, final boolean upperBoundOpen) throws IOException {
 			int count=0;
 			final int length=min.length();
 			final String minShort=lowerBoundOpen ? min.substring(0,length-2) : TrieUtils.incrementTrieCoded(min.substring(0,length-2));
@@ -186,13 +186,11 @@ public final class TrieRangeQuery extends Query {
 		}
 
 		/**
-		 * Returns a BitSet with true for documents which should be
-		 * permitted in search results, and false for those that should
-		 * not.
+		 * Returns a DocIdSet that provides the documents which should be permitted or prohibited in search results.
 		 */
 		@Override
-		public BitSet bits(final IndexReader reader) throws IOException {
-			final BitSet bits = new BitSet(reader.maxDoc());
+		public DocIdSet getDocIdSet(IndexReader reader) throws IOException {
+			final OpenBitSet bits = new OpenBitSet(reader.maxDoc());
 			final TermDocs termDocs=reader.termDocs();
 			try {
 				final int count=splitRange(reader,termDocs,bits,min,TrieUtils.TRIE_CODED_NUMERIC_MIN.equals(min),max,TrieUtils.TRIE_CODED_NUMERIC_MAX.equals(max));

@@ -19,7 +19,6 @@ package de.pangaea.metadataportal.harvester;
 import de.pangaea.metadataportal.config.*;
 import de.pangaea.metadataportal.utils.*;
 import org.apache.lucene.index.*;
-import org.apache.lucene.store.FSDirectory;
 import java.util.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -58,11 +57,8 @@ public class Optimizer {
 				try {
 					// und los gehts
 					log.info("Opening index \""+iconf.id+"\" for optimizing...");
-					FSDirectory dir=FSDirectory.getDirectory(siconf.getFullIndexPath());
-					if (!siconf.isIndexAvailable()) throw new java.io.FileNotFoundException("Index directory with segments file does not exist: "+dir.toString());
-					writer = new IndexWriter(dir, conf.getAnalyzer(), false);
-					Log iwlog=LogFactory.getLog(writer.getClass());
-					if (iwlog.isDebugEnabled()) writer.setInfoStream(LogUtil.getDebugStream(iwlog));
+					if (!siconf.isIndexAvailable()) throw new java.io.FileNotFoundException("Index directory with segments file does not exist.");
+					writer = siconf.newIndexWriter(false);
 					log.info("Optimizing...");
 					writer.optimize(true);
 					log.info("Finished index optimizing of index \""+iconf.id+"\".");

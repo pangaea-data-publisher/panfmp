@@ -26,20 +26,18 @@ import java.util.concurrent.atomic.*;
 import java.io.IOException;
 import org.apache.lucene.index.*;
 import org.apache.lucene.document.Document;
-import org.apache.lucene.store.FSDirectory;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.lucene.store.IndexInput;
+import org.apache.lucene.store.IndexOutput;
 
 /**
  * Component of <b>panFMP</b> that analyzes and indexes harvested documents in different threads.
  * @author Uwe Schindler
  */
 public class IndexBuilder {
-	private static Log log = LogFactory.getLog(IndexBuilder.class);
+	private static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(IndexBuilder.class);
 
 	protected SingleIndexConfig iconfig;
 
-	private FSDirectory dir;
 	private Date lastHarvested=null;
 	private boolean create;
 
@@ -66,12 +64,11 @@ public class IndexBuilder {
 	private boolean threadsStarted=false;
 
 	public IndexBuilder(boolean create, SingleIndexConfig iconfig) throws IOException {
-		if (!IndexReader.indexExists(iconfig.getFullIndexPath())) create=true;
-		this.dir=FSDirectory.getDirectory(iconfig.getFullIndexPath());
+		if (!iconfig.isIndexAvailable()) create=true;
 		this.create=create;
 		this.iconfig=iconfig;
 		if (create) try {
-			dir.deleteFile(IndexConstants.FILENAME_LASTHARVESTED);
+			iconfig.getIndexDirectory().deleteFile(IndexConstants.FILENAME_LASTHARVESTED);
 		} catch (IOException e) {}
 
 		changesBeforeCommit=Integer.parseInt(iconfig.harvesterProperties.getProperty("changesBeforeIndexCommit","1000"));
@@ -151,7 +148,7 @@ public class IndexBuilder {
 		}
 
 		if (lastHarvested!=null) {
-			org.apache.lucene.store.IndexOutput out=dir.createOutput(IndexConstants.FILENAME_LASTHARVESTED);
+			IndexOutput out=iconfig.getIndexDirectory().createOutput(IndexConstants.FILENAME_LASTHARVESTED);
 			out.writeLong(lastHarvested.getTime());
 			out.close();
 			lastHarvested=null;
@@ -199,10 +196,10 @@ public class IndexBuilder {
 
 	public Date getLastHarvestedFromDisk() {
 		if (create) return null;
-		org.apache.lucene.store.IndexInput in=null;
+		IndexInput in=null;
 		Date d=null;
 		try {
-			in=dir.openInput(IndexConstants.FILENAME_LASTHARVESTED);
+			in=iconfig.getIndexDirectory().openInput(IndexConstants.FILENAME_LASTHARVESTED);
 			d=new Date(in.readLong());
 			in.close();
 		} catch (IOException e) {
@@ -273,10 +270,7 @@ public class IndexBuilder {
 		int updated=0, deleted=0;
 		boolean finished=false;
 		try {
-			writer=new IndexWriter(dir, true, iconfig.parent.getAnalyzer(), create);
-			Log iwlog=LogFactory.getLog(writer.getClass());
-			if (iwlog.isDebugEnabled()) writer.setInfoStream(LogUtil.getDebugStream(iwlog));
-			writer.setMaxFieldLength(Integer.MAX_VALUE);
+			writer=iconfig.newIndexWriter(create);
 			writer.setMaxBufferedDocs(changesBeforeCommit);
 			writer.setMaxBufferedDeleteTerms(changesBeforeCommit);
 
@@ -315,7 +309,7 @@ public class IndexBuilder {
 					HarvesterCommitEvent ce=commitEvent.get();
 
 					// only flush if commitEvent interface registered
-					if (ce!=null) writer.flush();
+					if (ce!=null) writer.commit();
 
 					log.info(deleted+" docs presumably deleted (if existent) and "+updated+" docs (re-)indexed so far.");
 
@@ -332,12 +326,11 @@ public class IndexBuilder {
 				indexerLock.unlock();
 			}
 
-			writer.flush();
-
 			// check vor validIdentifiers Set and remove all unknown identifiers from index, if available (but not if new-created index)
 			Set<String> validIdentifiers=this.validIdentifiers.get();
 			if (validIdentifiers!=null && !create) {
 				log.info(deleted+" docs presumably deleted (if existent) and "+updated+" docs (re-)indexed so far.");
+				writer.commit();
 				writer.close(); writer=null;
 
 				log.info("Removing documents not seen while harvesting (this may take a while)...");
@@ -345,7 +338,7 @@ public class IndexBuilder {
 				TermEnum terms=null;
 				Term base=new Term(IndexConstants.FIELDNAME_IDENTIFIER,"");
 				try {
-					reader = iconfig.getUncachedIndexReader();
+					reader = iconfig.newIndexReader(false);
 					terms=reader.terms(base);
 					do {
 						Term t=terms.term();
@@ -367,6 +360,7 @@ public class IndexBuilder {
 
 			// notify Harvester of index commit
 			HarvesterCommitEvent ce=commitEvent.get();
+			if (writer!=null && ce!=null) writer.commit();
 			if (ce!=null && committedIdentifiers.size()>0) ce.harvesterCommitted(Collections.unmodifiableSet(committedIdentifiers));
 			committedIdentifiers.clear();
 
@@ -374,12 +368,7 @@ public class IndexBuilder {
 			log.info(deleted+" docs presumably deleted (only if existent) and "+updated+" docs (re-)indexed - finished.");
 
 			if (BooleanParser.parseBoolean(iconfig.harvesterProperties.getProperty("autoOptimize","false"))) {
-				if (writer==null) {
-					writer=new IndexWriter(dir, true, iconfig.parent.getAnalyzer(), false);
-					iwlog=LogFactory.getLog(writer.getClass());
-					if (iwlog.isDebugEnabled()) writer.setInfoStream(LogUtil.getDebugStream(iwlog));					
-					writer.setMaxFieldLength(Integer.MAX_VALUE);
-				}
+				if (writer==null) writer=iconfig.newIndexWriter(false);
 				log.info("Optimizing index...");
 				writer.optimize(true);
 				log.info("Index optimized.");
@@ -398,6 +387,7 @@ public class IndexBuilder {
 			}
 			// close reader
 			if (writer!=null) try {
+				writer.commit();
 				writer.close();
 			} catch (IOException ioe) {
 				log.warn("Failed to close Lucene IndexWriter, you may need to remove lock files!",ioe);

@@ -20,7 +20,7 @@ import org.apache.lucene.index.*;
 import java.io.IOException;
 
 /**
- * <code>ReadOnlyAutoCloseIndexReader</code> prevents the target index to be modified. It is used by {@link de.pangaea.metadataportal.config.IndexConfig#getIndexReader}
+ * <code>ReadOnlyAutoCloseIndexReader</code> prevents the target index to be modified. It is used by {@link de.pangaea.metadataportal.config.IndexConfig#getSharedIndexReader}
  * to prevent index modification. To do reopens of indexes, the index cannot be closed by <code>IndexConfig</code>, so it is openend until finalized by GC.
  * @author Uwe Schindler
  */
@@ -31,26 +31,6 @@ public final class ReadOnlyAutoCloseIndexReader extends FilterIndexReader {
 	public ReadOnlyAutoCloseIndexReader(final IndexReader in, final String name) {
 		super(in);
 		this.name=name;
-	}
-
-	@Override
-	protected void doUndeleteAll() throws CorruptIndexException, IOException {
-		throw new UnsupportedOperationException("This IndexReader is read-only.");
-	}
-
-	@Override
-	protected void doSetNorm(int d, String f, byte b) throws CorruptIndexException, IOException {
-		throw new UnsupportedOperationException("This IndexReader is read-only.");
-	}
-
-	@Override
-	protected void doDelete(int n) throws  CorruptIndexException, IOException {
-		throw new UnsupportedOperationException("This IndexReader is read-only.");
-	}
-	
-	@Override
-	protected void doCommit() throws IOException { 
-		throw new UnsupportedOperationException("This IndexReader is read-only.");
 	}
 	
 	@Override

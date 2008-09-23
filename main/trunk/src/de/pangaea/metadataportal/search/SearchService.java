@@ -365,7 +365,7 @@ public class SearchService {
 
 				// scan
 				List<String> list=new ArrayList<String>((count>100)?50:count/2);
-				TermEnum terms=index.getIndexReader().terms(base);
+				TermEnum terms=index.getSharedIndexReader().terms(base);
 				try {
 					int c=0;
 					do {
@@ -440,7 +440,7 @@ public class SearchService {
 			throw new IllegalFieldConfigException("Field '"+fieldName+"' is not of type STRING!");
 
 		// scan
-		IndexReader reader=index.getIndexReader();
+		IndexReader reader=index.getSharedIndexReader();
 		fieldName=fieldName.intern();
 		TermEnum terms=reader.terms(new Term(fieldName,prefix));
 		try {
@@ -599,7 +599,7 @@ public class SearchService {
 	public SearchResultItem getDocument(String identifier, boolean loadXml, Collection<String> fieldsToLoad) throws IOException {
 		cache.cleanupCache();
 
-		IndexReader reader=index.getIndexReader();
+		IndexReader reader=index.getSharedIndexReader();
 
 		TermDocs td=reader.termDocs(new Term(IndexConstants.FIELDNAME_IDENTIFIER,identifier));
 		try {

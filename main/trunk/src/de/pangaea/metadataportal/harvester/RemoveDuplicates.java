@@ -87,7 +87,7 @@ public class RemoveDuplicates {
 				try {
 					// und los gehts
 					log.info("Opening index \""+iconf.id+"\" for removing duplicate documents...");
-					reader = siconf.getUncachedIndexReader();
+					reader = siconf.newIndexReader(true);
 
 					Term base=new Term(IndexConstants.FIELDNAME_IDENTIFIER,"");
 					TermEnum terms=reader.terms(base);

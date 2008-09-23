@@ -68,21 +68,21 @@ public class VirtualIndexConfig extends IndexConfig {
 	}
 
 	@Override
-	public synchronized IndexReader getIndexReader() throws java.io.IOException {
+	public synchronized IndexReader getSharedIndexReader() throws java.io.IOException {
 		if (indexes==null) throw new IllegalStateException("Virtual index configuration with id=\""+id+"\" not yet checked and initialized!");
 		if (indexReader==null) {
 			IndexReader[] l=new IndexReader[indexes.length];
-			for (int i=0, c=indexes.length; i<c; i++) l[i]=indexes[i].getIndexReader();
+			for (int i=0, c=indexes.length; i<c; i++) l[i]=indexes[i].getSharedIndexReader();
 			indexReader=new ReadOnlyAutoCloseIndexReader(new MultiReader(l,false),id);
 		}
 		return indexReader;
 	}
 
 	@Override
-	public IndexReader getUncachedIndexReader() throws java.io.IOException {
+	public IndexReader newIndexReader(final boolean readOnly) throws java.io.IOException {
 		if (indexes==null) throw new IllegalStateException("Virtual index configuration with id=\""+id+"\" not yet checked and initialized!");
 		IndexReader[] l=new IndexReader[indexes.length];
-		for (int i=0, c=indexes.length; i<c; i++) l[i]=indexes[i].getUncachedIndexReader();
+		for (int i=0, c=indexes.length; i<c; i++) l[i]=indexes[i].newIndexReader(readOnly);
 		return new MultiReader(l,true);
 	}
 
