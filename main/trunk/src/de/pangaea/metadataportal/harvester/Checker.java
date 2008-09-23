@@ -74,9 +74,11 @@ public class Checker {
 						if (result.clean) {
 							log.info("Finished checking of index \""+iconf.id+"\": Index is clean.");
 						} else {
-							log.warn("Finished checking of index \""+iconf.id+"\": Index is corrupt - fixing...");
-							CheckIndex.fix(result);
-							log.info("Index \""+iconf.id+"\" was fixed.");
+							log.warn("Finished checking of index \""+iconf.id+"\": Index is corrupt"+(fix?", fixing it":"")+'.');
+							if (fix) {
+								CheckIndex.fix(result);
+								log.info("Index \""+iconf.id+"\" was fixed.");
+							}
 						}
 					} catch (java.io.IOException e) {
 						log.fatal("Exception during index checking.",e);
