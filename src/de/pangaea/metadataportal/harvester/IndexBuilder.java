@@ -381,7 +381,7 @@ public class IndexBuilder {
 					writer.setMaxFieldLength(Integer.MAX_VALUE);
 				}
 				log.info("Optimizing index...");
-				writer.optimize();
+				writer.optimize(true);
 				log.info("Index optimized.");
 			}
 		} catch (IOException e) {
