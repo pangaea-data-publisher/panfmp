@@ -61,7 +61,7 @@ public class OAIMetadataDocument extends MetadataDocument {
 	protected Document createEmptyDocument() throws Exception {
 		Document ldoc=super.createEmptyDocument();
 		if (ldoc!=null) {
-			for (String set : sets) ldoc.add(new Field(IndexConstants.FIELDNAME_SET, set, Field.Store.YES, Field.Index.UN_TOKENIZED));
+			for (String set : sets) ldoc.add(new Field(IndexConstants.FIELDNAME_SET, set, Field.Store.YES, Field.Index.NOT_ANALYZED));
 		}
 		return ldoc;
 	}

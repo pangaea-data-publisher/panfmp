@@ -20,7 +20,6 @@ import de.pangaea.metadataportal.config.*;
 import de.pangaea.metadataportal.utils.*;
 import org.apache.lucene.document.*;
 import org.apache.lucene.index.*;
-import org.apache.lucene.store.FSDirectory;
 import java.util.*;
 
 /**
@@ -55,7 +54,7 @@ public class Rebuilder extends Harvester {
 	@Override
 	public void open(SingleIndexConfig iconfig) throws Exception {
 		log.info("Opening index \""+iconfig.id+"\" for harvesting all documents...");
-		reader = iconfig.getUncachedIndexReader();
+		reader = iconfig.newIndexReader(true);
 		super.open(iconfig);
 	}
 

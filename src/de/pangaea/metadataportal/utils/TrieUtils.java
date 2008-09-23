@@ -153,9 +153,9 @@ public final class TrieUtils {
 	}
 
 	private static void addConvertedTrieCodedDocumentField(final Document ldoc, final String fieldname, final String val, final boolean index, final Field.Store store) {
-		ldoc.add(new Field(fieldname, val, store, index?Field.Index.UN_TOKENIZED:Field.Index.NO));
+		ldoc.add(new Field(fieldname, val, store, index?Field.Index.NOT_ANALYZED:Field.Index.NO));
 		if (index) for (int i=7; i>0; i--)
-			ldoc.add(new Field(fieldname, new StringBuilder(i*2+1).append((char)(TRIE_CODED_PADDING_START+i)).append(val.substring(0,i*2)).toString(), Field.Store.NO, Field.Index.UN_TOKENIZED));
+			ldoc.add(new Field(fieldname, new StringBuilder(i*2+1).append((char)(TRIE_CODED_PADDING_START+i)).append(val.substring(0,i*2)).toString(), Field.Store.NO, Field.Index.NOT_ANALYZED));
 	}
 
 	/**

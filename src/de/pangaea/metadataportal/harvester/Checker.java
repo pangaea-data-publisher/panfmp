@@ -19,7 +19,6 @@ package de.pangaea.metadataportal.harvester;
 import de.pangaea.metadataportal.config.*;
 import de.pangaea.metadataportal.utils.*;
 import org.apache.lucene.index.*;
-import org.apache.lucene.store.FSDirectory;
 import java.util.*;
 import java.io.PrintStream;
 import org.apache.commons.logging.Log;
@@ -70,9 +69,8 @@ public class Checker {
 					try {
 						// und los gehts
 						log.info("Checking index \""+iconf.id+'"'+(fix?" with repairing errors":"")+"...");
-						FSDirectory dir=FSDirectory.getDirectory(siconf.getFullIndexPath());
-						if (!siconf.isIndexAvailable()) throw new java.io.FileNotFoundException("Index directory with segments file does not exist: "+dir.toString());
-						boolean result=CheckIndex.check(dir,fix);
+						if (!siconf.isIndexAvailable()) throw new java.io.FileNotFoundException("Index directory with segments file does not exist.");
+						boolean result=CheckIndex.check(siconf.getIndexDirectory(),fix).clean;
 						if (result)
 							log.info("Finished checking of index \""+iconf.id+"\": Index is clean.");
 						else 

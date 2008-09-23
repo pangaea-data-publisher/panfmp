@@ -20,6 +20,11 @@ import java.util.*;
 import de.pangaea.metadataportal.utils.*;
 import javax.xml.transform.Templates;
 import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.store.FSDirectory;
+import org.apache.lucene.store.Directory;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * Configuration of a real lucene index. Such indexes can be the target of a harvest operation.
@@ -27,13 +32,15 @@ import org.apache.lucene.index.IndexReader;
  */
 public class SingleIndexConfig extends IndexConfig {
 
-	private static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(SingleIndexConfig.class);
+	private static Log log = LogFactory.getLog(SingleIndexConfig.class);
 
 	public SingleIndexConfig() {
 		super();
 	}
 
-	public void setIndexDir(String v) throws java.io.IOException {
+	public synchronized void setIndexDir(String v) throws java.io.IOException {
+		if (indexDirImpl!=null) indexDirImpl.close();
+		indexDirImpl=null;
 		indexDir=v;
 	}
 
@@ -71,23 +78,38 @@ public class SingleIndexConfig extends IndexConfig {
 		return parent.makePathAbsolute(indexDir);
 	}
 
+	public synchronized Directory getIndexDirectory() throws java.io.IOException {
+		if (indexDirImpl==null) indexDirImpl=FSDirectory.getDirectory(getFullIndexPath());
+		return indexDirImpl;
+	}
+
 	@Override
-	public synchronized IndexReader getIndexReader() throws java.io.IOException {
+	public synchronized IndexReader getSharedIndexReader() throws java.io.IOException {
 		if (!checked) throw new IllegalStateException("Index config not initialized and checked!");
-		if (indexReader==null) indexReader=new ReadOnlyAutoCloseIndexReader(IndexReader.open(getFullIndexPath()),id);
+		if (indexReader==null) indexReader=new ReadOnlyAutoCloseIndexReader(IndexReader.open(getIndexDirectory(),true),id);
 		return indexReader;
 	}
 
 	@Override
-	public IndexReader getUncachedIndexReader() throws java.io.IOException {
+	public IndexReader newIndexReader(final boolean readOnly) throws java.io.IOException {
 		if (!checked) throw new IllegalStateException("Index config not initialized and checked!");
-		return IndexReader.open(getFullIndexPath());
+		return IndexReader.open(getIndexDirectory(),readOnly);
+	}
+	
+	@SuppressWarnings("deprecation") // TODO: remove this when bug is fixed Lucene 2.4.final and autoCommit can be disabled
+	public IndexWriter newIndexWriter(boolean create) throws java.io.IOException {
+		if (!checked) throw new IllegalStateException("Index config not initialized and checked!");
+		final IndexWriter writer=new IndexWriter(getIndexDirectory(), false, parent.getAnalyzer(), create, IndexWriter.MaxFieldLength.UNLIMITED);
+		final Log iwlog=LogFactory.getLog(writer.getClass());
+		if (iwlog.isDebugEnabled()) writer.setInfoStream(LogUtil.getDebugStream(iwlog));
+		writer.setUseCompoundFile(true);
+		return writer;
 	}
 
 	@Override
 	public boolean isIndexAvailable() throws java.io.IOException {
 		if (!checked) throw new IllegalStateException("Index config not initialized and checked!");
-		return IndexReader.indexExists(getFullIndexPath());
+		return IndexReader.indexExists(getIndexDirectory());
 	}
 	
 	@Override
@@ -102,10 +124,21 @@ public class SingleIndexConfig extends IndexConfig {
 				indexReader=null;
 			}
 		}
-	}	
+	}
 
+	@Override
+	protected void finalize() throws Throwable {
+		try {
+			if (indexDirImpl!=null) indexDirImpl.close();
+			indexDirImpl=null;
+		} finally {
+			super.finalize();
+		}
+	}
+	
 	// members "the configuration"
 	private String indexDir=null;
+	private volatile Directory indexDirImpl=null;
 	public Class<? extends de.pangaea.metadataportal.harvester.Harvester> harvesterClass=null;
 	public InheritedProperties harvesterProperties=new InheritedProperties();
 	public Templates xslt=null;

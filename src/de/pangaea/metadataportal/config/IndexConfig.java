@@ -55,7 +55,7 @@ public abstract class IndexConfig {
 	
 	public Searcher newSearcher() throws java.io.IOException {
 		if (!checked) throw new IllegalStateException("Index config not initialized and checked!");
-		return new IndexSearcher(getIndexReader());
+		return new IndexSearcher(getSharedIndexReader());
 	}
 
 	public synchronized boolean isIndexCurrent() throws java.io.IOException {
@@ -65,8 +65,8 @@ public abstract class IndexConfig {
 	}
 	
 	// Reader
-	public abstract IndexReader getIndexReader() throws java.io.IOException;
-	public abstract IndexReader getUncachedIndexReader() throws java.io.IOException;
+	public abstract IndexReader getSharedIndexReader() throws java.io.IOException;
+	public abstract IndexReader newIndexReader(boolean readOnly) throws java.io.IOException;
 	public abstract boolean isIndexAvailable() throws java.io.IOException;
 	public abstract void reopenIndex() throws java.io.IOException;
 	
