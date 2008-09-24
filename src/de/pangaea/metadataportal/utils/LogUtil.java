@@ -91,7 +91,7 @@ public class LogUtil {
 				public synchronized void flush() throws IOException { 
 					if (!hasNewline()) return; 
 					try { 
-						method.invoke(logger, new String(buf,0,scan,"US-ASCII"), null); 
+						if (scan>0) method.invoke(logger, new String(buf,0,scan,"US-ASCII"), null); 
 					} catch (Exception e) { 
 						log.fatal("Cannot log with method [" + method + "]", e); 
 					}
