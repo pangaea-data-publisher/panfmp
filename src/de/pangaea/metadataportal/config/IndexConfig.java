@@ -16,9 +16,11 @@
 
 package de.pangaea.metadataportal.config;
 
+import java.lang.ref.WeakReference;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.search.Searcher;
 import org.apache.lucene.search.IndexSearcher;
+import de.pangaea.metadataportal.utils.AutoCloseIndexReader;
 
 /**
  * Abstract configuration of an panFMP index. It not only configures its properties like name/id,
@@ -44,33 +46,63 @@ public abstract class IndexConfig {
 		checked=true;
 	}
 	
-	@Override
-	protected void finalize() throws Throwable {
-		try {
-			indexReader=null;
-		} finally {
-			super.finalize();
-		}
-	}
-	
+	/** returns a Searcher on the shared IndexReader, should be closed after using. **/
 	public Searcher newSearcher() throws java.io.IOException {
 		if (!checked) throw new IllegalStateException("Index config not initialized and checked!");
 		return new IndexSearcher(getSharedIndexReader());
 	}
 
-	public synchronized boolean isIndexCurrent() throws java.io.IOException {
+	/** checks, if shared IndexReader is current and the underlying disk store was not changed **/
+	public synchronized boolean isSharedIndexCurrent() throws java.io.IOException {
 		if (!checked) throw new IllegalStateException("Index config not initialized and checked!");
 		if (indexReader==null) return true;
 		return indexReader.isCurrent();
 	}
 	
-	// Reader
+	/** returns a shared, read-only IndexReader. This reader may not be closed by {@link IndexReader#close()}.  **/
 	public abstract IndexReader getSharedIndexReader() throws java.io.IOException;
+
+	/**  returns a new IndexReader, optionally read-only. This reader must be closed after using. **/
 	public abstract IndexReader newIndexReader(boolean readOnly) throws java.io.IOException;
+
+	/** checks, if index is available (a segment file is available) **/
 	public abstract boolean isIndexAvailable() throws java.io.IOException;
-	public abstract void reopenIndex() throws java.io.IOException;
+
+	/** checks, if shared IndexReader is current and the underlying disk store was not changed. **/
+	public abstract void reopenSharedIndex() throws java.io.IOException;
 	
-	protected volatile IndexReader indexReader=null;
+	/** called by {@link de.pangaea.metadataportal.search.LuceneCache} to release the old reader, if not done automatically by GC. **/
+	public synchronized void releaseOldSharedReader() throws java.io.IOException {
+		if (oldReaderRef!=null) {
+			AutoCloseIndexReader old=oldReaderRef.get();
+			try {
+				if (old!=null) old.hardClose();
+			} finally {
+				old=null;
+				oldReaderRef.clear();
+				oldReaderRef=null;
+			}
+		}
+	}
+	
+	/** this saves the old indexReader instance in a weak reference and replaces by new (reopened) one **/
+	protected synchronized void replaceSharedIndexReader(AutoCloseIndexReader indexReader) throws java.io.IOException {
+		releaseOldSharedReader();
+		oldReaderRef=new WeakReference<AutoCloseIndexReader>(this.indexReader);
+		this.indexReader=indexReader;
+	}
+
+	@Override
+	protected void finalize() throws Throwable {
+		try {
+			releaseOldSharedReader();
+		} finally {
+			super.finalize();
+		}
+	}
+	
+	protected volatile AutoCloseIndexReader indexReader=null;
+	protected volatile WeakReference<AutoCloseIndexReader> oldReaderRef=null;
 	protected boolean checked=false;
 
 	// members "the configuration"

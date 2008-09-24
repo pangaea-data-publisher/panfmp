@@ -340,8 +340,6 @@ public class SearchService {
 	 * @throws IllegalFieldConfigException if the configuration of <code>fieldName</code> does not match data type TOKENIZEDTEXT or it is unknown
 	 */
 	public List<String> suggest(String fieldName, String query, QueryParser.Operator operator, int count) throws IOException {
-		cache.cleanupCache();
-
 		if (count==0) return Collections.<String>emptyList();
 
 		if (fieldName!=null) {
@@ -428,8 +426,6 @@ public class SearchService {
 	 * @throws IllegalFieldConfigException if the configuration of <code>fieldName</code> does not match data type STRING or it is unknown
 	 */
 	public List<String> listTerms(String fieldName, String prefix, int count) throws IOException {
-		cache.cleanupCache();
-
 		if (count==0) return Collections.<String>emptyList();
 
 		// check field
@@ -475,8 +471,6 @@ public class SearchService {
 	 * @param fieldsToLoad a collection of field names that should be made available. <code>null</code> to return all fields.
 	 */
 	public SearchResultList search(Query query, Sort sort, boolean loadXml, Collection<String> fieldsToLoad) throws IOException {
-		cache.cleanupCache();
-
 		LuceneCache.Session sess=cache.getSession(index,query,sort);
 		return sess.getSearchResultList(loadXml,fieldsToLoad);
 	}
@@ -537,8 +531,6 @@ public class SearchService {
 	 * @param fieldsToLoad a collection of field names that should be made available. <code>null</code> to return all fields.
 	 */
 	public void search(SearchResultCollector collector, Query query, boolean loadXml, Collection<String> fieldsToLoad) throws IOException {
-		cache.cleanupCache();
-
 		log.info("Collecting results for index={"+index.id+"}; query={"+query.toString(IndexConstants.FIELDNAME_CONTENT)+"}");
 
 		Searcher searcher=index.newSearcher();
@@ -597,8 +589,6 @@ public class SearchService {
 	 * Reads one document from index using its identifier. The score of the returned {@link SearchResultItem} will be set to <code>1.0</code>.
 	 */
 	public SearchResultItem getDocument(String identifier, boolean loadXml, Collection<String> fieldsToLoad) throws IOException {
-		cache.cleanupCache();
-
 		IndexReader reader=index.getSharedIndexReader();
 
 		TermDocs td=reader.termDocs(new Term(IndexConstants.FIELDNAME_IDENTIFIER,identifier));

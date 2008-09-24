@@ -116,6 +116,8 @@
 		<cfg:cacheMaxAge>300</cfg:cacheMaxAge>
 		<cfg:cacheMaxSessions>10</cfg:cacheMaxSessions>
 		<cfg:reloadIndexIfChangedAfter>60</cfg:reloadIndexIfChangedAfter>
+		<cfg:keepOldReaderAlive>60</cfg:keepOldReaderAlive>
+		<cfg:indexChangeCheckInterval>30</cfg:indexChangeCheckInterval>
 		<cfg:maxStoredQueries>200</cfg:maxStoredQueries>
 		<cfg:queryParserClass>org.apache.lucene.queryParser.QueryParser</cfg:queryParserClass>
 		<cfg:defaultQueryParserOperator>and</cfg:defaultQueryParserOperator>

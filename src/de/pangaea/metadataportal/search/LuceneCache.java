@@ -17,6 +17,7 @@
 package de.pangaea.metadataportal.search;
 
 import java.util.*;
+import java.io.IOException;
 import de.pangaea.metadataportal.config.*;
 import de.pangaea.metadataportal.utils.IndexConstants;
 import de.pangaea.metadataportal.utils.HashGenerator;
@@ -24,7 +25,6 @@ import org.apache.lucene.index.*;
 import org.apache.lucene.search.*;
 import org.apache.lucene.document.*;
 import org.apache.commons.collections.map.LRUMap;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Implementation of the caching algorithm behind the <b>panFMP</b> search engine.
@@ -33,12 +33,14 @@ import java.util.concurrent.locks.ReentrantLock;
  *<pre>{@literal
  *<cacheMaxAge>300</cacheMaxAge>
  *<cacheMaxSessions>30</cacheMaxSessions>
+ *<indexChangeCheckInterval>30</indexChangeCheckInterval>
  *<reloadIndexIfChangedAfter>60</reloadIndexIfChangedAfter>
+ *<keepOldReaderAlive>60</keepOldReaderAlive>
  *<maxStoredQueries>200</maxStoredQueries>
  *}</pre>
  * @author Uwe Schindler
  */
-public class LuceneCache {
+public final class LuceneCache {
 
 	private static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(LuceneCache.class);
 
@@ -54,11 +56,24 @@ public class LuceneCache {
 		this.sessions=sessions;
 		
 		cacheMaxAge=Integer.parseInt(config.searchProperties.getProperty("cacheMaxAge",Integer.toString(DEFAULT_CACHE_MAX_AGE)));
-		reloadIndexIfChangedAfter=Integer.parseInt(config.searchProperties.getProperty("reloadIndexIfChangedAfter",Integer.toString(DEFAULT_RELOAD_AFTER)));		
-		fetchFactor=Integer.parseInt(config.searchProperties.getProperty("fetchFactor",Integer.toString(DEFAULT_FETCH_FACTOR)));		
+		reloadIndexIfChangedAfter=Integer.parseInt(config.searchProperties.getProperty("reloadIndexIfChangedAfter",Integer.toString(DEFAULT_RELOAD_AFTER)));
+		keepOldReaderAlive=Integer.parseInt(config.searchProperties.getProperty("keepOldReaderAlive",Integer.toString(DEFAULT_KEEP_OLD_READER_ALIVE)));
+		fetchFactor=Integer.parseInt(config.searchProperties.getProperty("fetchFactor",Integer.toString(DEFAULT_FETCH_FACTOR)));
+
+		final long indexChangeCheckInterval=1000L*(long)(Integer.parseInt(config.searchProperties.getProperty("indexChangeCheckInterval",Integer.toString(DEFAULT_INDEX_CHANGE_CHECK_INTERVAL))));
+		timer.schedule(new TimerTask() {
+			public void run() {
+				try {
+					cleanupCacheTask();
+				} catch (IOException ioe) {
+					log.error("Error in timer task: ",ioe);
+				}
+			}
+		},indexChangeCheckInterval,indexChangeCheckInterval);
 	}
 
 	private static final Map<String,LuceneCache> instances=new HashMap<String,LuceneCache>();
+	private static final Timer timer=new Timer("LuceneCache Maintenance Tasks",true);
 
 	// get an instance of per-file-singletons
 	public static synchronized LuceneCache getInstance(String cfgFile) throws Exception {
@@ -83,7 +98,7 @@ public class LuceneCache {
 		return storedQueries.get(hash);
 	}
 
-	public Session getSession(IndexConfig index, Query query, Sort sort) throws java.io.IOException {
+	public Session getSession(IndexConfig index, Query query, Sort sort) throws IOException {
 		// generate an unique identifier
 		String id="index="+index.id+"\000query="+query.toString(IndexConstants.FIELDNAME_CONTENT)+"\000sort="+sort;
 		Session sess;
@@ -102,48 +117,70 @@ public class LuceneCache {
 		return sess;
 	}
 
-	public void cleanupCache() throws java.io.IOException {
-		// if a cleanup is currently running (lock is active), we do nothing
-		if (cleanupLock.tryLock()) try {
-			long now=new java.util.Date().getTime();
+	// helper variables
+	private volatile boolean indexChanged=false;
+	private volatile TimerTask releaseOldSharedReaderTask=null;
+	
+	private void cleanupCacheTask() throws IOException {
+		log.debug("cleanupCacheTask() started.");
+		
+		boolean changed=false;
 
-			// check indexes for changes and queue re-open
-			if (!indexChanged) {
-				boolean changed=false;
-				for (IndexConfig cfg : config.indexes.values()) {
-					if (cfg instanceof SingleIndexConfig && !cfg.isIndexCurrent()) {
-						changed=true;
-						break;
-					}
+		if (!indexChanged) {
+			for (IndexConfig cfg : config.indexes.values()) {
+				if (cfg instanceof SingleIndexConfig && !cfg.isSharedIndexCurrent()) {
+					changed=true;
+					break;
 				}
-				if (changed) {
-					indexChangedAt=now;
-					log.info("Detected change in one of the configured indexes. Preparing for reload in "+reloadIndexIfChangedAfter+"s.");
-				}
-				indexChanged=changed;
 			}
-
-			synchronized(sessions) {
-				// reopen indexes after RELOAD_AFTER secs. from detection of change
-				if (indexChanged && now-indexChangedAt>((long)reloadIndexIfChangedAfter)*1000L) {
-					for (IndexConfig cfg : config.indexes.values()) {
-						log.info("Reopening index '"+cfg.id+"'.");
-						cfg.reopenIndex();
+			indexChanged=changed;
+		}
+		
+		if (changed) {
+			log.info("Detected change in one of the configured indexes. Preparing for reload in "+reloadIndexIfChangedAfter+"s.");
+			//schedule a task, that reloads the index
+			timer.schedule(new TimerTask() {
+				public void run() {
+					synchronized(sessions) {
+						try {
+							for (IndexConfig cfg : config.indexes.values()) {
+								cfg.reopenSharedIndex();
+							}
+						} catch (IOException ioe) {
+							log.error("Failed to reopen shared index readers.",ioe);
+						}
+						indexChanged=false;
+						
+						sessions.clear();
 					}
 					
-					sessions.clear();
-					indexChanged=false;
-				} else {
-					// now really clean up sessions (if too old, as this is not handled by LRUMap -- and if reload of indexes occurred)
-					for (Iterator<Session> entries=sessions.values().iterator(); entries.hasNext(); ) {
-						Session e=entries.next();
-						if (now-e.lastAccess>((long)cacheMaxAge)*1000L) entries.remove();
-					}		
+					// schedule a task, that closes unused readers
+					if (releaseOldSharedReaderTask!=null) releaseOldSharedReaderTask.cancel();
+					timer.schedule(releaseOldSharedReaderTask=new TimerTask() {
+						public void run() {
+							try {
+								for (IndexConfig cfg : config.indexes.values()) {
+									cfg.releaseOldSharedReader();
+								}
+							} catch (IOException ioe) {
+								log.error("Failed to release unused shared index readers.",ioe);
+							}
+						}
+					},((long)keepOldReaderAlive)*1000L);					
 				}
-			}
-		} finally {
-			cleanupLock.unlock();
+			},((long)reloadIndexIfChangedAfter)*1000L);
 		}
+		
+		long now=new java.util.Date().getTime();
+		synchronized(sessions) {
+			// now really clean up sessions (if too old, as this is not handled by LRUMap -- and if reload of indexes occurred)
+			for (Iterator<Session> entries=sessions.values().iterator(); entries.hasNext(); ) {
+				Session e=entries.next();
+				if (now-e.lastAccess>((long)cacheMaxAge)*1000L) entries.remove();
+			}		
+		}
+			
+		log.debug("cleanupCacheTask() finished.");
 	}
 
 	public FieldSelector getFieldSelector(boolean loadXml, Collection<String> fieldsToLoad) {
@@ -164,19 +201,19 @@ public class LuceneCache {
 		return new SetBasedFieldSelector(set,Collections.<String>emptySet());
 	}
 
-	private final ReentrantLock cleanupLock=new ReentrantLock();
-	private boolean indexChanged=false;
-	private long indexChangedAt;
 	private int cacheMaxAge=DEFAULT_CACHE_MAX_AGE;
-	private int reloadIndexIfChangedAfter=DEFAULT_RELOAD_AFTER;		
-	private int fetchFactor=DEFAULT_FETCH_FACTOR;		
+	private int keepOldReaderAlive=DEFAULT_KEEP_OLD_READER_ALIVE;
+	private int reloadIndexIfChangedAfter=DEFAULT_RELOAD_AFTER;
+	private int fetchFactor=DEFAULT_FETCH_FACTOR;
 	private Map<String,Query> storedQueries;
 	private Map<String,Session> sessions;
 
 	protected Config config;
 
 	public static final int DEFAULT_CACHE_MAX_AGE=5*60; // default 5 minutes
+	public static final int DEFAULT_INDEX_CHANGE_CHECK_INTERVAL=30; // 30 seconds to poll for index change
 	public static final int DEFAULT_RELOAD_AFTER=1*60; // reload changed index after 1 minutes
+	public static final int DEFAULT_KEEP_OLD_READER_ALIVE=1*60; // how long should the old reader kept alive after reopen
 
 	public static final int DEFAULT_MAX_STORED_QUERIES=200;
 	public static final int DEFAULT_CACHE_MAX_SESSIONS=30;
@@ -201,7 +238,7 @@ public class LuceneCache {
 			lastAccess=new java.util.Date().getTime();
 		}
 		
-		protected synchronized void ensureFetchable(int neededDoc) throws java.io.IOException {
+		protected synchronized void ensureFetchable(int neededDoc) throws IOException {
 			if (topDocs==null || neededDoc>=fetchedCount) {
 				int count;
 				if (neededDoc>=Integer.MAX_VALUE/2) {

@@ -20,8 +20,7 @@ import org.apache.lucene.index.*;
 import java.io.IOException;
 
 /**
- * <code>AutoCloseIndexReader</code> prevents the target index to be modified. It is used by {@link de.pangaea.metadataportal.config.IndexConfig#getSharedIndexReader}
- * to prevent index modification. To do reopens of indexes, the index cannot be closed by <code>IndexConfig</code>, so it is openend until finalized by GC.
+ * <code>AutoCloseIndexReader</code> is used by {@link de.pangaea.metadataportal.config.IndexConfig#getSharedIndexReader} to make IndexReaders cleanup by GC possible.
  * @author Uwe Schindler
  */
 public final class AutoCloseIndexReader extends FilterIndexReader {
@@ -29,12 +28,17 @@ public final class AutoCloseIndexReader extends FilterIndexReader {
 	private static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(AutoCloseIndexReader.class);
 
 	public AutoCloseIndexReader(final IndexReader in, final String name) {
+		this(in,name,false);
+	}
+	
+	private AutoCloseIndexReader(final IndexReader in, final String name, final boolean reopened) {
 		super(in);
 		this.name=name;
+		log.info((reopened?"Softly reopened":"Opened")+" shared reader of index '"+name+"'.");
 	}
 	
 	@Override
-	protected void doClose() throws IOException {
+	protected synchronized void doClose() throws IOException {
 		// the index may only be closed on finalization
 		if (!finalizationStarted) throw new UnsupportedOperationException("This IndexReader should not be closed.");
 		// if in finalization, close normal
@@ -44,17 +48,29 @@ public final class AutoCloseIndexReader extends FilterIndexReader {
 	@Override
 	public IndexReader reopen() throws CorruptIndexException, IOException {
 		final IndexReader n=in.reopen();
-		if (n!=in) return new AutoCloseIndexReader(n,name);
+		if (n!=in) {
+			return new AutoCloseIndexReader(n,name,true);
+		}
 		return this;
+	}
+	
+	public final synchronized void hardClose() throws CorruptIndexException, IOException {
+		finalizationStarted=true;
+		try {
+			log.info("Closing unused shared reader of index '"+name+"'.");
+			close();
+		} catch (IOException ioe) {
+			finalizationStarted=false;
+			throw ioe;
+		}
 	}
 
 	/** Close the index automatically. */
 	@Override
-	protected void finalize() throws Throwable {
-		finalizationStarted=true;
+	protected synchronized void finalize() throws Throwable {
 		try {
-			log.info("Auto-closing orphaned instance of index '"+name+"' in finalizer.");
-			this.close();
+			if (finalizationStarted) return;
+			hardClose();
 		} catch (IOException ioe) {
 			log.error("Closing index '"+name+"' in finalization failed.",ioe);
 		} finally {

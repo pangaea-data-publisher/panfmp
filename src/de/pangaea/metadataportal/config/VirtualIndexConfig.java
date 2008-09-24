@@ -95,8 +95,8 @@ public class VirtualIndexConfig extends IndexConfig {
 	}
 	
 	@Override
-	public synchronized void reopenIndex() throws java.io.IOException {
-		indexReader=null;
+	public synchronized void reopenSharedIndex() throws java.io.IOException {
+		replaceSharedIndexReader(null);
 	}	
 
 	private Set<String> indexIds=new HashSet<String>();

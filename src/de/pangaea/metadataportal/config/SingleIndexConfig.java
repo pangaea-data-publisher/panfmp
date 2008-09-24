@@ -113,15 +113,15 @@ public class SingleIndexConfig extends IndexConfig {
 	}
 	
 	@Override
-	public synchronized void reopenIndex() throws java.io.IOException {
+	public synchronized void reopenSharedIndex() throws java.io.IOException {
 		if (!checked) throw new IllegalStateException("Index config not initialized and checked!");
 		if (indexReader!=null) {
 			IndexReader n=indexReader.reopen();
 			if (n!=indexReader) {
-				indexReader=n;
-			} else if (!indexReader.isCurrent()) {
+				replaceSharedIndexReader((AutoCloseIndexReader)n); // should be castable!
+			} else if (!indexReader.isCurrent()) { // it should be current now... (we hope)
 				log.warn("Index '"+id+"' was reopened but is still not up-to-date (maybe a bug in Lucene, we try to investigate this). Doing a hard reopen (close & open later).");
-				indexReader=null;
+				replaceSharedIndexReader(null);
 			}
 		}
 	}
