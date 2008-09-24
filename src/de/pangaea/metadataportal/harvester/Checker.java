@@ -76,6 +76,10 @@ public class Checker {
 						} else {
 							log.warn("Finished checking of index \""+iconf.id+"\": Index is corrupt"+(fix?", fixing it":"")+'.');
 							if (fix) {
+								try {
+									// remove the last harvested file, because corrupt index means missing documents
+									siconf.getIndexDirectory().deleteFile(IndexConstants.FILENAME_LASTHARVESTED);
+								} catch (java.io.IOException ioe) {}
 								CheckIndex.fix(result);
 								log.info("Index \""+iconf.id+"\" was fixed.");
 							}
@@ -87,6 +91,7 @@ public class Checker {
 					}
 				}
 			} finally {
+				CheckIndex.out.close();
 				CheckIndex.out=oldCheckIndexStream;
 			}
 		} catch (Exception e) {
