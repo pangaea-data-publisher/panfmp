@@ -59,40 +59,38 @@ public class Checker {
 				indexList=Collections.singletonList(iconf);
 			}
 			
-			PrintStream oldCheckIndexStream=CheckIndex.out;
-			try {
-				CheckIndex.out=LogUtil.getInfoStream(LogFactory.getLog(CheckIndex.class));
-
-				for (IndexConfig iconf : indexList) if (iconf instanceof SingleIndexConfig) {
-					IndexWriter writer=null;
-					SingleIndexConfig siconf=(SingleIndexConfig)iconf;
-					try {
-						// und los gehts
-						log.info("Checking index \""+iconf.id+'"'+(fix?" with repairing errors":"")+"...");
-						if (!siconf.isIndexAvailable()) throw new java.io.FileNotFoundException("Index directory with segments file does not exist.");
-						CheckIndexStatus result=CheckIndex.check(siconf.getIndexDirectory(),false);
-						if (result.clean) {
-							log.info("Finished checking of index \""+iconf.id+"\": Index is clean.");
-						} else {
-							log.warn("Finished checking of index \""+iconf.id+"\": Index is corrupt"+(fix?", fixing it":"")+'.');
-							if (fix) {
-								try {
-									// remove the last harvested file, because corrupt index means missing documents
-									siconf.getIndexDirectory().deleteFile(IndexConstants.FILENAME_LASTHARVESTED);
-								} catch (java.io.IOException ioe) {}
-								CheckIndex.fix(result);
-								log.info("Index \""+iconf.id+"\" was fixed.");
-							}
+			for (IndexConfig iconf : indexList) if (iconf instanceof SingleIndexConfig) {
+				IndexWriter writer=null;
+				SingleIndexConfig siconf=(SingleIndexConfig)iconf;
+				try {
+					// und los gehts
+					log.info("Checking index \""+iconf.id+'"'+(fix?" with repairing errors":"")+"...");
+					if (!siconf.isIndexAvailable()) throw new java.io.FileNotFoundException("Index directory with segments file does not exist.");
+					CheckIndex checker=new CheckIndex(siconf.getIndexDirectory());
+					PrintStream out=LogUtil.getInfoStream(LogFactory.getLog(CheckIndex.class));
+					checker.setInfoStream(out);
+					CheckIndex.Status result=checker.checkIndex();
+					if (result!=null && result.clean) {
+						log.info("Finished checking of index \""+iconf.id+"\": Index is clean.");
+					} else {
+						if (result==null) fix=false;
+						log.warn("Finished checking of index \""+iconf.id+"\": Index is corrupt"+(fix?", fixing it":"")+'.');
+						if (fix) {
+							try {
+								// remove the last harvested file, because corrupt index means missing documents
+								siconf.getIndexDirectory().deleteFile(IndexConstants.FILENAME_LASTHARVESTED);
+							} catch (java.io.IOException ioe) {}
+							checker.fixIndex(result);
+							log.info("Index \""+iconf.id+"\" was fixed.");
 						}
-					} catch (java.io.IOException e) {
-						log.fatal("Exception during index checking.",e);
-					} finally {
-						if (writer!=null) writer.close();
 					}
+					checker.setInfoStream(null);
+					out.close();
+				} catch (java.io.IOException e) {
+					log.fatal("Exception during index checking.",e);
+				} finally {
+					if (writer!=null) writer.close();
 				}
-			} finally {
-				CheckIndex.out.close();
-				CheckIndex.out=oldCheckIndexStream;
 			}
 		} catch (Exception e) {
 			log.fatal("Checker general error:",e);
