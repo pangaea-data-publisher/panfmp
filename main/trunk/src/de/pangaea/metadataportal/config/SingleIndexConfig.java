@@ -96,10 +96,9 @@ public class SingleIndexConfig extends IndexConfig {
 		return IndexReader.open(getIndexDirectory(),readOnly);
 	}
 	
-	@SuppressWarnings("deprecation") // TODO: remove this when bug is fixed Lucene 2.4.final and autoCommit can be disabled
 	public IndexWriter newIndexWriter(boolean create) throws java.io.IOException {
 		if (!checked) throw new IllegalStateException("Index config not initialized and checked!");
-		final IndexWriter writer=new IndexWriter(getIndexDirectory(), false, parent.getAnalyzer(), create, IndexWriter.MaxFieldLength.UNLIMITED);
+		final IndexWriter writer=new IndexWriter(getIndexDirectory(), parent.getAnalyzer(), create, IndexWriter.MaxFieldLength.UNLIMITED);
 		final Log iwlog=LogFactory.getLog(writer.getClass());
 		if (iwlog.isDebugEnabled()) writer.setInfoStream(LogUtil.getDebugStream(iwlog));
 		writer.setUseCompoundFile(true);
