@@ -25,7 +25,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 /**
- * Index optimizer. To be called from command line.
+ * Index checker. To be called from command line.
  * @author Uwe Schindler
  */
 public class Checker {
