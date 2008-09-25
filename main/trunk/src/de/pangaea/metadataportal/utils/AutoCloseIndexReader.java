@@ -38,7 +38,7 @@ public final class AutoCloseIndexReader extends FilterIndexReader {
 	}
 	
 	@Override
-	protected synchronized void doClose() throws IOException {
+	protected synchronized final void doClose() throws IOException {
 		// the index may only be closed on finalization
 		if (!finalizationStarted) throw new UnsupportedOperationException("This IndexReader should not be closed.");
 		// if in finalization, close normal
@@ -46,11 +46,9 @@ public final class AutoCloseIndexReader extends FilterIndexReader {
 	}
 
 	@Override
-	public IndexReader reopen() throws CorruptIndexException, IOException {
+	public final IndexReader reopen() throws CorruptIndexException, IOException {
 		final IndexReader n=in.reopen();
-		if (n!=in) {
-			return new AutoCloseIndexReader(n,name,true);
-		}
+		if (n!=in) return new AutoCloseIndexReader(n,name,true);
 		return this;
 	}
 	
