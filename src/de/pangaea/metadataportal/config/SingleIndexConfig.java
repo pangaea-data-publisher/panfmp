@@ -38,18 +38,21 @@ public class SingleIndexConfig extends IndexConfig {
 		super();
 	}
 
+	/** Sets index directory (called from Digester on config load). **/
 	public synchronized void setIndexDir(String v) throws java.io.IOException {
 		if (indexDirImpl!=null) indexDirImpl.close();
 		indexDirImpl=null;
 		indexDir=v;
 	}
 
+	/** Sets class name of harvester (called from Digester on config load). **/
 	@PublicForDigesterUse
 	@Deprecated
 	public void setHarvesterClass(String v) throws ClassNotFoundException {
 		harvesterClass=Class.forName(v).asSubclass(de.pangaea.metadataportal.harvester.Harvester.class);
 	}
 
+	/** Adds property for harvester (called from Digester on config load). **/
 	@PublicForDigesterUse
 	@Deprecated
 	public void addHarvesterProperty(ExtendedDigester dig, String value) {
