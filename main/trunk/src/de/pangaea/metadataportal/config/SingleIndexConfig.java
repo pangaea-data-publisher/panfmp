@@ -63,6 +63,7 @@ public class SingleIndexConfig extends IndexConfig {
 			throw new IllegalStateException("Some index configuration fields are missing for index with id=\""+id+"\"!");
 	}
 
+	/** Checks all harvester properties for validity. **/
 	public void checkProperties() throws Exception {
 		de.pangaea.metadataportal.harvester.Harvester h=harvesterClass.newInstance();
 		Set<String> validProperties=h.getValidHarvesterPropertyNames();
@@ -74,10 +75,12 @@ public class SingleIndexConfig extends IndexConfig {
 		}
 	}
 
+	/** Returns the local, expanded file system path to index. **/
 	public String getFullIndexPath() throws java.io.IOException {
 		return parent.makePathAbsolute(indexDir);
 	}
 
+	/** Returns the directory implementation, that contains the index. **/
 	public synchronized Directory getIndexDirectory() throws java.io.IOException {
 		if (indexDirImpl==null) indexDirImpl=FSDirectory.getDirectory(getFullIndexPath());
 		return indexDirImpl;
@@ -96,6 +99,7 @@ public class SingleIndexConfig extends IndexConfig {
 		return IndexReader.open(getIndexDirectory(),readOnly);
 	}
 	
+	/** Opens an IndexWriter for adding Documents to Index. **/
 	public IndexWriter newIndexWriter(boolean create) throws java.io.IOException {
 		if (!checked) throw new IllegalStateException("Index config not initialized and checked!");
 		final IndexWriter writer=new IndexWriter(getIndexDirectory(), parent.getAnalyzer(), create, IndexWriter.MaxFieldLength.UNLIMITED);
