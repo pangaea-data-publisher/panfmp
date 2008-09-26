@@ -31,15 +31,18 @@ public abstract class IndexConfig {
 
 	private static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(IndexConfig.class);
 
+	/** Sets the ID of this index configuration. **/
 	public void setId(String v) {
 		if (checked) throw new IllegalStateException("Virtual index configuration cannot be changed anymore!");
 		id=v;
 	}
 
+	/** Sets the user-readable name of this index configuration. **/
 	public void setDisplayName(String v) {
 		displayName=v;
 	}
 
+	/** Checks, if configuration is ok. After calling this, you are not able to change anything in this instance. **/
 	public void check() {
 		if (id==null) throw new IllegalStateException("Every index needs a unique id!");
 		if (displayName==null || "".equals(displayName)) throw new IllegalStateException("Index with id=\""+id+"\" has no displayName!");
@@ -68,7 +71,7 @@ public abstract class IndexConfig {
 	/** checks, if index is available (a segment file is available) **/
 	public abstract boolean isIndexAvailable() throws java.io.IOException;
 
-	/** checks, if shared IndexReader is current and the underlying disk store was not changed. **/
+	/** reopens the shared index reader. **/
 	public abstract void reopenSharedIndex() throws java.io.IOException;
 	
 	/** called by {@link de.pangaea.metadataportal.search.LuceneCache} to release the old reader, if not done automatically by GC. **/

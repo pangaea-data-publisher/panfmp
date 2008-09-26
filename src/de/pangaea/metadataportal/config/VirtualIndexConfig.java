@@ -38,6 +38,7 @@ public class VirtualIndexConfig extends IndexConfig {
 		super();
 	}
 
+	/** Adds an index by its id to the configuration. **/
 	public void addIndex(String v) {
 		if (checked) throw new IllegalStateException("Virtual index configuration cannot be changed anymore!");
 		v=v.trim();
@@ -46,6 +47,7 @@ public class VirtualIndexConfig extends IndexConfig {
 		indexIds.add(v);
 	}
 
+	/** Adds indexes by id to the configuration. **/
 	public void addIndexCollection(Collection<String> v) {
 		if (checked) throw new IllegalStateException("Virtual index configuration cannot be changed anymore!");
 		for (String s : v) addIndex(s);
