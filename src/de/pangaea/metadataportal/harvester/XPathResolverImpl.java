@@ -146,7 +146,7 @@ public final class XPathResolverImpl implements XPathFunctionResolver,XPathVaria
 	}
 
 	public synchronized void unsetVariables() {
-		xPathVariableData.set(null);
+		xPathVariableData.remove();
 	}
 
 	public synchronized void setIndexBuilder(IndexBuilder index) {
@@ -155,13 +155,13 @@ public final class XPathResolverImpl implements XPathFunctionResolver,XPathVaria
 	}
 
 	public synchronized void unsetIndexBuilder() {
-		currentIndexBuilder.set(null);
+		currentIndexBuilder.remove();
 		for (IndexReader v : cachedIndexes.get().values()) try {
 			v.close();
 		} catch (java.io.IOException ioe) {
 			log.warn("Could not close one of the opened foreign indexes: "+ioe);
 		}
-		cachedIndexes.set(null);
+		cachedIndexes.remove();
 	}
 
 	// class members
