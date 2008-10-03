@@ -171,7 +171,7 @@ public final class LuceneCache {
 			},((long)reloadIndexIfChangedAfter)*1000L);
 		}
 		
-		long now=new java.util.Date().getTime();
+		long now=System.currentTimeMillis();
 		synchronized(sessions) {
 			// now really clean up sessions (if too old, as this is not handled by LRUMap -- and if reload of indexes occurred)
 			for (Iterator<Session> entries=sessions.values().iterator(); entries.hasNext(); ) {
@@ -235,7 +235,7 @@ public final class LuceneCache {
 			this.searcher=searcher;
 			this.query=query;
 			this.sort=sort;
-			lastAccess=new java.util.Date().getTime();
+			lastAccess=System.currentTimeMillis();
 		}
 		
 		protected synchronized void ensureFetchable(int neededDoc) throws IOException {
@@ -248,15 +248,15 @@ public final class LuceneCache {
 					while (neededDoc>=count) count*=2;
 				}
 				log.debug("Fetching "+count+" top docs...");
-				long start=new java.util.Date().getTime();
+				long start=System.currentTimeMillis();
 				topDocs = (sort!=null) ? searcher.search(query,(Filter)null,count,sort) : searcher.search(query,(Filter)null,count);
-				queryTime=new java.util.Date().getTime()-start;
+				queryTime=System.currentTimeMillis()-start;
 				fetchedCount=count;
 			}
 		}
 
 		protected synchronized void logAccess() {
-			lastAccess=new java.util.Date().getTime();
+			lastAccess=System.currentTimeMillis();
 		}
 
 		protected SearchResultList getSearchResultList(boolean loadXml, Collection<String> fieldsToLoad) {
