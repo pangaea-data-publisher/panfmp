@@ -113,7 +113,7 @@ public class MetadataDocument {
 			StreamSource s=new StreamSource(new StringReader(xml),identifier);
 			DOMResult r=new DOMResult(dom,identifier);
 			Transformer trans=StaticFactories.transFactory.newTransformer();
-			trans.setErrorListener(new LoggingErrorListener(getClass()));
+			trans.setErrorListener(new LoggingErrorListener(log));
 			trans.transform(s,r);
 		}
 	}
@@ -128,7 +128,7 @@ public class MetadataDocument {
 		// convert DOM
 		StringWriter xmlWriter=new StringWriter();
 		Transformer trans=StaticFactories.transFactory.newTransformer();
-		trans.setErrorListener(new LoggingErrorListener(getClass()));
+		trans.setErrorListener(new LoggingErrorListener(log));
 		trans.setOutputProperty(OutputKeys.INDENT,"no");
 		trans.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION,"yes");
 		DOMSource in=new DOMSource(dom,identifier);
@@ -311,7 +311,7 @@ public class MetadataDocument {
 					Transformer trans=null;
 					if (f.datatype==FieldConfig.DataType.XML) {
 						trans=StaticFactories.transFactory.newTransformer();
-						trans.setErrorListener(new LoggingErrorListener(getClass()));
+						trans.setErrorListener(new LoggingErrorListener(log));
 						trans.setOutputProperty(OutputKeys.INDENT,"no");
 						trans.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION,"yes");
 					}
@@ -455,7 +455,7 @@ public class MetadataDocument {
 	 */
 	protected NodeList evaluateTemplate(ExpressionConfig expr) throws TransformerException {
 		Transformer trans=expr.xslt.newTransformer();
-		trans.setErrorListener(new LoggingErrorListener(getClass()));
+		trans.setErrorListener(new LoggingErrorListener(log));
 
 		// set variables in transformer
 		Map<QName,Object> vars=XPathResolverImpl.getInstance().getCurrentVariableMap();
@@ -477,7 +477,7 @@ public class MetadataDocument {
 	protected String evaluateTemplateAsXHTML(FieldConfig expr) throws TransformerException,java.io.IOException {
 		if (expr.datatype!=FieldConfig.DataType.XHTML) throw new IllegalArgumentException("Datatype must be XHTML for evaluateTemplateAsXHTML()");
 		Transformer trans=expr.xslt.newTransformer();
-		trans.setErrorListener(new LoggingErrorListener(getClass()));
+		trans.setErrorListener(new LoggingErrorListener(log));
 		trans.setOutputProperty(OutputKeys.METHOD,"xml");
 		trans.setOutputProperty(OutputKeys.DOCTYPE_PUBLIC,"-//W3C//DTD XHTML 1.0 Transitional//EN");
 		trans.setOutputProperty(OutputKeys.INDENT,"no");
