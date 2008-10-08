@@ -56,7 +56,7 @@
 		<cfg:numConverterThreads>2</cfg:numConverterThreads>
 		<cfg:maxConverterQueue>250</cfg:maxConverterQueue>
 		<cfg:maxIndexerQueue>250</cfg:maxIndexerQueue>
-		<cfg:changesBeforeIndexCommit>1000</cfg:changesBeforeIndexCommit>
+		<cfg:maxBufferedIndexChanges>1000</cfg:maxBufferedIndexChanges>
 	</cfg:globalHarvesterProperties>
 	<cfg:analyzer>
 		<cfg:class>org.apache.lucene.analysis.standard.StandardAnalyzer</cfg:class>

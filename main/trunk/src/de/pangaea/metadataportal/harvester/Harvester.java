@@ -26,7 +26,8 @@ import org.xml.sax.SAXParseException;
  * It also supplies an entry point for the command line interface.
  * <p>All panFMP harvesters support the following <b>harvester properties</b>:<ul>
  * <li><code>harvestMessageStep</code>: After how many documents should a status message be printed out by the method {@link #addDocument}? (default: 100)</li>
- * <li><code>changesBeforeIndexCommit</code>: how many documents should be harvested before the index changes are commit? (default: 1000)</li>
+ * <li><code>maxBufferedIndexChanges</code>: how many documents should be harvested before the index changes are written to disk? If {@link HarvesterCommitEvent}s are used,
+ *   the changes are also committed (seen by search service) after this number of changes (default: 1000)</li>
  * <li><code>numConverterThreads</code>: how many threads should convert documents (XPath queries and XSL templates)? (default: 1)
  * Raise this value, if the indexer waits to often for more documents and you have more than one processor. The optimal value is one lower than the number of processors. If you have very simple
  * metadata documents (simple XML schmema) and few fields, lower values may be enough. The optimal value could only be found by testing.</li>
@@ -240,7 +241,7 @@ public abstract class Harvester {
 			// own
 			"harvestMessageStep",
 			// IndexBuilder
-			"changesBeforeIndexCommit",
+			"maxBufferedIndexChanges",
 			"numConverterThreads",
 			"maxConverterQueue",
 			"maxIndexerQueue",
