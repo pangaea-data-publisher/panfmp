@@ -17,11 +17,17 @@
 package de.pangaea.metadataportal.utils;
 
 import javax.xml.transform.*;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 public final class LoggingErrorListener implements ErrorListener {
 
-	public LoggingErrorListener(Class c) {
-		log=org.apache.commons.logging.LogFactory.getLog(c);
+	public LoggingErrorListener(final Log c) {
+		this.log=log;
+	}
+
+	public LoggingErrorListener(final Class c) {
+		this(LogFactory.getLog(c));
 	}
 
 	public void error(TransformerException e) throws TransformerException {
@@ -33,9 +39,9 @@ public final class LoggingErrorListener implements ErrorListener {
 	}
 
 	public void warning(TransformerException e) throws TransformerException {
-		log.warn(e.getMessage());
+		log.warn(e.getMessageAndLocation());
 	}
 
-	private org.apache.commons.logging.Log log;
+	private Log log;
 
 }
