@@ -55,7 +55,7 @@ public class IndexBuilder {
 	private final Lock indexerLock=new ReentrantLock();
 	private final Condition indexerLockCondition=indexerLock.newCondition(); 
 	
-	private int changesBeforeCommit;
+	private int maxBufferedChanges;
 	private DocumentErrorAction conversionErrorAction=DocumentErrorAction.STOP;
 
 	private Thread indexerThread;
@@ -71,7 +71,7 @@ public class IndexBuilder {
 			iconfig.getIndexDirectory().deleteFile(IndexConstants.FILENAME_LASTHARVESTED);
 		} catch (IOException e) {}
 
-		changesBeforeCommit=Integer.parseInt(iconfig.harvesterProperties.getProperty("changesBeforeIndexCommit","1000"));
+		maxBufferedChanges=Integer.parseInt(iconfig.harvesterProperties.getProperty("maxBufferedIndexChanges","1000"));
 
 		String s=iconfig.harvesterProperties.getProperty("conversionErrorAction");
 		if (s!=null) try {
@@ -271,10 +271,10 @@ public class IndexBuilder {
 		boolean finished=false;
 		try {
 			writer=iconfig.newIndexWriter(create);
-			writer.setMaxBufferedDocs(changesBeforeCommit);
-			writer.setMaxBufferedDeleteTerms(changesBeforeCommit);
+			writer.setMaxBufferedDocs(maxBufferedChanges);
+			writer.setMaxBufferedDeleteTerms(maxBufferedChanges);
 
-			HashSet<String> committedIdentifiers=new HashSet<String>(changesBeforeCommit);
+			HashSet<String> committedIdentifiers=new HashSet<String>(maxBufferedChanges);
 
 			while (failure.get()==null) {
 				// notify eventually waiting checkIndexerBuffer() calls
@@ -305,7 +305,7 @@ public class IndexBuilder {
 				}
 				committedIdentifiers.add(entry.identifier);
 
-				if (committedIdentifiers.size()>=changesBeforeCommit)  {
+				if (committedIdentifiers.size()>=maxBufferedChanges)  {
 					HarvesterCommitEvent ce=commitEvent.get();
 
 					// only flush if commitEvent interface registered
