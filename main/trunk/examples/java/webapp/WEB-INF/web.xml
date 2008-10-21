@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE web-app PUBLIC '-//Sun Microsystems, Inc.//DTD Web Application 2.3//EN' 'http://java.sun.com/dtd/web-app_2_3.dtd'>
+<web-app>
+	<!-- SERVLETS -->
+	<servlet>
+		<servlet-name>WFSServlet</servlet-name>
+		<display-name>WFSServlet</display-name>
+		<servlet-class>SimpleWFSServlet</servlet-class>
+		<init-param>
+			<param-name>configFile</param-name>
+			<param-value>../../../../repository/config.xml</param-value>
+		</init-param>
+		<init-param>
+			<param-name>westBoundLongitudeField</param-name>
+			<param-value>minLongitude</param-value>
+		</init-param>
+		<init-param>
+			<param-name>eastBoundLongitudeField</param-name>
+			<param-value>maxLongitude</param-value>
+		</init-param>
+		<init-param>
+			<param-name>southBoundLatitudeField</param-name>
+			<param-value>minLatitude</param-value>
+		</init-param>
+		<init-param>
+			<param-name>northBoundLatitudeField</param-name>
+			<param-value>maxLatitude</param-value>
+		</init-param>
+	</servlet>
+	<servlet>
+		<servlet-name>QueryServlet</servlet-name>
+		<display-name>QueryServlet</display-name>
+		<servlet-class>SimpleQueryServlet</servlet-class>
+		<init-param>
+			<param-name>configFile</param-name>
+			<param-value>../../../../repository/config.xml</param-value>
+		</init-param>
+	</servlet>
+	<!-- MAPPINGS -->
+	<servlet-mapping>
+		<servlet-name>QueryServlet</servlet-name>
+		<url-pattern>/search/*</url-pattern>
+	</servlet-mapping>
+	<servlet-mapping>
+		<servlet-name>WFSServlet</servlet-name>
+		<url-pattern>/wfs/*</url-pattern>
+	</servlet-mapping>
+</web-app>
+
