@@ -22,7 +22,7 @@
 			<Set name="handlers">
 				<Array type="org.mortbay.jetty.Handler">
 					<Item>
-						<New id="axis-webapp" class="org.mortbay.jetty.webapp.WebAppContext">
+						<New id="example-webapp" class="org.mortbay.jetty.webapp.WebAppContext">
 							<Set name="contextPath">/</Set>
 							<Set name="war">webapp</Set>
 						</New>
