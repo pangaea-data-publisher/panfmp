@@ -29,10 +29,31 @@ import java.util.Date;
  * This query depends on a specific structure of terms in the index that can only be created
  * by {@link TrieUtils} methods.
  * <p>This is the central implementation of <b>panFMP</b>'s
- * high performance range queries on numeric and date/time fields using &quot;trie memory&quot; structures
- * (see the publication about <b>panFMP</b>:
- * <em>Schindler, U, Diepenbroek, M, 2008. Generic XML-based Framework for Metadata Portals. Computers & Geosciences, in press. doi:10.1016/j.cageo.2008.02.023</em>).
- * This query type works only with indexes created by <b>panFMP</b>'s index builder.
+ * high performance range queries on numeric and date/time fields using &quot;trie memory&quot; structures.
+ * See the publication about <b>panFMP</b>:
+ * <blockquote><strong>Schindler, U, Diepenbroek, M</strong>, 2008. <em>Generic XML-based Framework for Metadata Portals.</em>
+ * Computers &amp; Geosciences 34 (12), 1947-1955.
+ * <a href="http://dx.doi.org/10.1016/j.cageo.2008.02.023" target="_blank">doi:10.1016/j.cageo.2008.02.023</a></blockquote>
+ * <p><em>A quote from this paper:</em> Because Apache Lucene is a full-text search engine and not a conventional database,
+ * it cannot handle numerical ranges (e.g., field value is inside user defined bounds, even dates are numerical values).
+ * We have developed an extension to Apache Lucene that stores
+ * the numerical values in a special string-encoded format with variable precision
+ * (all numerical values like doubles, longs, and timestamps are converted to lexicographic sortable string representations of
+ * <code>long long words</code> and stored with precisions from one byte to the full 8 bytes).
+ * For a more detailed description, how the values are stored, see {@link TrieUtils}.
+ * A range is then divided recursively into multiple intervals for searching:
+ * The center of the range is searched only with the lowest possible precision in the trie, the boundaries are matched
+ * more exactly. This reduces the number of terms dramatically (in the lowest precision of 1-byte the index only
+ * contains a maximum of 256 distinct values). Overall, a range could consist of a theoretical maximum of
+ * <code>7*256*2 + 255 = 3825</code> distinct terms (when there is a term for every distinct value of an
+ * 8-byte-number in the index and the range covers all of them; a maximum of 255 distinct values is used
+ * because it would always be possible to reduce the full 256 values to one term with degraded precision).
+ * In practise, we have seen up to 300 terms in most cases (index with 500,000 metadata records
+ * and a homogeneous dispersion of values).
+ * <p>This dramatically improves the performance of Apache Lucene with range queries, which
+ * is no longer dependent on the index size and number of distinct values because there is
+ * an upper limit not related to any of these properties.
+ * <p>This query type works only with indexes created by <b>panFMP</b>'s index builder / using {@link TrieUtils}.
  * @author Uwe Schindler
  */
 public final class TrieRangeQuery extends Query {
@@ -132,10 +153,6 @@ public final class TrieRangeQuery extends Query {
 	 * Internal implementation of a trie-based range query using a {@link Filter}.
 	 * This filter depends on a specific structure of terms in the index that can only be created
 	 * by {@link TrieUtils} methods.
-	 * <p>This is the base of the internal implementation of <b>panFMP</b>'s
-	 * high performance range queries on numeric and date/time fields using &quot;trie memory&quot; structures
-	 * (see the publication about <b>panFMP</b>:
-	 * <em>Schindler, U, Diepenbroek, M, 2007. Generic Framework for Metadata Portals. Computers &amp; Geosciences, submitted.</em>).
 	 */
 	protected final class TrieRangeFilter extends Filter {
 

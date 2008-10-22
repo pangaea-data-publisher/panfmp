@@ -23,11 +23,28 @@ import org.apache.lucene.document.Field;
 /**
  *This is a helper class to construct the trie-based index entries for numerical values.
  * <p>This is part of the central implementation of <b>panFMP</b>'s
- * high performance range queries on numeric and date/time fields using &quot;trie memory&quot; structures
- * (see the publication about <b>panFMP</b>:
- * <em>Schindler, U, Diepenbroek, M, 2008. Generic XML-based Framework for Metadata Portals. Computers & Geosciences, in press. doi:10.1016/j.cageo.2008.02.023</em>).
- * This query type works only with indexes created by <b>panFMP</b>'s index builder. This class helps on creating correct fields in a Lucene index.
- * <p>TODO: Describe the format of converted values!
+ * high performance range queries on numeric and date/time fields using &quot;trie memory&quot; structures.
+ * See the publication about <b>panFMP</b>:
+ * <blockquote><strong>Schindler, U, Diepenbroek, M</strong>, 2008. <em>Generic XML-based Framework for Metadata Portals.</em>
+ * Computers &amp; Geosciences 34 (12), 1947-1955.
+ * <a href="http://dx.doi.org/10.1016/j.cageo.2008.02.023" target="_blank">doi:10.1016/j.cageo.2008.02.023</a></blockquote>
+ * <p>For more information, how the query works, see {@link de.pangaea.metadataportal.search.TrieRangeQuery}. The format of how the
+ * numerical values are stored in index is documented here:
+ * <p>All numerical values are first converted to special <code>unsigned long</code>s by applying some bit-wise transformations. This means:<ul>
+ * <li>{@link Date}s are casted to unix timestamps (milliseconds since 1970-01-01, this is how Java represents date/time
+ * internally): {@link Date#getTime()}. The resulting <code>signed long</code> is transformed to the unsigned form like so:</li>
+ * <li><code>signed long</code>s are shifted, so that {@link Long#MIN_VALUE} is mapped to <code>0x0000000000000000</code>,
+ * {@link Long#MAX_VALUE} is mapped to <code>0xffffffffffffffff</code>.</li>
+ * <li><code>double</code>s are converted by getting their IEEE 754 floating-point "double format" bit layout and then some bits
+ * are swapped, to be able to compare the result as <code>unsigned long</code>s.</li>
+ * </ul><p>Each half-byte of this <code>unsigned long</code> (starting with the most-significant half-byte) is converted to ASCII chars
+ * between 'a' ({@link #TRIE_CODED_SYMBOL_MIN}) and <code>'o'=='a'+0x0f</code> ({@link #TRIE_CODED_SYMBOL_MAX}).
+ * The resulting {@link String} is comparable like the corresponding <code>unsigned long</code>.
+ * <p>To store the different precisions of the long values (from one byte [only the most significant one] to the full eight bytes),
+ * each lower precision is prefixed by the length ({@link #TRIE_CODED_PADDING_START}<code>+precision == '0'+precision</code>).
+ * The full long is not prefixed at all. By this it is possible to get the correct enumeration of terms in correct precision
+ * of the term list by just jumping to the correct prefix.
+ * The full precision value may also be stored in the document.
  * @author Uwe Schindler
  */
 public final class TrieUtils {
@@ -49,13 +66,13 @@ public final class TrieUtils {
 
 	// internal conversion to/from strings
 
-	private static String internalLongToTrieCoded(final long l) {
+	private static final String internalLongToTrieCoded(final long l) {
 		final StringBuilder sb=new StringBuilder(16);
 		for (int j=60; j>=0; j-=4) sb.append((char)(TRIE_CODED_SYMBOL_MIN+((l >>> j) & 0x0f)));
 		return sb.toString();
 	}
 
-	private static long internalTrieCodedToLong(final String s) {
+	private static final long internalTrieCodedToLong(final String s) {
 		if (s==null) throw new NullPointerException("Trie encoded string may not be NULL");
 		final int len=s.length();
 		if (len!=16) throw new NumberFormatException("Invalid trie encoded numerical value representation: "+s+" (incompatible length, must be 16)");
