@@ -26,7 +26,7 @@ import org.apache.commons.logging.LogFactory;
 /**
  * Simple static class that supplies {@link PrintStream}s for log methods.
  * This class was borrowed from Nutch, a sub-project of Apache Lucene, and made conformant to Java 1.5 coding style.
- * @author Uwe Schindler, Jérôme Charron (Nutch)
+ * @author Uwe Schindler, J&#233;r&#244;me Charron (Nutch)
  */
 public class LogUtil { 
 	private static final Log log = LogFactory.getLog(LogUtil.class); 
