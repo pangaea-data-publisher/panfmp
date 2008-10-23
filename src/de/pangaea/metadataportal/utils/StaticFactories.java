@@ -20,6 +20,10 @@ import javax.xml.transform.sax.*;
 import javax.xml.parsers.*;
 import javax.xml.xpath.*;
 
+/**
+ * Some pre-allocated XML factories.
+ * @author Uwe Schindler
+ */
 public final class StaticFactories {
 
 	private static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(StaticFactories.class);

@@ -16,10 +16,17 @@
 
 package de.pangaea.metadataportal.utils;
 
+/**
+ * <code>BooleanParser</code> is a simple static class supplying a method to parse booleans.
+ * @author Uwe Schindler
+ */
 public final class BooleanParser {
 
 	private BooleanParser() {}
 
+	/** Parses a boolean value expressed as String
+	 * @throws IllegalArgumentException if uppercase <code>v</code> is not "TRUE", "YES", "ON", "FALSE", "NO", "OFF"
+	 */
 	public static boolean parseBoolean(String v) {
 		v=v.toUpperCase();
 		if ("TRUE".equals(v) || "YES".equals(v) || "ON".equals(v)) return true;

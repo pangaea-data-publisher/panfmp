@@ -22,6 +22,13 @@ import org.apache.commons.collections.ArrayStack;
 import org.apache.commons.digester.*;
 import org.xml.sax.*;
 
+/**
+ * Extension of the Commons Digester Class, that works around some limitations/bugs. It is
+ * especially important for {@link SaxRule}, as it supports a stack of namespace-prefix assignments,
+ * and contains a integrated error handler. It also gives the possibility to not allow
+ * invalid element names.
+ * @author Uwe Schindler
+ */
 public class ExtendedDigester extends Digester {
 
 	protected HashMap<String,ArrayStack> currentNamespaceMap=new HashMap<String,ArrayStack>();
@@ -30,30 +37,37 @@ public class ExtendedDigester extends Digester {
 	public ExtendedDigester() { super(); }
 	public ExtendedDigester(javax.xml.parsers.SAXParser parser) { super(parser); }
 
+	/** Sets a custom {@link ContentHandler}, that receives all SAX events until disabled (<code>null</code>). */
 	@Override
 	public void setCustomContentHandler(ContentHandler c) {
 		custContentHandler=c;
 	}
 
+	/** Gets the custom event handler. */
 	@Override
 	public ContentHandler getCustomContentHandler() {
 		return custContentHandler;
 	}
 
+	/** Not suppoted, always throws {@link IllegalArgumentException} if not <code>null</code>. */
 	@Override
 	public void setErrorHandler(ErrorHandler err) {
 		if (err!=null) throw new IllegalArgumentException("You cannot set any ErrorHandler with "+getClass().getName());
 	}
 
+	/** Not supported, always returns <code>null</code> */
 	@Override
 	public ErrorHandler getErrorHandler() {
 		return null;
 	}
 
+	/** Adds a dummy rule for element paths, that are allowed, but not parsed. */
 	public void addDoNothing(String pattern) {
 		addRule(pattern,new DoNothingRule());
 	}
 
+	/** Adds a default Rule for not allowing invalid (not registered) event paths. The given Rules object is
+	 * wrapped and set using <code>setRules(Rules rules)</code>. */
 	public void setRulesWithInvalidElementCheck(Rules rules) {
 		WithDefaultsRulesWrapper r=new WithDefaultsRulesWrapper(rules);
 		r.addDefault(new InvalidElementRule());
@@ -142,17 +156,20 @@ public class ExtendedDigester extends Digester {
 
 	// *** START: ErrorHandler (with exceptions)
 
+	/** Logs the SAX exception as warning (with location). */
 	@Override
 	public void warning(SAXParseException ex) throws SAXException {
-		log.warn(ex);
+		log.warn("SAX parse warning in \""+ex.getSystemId()+"\", line "+ex.getLineNumber()+", column "+ex.getColumnNumber()+": "+ex.getMessage());
 	}
 
+	/** Just throws <code>ex</code>. */
 	@Override
 	public void error(SAXParseException ex) throws SAXException {
 		// stop processing on errors
 		throw ex;
 	}
 
+	/** Just throws <code>ex</code>. */
 	@Override
 	public void fatalError(SAXParseException ex) throws SAXException {
 		// stop processing on fatal errors
@@ -165,10 +182,14 @@ public class ExtendedDigester extends Digester {
 
 	// this is a better implementation than in the original digester version 1.8
 
+	/** Returns <b>all</b> current namespace prefix mappings as {@link Map} containing the prefix
+	 * and all assigned namespaces as Stack, with the top element containing the current namespace. */
 	public Map<String,ArrayStack> getCurrentPrefixMappings() {
 		return Collections.unmodifiableMap(currentNamespaceMap);
 	}
 
+	/** Returns the current namespace prefix mappings as {@link Map} containing the prefix
+	 * and the current namespace assignment. */
 	public Map<String,String> getCurrentNamespaceMap() {
 		HashMap<String,String> n=new HashMap<String,String>(currentNamespaceMap.size());
 		for (Map.Entry<String,ArrayStack> i : currentNamespaceMap.entrySet()) {
@@ -178,6 +199,11 @@ public class ExtendedDigester extends Digester {
 		return n;
 	}
 
+	/**
+	 * Returns the current {@link javax.xml.namespace.NamespaceContext} for executing XPath expressions.
+	 * @param strict denotes, that undeclared prefixes throw an {@link IllegalArgumentException}, like XSLT does it.
+	 * @param reDefineDefaultPrefix denotes, that the default "xmlns" is reassigned. This conforms to XSLT.
+	 */
 	public javax.xml.namespace.NamespaceContext getCurrentNamespaceContext(boolean strict, boolean reDefineDefaultPrefix) {
 		// create Map
 		final boolean isStrict=strict;
@@ -223,6 +249,7 @@ public class ExtendedDigester extends Digester {
 		};
 	}
 
+	/** This rule does nothing. It is needed for giving a rule for uninteresting tags to not throw an exception. */
 	public static class DoNothingRule extends Rule {
 		// empty, this only makes the class non-abstract
 	}

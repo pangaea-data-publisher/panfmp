@@ -19,10 +19,15 @@ package de.pangaea.metadataportal.utils;
 import javax.xml.XMLConstants;
 import javax.xml.namespace.*;
 
+/**
+ * Simple static class to parse XPath-like string QNames ("prefix:tagname").
+ * @author Uwe Schindler
+ */
 public final class QNameParser {
 
 	private QNameParser() {}
 
+	/** Parses the given string to a {@link QName}. Namespace prefixes are resolvced using the given {@link NamespaceContext}. */
 	public static QName parseLexicalQName(String nameStr, NamespaceContext ctx) {
 		String prefix,localPart;
 		String[] parts=nameStr.split(":");

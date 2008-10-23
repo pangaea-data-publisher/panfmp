@@ -16,6 +16,10 @@
 
 package de.pangaea.metadataportal.utils;
 
+/**
+ * Some constants used by <b>panFMP</b>.
+ * @author Uwe Schindler
+ */
 public final class IndexConstants {
 
 	private IndexConstants() {} // no instance

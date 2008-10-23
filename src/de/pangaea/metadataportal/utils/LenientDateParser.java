@@ -24,10 +24,16 @@ import java.text.*;
 
 // TODO !!!!!!!!!!!!!!!!!
 
+/**
+ * Simple static class to parse date/times <b>very</b> lenient. This class will be changed
+ * in future, as date/time parsing will be refactored in <b>panFMP</b>.
+ * @author Uwe Schindler
+ */
 public final class LenientDateParser {
 
 	private LenientDateParser() {} // no instance
 
+	/**Parses a string to a {@link Date} */
 	public static synchronized Date parseDate(String date) throws ParseException {
 		if (date==null) return null;
 
