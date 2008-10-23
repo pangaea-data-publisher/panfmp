@@ -21,10 +21,19 @@ import java.util.TimeZone;
 import java.util.Locale;
 import java.text.*;
 
+/**
+ * Simple static class to create and parse ISO-8601 date stamps (used by OAI harvester):
+ * The used date formats are:<ul>
+ * <li>Long date: <code>yyyy-MM-dd'T'HH:mm:ss'Z'</code></li>
+ * <li>Short date: <code>yyyy-MM-dd</code></li>
+ * </ul>
+ * @author Uwe Schindler
+ */
 public final class ISODateFormatter {
 
 	private ISODateFormatter() {} // no instance
 
+	/** Parses the given string into a {@link Date}. It accepts short and long dates (with time) */
 	public static synchronized Date parseDate(String date) throws ParseException {
 		if (date==null) return null;
 		ParsePosition pp=new ParsePosition(0);
@@ -40,10 +49,12 @@ public final class ISODateFormatter {
 		}
 	}
 
+	/** Formats a long date. */
 	public static synchronized String formatLong(Date date) {
 		return longDate.format(date);
 	}
 
+	/** Formats a short date. */
 	public static synchronized String formatShort(Date date) {
 		return shortDate.format(date);
 	}

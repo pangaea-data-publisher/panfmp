@@ -14,8 +14,6 @@
  *   limitations under the License.
  */
 
-/* This class was borrowed from Nutch, a sub-project of Apache Lucene, and made conformant to Java 1.5 coding style. */
-
 package de.pangaea.metadataportal.utils;
 
 import java.io.ByteArrayOutputStream; 
@@ -25,6 +23,11 @@ import java.lang.reflect.Method;
 import org.apache.commons.logging.Log; 
 import org.apache.commons.logging.LogFactory; 
 
+/**
+ * Simple static class that supplies {@link PrintStream}s for log methods.
+ * This class was borrowed from Nutch, a sub-project of Apache Lucene, and made conformant to Java 1.5 coding style.
+ * @author Uwe Schindler, Jérôme Charron (Nutch)
+ */
 public class LogUtil { 
 	private static final Log log = LogFactory.getLog(LogUtil.class); 
 	
@@ -51,26 +54,32 @@ public class LogUtil {
 		// no instance
 	}
 	
+	/** Returns a PrintStream that logs all output with TRACE method to the given Commons Logging logger. */
 	public static PrintStream getTraceStream(final Log logger) { 
 		return getLogStream(logger, TRACE); 
 	} 
 	
+	/** Returns a PrintStream that logs all output with DEBUG method to the given Commons Logging logger. */
 	public static PrintStream getDebugStream(final Log logger) { 
 		return getLogStream(logger, DEBUG); 
 	} 
 	
+	/** Returns a PrintStream that logs all output with INFO method to the given Commons Logging logger. */
 	public static PrintStream getInfoStream(final Log logger) { 
 		return getLogStream(logger, INFO); 
 	} 
 	
+	/** Returns a PrintStream that logs all output with WARN method to the given Commons Logging logger. */
 	public static PrintStream getWarnStream(final Log logger) { 
 		return getLogStream(logger, WARN); 
 	} 
 	
+	/** Returns a PrintStream that logs all output with ERROR method to the given Commons Logging logger. */
 	public static PrintStream getErrorStream(final Log logger) { 
 		return getLogStream(logger, ERROR); 
 	} 
 	
+	/** Returns a PrintStream that logs all output with FATAL method to the given Commons Logging logger. */
 	public static PrintStream getFatalStream(final Log logger) { 
 		return getLogStream(logger, FATAL); 
 	} 

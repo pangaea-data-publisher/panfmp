@@ -18,10 +18,15 @@ package de.pangaea.metadataportal.utils;
 
 import java.security.*;
 
+/**
+ * Simple static class to create some hashes from string values.
+ * @author Uwe Schindler
+ */
 public final class HashGenerator {
 
 	private HashGenerator() {} // no instance
 
+	/** Converts a byte array to a hexadecimal string. */
 	public static String hex(byte[] array) {
 		StringBuilder sb = new StringBuilder();
 		for (int i = 0; i < array.length; i++) {
@@ -30,6 +35,7 @@ public final class HashGenerator {
 		return sb.toString();
 	}
 
+	/** Applies MD5 algorithm to the given message and returns it as a hex string. */
 	public static String md5(String message) {
 		try {
 			MessageDigest md = MessageDigest.getInstance("MD5");
@@ -40,6 +46,7 @@ public final class HashGenerator {
 		}
 	}
 
+	/** Applies SHA1 algorithm to the given message and returns it as a hex string. */
 	public static String sha1(String message) {
 		try {
 			MessageDigest md = MessageDigest.getInstance("SHA1");

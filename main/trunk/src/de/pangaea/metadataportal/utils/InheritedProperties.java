@@ -24,6 +24,7 @@ import java.util.Properties;
  */
 public final class InheritedProperties extends Properties {
 
+	/** Sets the parent <code>Properties</code> object with the default values. */
 	public void setParentProperties(Properties props) {
 		this.defaults=props;
 	}
