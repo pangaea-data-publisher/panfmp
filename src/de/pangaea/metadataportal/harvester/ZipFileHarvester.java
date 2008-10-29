@@ -147,10 +147,9 @@ public class ZipFileHarvester extends SingleFileEntitiesHarvester {
 			conn.setReadTimeout(timeout*1000);		
 
 			if (conn instanceof HttpURLConnection) {
-				StringBuilder ua=new StringBuilder("Java/");
-				ua.append(System.getProperty("java.version"));
-				ua.append(" (").append(de.pangaea.metadataportal.Package.getProductName()).append('/');
-				ua.append(de.pangaea.metadataportal.Package.getVersion()).append("; ZipFileHarvester)");
+				StringBuilder ua=new StringBuilder("Java/").append(System.getProperty("java.version"))
+					.append(" (").append(de.pangaea.metadataportal.Package.getProductName()).append('/')
+					.append(de.pangaea.metadataportal.Package.getVersion()).append("; ZipFileHarvester)");
 				conn.setRequestProperty("User-Agent",ua.toString());
 
 				conn.setRequestProperty("Accept-Encoding","identity, *;q=0");

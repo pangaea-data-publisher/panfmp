@@ -176,8 +176,7 @@ public class OAIHarvester extends OAIHarvesterBase {
 	}
 
 	private void checkIdentify(String baseURL) throws Exception {
-		StringBuilder url=new StringBuilder(baseURL);
-		url.append("?verb=Identify");
+		StringBuilder url=new StringBuilder(baseURL).append("?verb=Identify");
 		log.info("Reading identify response from \""+url+"\"...");
 		doParse(identifyDig,url.toString(),null);
 		log.info("Repository supports "+(fineGranularity?"seconds":"days")+"-granularity in selective harvesting.");
@@ -205,18 +204,14 @@ public class OAIHarvester extends OAIHarvesterBase {
 		checkIdentify(baseUrl);
 		reset();
 
-		StringBuilder url=new StringBuilder(baseUrl);
-		url.append("?verb=ListRecords&metadataPrefix=");
-		url.append(URLEncoder.encode(metadataPrefix,"UTF-8"));
+		StringBuilder url=new StringBuilder(baseUrl).append("?verb=ListRecords&metadataPrefix=").append(URLEncoder.encode(metadataPrefix,"UTF-8"));
 		if (sets!=null) {
 			if (sets.size()==1) {
-				url.append("&set=");
-				url.append(URLEncoder.encode(sets.iterator().next(),"UTF-8"));
+				url.append("&set=").append(URLEncoder.encode(sets.iterator().next(),"UTF-8"));
 			} else log.warn("More than one set to be harvested - this is not supported by OAI-PMH. Filtering documents during indexing!");
 		}
 		if (fromDateReference!=null) {
-			url.append("&from=");
-			url.append(URLEncoder.encode(fineGranularity?ISODateFormatter.formatLong(fromDateReference):ISODateFormatter.formatShort(fromDateReference),"UTF-8"));
+			url.append("&from=").append(URLEncoder.encode(fineGranularity?ISODateFormatter.formatLong(fromDateReference):ISODateFormatter.formatShort(fromDateReference),"UTF-8"));
 		}
 		readStream(url.toString());
 		setHarvestingDateReference(currResponseDate);
@@ -226,8 +221,7 @@ public class OAIHarvester extends OAIHarvesterBase {
 			log.debug("Resumption token expires in "+currResumptionExpiration+" ms");
 			index.checkIndexerBuffer();
 			url=new StringBuilder(baseUrl);
-			url.append("?verb=ListRecords&resumptionToken=");
-			url.append(URLEncoder.encode(currResumptionToken,"UTF-8"));
+			url.append("?verb=ListRecords&resumptionToken=").append(URLEncoder.encode(currResumptionToken,"UTF-8"));
 			reset();
 			readStream(url.toString());
 		}

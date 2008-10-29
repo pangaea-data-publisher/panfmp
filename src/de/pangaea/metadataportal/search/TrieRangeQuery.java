@@ -114,11 +114,7 @@ public final class TrieRangeQuery extends Query {
 	public String toString(final String field) {
 		final StringBuilder sb=new StringBuilder();
 		if (!this.field.equals(field)) sb.append(this.field).append(':');
-		sb.append('[');
-		sb.append(minUnconverted);
-		sb.append(" TO ");
-		sb.append(maxUnconverted);
-		sb.append(']');
+		sb.append('[').append(minUnconverted).append(" TO ").append(maxUnconverted).append(']');
 		return sb.append(ToStringUtils.boost(getBoost())).toString();
 	}
 

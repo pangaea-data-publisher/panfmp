@@ -183,11 +183,9 @@ public class WebCrawlingHarvester extends SingleFileEntitiesHarvester {
 			conn.setReadTimeout(timeout*1000);
 			conn.setRequestMethod(method);
 
-			StringBuilder ua=new StringBuilder("Java/");
-			ua.append(System.getProperty("java.version"));
-			String version=de.pangaea.metadataportal.Package.getProductName();
-			ua.append(" (").append(de.pangaea.metadataportal.Package.getProductName()).append('/');
-			ua.append(de.pangaea.metadataportal.Package.getVersion()).append("; WebCrawlingHarvester)");
+			StringBuilder ua=new StringBuilder("Java/").append(System.getProperty("java.version"))
+				.append(" (").append(de.pangaea.metadataportal.Package.getProductName()).append('/')
+				.append(de.pangaea.metadataportal.Package.getVersion()).append("; WebCrawlingHarvester)");
 			conn.setRequestProperty("User-Agent",ua.toString());
 
 			conn.setRequestProperty("Accept-Encoding","gzip, deflate, identity;q=0.3, *;q=0");
