@@ -24,6 +24,7 @@ import de.pangaea.metadataportal.utils.HashGenerator;
 import org.apache.lucene.index.*;
 import org.apache.lucene.search.*;
 import org.apache.lucene.document.*;
+import org.apache.lucene.store.AlreadyClosedException;
 import org.apache.commons.collections.map.LRUMap;
 
 /**
@@ -52,7 +53,17 @@ public final class LuceneCache {
 		this.storedQueries=Collections.synchronizedMap(storedQueries);
 		
 		int cacheMaxSessions=Integer.parseInt(config.searchProperties.getProperty("cacheMaxSessions",Integer.toString(DEFAULT_CACHE_MAX_SESSIONS)));
-		@SuppressWarnings("unchecked") Map<String,Session> sessions=(Map<String,Session>)new LRUMap(cacheMaxSessions);
+		@SuppressWarnings("unchecked") Map<String,Session> sessions=(Map<String,Session>)new LRUMap(cacheMaxSessions) {
+			@Override
+			protected boolean removeLRU(LRUMap.LinkEntry entry) {
+				try {
+					((Session)entry.getValue()).close();
+				} catch (IOException ioe) {
+					throw new RuntimeException(ioe);
+				}
+				return true;
+			}
+		};
 		this.sessions=sessions;
 		
 		cacheMaxAge=Integer.parseInt(config.searchProperties.getProperty("cacheMaxAge",Integer.toString(DEFAULT_CACHE_MAX_AGE)));
@@ -176,7 +187,10 @@ public final class LuceneCache {
 			// now really clean up sessions (if too old, as this is not handled by LRUMap -- and if reload of indexes occurred)
 			for (Iterator<Session> entries=sessions.values().iterator(); entries.hasNext(); ) {
 				Session e=entries.next();
-				if (now-e.lastAccess>((long)cacheMaxAge)*1000L) entries.remove();
+				if (now-e.lastAccess>((long)cacheMaxAge)*1000L) {
+					entries.remove();
+					e.close();
+				}
 			}		
 		}
 			
@@ -240,6 +254,7 @@ public final class LuceneCache {
 		
 		protected synchronized void ensureFetchable(int neededDoc) throws IOException {
 			if (topDocs==null || neededDoc>=fetchedCount) {
+				if (searcher==null) throw new AlreadyClosedException("Session not open anymore.");
 				int count;
 				if (neededDoc>=Integer.MAX_VALUE/2) {
 					count=Integer.MAX_VALUE;
@@ -263,11 +278,18 @@ public final class LuceneCache {
 			return new SearchResultList(this, parent.getFieldSelector(loadXml,fieldsToLoad));
 		}
 		
+		protected synchronized void close() throws IOException {
+			try {
+				if (searcher!=null) searcher.close();
+			} finally {
+				searcher=null;
+			}
+		}
+		
 		@Override
 		protected void finalize() throws Throwable {
 			try {
-				searcher.close();
-				searcher=null;
+				close();
 			} finally {
 				super.finalize();
 			}
