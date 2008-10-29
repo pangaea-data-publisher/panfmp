@@ -57,14 +57,10 @@ public final class Package {
 	public static String getFullPackageDescription() {
 		java.lang.Package pkg=get();
 		if (pkg==null) return null;
-		StringBuilder sb=new StringBuilder();
-		sb.append(pkg.getImplementationTitle());
-		sb.append(" version ");
-		sb.append(pkg.getImplementationVersion());
-		sb.append(" (");
-		sb.append(pkg.getImplementationVendor());
-		sb.append(")");
-		return sb.toString();
+		return new StringBuilder(pkg.getImplementationTitle())
+			.append(" version ").append(pkg.getImplementationVersion())
+			.append(" (").append(pkg.getImplementationVendor()).append(")")
+			.toString();
 	}
 	
 	private static boolean isVersionCompatible(String pkgVersion, String desired) {

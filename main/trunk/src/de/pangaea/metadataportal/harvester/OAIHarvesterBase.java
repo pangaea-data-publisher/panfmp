@@ -164,10 +164,9 @@ public abstract class OAIHarvesterBase extends Harvester {
 		conn.setConnectTimeout(timeout*1000);
 		conn.setReadTimeout(timeout*1000);		
 
-		StringBuilder ua=new StringBuilder("Java/");
-		ua.append(System.getProperty("java.version"));
-		ua.append(" (").append(de.pangaea.metadataportal.Package.getProductName()).append('/');
-		ua.append(de.pangaea.metadataportal.Package.getVersion()).append("; OAI downloader)");
+		StringBuilder ua=new StringBuilder("Java/").append(System.getProperty("java.version"))
+			.append(" (").append(de.pangaea.metadataportal.Package.getProductName()).append('/')
+			.append(de.pangaea.metadataportal.Package.getVersion()).append("; OAI downloader)");
 		conn.setRequestProperty("User-Agent",ua.toString());
 
 		conn.setRequestProperty("Accept-Encoding","gzip, deflate, identity;q=0.3, *;q=0");

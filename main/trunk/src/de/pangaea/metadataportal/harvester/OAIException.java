@@ -29,12 +29,9 @@ public class OAIException extends java.lang.Exception {
 
 	@Override
 	public String getMessage() {
-		StringBuilder sb=new StringBuilder((code==null)?"default":code);
-		String s=super.getMessage();
-		if (s!=null) {
-			sb.append(": ");
-			sb.append(s);
-		}
+		final StringBuilder sb=new StringBuilder((code==null)?"default":code);
+		final String s=super.getMessage();
+		if (s!=null) sb.append(": ").append(s);
 		return sb.toString();
 	}
 
