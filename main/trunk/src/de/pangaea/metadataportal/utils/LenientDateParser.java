@@ -88,11 +88,16 @@ public final class LenientDateParser {
 		new SimpleDateFormat("HH:mm'Z'",Locale.US),
 		new SimpleDateFormat("HH:mm:ss.SSSZ",Locale.US),
 		new SimpleDateFormat("HH:mm:ssZ",Locale.US),
+		new SimpleDateFormat("HH:mmZ",Locale.US),
 		new SimpleDateFormat("HH:mm:ss.SSS z",Locale.US),
 		new SimpleDateFormat("HH:mm:ss z",Locale.US),
+		new SimpleDateFormat("HH:mm z",Locale.US),
 		new SimpleDateFormat("HH:mm:ss.SSS",Locale.US),
 		new SimpleDateFormat("HH:mm:ss",Locale.US),
 		new SimpleDateFormat("HH:mm",Locale.US),
+		DateFormat.getTimeInstance(DateFormat.FULL,Locale.US),
+		DateFormat.getTimeInstance(DateFormat.MEDIUM,Locale.US),
+		DateFormat.getTimeInstance(DateFormat.SHORT,Locale.US),
 	};
 	static {
 		TimeZone UTC=TimeZone.getTimeZone("UTC");
