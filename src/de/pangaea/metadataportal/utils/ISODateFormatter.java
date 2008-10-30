@@ -62,9 +62,9 @@ public final class ISODateFormatter {
 	private static SimpleDateFormat longDate=new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'",Locale.US);
 	private static SimpleDateFormat shortDate=new SimpleDateFormat("yyyy-MM-dd",Locale.US);
 	static {
-		longDate.setTimeZone(TimeZone.getTimeZone("GMT"));
+		longDate.setTimeZone(TimeZone.getTimeZone("UTC"));
 		longDate.setLenient(false);
-		shortDate.setTimeZone(TimeZone.getTimeZone("GMT"));
+		shortDate.setTimeZone(TimeZone.getTimeZone("UTC"));
 		shortDate.setLenient(false);
 	}
 }

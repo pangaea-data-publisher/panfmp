@@ -76,37 +76,29 @@ public final class LenientDateParser {
 	private static DateFormat[] dateFormats={
 		new SimpleDateFormat("yyyy-MM-dd'T'",Locale.US),
 		new SimpleDateFormat("yyyy-MM-dd",Locale.US),
-		java.text.DateFormat.getDateInstance(DateFormat.FULL,Locale.US),
-		java.text.DateFormat.getDateInstance(DateFormat.FULL,Locale.GERMANY),
-		java.text.DateFormat.getDateInstance(DateFormat.MEDIUM,Locale.US),
-		java.text.DateFormat.getDateInstance(DateFormat.MEDIUM,Locale.GERMANY),
-		java.text.DateFormat.getDateInstance(DateFormat.SHORT,Locale.US),
-		java.text.DateFormat.getDateInstance(DateFormat.SHORT,Locale.GERMANY),
+		DateFormat.getDateInstance(DateFormat.FULL,Locale.US),
+		DateFormat.getDateInstance(DateFormat.MEDIUM,Locale.US),
+		DateFormat.getDateInstance(DateFormat.SHORT,Locale.US),
 		new SimpleDateFormat("yyyy-MM",Locale.US),
 		new SimpleDateFormat("yyyy",Locale.US),
 	};
 	private static DateFormat[] timeFormats={
 		new SimpleDateFormat("HH:mm:ss.SSS'Z'",Locale.US),
 		new SimpleDateFormat("HH:mm:ss'Z'",Locale.US),
+		new SimpleDateFormat("HH:mm'Z'",Locale.US),
 		new SimpleDateFormat("HH:mm:ss.SSSZ",Locale.US),
 		new SimpleDateFormat("HH:mm:ssZ",Locale.US),
 		new SimpleDateFormat("HH:mm:ss.SSS z",Locale.US),
 		new SimpleDateFormat("HH:mm:ss z",Locale.US),
-		java.text.DateFormat.getTimeInstance(DateFormat.FULL,Locale.US),
-		java.text.DateFormat.getTimeInstance(DateFormat.FULL,Locale.GERMANY),
-		java.text.DateFormat.getTimeInstance(DateFormat.MEDIUM,Locale.US),
-		java.text.DateFormat.getTimeInstance(DateFormat.MEDIUM,Locale.GERMANY),
-		java.text.DateFormat.getTimeInstance(DateFormat.SHORT,Locale.US),
-		java.text.DateFormat.getTimeInstance(DateFormat.SHORT,Locale.GERMANY),
 		new SimpleDateFormat("HH:mm:ss.SSS",Locale.US),
 		new SimpleDateFormat("HH:mm:ss",Locale.US),
 		new SimpleDateFormat("HH:mm",Locale.US),
 	};
 	static {
-		TimeZone gmt=TimeZone.getTimeZone("GMT");
+		TimeZone UTC=TimeZone.getTimeZone("UTC");
 		for (int i=0,c=dateFormats.length; i<c; i++) {
 			DateFormat df=dateFormats[i];
-			df.setTimeZone(gmt);
+			df.setTimeZone(UTC);
 			df.setLenient(true);
 			//System.err.println(((SimpleDateFormat)df).toPattern());
 		}
@@ -117,10 +109,12 @@ public final class LenientDateParser {
 			df.setLenient(true);
 			//System.err.println(((SimpleDateFormat)df).toPattern());
 		}
-		timeFormats[0].setTimeZone(gmt);
+		timeFormats[0].setTimeZone(UTC);
 		timeFormats[0].setLenient(false);
-		timeFormats[1].setTimeZone(gmt);
+		timeFormats[1].setTimeZone(UTC);
 		timeFormats[1].setLenient(false);
+		timeFormats[2].setTimeZone(UTC);
+		timeFormats[2].setLenient(false);
 	}
 
 }
