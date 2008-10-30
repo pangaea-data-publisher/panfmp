@@ -21,7 +21,6 @@ import de.pangaea.metadataportal.config.*;
 import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.locks.*;
 import java.util.concurrent.atomic.*;
 import java.io.IOException;
 import org.apache.lucene.index.*;
@@ -52,8 +51,7 @@ public class IndexBuilder {
 	private BlockingQueue<MetadataDocument> mdocBuffer;
 	private BlockingQueue<IndexerQueueEntry> ldocBuffer;
 
-	private final Lock indexerLock=new ReentrantLock();
-	private final Condition indexerLockCondition=indexerLock.newCondition(); 
+	private final Object indexerLock=new Object();
 	
 	private int maxBufferedChanges;
 	private DocumentErrorAction conversionErrorAction=DocumentErrorAction.STOP;
@@ -178,13 +176,8 @@ public class IndexBuilder {
 
 		if (ldocBuffer.remainingCapacity()*2<ldocBuffer.size()) {
 			log.warn("Harvester is too fast for indexer thread, that is blocked. Waiting...");
-			// we use >=2, because there seems to be a synchronization bug. TODO: check this!!!
-			while (ldocBuffer.size()>=2 && failure.get()==null) {
-				indexerLock.lock(); try {
-					indexerLockCondition.awaitNanos(10000L);
-				} finally {
-					indexerLock.unlock();
-				}				
+			synchronized(indexerLock) {
+				if (ldocBuffer.size()>0 && failure.get()==null) indexerLock.wait();
 			}
 		}
 	}
@@ -278,12 +271,11 @@ public class IndexBuilder {
 
 			while (failure.get()==null) {
 				// notify eventually waiting checkIndexerBuffer() calls
-				if (indexerLock.tryLock()) try { 
-					indexerLockCondition.signalAll();
-				} finally {
-					indexerLock.unlock();
+				synchronized(indexerLock) { 
+					if (ldocBuffer.size()==0) indexerLock.notifyAll();
 				}
 
+				// take entry from buffer
 				IndexerQueueEntry entry;
 				try {
 					entry=ldocBuffer.take();
@@ -319,11 +311,9 @@ public class IndexBuilder {
 				}
 			}
 
-			// notify eventually waiting checkIndexerBuffer() calls
-			if (indexerLock.tryLock()) try { 
-				indexerLockCondition.signalAll();
-			} finally {
-				indexerLock.unlock();
+			// notify eventually waiting checkIndexerBuffer() calls, as we are finished
+			synchronized(indexerLock) { 
+				indexerLock.notifyAll();
 			}
 
 			// check vor validIdentifiers Set and remove all unknown identifiers from index, if available (but not if new-created index)
@@ -379,11 +369,9 @@ public class IndexBuilder {
 			if (!failure.compareAndSet(null,e)) log.error(e);
 		} finally {
 			ldocBuffer.clear();
-			// notify eventually waiting checkIndexerBuffer() calls
-			indexerLock.lock(); try { 
-				indexerLockCondition.signalAll();
-			} finally {
-				indexerLock.unlock();
+			// notify eventually waiting checkIndexerBuffer() calls, as we are finished
+			synchronized(indexerLock) { 
+				indexerLock.notifyAll();
 			}
 			// close reader
 			if (writer!=null) try {
