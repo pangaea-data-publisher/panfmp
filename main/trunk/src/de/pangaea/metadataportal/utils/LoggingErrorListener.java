@@ -27,7 +27,7 @@ import org.apache.commons.logging.LogFactory;
 public final class LoggingErrorListener implements ErrorListener {
 
 	/** A error listener using the supplied Commons Logging instance as log target. */
-	public LoggingErrorListener(final Log c) {
+	public LoggingErrorListener(final Log log) {
 		this.log=log;
 	}
 
