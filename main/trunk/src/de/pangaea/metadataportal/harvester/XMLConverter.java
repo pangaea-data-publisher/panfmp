@@ -97,6 +97,12 @@ public class XMLConverter  {
 			if (log.isDebugEnabled()) log.debug("XSL-Transforming '"+s.getSystemId()+"'...");
 			Transformer trans=(iconfig.xslt==null) ? StaticFactories.transFactory.newTransformer() : iconfig.xslt.newTransformer();
 			trans.setErrorListener(new LoggingErrorListener(log));
+			// set variables
+			trans.setParameter(XPathResolverImpl.VARIABLE_INDEX_ID.toString(),iconfig.id);
+			trans.setParameter(XPathResolverImpl.VARIABLE_INDEX_DISPLAYNAME.toString(),iconfig.displayName);
+			trans.setParameter(XPathResolverImpl.VARIABLE_DOC_IDENTIFIER.toString(),s.getSystemId());
+			/* TODO: datestamp is not available yet -> do not set it, maybe fix this for consistency */
+			// transform document
 			dr=emptyDOMResult(s.getSystemId());
 			trans.transform(s,dr);
 		}
