@@ -223,8 +223,6 @@ public class MetadataDocument {
 	 * @throws IllegalStateException if index configuration is unknown
 	 */
 	public Document getLuceneDocument() throws Exception {
-		if (iconfig==null) throw new IllegalStateException("An index configuration must be set before calling getLuceneDocument().");
-
 		Document ldoc = createEmptyDocument();
 		if (!deleted) {
 			if (dom==null) throw new NullPointerException("The DOM-Tree of document may not be 'null'!");
@@ -413,10 +411,12 @@ public class MetadataDocument {
 	 * The variables must be registered in the supplied {@link Map}.
 	 */
 	protected void addSystemVariables(Map<QName,Object> vars) {
-		vars.put(XPathResolverImpl.VARIABLE_INDEX_ID,iconfig.id);
-		vars.put(XPathResolverImpl.VARIABLE_INDEX_DISPLAYNAME,iconfig.displayName);
-		vars.put(XPathResolverImpl.VARIABLE_DOC_IDENTIFIER,identifier);
-		vars.put(XPathResolverImpl.VARIABLE_DOC_DATESTAMP,(datestamp==null)?null:ISODateFormatter.formatLong(datestamp));
+		if (identifier==null || iconfig==null || iconfig.id==null || iconfig.displayName==null)
+			throw new NullPointerException();
+		vars.put(XPathResolverImpl.VARIABLE_INDEX_ID, iconfig.id);
+		vars.put(XPathResolverImpl.VARIABLE_INDEX_DISPLAYNAME, iconfig.displayName);
+		vars.put(XPathResolverImpl.VARIABLE_DOC_IDENTIFIER, identifier);
+		vars.put(XPathResolverImpl.VARIABLE_DOC_DATESTAMP, (datestamp==null)?"":ISODateFormatter.formatLong(datestamp));
 	}
 
 	/**
@@ -472,7 +472,7 @@ public class MetadataDocument {
 		// set variables in transformer
 		Map<QName,Object> vars=XPathResolverImpl.getInstance().getCurrentVariableMap();
 		for (Map.Entry<QName,Object> entry : vars.entrySet()) {
-			if (entry.getValue()!=null) trans.setParameter(entry.getKey().toString(),entry.getValue());
+			trans.setParameter(entry.getKey().toString(),entry.getValue());
 		}
 
 		// transform
@@ -498,7 +498,7 @@ public class MetadataDocument {
 		// set variables in transformer
 		Map<QName,Object> vars=XPathResolverImpl.getInstance().getCurrentVariableMap();
 		for (Map.Entry<QName,Object> entry : vars.entrySet()) {
-			if (entry.getValue()!=null) trans.setParameter(entry.getKey().toString(),entry.getValue());
+			trans.setParameter(entry.getKey().toString(),entry.getValue());
 		}
 
 		StringWriter xmlWriter=new StringWriter();
@@ -641,7 +641,7 @@ public class MetadataDocument {
 				
 				@Override
 				public Object put(QName key, Object value) {
-					if (value!=null) trans.setParameter(key.toString(), value);
+					trans.setParameter(key.toString(), value);
 					return null; // dummy
 				}
 			});
