@@ -69,7 +69,7 @@ public abstract class SingleFileEntitiesHarvester extends Harvester {
 	 * @param xml is the transformer source of the document, <code>null</code> to only update document status (lastModified) and adding to valid identifiers
 	 * @see #addDocument(MetadataDocument)
 	 */
-	protected void addDocument(String identifier, Date lastModified, Source xml) throws Exception {
+	protected final void addDocument(String identifier, Date lastModified, Source xml) throws Exception {
 		addDocument(identifier, (lastModified==null)?-1L:lastModified.getTime(), xml);
 	}
 	
@@ -82,18 +82,18 @@ public abstract class SingleFileEntitiesHarvester extends Harvester {
 		
 		if (lastModified>0L) {
 			if (newestDatestamp<=0L || newestDatestamp<lastModified) setHarvestingDateReference(new Date(newestDatestamp=lastModified));
-			if (fromDateReference!=null && fromDateReference.getTime()>=lastModified) return;
+			if (!isDocumentOutdated(lastModified)) return;
 		}
 		
 		if (xml==null) return;
 		
-		MetadataDocument mdoc=new MetadataDocument();
+		MetadataDocument mdoc=createMetadataDocumentInstance();
 		mdoc.setIdentifier(identifier);
 		mdoc.setDatestamp((lastModified>0L) ? new java.util.Date(lastModified) : null);
 		
 		Exception e=null; String errstr=null;
 		try {
-			mdoc.setDOM(xmlConverter.transform(identifier,mdoc.datestamp,xml));
+			mdoc.getConverter().transform(xml);
 		} catch (org.xml.sax.SAXParseException saxe) {
 			e=saxe;
 			errstr="Harvesting object '"+identifier+"' failed due to SAX parse error in \""+saxe.getSystemId()+"\", line "+saxe.getLineNumber()+", column "+saxe.getColumnNumber();
@@ -110,7 +110,7 @@ public abstract class SingleFileEntitiesHarvester extends Harvester {
 				return;
 			case DELETEDOCUMENT:
 				log.error(errstr+" (object marked deleted):",e);
-				mdoc.setDOM(null);
+				mdoc.setFinalDOM(null);
 				mdoc.deleted=true;
 				break; // continue normal
 			default:

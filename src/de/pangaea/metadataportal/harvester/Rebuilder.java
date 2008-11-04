@@ -66,6 +66,11 @@ public class Rebuilder extends Harvester {
 	}
 
 	@Override
+	protected MetadataDocument createMetadataDocumentInstance() {
+		throw new UnsupportedOperationException("The rebuilder uses an internal mechanism to generate metadata documents.");
+	}
+
+	@Override
 	public void harvest() throws Exception {
 		if (reader==null) throw new IllegalStateException("Rebuilder was not opened!");
 		for (int i=0, c=reader.maxDoc(); i<c; i++) {

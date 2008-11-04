@@ -182,7 +182,7 @@ public class ZipFileHarvester extends SingleFileEntitiesHarvester {
 			if (fromDateReference!=null && useZipFileDate) {
 				if (
 					(conn instanceof HttpURLConnection && ((HttpURLConnection)conn).getResponseCode()==HttpURLConnection.HTTP_NOT_MODIFIED)
-					|| (lastModified!=0L && lastModified<=fromDateReference.getTime())
+					|| !isDocumentOutdated(lastModified)
 				) {
 					log.debug("File not modified since "+fromDateReference);
 					if (in!=null) in.close();
@@ -196,7 +196,7 @@ public class ZipFileHarvester extends SingleFileEntitiesHarvester {
 			File f=new File(zipFile);
 			long lastModified=f.lastModified();
 			if (useZipFileDate) setHarvestingDateReference((lastModified==0L) ? null : new Date(lastModified));
-			if (useZipFileDate && fromDateReference!=null && lastModified>0L && lastModified<=fromDateReference.getTime()) return null;
+			if (useZipFileDate && !isDocumentOutdated(lastModified)) return null;
 			return new FileInputStream(f);
 		} catch (FileNotFoundException fne) {
 			throw fne;

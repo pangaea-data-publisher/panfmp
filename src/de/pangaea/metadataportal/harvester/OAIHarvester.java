@@ -60,7 +60,7 @@ public class OAIHarvester extends OAIHarvesterBase {
 		digesterAddGeneralOAIRules(listRecordsDig);
 
 		listRecordsDig.addDoNothing("OAI-PMH/ListRecords");
-		listRecordsDig.addObjectCreate("OAI-PMH/ListRecords/record", OAIMetadataDocument.class);
+		listRecordsDig.addFactoryCreate("OAI-PMH/ListRecords/record", getMetadataDocumentFactory());
 		listRecordsDig.addSetNext("OAI-PMH/ListRecords/record", "addDocument");
 
 		// setHeaderInfo(boolean deleted, String identifier, String datestampStr)
@@ -72,7 +72,7 @@ public class OAIHarvester extends OAIHarvesterBase {
 		listRecordsDig.addCallMethod("OAI-PMH/ListRecords/record/header/setSpec", "addSet", 0);
 
 		// metadata element
-		listRecordsDig.addRule("OAI-PMH/ListRecords/record/metadata", new OAIMetadataSaxRule(xmlConverter));
+		listRecordsDig.addRule("OAI-PMH/ListRecords/record/metadata", new OAIMetadataSaxRule());
 
 		// dummy SAX handler to put <about> into trash
 		listRecordsDig.addRule("OAI-PMH/ListRecords/record/about", SaxRule.emptyRule());

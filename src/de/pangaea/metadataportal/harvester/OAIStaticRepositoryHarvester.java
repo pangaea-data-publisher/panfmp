@@ -88,7 +88,7 @@ public class OAIStaticRepositoryHarvester extends OAIHarvesterBase {
 		});
 
 		dig.setRuleNamespaceURI(OAI_NS);
-		dig.addObjectCreate("Repository/ListRecords/record", OAIMetadataDocument.class);
+		dig.addFactoryCreate("Repository/ListRecords/record", getMetadataDocumentFactory());
 		dig.addSetNext("Repository/ListRecords/record", "addDocument");
 
 		// setHeaderInfo(boolean deleted, String identifier, String datestampStr)
@@ -100,7 +100,7 @@ public class OAIStaticRepositoryHarvester extends OAIHarvesterBase {
 		dig.addCallMethod("Repository/ListRecords/record/header/setSpec", "addSet", 0);
 
 		// metadata element
-		dig.addRule("Repository/ListRecords/record/metadata", metadataSaxRule=new OAIMetadataSaxRule(xmlConverter));
+		dig.addRule("Repository/ListRecords/record/metadata", metadataSaxRule=new OAIMetadataSaxRule());
 		metadataSaxRule.setEnabled(false);
 
 		// dummy SAX handler to put <about> into trash

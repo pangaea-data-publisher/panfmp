@@ -23,7 +23,7 @@ import java.util.*;
 
 /**
  * This class is used as a rule for the "metadata" element of the OAI response.
- * Whenever this element occurs in Digester, it feeds the SAX events to a content handler supplied by {@link XMLConverter}
+ * Whenever this element occurs in Digester, it feeds the SAX events to a content handler
  * and stores the DOM result in the {@link OAIMetadataDocument} on the Digester stack,
  * if rule is not enabled, metadata is fed to nowhere.
  * @author Uwe Schindler
@@ -31,16 +31,13 @@ import java.util.*;
 public class OAIMetadataSaxRule extends SaxRule {
 
 	private OAIMetadataDocument doc=null;
-	private XMLConverter trans=null;
 	private boolean enabled=true;
 	
 	/**
 	 * Creates a new rule which is enabled by default.
-	 * @param trans is used for transformation and validation  of resulting DOM tree
 	 */
-	public OAIMetadataSaxRule(XMLConverter trans) {
+	public OAIMetadataSaxRule() {
 		super();
-		this.trans=trans;
 		setExcludeNamespaces(EXCLUDE_NS);
 	}
 	
@@ -65,7 +62,7 @@ public class OAIMetadataSaxRule extends SaxRule {
 	public void begin(java.lang.String namespace, java.lang.String name, org.xml.sax.Attributes attributes) throws Exception {
 		if (enabled) {
 			doc=(OAIMetadataDocument)digester.peek(); // the OAIMetadataDocument is on the stack!!!
-			ContentHandler handler=trans.getTransformContentHandler(doc.getIdentifier(),doc.datestamp);
+			ContentHandler handler=doc.getConverter().getTransformContentHandler();
 			setContentHandler(handler);
 		} else {
 			doc=null;
@@ -78,7 +75,7 @@ public class OAIMetadataSaxRule extends SaxRule {
 	public void end(java.lang.String namespace, java.lang.String name) throws Exception {
 		super.end(namespace,name);
 		if (enabled) {
-			doc.setDOM(trans.finishTransformation());
+			doc.getConverter().finishTransformation();
 			doc=null;
 		}
 	}

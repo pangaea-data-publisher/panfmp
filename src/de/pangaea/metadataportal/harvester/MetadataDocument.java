@@ -18,17 +18,23 @@ package de.pangaea.metadataportal.harvester;
 
 import de.pangaea.metadataportal.utils.*;
 import de.pangaea.metadataportal.config.*;
+import org.apache.lucene.document.*;
 import java.io.StringWriter;
 import java.io.StringReader;
 import java.util.Map;
+import java.io.IOException;
+import java.util.Date;
 import javax.xml.transform.*;
 import javax.xml.transform.dom.*;
+import javax.xml.transform.sax.*;
 import javax.xml.transform.stream.*;
 import javax.xml.namespace.QName;
-import org.apache.lucene.document.*;
+import javax.xml.validation.*;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.Node;
 import org.w3c.dom.DocumentFragment;
+import org.xml.sax.*;
+import java.lang.reflect.Constructor;
 
 /**
  * This class holds all information harvested and provides methods for {@link IndexBuilder} to create
@@ -39,9 +45,11 @@ public class MetadataDocument {
 	private static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(MetadataDocument.class);
 
 	/**
-	 * Default constructor, that creates an empty instance.
+	 * Constructor, that creates an empty instance for the supplied index configuration.
+	 * Sub classes must always supply this exact constructor for working with {@link Rebuilder} and {@link #createInstanceFromLucene}.
 	 */
-	public MetadataDocument() {
+	public MetadataDocument(SingleIndexConfig iconfig) {
+		this.iconfig=iconfig;
 	}
 
 	/**
@@ -67,17 +75,18 @@ public class MetadataDocument {
 				"This error occurs if there was an incompatible change of panFMP. You have to reharvest from the original source and recreate your index!");
 		}
 		if (log.isDebugEnabled()) log.debug("Using MetadataDocument class: "+cls.getName());
-		MetadataDocument mdoc=cls.newInstance();
-		mdoc.setIndexConfig(iconf);
-		mdoc.loadFromLucene(ldoc);
-		return mdoc;
-	}
-
-	/**
-	 * Sets the {@link SingleIndexConfig} to be used for transforming the document to a Lucene {@link Document}.
-	 */
-	public void setIndexConfig(SingleIndexConfig iconfig) {
-		this.iconfig=iconfig;
+		// find constructor
+		Constructor<? extends MetadataDocument> constructor;
+		try {
+			constructor=cls.getConstructor(SingleIndexConfig.class);
+			MetadataDocument mdoc=constructor.newInstance(iconf);
+			mdoc.loadFromLucene(ldoc);
+			return mdoc;
+		} catch (NoSuchMethodException nsme) {
+			throw new NoSuchMethodException("The class "+cls+" does not have the right constructor for instantiation with createInstanceFromLucene(): "+nsme.getMessage());
+		} catch (Exception e) {
+			throw new RuntimeException("Error invoking constructor of class "+cls,e);
+		}
 	}
 
 	/**
@@ -98,23 +107,17 @@ public class MetadataDocument {
 		} catch (NumberFormatException ne) {
 			log.warn("Datestamp of document '"+identifier+"' is invalid. Deleting datestamp!",ne);
 		}
-		setXML(ldoc.get(IndexConstants.FIELDNAME_XML));
-	}
-
-	/**
-	 * Sets XML contents as String (used by {@link #loadFromLucene}).
-	 */
-	public void setXML(String xml) throws Exception {
-		xmlCache=xml;
+		String xml=ldoc.get(IndexConstants.FIELDNAME_XML);
 		if (xml==null) {
-			dom=null;
+			setFinalDOM(null);
 		} else {
-			dom=StaticFactories.dombuilder.newDocument();
+			org.w3c.dom.Document dom=StaticFactories.dombuilder.newDocument();
 			StreamSource s=new StreamSource(new StringReader(xml),identifier);
 			DOMResult r=new DOMResult(dom,identifier);
 			Transformer trans=StaticFactories.transFactory.newTransformer();
 			trans.setErrorListener(new LoggingErrorListener(log));
 			trans.transform(s,r);
+			setFinalDOM(dom);
 		}
 	}
 
@@ -139,9 +142,9 @@ public class MetadataDocument {
 	}
 
 	/**
-	 * Sets XML contents as DOM tree. Invalidates cache.
+	 * Sets XML final (transformed) xml contents as DOM tree. Invalidates cache.
 	 */
-	public void setDOM(org.w3c.dom.Document  dom) {
+	public void setFinalDOM(org.w3c.dom.Document  dom) {
 		this.dom=dom;
 		xmlCache=null;
 	}
@@ -149,8 +152,16 @@ public class MetadataDocument {
 	/**
 	 * Returns XML contents as DOM tree.
 	 */
-	public org.w3c.dom.Document getDOM() {
+	public org.w3c.dom.Document getFinalDOM() {
 		return dom;
+	}
+
+	/**
+	 * Returns a converter instance that does transformation and validation according to index config.
+	 */
+	public synchronized XMLConverter getConverter() {
+		if (converter==null) converter=new XMLConverter();
+		return converter;
 	}
 
 	/**
@@ -208,7 +219,6 @@ public class MetadataDocument {
 	 * @return Lucene {@link Document} or <code>null</code>, if doc was deleted.
 	 * @throws Exception if an exception occurs during transformation (various types of exceptions can be thrown).
 	 * @throws IllegalStateException if index configuration is unknown
-	 * @see #setIndexConfig
 	 */
 	public Document getLuceneDocument() throws Exception {
 		if (iconfig==null) throw new IllegalStateException("An index configuration must be set before calling getLuceneDocument().");
@@ -564,10 +574,122 @@ public class MetadataDocument {
 	protected String identifier=null;
 
 	/**
-	 * @see #setIndexConfig
+	 * The index configuration.
 	 */
 	protected SingleIndexConfig iconfig=null;
 
 	private org.w3c.dom.Document dom=null;
 	private String xmlCache=null;
+	private XMLConverter converter=null;
+
+	/**
+	 * This class handles the transformation from any source to the "official" metadata format and can even validate it
+	 * @author Uwe Schindler
+	 */
+	public class XMLConverter  {
+
+		private boolean validate=true;
+
+		private XMLConverter() {
+			String v=iconfig.harvesterProperties.getProperty("validate");
+			if (iconfig.parent.schema==null) {
+				if (v!=null) throw new IllegalStateException("The <validate> harvester property is only allowed if a XML schema is set in the metadata properties!");
+				validate=false; // no validation if no schema available
+			} else {
+				if (v==null) validate=true; // validate by default
+				else validate=BooleanParser.parseBoolean(v);
+			}
+		}
+
+		private DOMResult validate(final DOMSource ds, final boolean wasTransformed) throws SAXException,IOException {
+			if (!validate) {
+				return DOMSource2Result(ds);
+			} else {
+				if (log.isDebugEnabled()) log.debug("Validating '"+ds.getSystemId()+"'...");
+				Validator val=iconfig.parent.schema.newValidator();
+				val.setErrorHandler(new ErrorHandler() {
+					public void warning(SAXParseException e) throws SAXException {
+						log.warn("Validation warning in "+(wasTransformed?"XSL transformed ":"")+"document '"+ds.getSystemId()+"': "+e.getMessage());
+					}
+
+					public void error(SAXParseException e) throws SAXException {
+						String msg="Validation error in "+(wasTransformed?"XSL transformed ":"")+"document '"+ds.getSystemId()+"': "+e.getMessage();
+						if (iconfig.parent.haltOnSchemaError) throw new SAXException(msg);
+						log.error(msg);
+					}
+
+					public void fatalError(SAXParseException e) throws SAXException {
+						throw new SAXException("Fatal validation error in "+(wasTransformed?"XSL transformed ":"")+"document '"+ds.getSystemId()+"': "+e.getMessage());
+					}
+				});
+				DOMResult dr=(iconfig.parent.validateWithAugmentation) ? emptyDOMResult(ds.getSystemId()) : null;
+				val.validate(ds,dr);
+				return (dr==null) ? DOMSource2Result(ds) : dr;
+			}
+		}
+
+		private void setTransformerProperties(Transformer trans, String identifier, Date datestamp) throws TransformerException {
+			trans.setErrorListener(new LoggingErrorListener(log));
+			// set variables
+			trans.setParameter(XPathResolverImpl.VARIABLE_INDEX_ID.toString(), iconfig.id);
+			trans.setParameter(XPathResolverImpl.VARIABLE_INDEX_DISPLAYNAME.toString(), iconfig.displayName);
+			trans.setParameter(XPathResolverImpl.VARIABLE_DOC_IDENTIFIER.toString(), identifier);
+			trans.setParameter(XPathResolverImpl.VARIABLE_DOC_DATESTAMP.toString(), (datestamp==null)?null:ISODateFormatter.formatLong(datestamp));
+		}
+
+		private final DOMSource DOMResult2Source(DOMResult dr) {
+			return new DOMSource(dr.getNode(),dr.getSystemId());
+		}
+
+		private final DOMResult DOMSource2Result(DOMSource ds) {
+			return new DOMResult(ds.getNode(),ds.getSystemId());
+		}
+
+		private final DOMResult emptyDOMResult(String systemId) {
+			return new DOMResult(StaticFactories.dombuilder.newDocument(),systemId);
+		}
+		
+		// Transforms a Source to a DOM w/wo transformation
+		public void transform(Source s) throws TransformerException,SAXException,IOException {
+			DOMResult dr;
+			if (iconfig.xslt==null && s instanceof DOMSource) {
+				dr=DOMSource2Result((DOMSource)s);
+				dr.setSystemId(identifier);
+			} else {
+				if (log.isDebugEnabled()) log.debug("XSL-Transforming '"+s.getSystemId()+"' to '"+identifier+"'...");
+				Transformer trans=(iconfig.xslt==null) ? StaticFactories.transFactory.newTransformer() : iconfig.xslt.newTransformer();
+				setTransformerProperties(trans,identifier,datestamp);
+				dr=emptyDOMResult(identifier);
+				trans.transform(s,dr);
+			}
+			org.w3c.dom.Document dom=(org.w3c.dom.Document)(validate(DOMResult2Source(dr), iconfig.xslt!=null).getNode());
+			dom.normalize();
+			setFinalDOM(dom);
+		}
+
+		// ContentHandler part (gets events and converts it to DOM w/wo transformation)
+		private DOMResult dr=null;
+
+		public ContentHandler getTransformContentHandler() throws TransformerException {
+			if (dr!=null) throw new IllegalStateException("XMLConverter is currently convertig a SAX document, you cannot get a new ContentHandler!");
+
+			if (iconfig.xslt!=null && log.isDebugEnabled()) log.debug("XSL-Transforming '"+identifier+"'...");
+
+			TransformerHandler handler=(iconfig.xslt==null)?StaticFactories.transFactory.newTransformerHandler():StaticFactories.transFactory.newTransformerHandler(iconfig.xslt);
+			setTransformerProperties(handler.getTransformer(),identifier,datestamp);
+			dr=emptyDOMResult(identifier);
+			handler.setResult(dr);
+			return handler;
+		}
+
+		public void finishTransformation() throws TransformerException,SAXException,IOException {
+			if (dr==null) throw new IllegalStateException("XMLConverter is not convertig a SAX document, you cannot get a result DOM tree!");
+
+			org.w3c.dom.Document dom=(org.w3c.dom.Document)(validate(DOMResult2Source(dr), iconfig.xslt!=null).getNode());
+			dom.normalize();
+			dr=null;
+			setFinalDOM(dom);
+		}
+
+	}	
 }

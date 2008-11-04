@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.xml.sax.InputSource;
 import org.xml.sax.EntityResolver;
 import org.xml.sax.SAXException;
+import org.apache.commons.digester.*;
 
 /**
  * Abstract base class for OAI harvesting support in panFMP.
@@ -84,6 +85,23 @@ public abstract class OAIHarvesterBase extends Harvester {
 			if (Collections.disjoint(((OAIMetadataDocument)mdoc).getSets(),sets)) mdoc.setDeleted(true);
 		}
 		super.addDocument(mdoc);
+	}
+
+	@Override
+	protected MetadataDocument createMetadataDocumentInstance() {
+		return new OAIMetadataDocument(iconfig);
+	}
+	
+	/** 
+	 * Returns a factory for creating the {@link MetadataDocument}s in Digester code (using <code>FactoryCreateRule</code>).
+	 * @see #createMetadataDocumentInstance
+	 */
+	protected ObjectCreationFactory getMetadataDocumentFactory() {
+		return new AbstractObjectCreationFactory() {
+			public Object createObject(org.xml.sax.Attributes attributes) {
+				return createMetadataDocumentInstance();
+			}
+		};
 	}
 
 	/** Harvests a URL using the suplied digester.
