@@ -27,6 +27,13 @@ import org.apache.lucene.document.*;
  */
 public class OAIMetadataDocument extends MetadataDocument {
 
+	/**
+	 * Constructor, that creates an empty instance for the supplied index configuration.
+	 */
+	public OAIMetadataDocument(SingleIndexConfig iconfig) {
+		super(iconfig);
+	}
+
 	@PublicForDigesterUse
 	@Deprecated
 	public void setHeaderInfo(String status, String identifier, String datestampStr) throws java.text.ParseException {

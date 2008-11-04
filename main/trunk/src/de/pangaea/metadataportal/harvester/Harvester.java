@@ -136,13 +136,6 @@ public abstract class Harvester {
 	protected SingleIndexConfig iconfig=null;
 
 	/**
-	 * Instance of {@link XMLConverter} that helps to convert harvested XML documents.
-	 * It does only convert SAX events or DOM trees to the final index DOM trees
-	 * (by the index specific XSLT) and optionally validates the result.
-	 */
-	protected XMLConverter xmlConverter=null;
-
-	/**
 	 * Count of harvested documents. Incremented by {@link #addDocument}.
 	 */
 	protected int harvestCount=0;
@@ -165,7 +158,7 @@ public abstract class Harvester {
 
 	/**
 	 * Opens harvester for harvesting documents into the index described by the given {@link SingleIndexConfig}.
-	 * Opens {@link #index} and {@link #xmlConverter} for usage in {@link #harvest} method.
+	 * Opens {@link #index} for usage in {@link #harvest} method.
 	 * @throws Exception if an exception occurs during opening (various types of exceptions can be thrown).
 	 */
 	public void open(SingleIndexConfig iconfig) throws Exception {
@@ -174,7 +167,6 @@ public abstract class Harvester {
 		harvestMessageStep=Integer.parseInt(iconfig.harvesterProperties.getProperty("harvestMessageStep","100"));
 		if (harvestMessageStep<=0) throw new IllegalArgumentException("Invalid value for harvestMessageStep: "+harvestMessageStep);
 		index = new IndexBuilder(false,iconfig);
-		xmlConverter=new XMLConverter(iconfig);
 
 		fromDateReference=index.getLastHarvestedFromDisk();
 	}
@@ -205,6 +197,14 @@ public abstract class Harvester {
 		else
 			log.warn("Harvesting stopped unexspected, but "+harvestCount+" objects harvested - finished.");
 	}
+	
+	/**
+	 * Creates an instance of MetadataDocument and initializes it with the index config.
+	 * This method should be overwritten, if a harvester uses another class.
+	 */
+	protected MetadataDocument createMetadataDocumentInstance() {
+		return new MetadataDocument(iconfig);
+	}
 
 	/**
 	 * Adds a document to the {@link #index} working in the background.
@@ -215,12 +215,27 @@ public abstract class Harvester {
 	 */
 	protected void addDocument(MetadataDocument mdoc) throws IndexBuilderBackgroundFailure,InterruptedException {
 		if (index==null) throw new IllegalStateException("Harvester must be opened before using");
-		mdoc.setIndexConfig(iconfig);
 		index.addDocument(mdoc);
 		harvestCount++;
 		if (harvestCount%harvestMessageStep==0) log.info("Harvested "+harvestCount+" objects so far.");
 	}
 	
+	/**
+	 * Checks, if the supplied Datestamp needs harvesting. This method can be used to find out, if a documents needs harvesting.
+	 * @see #isDocumentOutdated(long)
+	 */
+	protected final boolean isDocumentOutdated(Date lastModified) {
+		return isDocumentOutdated( (lastModified==null)?-1L:lastModified.getTime() );
+	}
+
+	/**
+	 * Checks, if the supplied Datestamp needs harvesting. This method can be used to find out, if a documents needs harvesting.
+	 * @see #isDocumentOutdated(Date)
+	 */
+	protected boolean isDocumentOutdated(long lastModified) {
+		return (lastModified<=0L || fromDateReference==null || fromDateReference.getTime()<lastModified);
+	}
+
 	/**
 	 * Reference date of this harvesting event (in time reference of the original server).
 	 * This date is used on the next harvesting in variable {@link #fromDateReference}.
@@ -247,7 +262,7 @@ public abstract class Harvester {
 			"maxIndexerQueue",
 			"autoOptimize",
 			"conversionErrorAction",
-			// XMLConverter
+			// IndexBuilder.XMLConverter
 			"validate",
 			// MetadataDocument
 			"compressXML"

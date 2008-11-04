@@ -40,7 +40,7 @@ public class IndexBuilder {
 	private Date lastHarvested=null;
 	private boolean create;
 
-	private static MetadataDocument  MDOC_EOF = new MetadataDocument();
+	private static MetadataDocument  MDOC_EOF = new MetadataDocument(null);
 	private static IndexerQueueEntry LDOC_EOF = new IndexerQueueEntry(null,null);
 
 	private AtomicInteger runningConverters=new AtomicInteger(0);
