@@ -22,6 +22,8 @@ import org.apache.lucene.document.*;
 import java.io.StringWriter;
 import java.io.StringReader;
 import java.util.Map;
+import java.util.Set;
+import java.util.AbstractMap;
 import java.io.IOException;
 import java.util.Date;
 import javax.xml.transform.*;
@@ -470,7 +472,7 @@ public class MetadataDocument {
 		// set variables in transformer
 		Map<QName,Object> vars=XPathResolverImpl.getInstance().getCurrentVariableMap();
 		for (Map.Entry<QName,Object> entry : vars.entrySet()) {
-			trans.setParameter(entry.getKey().toString(),entry.getValue());
+			if (entry.getValue()!=null) trans.setParameter(entry.getKey().toString(),entry.getValue());
 		}
 
 		// transform
@@ -496,7 +498,7 @@ public class MetadataDocument {
 		// set variables in transformer
 		Map<QName,Object> vars=XPathResolverImpl.getInstance().getCurrentVariableMap();
 		for (Map.Entry<QName,Object> entry : vars.entrySet()) {
-			trans.setParameter(entry.getKey().toString(),entry.getValue());
+			if (entry.getValue()!=null) trans.setParameter(entry.getKey().toString(),entry.getValue());
 		}
 
 		StringWriter xmlWriter=new StringWriter();
@@ -628,13 +630,21 @@ public class MetadataDocument {
 			}
 		}
 
-		private void setTransformerProperties(Transformer trans, String identifier, Date datestamp) throws TransformerException {
+		private void setTransformerProperties(final Transformer trans) throws TransformerException {
 			trans.setErrorListener(new LoggingErrorListener(log));
 			// set variables
-			trans.setParameter(XPathResolverImpl.VARIABLE_INDEX_ID.toString(), iconfig.id);
-			trans.setParameter(XPathResolverImpl.VARIABLE_INDEX_DISPLAYNAME.toString(), iconfig.displayName);
-			trans.setParameter(XPathResolverImpl.VARIABLE_DOC_IDENTIFIER.toString(), identifier);
-			trans.setParameter(XPathResolverImpl.VARIABLE_DOC_DATESTAMP.toString(), (datestamp==null)?null:ISODateFormatter.formatLong(datestamp));
+			addSystemVariables(new AbstractMap<QName,Object>() {
+				@Override
+				public Set<Map.Entry<QName,Object>> entrySet() {
+					throw new UnsupportedOperationException(); // should never be called
+				}
+				
+				@Override
+				public Object put(QName key, Object value) {
+					if (value!=null) trans.setParameter(key.toString(), value);
+					return null; // dummy
+				}
+			});
 		}
 
 		private final DOMSource DOMResult2Source(DOMResult dr) {
@@ -658,7 +668,7 @@ public class MetadataDocument {
 			} else {
 				if (log.isDebugEnabled()) log.debug("XSL-Transforming '"+s.getSystemId()+"' to '"+identifier+"'...");
 				Transformer trans=(iconfig.xslt==null) ? StaticFactories.transFactory.newTransformer() : iconfig.xslt.newTransformer();
-				setTransformerProperties(trans,identifier,datestamp);
+				setTransformerProperties(trans);
 				dr=emptyDOMResult(identifier);
 				trans.transform(s,dr);
 			}
@@ -676,7 +686,7 @@ public class MetadataDocument {
 			if (iconfig.xslt!=null && log.isDebugEnabled()) log.debug("XSL-Transforming '"+identifier+"'...");
 
 			TransformerHandler handler=(iconfig.xslt==null)?StaticFactories.transFactory.newTransformerHandler():StaticFactories.transFactory.newTransformerHandler(iconfig.xslt);
-			setTransformerProperties(handler.getTransformer(),identifier,datestamp);
+			setTransformerProperties(handler.getTransformer());
 			dr=emptyDOMResult(identifier);
 			handler.setResult(dr);
 			return handler;
