@@ -220,10 +220,7 @@ public final class LuceneCache {
 	public static final int DEFAULT_FETCH_FACTOR=250;
 
 	private static final Set<String> FIELDS_DEFAULT=Collections.singleton(IndexConstants.FIELDNAME_IDENTIFIER);
-	private static final Set<String> FIELDS_XML=new TreeSet<String>(FIELDS_DEFAULT);
-	static {
-		FIELDS_XML.add(IndexConstants.FIELDNAME_XML);
-	}
+	private static final Set<String> FIELDS_XML=Collections.unmodifiableSet(new TreeSet<String>(Arrays.asList(IndexConstants.FIELDNAME_IDENTIFIER,IndexConstants.FIELDNAME_XML)));
 
 	/**
 	 * Implementation of a cache entry.

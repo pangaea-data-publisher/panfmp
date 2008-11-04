@@ -80,10 +80,8 @@ public class OAIMetadataSaxRule extends SaxRule {
 		}
 	}
 
-	private static final Set<String> EXCLUDE_NS=Collections.synchronizedSet(new HashSet<String>());
-	static {
-		EXCLUDE_NS.add(OAIHarvesterBase.OAI_NS);
-		EXCLUDE_NS.add(OAIHarvesterBase.OAI_STATICREPOSITORY_NS);
-	}
+	private static final Set<String> EXCLUDE_NS=Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(
+		OAIHarvesterBase.OAI_NS,OAIHarvesterBase.OAI_STATICREPOSITORY_NS
+	)));
 
 }

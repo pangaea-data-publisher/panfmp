@@ -173,13 +173,9 @@ public final class XPathResolverImpl implements XPathFunctionResolver,XPathVaria
 	public static final QName VARIABLE_INDEX_DISPLAYNAME=new QName(INDEX_BUILDER_NAMESPACE,"indexDisplayName");
 	public static final QName VARIABLE_INDEX_ID=new QName(INDEX_BUILDER_NAMESPACE,"index");
 
-	public static final Set<QName> BASE_VARIABLES=new HashSet<QName>();
-	static {
-		BASE_VARIABLES.add(VARIABLE_DOC_IDENTIFIER);
-		BASE_VARIABLES.add(VARIABLE_DOC_DATESTAMP);
-		BASE_VARIABLES.add(VARIABLE_INDEX_DISPLAYNAME);
-		BASE_VARIABLES.add(VARIABLE_INDEX_ID);
-	}
+	public static final Set<QName> BASE_VARIABLES=Collections.unmodifiableSet(new HashSet<QName>(Arrays.asList(
+		VARIABLE_DOC_IDENTIFIER, VARIABLE_DOC_DATESTAMP, VARIABLE_INDEX_DISPLAYNAME, VARIABLE_INDEX_ID
+	)));
 
 	private static XPathResolverImpl instance=new XPathResolverImpl();
 
