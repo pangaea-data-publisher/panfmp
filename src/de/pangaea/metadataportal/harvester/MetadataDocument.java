@@ -404,7 +404,7 @@ public class MetadataDocument {
 		vars.put(XPathResolverImpl.VARIABLE_INDEX_ID,iconfig.id);
 		vars.put(XPathResolverImpl.VARIABLE_INDEX_DISPLAYNAME,iconfig.displayName);
 		vars.put(XPathResolverImpl.VARIABLE_DOC_IDENTIFIER,identifier);
-		vars.put(XPathResolverImpl.VARIABLE_DOC_DATESTAMP,(datestamp==null)?"":ISODateFormatter.formatLong(datestamp));
+		vars.put(XPathResolverImpl.VARIABLE_DOC_DATESTAMP,(datestamp==null)?null:ISODateFormatter.formatLong(datestamp));
 	}
 
 	/**

@@ -93,7 +93,7 @@ public abstract class SingleFileEntitiesHarvester extends Harvester {
 		
 		Exception e=null; String errstr=null;
 		try {
-			mdoc.setDOM(xmlConverter.transform(xml));
+			mdoc.setDOM(xmlConverter.transform(identifier,mdoc.datestamp,xml));
 		} catch (org.xml.sax.SAXParseException saxe) {
 			e=saxe;
 			errstr="Harvesting object '"+identifier+"' failed due to SAX parse error in \""+saxe.getSystemId()+"\", line "+saxe.getLineNumber()+", column "+saxe.getColumnNumber();

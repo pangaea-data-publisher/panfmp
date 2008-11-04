@@ -65,7 +65,7 @@ public class OAIMetadataSaxRule extends SaxRule {
 	public void begin(java.lang.String namespace, java.lang.String name, org.xml.sax.Attributes attributes) throws Exception {
 		if (enabled) {
 			doc=(OAIMetadataDocument)digester.peek(); // the OAIMetadataDocument is on the stack!!!
-			ContentHandler handler=trans.getTransformContentHandler(doc.getIdentifier());
+			ContentHandler handler=trans.getTransformContentHandler(doc.getIdentifier(),doc.datestamp);
 			setContentHandler(handler);
 		} else {
 			doc=null;

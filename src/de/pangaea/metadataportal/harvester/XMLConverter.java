@@ -25,6 +25,7 @@ import javax.xml.validation.*;
 import org.w3c.dom.Document;
 import org.xml.sax.*;
 import java.io.IOException;
+import java.util.Date;
 
 /**
  * This class handles the transformation from any source to the "official" metadata format and can even validate it
@@ -76,6 +77,15 @@ public class XMLConverter  {
 		}
 	}
 
+	private void setTransformerProperties(Transformer trans, String identifier, Date datestamp) throws TransformerException {
+		trans.setErrorListener(new LoggingErrorListener(log));
+		// set variables
+		trans.setParameter(XPathResolverImpl.VARIABLE_INDEX_ID.toString(), iconfig.id);
+		trans.setParameter(XPathResolverImpl.VARIABLE_INDEX_DISPLAYNAME.toString(), iconfig.displayName);
+		trans.setParameter(XPathResolverImpl.VARIABLE_DOC_IDENTIFIER.toString(), identifier);
+		trans.setParameter(XPathResolverImpl.VARIABLE_DOC_DATESTAMP.toString(), (datestamp==null)?null:ISODateFormatter.formatLong(datestamp));
+	}
+
 	public static DOMSource DOMResult2Source(DOMResult dr) {
 		return new DOMSource(dr.getNode(),dr.getSystemId());
 	}
@@ -87,23 +97,18 @@ public class XMLConverter  {
 	public static DOMResult emptyDOMResult(String systemId) {
 		return new DOMResult(StaticFactories.dombuilder.newDocument(),systemId);
 	}
-
+	
 	// Transforms a Source to a DOM w/wo transformation
-	public Document transform(Source s) throws TransformerException,SAXException,IOException {
+	public Document transform(String identifier, Date datestamp, Source s) throws TransformerException,SAXException,IOException {
 		DOMResult dr;
 		if (iconfig.xslt==null && s instanceof DOMSource) {
 			dr=DOMSource2Result((DOMSource)s);
+			dr.setSystemId(identifier);
 		} else {
-			if (log.isDebugEnabled()) log.debug("XSL-Transforming '"+s.getSystemId()+"'...");
+			if (log.isDebugEnabled()) log.debug("XSL-Transforming '"+s.getSystemId()+"' to '"+identifier+"'...");
 			Transformer trans=(iconfig.xslt==null) ? StaticFactories.transFactory.newTransformer() : iconfig.xslt.newTransformer();
-			trans.setErrorListener(new LoggingErrorListener(log));
-			// set variables
-			trans.setParameter(XPathResolverImpl.VARIABLE_INDEX_ID.toString(),iconfig.id);
-			trans.setParameter(XPathResolverImpl.VARIABLE_INDEX_DISPLAYNAME.toString(),iconfig.displayName);
-			trans.setParameter(XPathResolverImpl.VARIABLE_DOC_IDENTIFIER.toString(),s.getSystemId());
-			/* TODO: datestamp is not available yet -> do not set it, maybe fix this for consistency */
-			// transform document
-			dr=emptyDOMResult(s.getSystemId());
+			setTransformerProperties(trans,identifier,datestamp);
+			dr=emptyDOMResult(identifier);
 			trans.transform(s,dr);
 		}
 		Document dom=(Document)(validate(DOMResult2Source(dr), iconfig.xslt!=null).getNode());
@@ -114,14 +119,14 @@ public class XMLConverter  {
 	// ContentHandler part (gets events and converts it to DOM w/wo transformation)
 	private DOMResult dr=null;
 
-	public ContentHandler getTransformContentHandler(String systemId) throws TransformerException {
+	public ContentHandler getTransformContentHandler(String identifier, Date datestamp) throws TransformerException {
 		if (dr!=null) throw new IllegalStateException("XMLConverter is currently convertig a SAX document, you cannot get a new ContentHandler!");
 
-		if (iconfig.xslt!=null && log.isDebugEnabled()) log.debug("XSL-Transforming '"+systemId+"'...");
+		if (iconfig.xslt!=null && log.isDebugEnabled()) log.debug("XSL-Transforming '"+identifier+"'...");
 
 		TransformerHandler handler=(iconfig.xslt==null)?StaticFactories.transFactory.newTransformerHandler():StaticFactories.transFactory.newTransformerHandler(iconfig.xslt);
-		handler.getTransformer().setErrorListener(new LoggingErrorListener(log));
-		dr=emptyDOMResult(systemId);
+		setTransformerProperties(handler.getTransformer(),identifier,datestamp);
+		dr=emptyDOMResult(identifier);
 		handler.setResult(dr);
 		return handler;
 	}
