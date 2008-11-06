@@ -69,7 +69,8 @@ public class SearchServiceImpl {
 
 	public SearchResponseItem getDocument(String indexName, String identifier) throws Exception {
 		SearchService service=new SearchService(cfgFile,indexName);
-		return new SearchResponseItem(service.getDocument(identifier),true,true);
+		SearchResultItem i=service.getDocument(identifier);
+		return (i==null) ? null : new SearchResponseItem(i,true,true);
 	}
 
 	public String[] suggest(String indexName, SearchRequestQuery query, int count) throws Exception {
