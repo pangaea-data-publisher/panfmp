@@ -49,7 +49,7 @@ public class DirectoryHarvester extends SingleFileEntitiesHarvester implements F
 		String s=iconfig.harvesterProperties.getProperty("directory");
 		if (s==null) throw new IllegalArgumentException("Missing directory name to start harvesting (property \"directory\")");
 
-		directory=new File(iconfig.parent.makePathAbsolute(s));
+		directory=new File(iconfig.parent.makePathAbsolute(s,false));
 		recursive=BooleanParser.parseBoolean(iconfig.harvesterProperties.getProperty("recursive","false"));
 		identifierPrefix=iconfig.harvesterProperties.getProperty("identifierPrefix","");
 

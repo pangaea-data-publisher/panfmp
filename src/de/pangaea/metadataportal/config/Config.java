@@ -18,8 +18,11 @@ package de.pangaea.metadataportal.config;
 
 import java.util.*;
 import java.io.*;
+import java.net.URL;
+import java.net.MalformedURLException;
 import de.pangaea.metadataportal.utils.*;
 import org.apache.commons.digester.*;
+import java.lang.reflect.Constructor;
 import org.xml.sax.*;
 import org.xml.sax.helpers.AttributesImpl;
 import javax.xml.XMLConstants;
@@ -155,7 +158,12 @@ public class Config {
 			dig.addDoNothing("config/indexes");
 
 			// SingleIndex
-			dig.addObjectCreate("config/indexes/index", SingleIndexConfig.class);
+			dig.addFactoryCreate("config/indexes/index", new AbstractObjectCreationFactory() {
+				@Override
+				public Object createObject(Attributes attributes) {
+					return new SingleIndexConfig(Config.this);
+				}
+			});
 			dig.addSetNext("config/indexes/index", "addIndex");
 			dig.addCallMethod("config/indexes/index","setId", 1);
 			dig.addCallParam("config/indexes/index", 0, "id");
@@ -172,7 +180,12 @@ public class Config {
 			dig.addCallParam("config/indexes/index/harvesterProperties/*", 1);
 
 			// VirtualIndex
-			dig.addObjectCreate("config/indexes/virtualIndex", VirtualIndexConfig.class);
+			dig.addFactoryCreate("config/indexes/virtualIndex", new AbstractObjectCreationFactory() {
+				@Override
+				public Object createObject(Attributes attributes) {
+					return new VirtualIndexConfig(Config.this);
+				}
+			});
 			dig.addSetNext("config/indexes/virtualIndex", "addIndex");
 			dig.addCallMethod("config/indexes/virtualIndex","setId", 1);
 			dig.addCallParam("config/indexes/virtualIndex", 0, "id");
@@ -208,10 +221,25 @@ public class Config {
 		}
 	}
 
-	public String makePathAbsolute(String file) throws java.io.IOException {
-		File f=new File(file);
-		if (f.isAbsolute()) return f.getCanonicalPath();
-		else return new File(new File(this.file).getAbsoluteFile().getParentFile(),file).getCanonicalPath();
+	/** makes the given local filesystem path absolute and resolve it relative to config directory **/
+	public final String makePathAbsolute(String file) throws java.io.IOException {
+		return makePathAbsolute(file,false);
+	}
+
+	/** makes the given local filesystem path or URL absolute and resolve it relative to config directory (if local) **/
+	public String makePathAbsolute(String file, boolean allowURL) throws java.io.IOException {
+		try {
+			if (allowURL) {
+				return new URL(file).toString();
+			} else  {
+				new URL(file);
+				throw new IllegalArgumentException("You can only use local file system pathes instead of '"+file+"'.");
+			}
+		} catch (MalformedURLException me) {
+			File f=new File(file);
+			if (f.isAbsolute()) return f.getCanonicalPath();
+			else return new File(new File(this.file).getAbsoluteFile().getParentFile(),file).getCanonicalPath();
+		}
 	}
 
 	public void addField(FieldConfig f) {
@@ -254,7 +282,6 @@ public class Config {
 	public void addIndex(IndexConfig i) {
 		if (indexes.containsKey(i.id))
 			throw new IllegalArgumentException("There is already an index with id=\""+i.id+"\" added to configuration!");
-		i.parent=this;
 		if (i instanceof SingleIndexConfig) ((SingleIndexConfig)i).harvesterProperties.setParentProperties(globalHarvesterProperties);
 		i.check();
 		indexes.put(i.id,i);
@@ -364,7 +391,8 @@ public class Config {
 	public void setSchema(String namespace, String url) throws Exception {
 		if (configMode!=ConfigMode.HARVESTING) return; // no schema support when search engine
 		if (schema!=null) throw new SAXException("Schema URL already defined!");
-		url=url.trim();
+		url=makePathAbsolute(url.trim(),true);
+		
 		if (namespace!=null) namespace=namespace.trim();
 		if (namespace==null || "".equals(namespace)) namespace=XMLConstants.W3C_XML_SCHEMA_NS_URI;
 		log.info("Loading XML schema in format '"+namespace+"' from URL '"+url+"'...");
@@ -404,6 +432,18 @@ public class Config {
 			throw new RuntimeException("Error instantiating analyzer (this should never happen)!",e);
 		}
 	}
+	
+	protected Templates loadTemplate(String file) throws Exception {
+		file=makePathAbsolute(file,true);
+		synchronized(templatesCache) {
+			Templates templ=templatesCache.get(file);
+			if (templ==null) {
+				log.info("Loading XSL transformation from '"+file+"'...");
+				templatesCache.put(file,templ=StaticFactories.transFactory.newTemplates(new StreamSource(file)));
+			}
+			return templ;
+		}
+	}
 
 	// members "the configuration"
 	public Map<String,IndexConfig> indexes=new LinkedHashMap<String,IndexConfig>();
@@ -428,12 +468,15 @@ public class Config {
 
 	/*public Templates xsltBeforeXPath=null;*/
 
+	// Template cache
+	private Map<String,Templates> templatesCache=new WeakHashMap<String,Templates>();
+	
 	public Properties searchProperties=new Properties();
 	public Properties globalHarvesterProperties=new Properties();
 
 	public Set<String> luceneStopWords=new HashSet<String>();
 	protected Class<? extends Analyzer> analyzerClass=null;
-	protected java.lang.reflect.Constructor<? extends Analyzer> analyzerConstructor=null;
+	protected Constructor<? extends Analyzer> analyzerConstructor=null;
 
 	public String file;
 	private ConfigMode configMode;
@@ -450,20 +493,22 @@ public class Config {
 		private TemplatesHandler th=null;
 
 		@Override
-		public void begin(java.lang.String namespace, java.lang.String name, Attributes attributes) throws Exception {
-			th=StaticFactories.transFactory.newTemplatesHandler();
-			th.setSystemId(file);
-			setContentHandler(th);
+		public void begin(String namespace, String name, Attributes attributes) throws Exception {
+			if (getContentHandler()==null) {
+				th=StaticFactories.transFactory.newTemplatesHandler();
+				th.setSystemId(file);
+				setContentHandler(th);
+			}
 			super.begin(namespace,name,attributes);
 		}
 
 		protected abstract void setResult(Templates t);
 
 		@Override
-		public void end(java.lang.String namespace, java.lang.String name) throws Exception {
+		public void end(String namespace, String name) throws Exception {
 			super.end(namespace,name);
-			setResult(th.getTemplates());
-			th=null;
+			if (th!=null) setResult(th.getTemplates());
+			setContentHandler(th=null);
 		}
 
 	}
@@ -471,11 +516,33 @@ public class Config {
 	private final class IndexConfigTransformerSaxRule extends TransformerSaxRule {
 
 		@Override
+		public void begin(String namespace, String name, Attributes attributes) throws Exception {
+			final String file=attributes.getValue(XMLConstants.NULL_NS_URI,"href");
+			if (file!=null) {
+				setResult(loadTemplate(file));
+				setContentHandler(new org.xml.sax.helpers.DefaultHandler() {
+					@Override
+					public void startElement(String namespaceURI, String localName, String qName, Attributes atts) throws SAXException {
+						throw new SAXException("No element content allowed here. You can either include an XSL template directly into the config file or use the 'href' attribute!");
+					}
+					@Override
+					public void characters(char[] ch, int start, int length) throws SAXException {
+						for (int i=0; i<length; i++) {
+							if (Character.isWhitespace(ch[start+i])) continue;
+							throw new SAXException("No element content allowed here. You can either include an XSL template directly into the config file or use the 'href' attribute!");
+						}
+					}
+				});
+			}
+			super.begin(namespace,name,attributes);
+		}
+
+		@Override
 		protected void setResult(Templates t) {
 			Object o=digester.peek();
 			if (o instanceof SingleIndexConfig) ((SingleIndexConfig)o).xslt=t;
 			/*else if (o instanceof Config) ((Config)o).xsltBeforeXPath=t; // the config itsself*/
-			else throw new RuntimeException("A XSLT tree is not allowed here!");
+			else throw new RuntimeException("An XSLT tree is not allowed here!");
 		}
 
 	}
@@ -537,7 +604,7 @@ public class Config {
 		protected void setResult(Templates t) {
 			Object o=digester.peek();
 			if (o instanceof ExpressionConfig) ((ExpressionConfig)o).setTemplate(t);
-			else throw new RuntimeException("A XSLT template is not allowed here!");
+			else throw new RuntimeException("An XSLT template is not allowed here!");
 		}
 
 		private static final String XSL_NAMESPACE="http://www.w3.org/1999/XSL/Transform";
