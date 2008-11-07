@@ -29,6 +29,10 @@ import javax.xml.transform.sax.*;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.*;
 import org.apache.lucene.document.Field;
+import org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.analysis.StopAnalyzer;
+import org.apache.lucene.analysis.Analyzer;
 
 /**
  * Main panFMP configuration class. It loads the configuration from a XML file.
@@ -47,9 +51,9 @@ public class Config {
 		if (version!=null) log.info(version);
 		de.pangaea.metadataportal.Package.checkMinimumRequirements();
 
-		setAnalyzerClass(org.apache.lucene.analysis.standard.StandardAnalyzer.class);
-		org.apache.lucene.search.BooleanQuery.setMaxClauseCount(DEFAULT_MAX_CLAUSE_COUNT);
-		org.apache.lucene.search.BooleanQuery.setAllowDocsOutOfOrder(true);
+		setAnalyzerClass(StandardAnalyzer.class);
+		BooleanQuery.setMaxClauseCount(DEFAULT_MAX_CLAUSE_COUNT);
+		BooleanQuery.setAllowDocsOutOfOrder(true);
 		try {
 			final Class[] DIGSTRING_PARAMS=new Class[]{ExtendedDigester.class,String.class};
 
@@ -313,17 +317,17 @@ public class Config {
 	@PublicForDigesterUse
 	@Deprecated
 	public void importEnglishStopWords(String dummy) {
-		luceneStopWords.addAll(Arrays.asList(org.apache.lucene.analysis.StopAnalyzer.ENGLISH_STOP_WORDS));
+		luceneStopWords.addAll(Arrays.asList(StopAnalyzer.ENGLISH_STOP_WORDS));
 	}
 
 	@PublicForDigesterUse
 	@Deprecated
 	public void setAnalyzer(String v) throws Exception {
 		Class<?> c=Class.forName(v.trim());
-		setAnalyzerClass(c.asSubclass(org.apache.lucene.analysis.Analyzer.class));
+		setAnalyzerClass(c.asSubclass(Analyzer.class));
 	}
 
-	public void setAnalyzerClass(Class<? extends org.apache.lucene.analysis.Analyzer> c) throws Exception {
+	public void setAnalyzerClass(Class<? extends Analyzer> c) throws Exception {
 		analyzerClass=c;
 		try {
 			analyzerConstructor=analyzerClass.getConstructor(String[].class);
@@ -336,14 +340,16 @@ public class Config {
 	@PublicForDigesterUse
 	@Deprecated
 	public void addSearchProperty(String value) {
-		String name=dig.getCurrentElementName();
+		final String name=dig.getCurrentElementName();
+		if (value==null) return;
+		value=value.trim();
 		if ("maxClauseCount".equals(name)) {
 			if ("inf".equals(value))
-				org.apache.lucene.search.BooleanQuery.setMaxClauseCount(Integer.MAX_VALUE);
+				BooleanQuery.setMaxClauseCount(Integer.MAX_VALUE);
 			else
-				org.apache.lucene.search.BooleanQuery.setMaxClauseCount(Integer.parseInt(value));
+				BooleanQuery.setMaxClauseCount(Integer.parseInt(value));
 		} else {
-		// default
+			// default
 			searchProperties.setProperty(name,value);
 		}
 	}
@@ -384,7 +390,7 @@ public class Config {
 
 	// get configuration infos
 
-	public org.apache.lucene.analysis.Analyzer getAnalyzer() {
+	public Analyzer getAnalyzer() {
 		try {
 			if (analyzerConstructor!=null) {
 				if (log.isDebugEnabled()) log.debug("Using stop words: "+luceneStopWords);
@@ -426,8 +432,8 @@ public class Config {
 	public Properties globalHarvesterProperties=new Properties();
 
 	public Set<String> luceneStopWords=new HashSet<String>();
-	protected Class<? extends org.apache.lucene.analysis.Analyzer> analyzerClass=null;
-	protected java.lang.reflect.Constructor<? extends org.apache.lucene.analysis.Analyzer> analyzerConstructor=null;
+	protected Class<? extends Analyzer> analyzerClass=null;
+	protected java.lang.reflect.Constructor<? extends Analyzer> analyzerConstructor=null;
 
 	public String file;
 	private ConfigMode configMode;

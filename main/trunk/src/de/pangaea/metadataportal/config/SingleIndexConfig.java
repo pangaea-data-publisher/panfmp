@@ -56,7 +56,7 @@ public class SingleIndexConfig extends IndexConfig {
 	@PublicForDigesterUse
 	@Deprecated
 	public void addHarvesterProperty(ExtendedDigester dig, String value) {
-		harvesterProperties.setProperty(dig.getCurrentElementName(),value);
+		if (value!=null) harvesterProperties.setProperty(dig.getCurrentElementName(),value.trim());
 	}
 
 	@Override

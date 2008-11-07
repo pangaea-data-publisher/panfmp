@@ -51,7 +51,7 @@ public class DirectoryHarvester extends SingleFileEntitiesHarvester implements F
 
 		directory=new File(iconfig.parent.makePathAbsolute(s));
 		recursive=BooleanParser.parseBoolean(iconfig.harvesterProperties.getProperty("recursive","false"));
-		identifierPrefix=iconfig.harvesterProperties.getProperty("identifierPrefix","").trim();
+		identifierPrefix=iconfig.harvesterProperties.getProperty("identifierPrefix","");
 
 		s=iconfig.harvesterProperties.getProperty("filenameFilter");
 		filenameFilter=(s==null) ? null : Pattern.compile(s);
