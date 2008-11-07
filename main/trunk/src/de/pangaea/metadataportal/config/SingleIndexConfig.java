@@ -151,6 +151,6 @@ public class SingleIndexConfig extends IndexConfig {
 	private String indexDir=null;
 	private volatile Directory indexDirImpl=null;
 	public Class<? extends de.pangaea.metadataportal.harvester.Harvester> harvesterClass=null;
-	public InheritedProperties harvesterProperties=new InheritedProperties();
+	public final InheritedProperties harvesterProperties=new InheritedProperties();
 	public Templates xslt=null;
 }

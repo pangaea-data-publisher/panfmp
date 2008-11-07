@@ -115,5 +115,5 @@ public abstract class IndexConfig {
 
 	// members "the configuration"
 	public String displayName=null,id=null;
-	public Config parent=null;
+	public final Config parent;
 }

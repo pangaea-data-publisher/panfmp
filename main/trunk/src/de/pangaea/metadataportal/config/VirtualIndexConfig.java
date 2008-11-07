@@ -102,7 +102,7 @@ public class VirtualIndexConfig extends IndexConfig {
 		replaceSharedIndexReader(null);
 	}	
 
-	private Set<String> indexIds=new HashSet<String>();
+	private final Set<String> indexIds=new HashSet<String>();
 
 	// members "the configuration"
 	public IndexConfig[] indexes=null;

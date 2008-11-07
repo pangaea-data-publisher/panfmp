@@ -446,18 +446,18 @@ public class Config {
 	}
 
 	// members "the configuration"
-	public Map<String,IndexConfig> indexes=new LinkedHashMap<String,IndexConfig>();
+	public final Map<String,IndexConfig> indexes=new LinkedHashMap<String,IndexConfig>();
 
-	public Map<String,FieldConfig> fields=new LinkedHashMap<String,FieldConfig>();
+	public final Map<String,FieldConfig> fields=new LinkedHashMap<String,FieldConfig>();
 	public ExpressionConfig defaultField=null;
 	public Field.TermVector defaultFieldTermVectors=Field.TermVector.NO;
 
 	// filters
 	public FilterConfig.FilterType filterDefault=FilterConfig.FilterType.ACCEPT;
-	public List<FilterConfig> filters=new ArrayList<FilterConfig>();
+	public final List<FilterConfig> filters=new ArrayList<FilterConfig>();
 
 	// variables
-	public List<VariableConfig> xPathVariables=new ArrayList<VariableConfig>();
+	public final List<VariableConfig> xPathVariables=new ArrayList<VariableConfig>();
 
 	// schema etc
 	public Schema schema=null;
@@ -469,12 +469,12 @@ public class Config {
 	/*public Templates xsltBeforeXPath=null;*/
 
 	// Template cache
-	private Map<String,Templates> templatesCache=new WeakHashMap<String,Templates>();
+	private final Map<String,Templates> templatesCache=new WeakHashMap<String,Templates>();
 	
-	public Properties searchProperties=new Properties();
-	public Properties globalHarvesterProperties=new Properties();
+	public final Properties searchProperties=new Properties();
+	public final Properties globalHarvesterProperties=new Properties();
 
-	public Set<String> luceneStopWords=new HashSet<String>();
+	public final Set<String> luceneStopWords=new HashSet<String>();
 	protected Class<? extends Analyzer> analyzerClass=null;
 	protected Constructor<? extends Analyzer> analyzerConstructor=null;
 
