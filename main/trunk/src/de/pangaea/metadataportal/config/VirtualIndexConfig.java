@@ -34,8 +34,9 @@ public class VirtualIndexConfig extends IndexConfig {
 
 	private static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(VirtualIndexConfig.class);
 
-	public VirtualIndexConfig() {
-		super();
+	/** Default constructor **/
+	public VirtualIndexConfig(Config parent) {
+		super(parent);
 	}
 
 	/** Adds an index by its id to the configuration. **/

@@ -30,6 +30,11 @@ import de.pangaea.metadataportal.utils.AutoCloseIndexReader;
 public abstract class IndexConfig {
 
 	private static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(IndexConfig.class);
+	
+	/** Default constructor **/
+	public IndexConfig(Config parent) {
+		this.parent=parent;
+	}
 
 	/** Sets the ID of this index configuration. **/
 	public void setId(String v) {

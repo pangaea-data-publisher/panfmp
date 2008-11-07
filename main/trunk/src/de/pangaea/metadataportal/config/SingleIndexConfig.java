@@ -19,6 +19,7 @@ package de.pangaea.metadataportal.config;
 import java.util.*;
 import de.pangaea.metadataportal.utils.*;
 import javax.xml.transform.Templates;
+import javax.xml.transform.stream.StreamSource;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.store.FSDirectory;
@@ -34,12 +35,14 @@ public class SingleIndexConfig extends IndexConfig {
 
 	private static Log log = LogFactory.getLog(SingleIndexConfig.class);
 
-	public SingleIndexConfig() {
-		super();
+	/** Default constructor **/
+	public SingleIndexConfig(Config parent) {
+		super(parent);
 	}
 
 	/** Sets index directory (called from Digester on config load). **/
 	public synchronized void setIndexDir(String v) throws java.io.IOException {
+		if (checked) throw new IllegalStateException("Index configuration cannot be changed anymore!");
 		if (indexDirImpl!=null) indexDirImpl.close();
 		indexDirImpl=null;
 		indexDir=v;
@@ -49,6 +52,7 @@ public class SingleIndexConfig extends IndexConfig {
 	@PublicForDigesterUse
 	@Deprecated
 	public void setHarvesterClass(String v) throws ClassNotFoundException {
+		if (checked) throw new IllegalStateException("Index configuration cannot be changed anymore!");
 		harvesterClass=Class.forName(v).asSubclass(de.pangaea.metadataportal.harvester.Harvester.class);
 	}
 
@@ -56,6 +60,7 @@ public class SingleIndexConfig extends IndexConfig {
 	@PublicForDigesterUse
 	@Deprecated
 	public void addHarvesterProperty(ExtendedDigester dig, String value) {
+		if (checked) throw new IllegalStateException("Index configuration cannot be changed anymore!");
 		if (value!=null) harvesterProperties.setProperty(dig.getCurrentElementName(),value.trim());
 	}
 
@@ -80,7 +85,7 @@ public class SingleIndexConfig extends IndexConfig {
 
 	/** Returns the local, expanded file system path to index. **/
 	public String getFullIndexPath() throws java.io.IOException {
-		return parent.makePathAbsolute(indexDir);
+		return parent.makePathAbsolute(indexDir,false);
 	}
 
 	/** Returns the directory implementation, that contains the index. **/
