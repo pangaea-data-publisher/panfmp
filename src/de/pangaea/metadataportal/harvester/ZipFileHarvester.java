@@ -66,14 +66,13 @@ public class ZipFileHarvester extends SingleFileEntitiesHarvester {
 
 		zipFile=iconfig.harvesterProperties.getProperty("zipFile");
 		if (zipFile==null) throw new IllegalArgumentException("Missing name / URL of ZIP file to harvest (property \"zipFile\")");
-		zipFile=zipFile.trim();
 		try {
 			new URL(zipFile); // just test
 		} catch (MalformedURLException urle) {
 			zipFile=iconfig.parent.makePathAbsolute(zipFile);
 		}
 
-		identifierPrefix=iconfig.harvesterProperties.getProperty("identifierPrefix","").trim();
+		identifierPrefix=iconfig.harvesterProperties.getProperty("identifierPrefix","");
 
 		String s=iconfig.harvesterProperties.getProperty("filenameFilter");
 		filenameFilter=(s==null) ? null : Pattern.compile(s);
