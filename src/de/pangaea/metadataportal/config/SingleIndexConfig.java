@@ -19,7 +19,6 @@ package de.pangaea.metadataportal.config;
 import java.util.*;
 import de.pangaea.metadataportal.utils.*;
 import javax.xml.transform.Templates;
-import javax.xml.transform.stream.StreamSource;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.store.FSDirectory;

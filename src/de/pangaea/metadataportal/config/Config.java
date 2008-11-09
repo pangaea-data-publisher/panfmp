@@ -517,7 +517,7 @@ public class Config {
 
 		@Override
 		public void begin(String namespace, String name, Attributes attributes) throws Exception {
-			final String file=attributes.getValue(XMLConstants.NULL_NS_URI,"href");
+			final String file=attributes.getValue(XMLConstants.NULL_NS_URI,"src");
 			if (file!=null) {
 				setResult(loadTemplate(file));
 				setContentHandler(new org.xml.sax.helpers.DefaultHandler() {
