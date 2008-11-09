@@ -31,7 +31,7 @@ import org.xml.sax.*;
  */
 public class ExtendedDigester extends Digester {
 
-	protected HashMap<String,ArrayStack> currentNamespaceMap=new HashMap<String,ArrayStack>();
+	protected final HashMap<String,ArrayStack> currentNamespaceMap=new HashMap<String,ArrayStack>();
 	protected ContentHandler custContentHandler=null;
 
 	public ExtendedDigester() { super(); }
@@ -72,6 +72,12 @@ public class ExtendedDigester extends Digester {
 		WithDefaultsRulesWrapper r=new WithDefaultsRulesWrapper(rules);
 		r.addDefault(new InvalidElementRule());
 		super.setRules(r);
+	}
+	
+	@Override
+	public void clear() {
+		currentNamespaceMap.clear();
+		super.clear();
 	}
 
 	// *** START: ContentHandler (to fix bugs in original digester that prevent some events from working)
@@ -150,6 +156,12 @@ public class ExtendedDigester extends Digester {
 			custContentHandler.skippedEntity(name);
 		else
 			super.skippedEntity(name);
+	}
+	
+	@Override
+	public void startDocument() throws SAXException {
+		currentNamespaceMap.clear();
+		super.startDocument();
 	}
 
 	// *** END: ContentHandler

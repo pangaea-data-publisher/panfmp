@@ -205,10 +205,10 @@ public final class LuceneCache {
 	private int keepOldReaderAlive=DEFAULT_KEEP_OLD_READER_ALIVE;
 	private int reloadIndexIfChangedAfter=DEFAULT_RELOAD_AFTER;
 	private int fetchFactor=DEFAULT_FETCH_FACTOR;
-	private Map<String,Query> storedQueries;
-	private Map<String,Session> sessions;
+	private final Map<String,Query> storedQueries;
+	private final Map<String,Session> sessions;
 
-	protected Config config;
+	protected final Config config;
 
 	public static final int DEFAULT_CACHE_MAX_AGE=5*60; // default 5 minutes
 	public static final int DEFAULT_INDEX_CHANGE_CHECK_INTERVAL=30; // 30 seconds to poll for index change
@@ -270,12 +270,12 @@ public final class LuceneCache {
 			}
 		}
 
-		protected LuceneCache parent;
-		protected Searcher searcher;
-		private Query query;
-		private Sort sort;
-		protected long lastAccess;
+		protected final LuceneCache parent;
+		private final Query query;
+		private final Sort sort;
 		
+		protected Searcher searcher;
+		protected long lastAccess;
 		protected long queryTime=0L;
 		protected TopDocs topDocs=null;
 		protected int fetchedCount=0;
