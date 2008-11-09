@@ -18,6 +18,7 @@ package de.pangaea.metadataportal.config;
 
 import java.util.*;
 import de.pangaea.metadataportal.utils.*;
+import de.pangaea.metadataportal.harvester.Harvester;
 import javax.xml.transform.Templates;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
@@ -37,6 +38,7 @@ public class SingleIndexConfig extends IndexConfig {
 	/** Default constructor **/
 	public SingleIndexConfig(Config parent) {
 		super(parent);
+		harvesterProperties=new Properties(parent.globalHarvesterProperties);
 	}
 
 	/** Sets index directory (called from Digester on config load). **/
@@ -52,7 +54,7 @@ public class SingleIndexConfig extends IndexConfig {
 	@Deprecated
 	public void setHarvesterClass(String v) throws ClassNotFoundException {
 		if (checked) throw new IllegalStateException("Index configuration cannot be changed anymore!");
-		harvesterClass=Class.forName(v).asSubclass(de.pangaea.metadataportal.harvester.Harvester.class);
+		harvesterClass=Class.forName(v).asSubclass(Harvester.class);
 	}
 
 	/** Adds property for harvester (called from Digester on config load). **/
@@ -64,15 +66,11 @@ public class SingleIndexConfig extends IndexConfig {
 	}
 
 	@Override
-	public void check() {
+	public void check() throws Exception {
 		super.check();
 		if (indexDir==null || harvesterClass==null)
 			throw new IllegalStateException("Some index configuration fields are missing for index with id=\""+id+"\"!");
-	}
-
-	/** Checks all harvester properties for validity. **/
-	public void checkProperties() throws Exception {
-		de.pangaea.metadataportal.harvester.Harvester h=harvesterClass.newInstance();
+		Harvester h=harvesterClass.newInstance();
 		Set<String> validProperties=h.getValidHarvesterPropertyNames();
 		@SuppressWarnings("unchecked") Enumeration<String> en=(Enumeration<String>)harvesterProperties.propertyNames();
 		while (en.hasMoreElements()) {
@@ -149,7 +147,7 @@ public class SingleIndexConfig extends IndexConfig {
 	// members "the configuration"
 	private String indexDir=null;
 	private volatile Directory indexDirImpl=null;
-	public Class<? extends de.pangaea.metadataportal.harvester.Harvester> harvesterClass=null;
-	public final InheritedProperties harvesterProperties=new InheritedProperties();
+	public Class<? extends Harvester> harvesterClass=null;
+	public final Properties harvesterProperties;
 	public Templates xslt=null;
 }

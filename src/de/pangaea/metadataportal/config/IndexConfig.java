@@ -48,7 +48,7 @@ public abstract class IndexConfig {
 	}
 
 	/** Checks, if configuration is ok. After calling this, you are not able to change anything in this instance. **/
-	public void check() {
+	public void check() throws Exception {
 		if (id==null) throw new IllegalStateException("Every index needs a unique id!");
 		if (displayName==null || "".equals(displayName)) throw new IllegalStateException("Index with id=\""+id+"\" has no displayName!");
 		checked=true;
