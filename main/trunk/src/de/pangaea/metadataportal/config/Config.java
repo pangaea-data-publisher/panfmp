@@ -215,10 +215,9 @@ public class Config {
 			dig=null;
 		}
 
-		// check some consistency things
-		for (IndexConfig iconf : indexes.values()) {
-			if (iconf instanceof SingleIndexConfig) ((SingleIndexConfig)iconf).checkProperties();
-		}
+		// *** After loading do final checks ***
+		// consistency in indexes:
+		for (IndexConfig iconf : indexes.values()) iconf.check();
 	}
 
 	/** makes the given local filesystem path absolute and resolve it relative to config directory **/
@@ -282,8 +281,6 @@ public class Config {
 	public void addIndex(IndexConfig i) {
 		if (indexes.containsKey(i.id))
 			throw new IllegalArgumentException("There is already an index with id=\""+i.id+"\" added to configuration!");
-		if (i instanceof SingleIndexConfig) ((SingleIndexConfig)i).harvesterProperties.setParentProperties(globalHarvesterProperties);
-		i.check();
 		indexes.put(i.id,i);
 	}
 

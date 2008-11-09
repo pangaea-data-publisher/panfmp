@@ -55,7 +55,7 @@ public class VirtualIndexConfig extends IndexConfig {
 	}
 
 	@Override
-	public void check() {
+	public void check() throws Exception {
 		super.check();
 		if (indexIds.size()==0) throw new IllegalStateException("Virtual index with id=\""+id+"\" does not reference any index!");
 		indexes=new IndexConfig[indexIds.size()];
