@@ -32,12 +32,16 @@ public final class StaticFactories {
 
 	public static final XPathFactory xpathFactory;
 	public static final SAXTransformerFactory transFactory;
-	public static final SAXParserFactory xinclSaxFactory;
+	public static final SAXParserFactory xinclSaxFactory,saxFactory;
 	public static final DocumentBuilderFactory dbf;
 	public static final DocumentBuilder dombuilder;
 	static {
 		try {
 			xpathFactory=XPathFactory.newInstance();
+
+			saxFactory=SAXParserFactory.newInstance();
+			saxFactory.setNamespaceAware(true);
+			saxFactory.setValidating(false);
 
 			xinclSaxFactory=SAXParserFactory.newInstance();
 			xinclSaxFactory.setNamespaceAware(true);

@@ -401,7 +401,7 @@ public class WebCrawlingHarvester extends SingleFileEntitiesHarvester {
 								InputSource src=new InputSource(in);
 								src.setSystemId(url.toString());
 								src.setEncoding(charset);
-								SAXSource saxsrc=new SAXSource(StaticFactories.xinclSaxFactory.newSAXParser().getXMLReader(), src);
+								SAXSource saxsrc=new SAXSource(StaticFactories.saxFactory.newSAXParser().getXMLReader(), src);
 								addDocument(url.toString(),lastModified,saxsrc);
 							} finally {
 								in.close();
