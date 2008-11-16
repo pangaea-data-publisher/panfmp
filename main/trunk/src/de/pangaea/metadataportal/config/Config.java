@@ -554,10 +554,8 @@ public class Config {
 
 			// generate prefixes to exclude (all currently defined; if they appear, they will be explicitely defined by processor)
 			StringBuilder excludePrefixes=new StringBuilder("#default ").append(XSL_PREFIX);
-			for (String prefix : ((ExtendedDigester)digester).getCurrentPrefixMappings().keySet()) {
-				if (!XMLConstants.DEFAULT_NS_PREFIX.equals(prefix)) {
-					excludePrefixes.append(' ').append(prefix);
-				}
+			for (String prefix : ((ExtendedDigester)digester).getCurrentAssignedPrefixes()) {
+				if (!XMLConstants.DEFAULT_NS_PREFIX.equals(prefix)) excludePrefixes.append(' ').append(prefix);
 			}
 			atts.addAttribute(XMLConstants.NULL_NS_URI,"exclude-result-prefixes","exclude-result-prefixes",CNAME,excludePrefixes.toString());
 
