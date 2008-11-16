@@ -18,20 +18,20 @@ package de.pangaea.metadataportal.utils;
 
 import javax.xml.XMLConstants;
 import java.util.*;
-import org.apache.commons.collections.ArrayStack;
 import org.apache.commons.digester.*;
 import org.xml.sax.*;
+import javax.xml.namespace.NamespaceContext;
 
 /**
  * Extension of the Commons Digester Class, that works around some limitations/bugs. It is
- * especially important for {@link SaxRule}, as it supports a stack of namespace-prefix assignments,
+ * especially important for {@link SaxRule}, as it supports a stack/list of namespace-prefix assignments,
  * and contains a integrated error handler. It also gives the possibility to not allow
  * invalid element names.
  * @author Uwe Schindler
  */
 public class ExtendedDigester extends Digester {
 
-	protected final HashMap<String,ArrayStack> currentNamespaceMap=new HashMap<String,ArrayStack>();
+	protected final HashMap<String,LinkedList<String>> currentNamespaceMap=new HashMap<String,LinkedList<String>>();
 	protected ContentHandler custContentHandler=null;
 
 	public ExtendedDigester() { super(); }
@@ -84,13 +84,9 @@ public class ExtendedDigester extends Digester {
 
 	@Override
 	public void startPrefixMapping(String prefix, String uri) throws SAXException {
-		ArrayStack stack=null;
-		if (currentNamespaceMap.containsKey(prefix)) stack=currentNamespaceMap.get(prefix);
-		else {
-			stack=new ArrayStack();
-			currentNamespaceMap.put(prefix,stack);
-		}
-		stack.push(uri);
+		LinkedList<String> stack=currentNamespaceMap.get(prefix);
+		if (stack==null) currentNamespaceMap.put(prefix,stack=new LinkedList<String>());
+		stack.addFirst(uri);
 
 		if (custContentHandler!=null)
 			custContentHandler.startPrefixMapping(prefix,uri);
@@ -105,9 +101,9 @@ public class ExtendedDigester extends Digester {
 		else
 			super.endPrefixMapping(prefix);
 
-		ArrayStack stack=currentNamespaceMap.get(prefix);
-		stack.remove();
-		if (stack.empty()) currentNamespaceMap.remove(prefix);
+		final LinkedList<String> stack=currentNamespaceMap.get(prefix);
+		stack.removeFirst();
+		if (stack.isEmpty()) currentNamespaceMap.remove(prefix);
 	}
 
 	@Override
@@ -194,29 +190,54 @@ public class ExtendedDigester extends Digester {
 
 	// this is a better implementation than in the original digester version 1.8
 
-	/** Returns <b>all</b> current namespace prefix mappings as {@link Map} containing the prefix
-	 * and all assigned namespaces as Stack, with the top element containing the current namespace. */
-	public Map<String,ArrayStack> getCurrentPrefixMappings() {
-		return Collections.unmodifiableMap(currentNamespaceMap);
+	/** Replays all current prefix mappings for another <code>ContentHandler</code> (start mapping).
+	 * @param handler the handler which {@link ContentHandler#startPrefixMapping} is called.
+	 * @param excludeNamespaces are prefixes for namespaces that should not be reported.
+	 */
+	public void replayStartPrefixMappings(final ContentHandler handler, final Set<String> excludeNamespaces) throws SAXException {
+		for (Map.Entry<String,LinkedList<String>> e : currentNamespaceMap.entrySet()) {
+			final String ns=e.getValue().getFirst();
+			if (!excludeNamespaces.contains(ns)) handler.startPrefixMapping(e.getKey(),ns);
+		}
 	}
 
-	/** Returns the current namespace prefix mappings as {@link Map} containing the prefix
-	 * and the current namespace assignment. */
+	/** Replays all current prefix mappings for another <code>ContentHandler</code> (end mapping).
+	 * @param handler the handler which {@link ContentHandler#endPrefixMapping} is called.
+	 * @param excludeNamespaces are prefixes for namespaces that should not be reported.
+	 */
+	public void replayEndPrefixMappings(final ContentHandler handler, final Set<String> excludeNamespaces) throws SAXException {
+		for (Map.Entry<String,LinkedList<String>> e : currentNamespaceMap.entrySet()) {
+			if (!excludeNamespaces.contains(e.getValue().getFirst())) handler.endPrefixMapping(e.getKey());
+		}
+	}
+
+	/** Returns <b>all</b> current namespace prefix that are assigned. */
+	public Set<String> getCurrentAssignedPrefixes() {
+		return Collections.unmodifiableSet(currentNamespaceMap.keySet());
+	}
+
+	/** Returns the current namespace URI for the given prefix. */
+	public String getCurrentNamespaceForPrefix(String prefix) {
+		final LinkedList<String> ns=currentNamespaceMap.get(prefix);
+		return (ns==null) ? null : ns.getFirst();
+	}
+
+	/** Returns the current namespace prefix mappings as modifiable {@link Map} containing the prefix
+	 * and the current namespace assignment (it is just a copy of the internal representation's current mapping). */
 	public Map<String,String> getCurrentNamespaceMap() {
-		HashMap<String,String> n=new HashMap<String,String>(currentNamespaceMap.size());
-		for (Map.Entry<String,ArrayStack> i : currentNamespaceMap.entrySet()) {
-			ArrayStack stack=i.getValue();
-			n.put(i.getKey(), (String)stack.peek());
+		final HashMap<String,String> n=new HashMap<String,String>(currentNamespaceMap.size());
+		for (Map.Entry<String,LinkedList<String>> i : currentNamespaceMap.entrySet()) {
+			n.put(i.getKey(), i.getValue().getFirst());
 		}
 		return n;
 	}
 
 	/**
-	 * Returns the current {@link javax.xml.namespace.NamespaceContext} for executing XPath expressions.
+	 * Returns the current {@link NamespaceContext} for compiling XPath expressions.
 	 * @param strict denotes, that undeclared prefixes throw an {@link IllegalArgumentException}, like XSLT does it.
 	 * @param reDefineDefaultPrefix denotes, that the default "xmlns" is reassigned. This conforms to XSLT.
 	 */
-	public javax.xml.namespace.NamespaceContext getCurrentNamespaceContext(boolean strict, boolean reDefineDefaultPrefix) {
+	public NamespaceContext getCurrentNamespaceContext(boolean strict, boolean reDefineDefaultPrefix) {
 		// create Map
 		final boolean isStrict=strict;
 		final Map<String,String> prefixToNS=getCurrentNamespaceMap();
@@ -237,7 +258,7 @@ public class ExtendedDigester extends Digester {
 			log.debug("Reverse NamespaceContext map: "+nsToPrefix);
 		}
 		// create return class
-		return new javax.xml.namespace.NamespaceContext() {
+		return new NamespaceContext() {
 			public String getNamespaceURI(String prefix) {
 				if (prefix==null)
 					throw new IllegalArgumentException("Namespace prefix cannot be null");
@@ -268,7 +289,7 @@ public class ExtendedDigester extends Digester {
 
 	private static final class InvalidElementRule extends Rule {
 
-		public void begin(java.lang.String namespace, java.lang.String name, org.xml.sax.Attributes attributes) throws java.lang.Exception {
+		public void begin(String namespace, String name, Attributes attributes) throws Exception {
 			throw new SAXException("Unknown element at XML path: '"+digester.getMatch()+"'; tagname: '{"+namespace+"}"+name+"'");
 		}
 

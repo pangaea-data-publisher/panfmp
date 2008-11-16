@@ -17,7 +17,6 @@
 package de.pangaea.metadataportal.utils;
 
 import java.util.*;
-import org.apache.commons.collections.ArrayStack;
 import de.pangaea.metadataportal.utils.*;
 import org.xml.sax.helpers.XMLFilterImpl;
 import org.xml.sax.*;
@@ -120,10 +119,7 @@ public class SaxRule extends org.apache.commons.digester.Rule {
 		destContentHandler.startDocument();
 
 		// register namespace prefixes
-		for (Map.Entry<String,ArrayStack> e : ((ExtendedDigester)digester).getCurrentPrefixMappings().entrySet()) {
-			String ns=(String)e.getValue().peek();
-			if (!excludeNamespaces.contains(ns)) destContentHandler.startPrefixMapping(e.getKey(),ns);
-		}
+		((ExtendedDigester)digester).replayStartPrefixMappings(destContentHandler,excludeNamespaces);
 
 		initDocument();
 	}
@@ -133,9 +129,7 @@ public class SaxRule extends org.apache.commons.digester.Rule {
 		finishDocument();
 
 		// un-register namespace prefixes
-		for (Map.Entry<String,ArrayStack> e : ((ExtendedDigester)digester).getCurrentPrefixMappings().entrySet()) {
-			if (!excludeNamespaces.contains((String)e.getValue().peek())) destContentHandler.endPrefixMapping(e.getKey());
-		}
+		((ExtendedDigester)digester).replayEndPrefixMappings(destContentHandler,excludeNamespaces);
 
 		destContentHandler.endDocument();
 	}
