@@ -89,9 +89,7 @@
 				<cfg:autoOptimize>true</cfg:autoOptimize>
 				<cfg:validate>true</cfg:validate>
 			</cfg:harvesterProperties>
-			<!--<cfg:transform>
-                <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="./ns-convert.xslt"/>
-            </cfg:transform>-->
+			<!--<cfg:transform src="./ns-convert.xslt"/>-->
 		</cfg:index>
 		<cfg:index id="copepod">
 			<cfg:displayName>COPEPOD</cfg:displayName>
