@@ -33,7 +33,7 @@ public class SearchRequest implements java.io.Serializable {
 		if (storedQueryHash!=null) {
 			if (queries!=null || ranges!=null)
 				throw new IllegalArgumentException("If you use a hash of a stored query, you may not give other constraints!");
-			Query q=service.readStoredQuery(storedQueryHash);
+			Query q=service.readStoredQuery(UUID.fromString(storedQueryHash));
 			if (q==null)
 				throw new IllegalArgumentException("The stored query is no longer available!");
 			return q;
