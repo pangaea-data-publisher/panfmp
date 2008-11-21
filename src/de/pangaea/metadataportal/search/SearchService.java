@@ -634,30 +634,33 @@ public class SearchService {
 	}
 
 	/**
-	 * Stores a query for later use in the cache. The query can be retrieved again using the returned string, which is an opaque
-	 * hash code.
+	 * Stores a query for later use in the cache. The query can be retrieved again using the returned UUID.
 	 * <p>This function can be used to store a query a user generated in your web interface for later use,
 	 * e.g. if you generate a query by the web service interface of panFMP and want to use it later in a Java Servlet for generating a
 	 * geographical map of document locations using the Collector API. In this case you store the query using the web service and supply the hash code
-	 * as a parameter to the servlet.
+	 * as a parameter to the servlet. See the examples for that.
+	 * <p>This method returns a UUID, the AXIS webservice itsself uses Strings (as there is no spec. for UUIDs in WSDL files),
+	 * you may convert the result to a String with {@link UUID#toString()}.
 	 * @param query the query to store.
-	 * @return a hash code identifying the query.
+	 * @return a UUID code identifying the query.
 	 * @see #readStoredQuery
 	 */
-	public String storeQuery(Query query) {
+	public UUID storeQuery(final Query query) {
 		return cache.storeQuery(query);
 	}
 
 	/**
 	 * Reads a query identified by a hash code from the cache.
-	 * @param hash the hash code returned by {@link #storeQuery}.
+	 * @param uuid the UUID returned by {@link #storeQuery}. The AXIS webservice itsself uses Strings
+	 * (as there is no spec. for UUIDs in WSDL files); you may convert the String from the webservice
+	 * with {@link UUID#fromString(String)} to an UUID.
 	 * @return the stored query or <code>null</code> if the hash code does not specify a query. This method may return <code>null</code>,
 	 * even if a query identified by this hash existed in the past, when the query store is full and older (LRU) queries are removed by
 	 * previous {@link #storeQuery} calls.
 	 * @see #storeQuery
 	 */
-	public Query readStoredQuery(String hash) {
-		return cache.readStoredQuery(hash);
+	public Query readStoredQuery(final UUID uuid) {
+		return cache.readStoredQuery(uuid);
 	}
 
 	/**

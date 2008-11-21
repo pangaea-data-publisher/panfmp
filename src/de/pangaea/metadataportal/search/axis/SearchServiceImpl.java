@@ -93,7 +93,7 @@ public class SearchServiceImpl {
 
 	public String storeQuery(SearchRequest req) throws Exception {
 		SearchService service=new SearchService(cfgFile,req.indexName);
-		return service.storeQuery(req.getLuceneQuery(service));
+		return service.storeQuery(req.getLuceneQuery(service)).toString();
 	}
 
 	private String cfgFile;

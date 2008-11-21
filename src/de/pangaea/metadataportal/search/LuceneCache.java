@@ -17,10 +17,10 @@
 package de.pangaea.metadataportal.search;
 
 import java.util.*;
+import java.io.UnsupportedEncodingException;
 import java.io.IOException;
 import de.pangaea.metadataportal.config.*;
 import de.pangaea.metadataportal.utils.IndexConstants;
-import de.pangaea.metadataportal.utils.HashGenerator;
 import org.apache.lucene.index.*;
 import org.apache.lucene.search.*;
 import org.apache.lucene.document.*;
@@ -48,7 +48,7 @@ public final class LuceneCache {
 		this.config=config;
 		
 		int maxStoredQueries=Integer.parseInt(config.searchProperties.getProperty("maxStoredQueries",Integer.toString(DEFAULT_MAX_STORED_QUERIES)));
-		@SuppressWarnings("unchecked") Map<String,Query> storedQueries=(Map<String,Query>)new LRUMap(maxStoredQueries);
+		@SuppressWarnings("unchecked") Map<UUID,Query> storedQueries=(Map<UUID,Query>)new LRUMap(maxStoredQueries);
 		this.storedQueries=Collections.synchronizedMap(storedQueries);
 		
 		int cacheMaxSessions=Integer.parseInt(config.searchProperties.getProperty("cacheMaxSessions",Integer.toString(DEFAULT_CACHE_MAX_SESSIONS)));
@@ -88,14 +88,20 @@ public final class LuceneCache {
 	}
 
 	// Stored Queries
-	public String storeQuery(Query query) {
-		String hash=HashGenerator.sha1(query.toString());
-		storedQueries.put(hash,query);
-		return hash;
+	private static final String UUID_GEN_PREFIX="urn:java:"+LuceneCache.class.getName()+'#';
+	
+	public UUID storeQuery(final Query query) {
+		try {
+			final UUID uuid=UUID.nameUUIDFromBytes( (UUID_GEN_PREFIX+query.toString(IndexConstants.FIELDNAME_CONTENT)).getBytes("UTF-8") );
+			storedQueries.put(uuid,query);
+			return uuid;
+		} catch (UnsupportedEncodingException ue) {
+			throw new RuntimeException(ue); // should not happen with UTF-8
+		}
 	}
 
-	public Query readStoredQuery(String hash) {
-		return storedQueries.get(hash);
+	public Query readStoredQuery(final UUID uuid) {
+		return storedQueries.get(uuid);
 	}
 
 	public Session getSession(IndexConfig index, Query query, Sort sort) throws IOException {
@@ -205,7 +211,7 @@ public final class LuceneCache {
 	private int keepOldReaderAlive=DEFAULT_KEEP_OLD_READER_ALIVE;
 	private int reloadIndexIfChangedAfter=DEFAULT_RELOAD_AFTER;
 	private int fetchFactor=DEFAULT_FETCH_FACTOR;
-	private final Map<String,Query> storedQueries;
+	private final Map<UUID,Query> storedQueries;
 	private final Map<String,Session> sessions;
 
 	protected final Config config;
