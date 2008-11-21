@@ -23,17 +23,17 @@ import java.util.*;
 public class SearchRequest implements java.io.Serializable {
 
 	public void setIndex(String v) { indexName=v; }
-	public void setStoredQueryHash(String v) { storedQueryHash=v; }
+	public void setStoredQueryUUID(String v) { storedQueryUUID=v; }
 	public void setQueries(SearchRequestQuery[] v) { queries=v; }
 	public void setRanges(SearchRequestRange[] v) { ranges=v; }
 	public void setSortField(String v) { sortFieldName=v; }
 	public void setSortReverse(Boolean v) { sortReverse=v; }
 
 	protected Query getLuceneQuery(SearchService service) throws Exception {
-		if (storedQueryHash!=null) {
+		if (storedQueryUUID!=null) {
 			if (queries!=null || ranges!=null)
 				throw new IllegalArgumentException("If you use a hash of a stored query, you may not give other constraints!");
-			Query q=service.readStoredQuery(UUID.fromString(storedQueryHash));
+			Query q=service.readStoredQuery(UUID.fromString(storedQueryUUID));
 			if (q==null)
 				throw new IllegalArgumentException("The stored query is no longer available!");
 			return q;
@@ -115,6 +115,6 @@ public class SearchRequest implements java.io.Serializable {
 	protected SearchRequestQuery queries[]=null;
 	protected String sortFieldName=null;
 	protected Boolean sortReverse=null;
-	protected String storedQueryHash=null;
+	protected String storedQueryUUID=null;
 
 }
