@@ -20,6 +20,7 @@ import de.pangaea.metadataportal.config.*;
 import de.pangaea.metadataportal.utils.IndexConstants;
 import de.pangaea.metadataportal.utils.LenientDateParser;
 import org.apache.lucene.search.*;
+import org.apache.lucene.search.trie.TrieRangeQuery;
 import org.apache.lucene.queryParser.QueryParser;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.analysis.Analyzer;
@@ -218,9 +219,9 @@ public class SearchService {
 		FieldConfig f=cache.config.fields.get(fieldName);
 		if (f==null) throw new IllegalFieldConfigException("Field name '"+fieldName+"' is unknown!");
 		if (!f.indexed) throw new IllegalFieldConfigException("Field '"+fieldName+"' is not searchable!");
-		if (f.datatype!=FieldConfig.DataType.DATETIME) throw new NullPointerException("The data type of field '"+fieldName+"' must be DATETIME!");
+		if (f.datatype!=FieldConfig.DataType.DATETIME) throw new IllegalFieldConfigException("The data type of field '"+fieldName+"' must be DATETIME!");
 		if (min==null && max==null) throw new NullPointerException("A min or max value must be given for field '"+fieldName+"'!");
-		return new TrieRangeQuery(fieldName,min,max);
+		return new TrieRangeQuery(fieldName,min,max,cache.config.trieImpl);
 	}
 
 	/**
@@ -254,9 +255,9 @@ public class SearchService {
 		FieldConfig f=cache.config.fields.get(fieldName);
 		if (f==null) throw new IllegalFieldConfigException("Field name '"+fieldName+"' is unknown!");
 		if (!f.indexed) throw new IllegalFieldConfigException("Field '"+fieldName+"' is not searchable!");
-		if (f.datatype!=FieldConfig.DataType.NUMBER) throw new NullPointerException("The data type of field '"+fieldName+"' must be NUMBER!");
+		if (f.datatype!=FieldConfig.DataType.NUMBER) throw new IllegalFieldConfigException("The data type of field '"+fieldName+"' must be NUMBER!");
 		if (min==null && max==null) throw new NullPointerException("A min or max value must be given for field '"+fieldName+"'!");
-		return new TrieRangeQuery(fieldName,min,max);
+		return new TrieRangeQuery(fieldName,min,max,cache.config.trieImpl);
 	}
 
 	/**
@@ -313,7 +314,7 @@ public class SearchService {
 		FieldConfig f=cache.config.fields.get(fieldName);
 		if (f==null) throw new IllegalFieldConfigException("Field name '"+fieldName+"' is unknown!");
 		if (!f.indexed) throw new IllegalFieldConfigException("Field '"+fieldName+"' is not searchable!");
-		if (f.datatype==FieldConfig.DataType.TOKENIZEDTEXT) throw new NullPointerException("A field used for sorting may not be tokenized!");
+		if (f.datatype==FieldConfig.DataType.TOKENIZEDTEXT) throw new IllegalFieldConfigException("A field used for sorting may not be tokenized!");
 		return new SortField(fieldName,SortField.STRING,reverse);
 	}
 

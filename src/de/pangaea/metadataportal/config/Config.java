@@ -36,6 +36,7 @@ import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.analysis.StopAnalyzer;
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.search.trie.TrieUtils;
 
 /**
  * Main panFMP configuration class. It loads the configuration from a XML file.
@@ -148,6 +149,9 @@ public class Config {
 			dig.addCallMethod("config/metadata/schema/haltOnError", "setHaltOnSchemaError", 0);
 			dig.addCallMethod("config/metadata/schema/augmentation", "setAugmentation", 0);
 
+			// *** TrieImpl ***/
+			dig.addCallMethod("config/numericTrieImplementation", "setTrieImpl", 0);
+			
 			// *** ANALYZER ***
 			dig.addDoNothing("config/analyzer");
 			dig.addCallMethod("config/analyzer/class", "setAnalyzer", 0);
@@ -363,6 +367,15 @@ public class Config {
 
 	@PublicForDigesterUse
 	@Deprecated
+	public void setTrieImpl(String v) throws Exception {
+		if ("8bit".equals(v)) trieImpl=TrieUtils.VARIANT_8BIT;
+		else if ("4bit".equals(v)) trieImpl=TrieUtils.VARIANT_4BIT;
+		else if ("2bit".equals(v)) trieImpl=TrieUtils.VARIANT_2BIT;
+		else throw new IllegalArgumentException("numericTrieImplementation may only be [8bit,4bit,2bit].");
+	}
+
+	@PublicForDigesterUse
+	@Deprecated
 	public void addSearchProperty(String value) {
 		final String name=dig.getCurrentElementName();
 		if (value==null) return;
@@ -463,6 +476,9 @@ public class Config {
 	// document boost
 	public ExpressionConfig documentBoost=null;
 
+	// Trie implementation
+	public TrieUtils trieImpl=TrieUtils.VARIANT_8BIT;
+	
 	/*public Templates xsltBeforeXPath=null;*/
 
 	// Template cache

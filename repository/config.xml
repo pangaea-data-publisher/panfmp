@@ -86,6 +86,14 @@
 		<cfg:maxIndexerQueue>250</cfg:maxIndexerQueue>
 		<cfg:maxBufferedIndexChanges>1000</cfg:maxBufferedIndexChanges>
 	</cfg:globalHarvesterProperties>
+	<!--
+		When indexing numerical fields, they are saved in a special trie-encoded form to optimize range queries.
+		There are three possibilities for encoding these values: 8bit, 4bit, 2bit; default is 8bit
+		8bit is slowest but has lowest index size, 4bit is faster, 2bit maybe faster, but uses much more disk IO.
+		If you change this value, the indexes must be rebuilt, if you do not do this, you will get spurious NumberFormatExceptions
+		during operation.
+	-->
+	<cfg:numericTrieImplementation>8bit</cfg:numericTrieImplementation>
 	<!-- the Lucene Analyzer used to tokenize the strings (default field and tokenizedText fields -->
 	<cfg:analyzer>
 		<cfg:class>org.apache.lucene.analysis.standard.StandardAnalyzer</cfg:class>

@@ -19,8 +19,10 @@ package de.pangaea.metadataportal.harvester;
 import de.pangaea.metadataportal.utils.*;
 import de.pangaea.metadataportal.config.*;
 import org.apache.lucene.document.*;
+import org.apache.lucene.search.trie.TrieUtils;
 import java.io.StringWriter;
 import java.io.StringReader;
+import java.util.UUID;
 import java.util.Map;
 import java.util.Set;
 import java.util.AbstractMap;
@@ -100,15 +102,20 @@ public class MetadataDocument {
 	 */
 	public void loadFromLucene(Document ldoc) throws Exception {
 		deleted=false; datestamp=null;
+		// read identifier
 		identifier=ldoc.get(IndexConstants.FIELDNAME_IDENTIFIER);
-		if (identifier==null)
-			log.warn("Loaded document without identifier from index.");
+		if (identifier==null) {
+			log.warn("Loaded document without identifier from index, adding a random one.");
+			identifier="urn:uuid:"+UUID.randomUUID().toString();
+		}
+		// try to read date stamp
 		try {
 			String d=ldoc.get(IndexConstants.FIELDNAME_DATESTAMP);
-			if (d!=null) datestamp=TrieUtils.trieCodedToDate(d);
+			if (d!=null) datestamp=TrieUtils.trieCodedToDateAuto(d);
 		} catch (NumberFormatException ne) {
-			log.warn("Datestamp of document '"+identifier+"' is invalid. Deleting datestamp!",ne);
+			log.warn("Datestamp of document '"+identifier+"' is invalid (trie implementation changed?): "+ne.getMessage()+" - Deleting datestamp.");
 		}
+		// read XML
 		String xml=ldoc.get(IndexConstants.FIELDNAME_XML);
 		if (xml==null) {
 			setFinalDOM(null);
@@ -266,7 +273,7 @@ public class MetadataDocument {
 			Document ldoc = new Document();
 			ldoc.add(new Field(IndexConstants.FIELDNAME_IDENTIFIER, identifier, Field.Store.YES, Field.Index.NOT_ANALYZED));
 			ldoc.add(new Field(IndexConstants.FIELDNAME_MDOC_IMPL, getClass().getName(), Field.Store.YES, Field.Index.NO));
-			if (datestamp!=null) TrieUtils.addDateTrieCodedDocumentField(ldoc,IndexConstants.FIELDNAME_DATESTAMP,datestamp,true,Field.Store.YES);
+			if (datestamp!=null) iconfig.parent.trieImpl.addDateTrieCodedDocumentField(ldoc,IndexConstants.FIELDNAME_DATESTAMP,datestamp,true,Field.Store.YES);
 			return ldoc;
 		}
 	}
@@ -545,10 +552,10 @@ public class MetadataDocument {
 		boolean token=false;
 		switch(f.datatype) {
 			case NUMBER:
-				TrieUtils.addDoubleTrieCodedDocumentField(ldoc, f.name, Double.parseDouble(val), f.indexed, f.storage);
+				iconfig.parent.trieImpl.addDoubleTrieCodedDocumentField(ldoc, f.name, Double.parseDouble(val), f.indexed, f.storage);
 				break;
 			case DATETIME:
-				TrieUtils.addDateTrieCodedDocumentField(ldoc, f.name, LenientDateParser.parseDate(val), f.indexed, f.storage);
+				iconfig.parent.trieImpl.addDateTrieCodedDocumentField(ldoc, f.name, LenientDateParser.parseDate(val), f.indexed, f.storage);
 				break;
 			case TOKENIZEDTEXT: 
 				token=true;
