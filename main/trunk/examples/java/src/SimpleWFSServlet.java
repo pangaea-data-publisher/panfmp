@@ -178,7 +178,7 @@ public class SimpleWFSServlet extends HttpServlet {
 			if (id==null) throw new NoSuchElementException();
 			StringTokenizer st=new StringTokenizer(id,"/");
 			searchService=new SearchService(configFile, st.nextToken());
-			query=searchService.readStoredQuery(st.nextToken());
+			query=searchService.readStoredQuery(UUID.fromString(st.nextToken()));
 			if (query==null || st.hasMoreTokens()) throw new NoSuchElementException();
 		} catch (NoSuchElementException e) {
 			returnError(out,"Missing index name or query hash in request URI.");
