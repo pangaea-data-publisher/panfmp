@@ -1,5 +1,5 @@
 /*
- *   Copyright 2004-2008
+ *   Copyright
  *       The Apache Software Foundation
  *   and
  *       panFMP Developers Team c/o Uwe Schindler

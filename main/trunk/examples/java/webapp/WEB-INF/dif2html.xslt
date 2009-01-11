@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="iso-8859-1"?>
 <!--
- *   Copyright 2007-2008 panFMP Developers Team c/o Uwe Schindler
+ *   Copyright panFMP Developers Team c/o Uwe Schindler
  *
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 -->
 
 <xsl:stylesheet version="1.0" xmlns:dif="http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:date="http://exslt.org/dates-and-times" xmlns:exsl="http://exslt.org/common" exclude-result-prefixes="exsl xs xsl date dif">
-    <xsl:output encoding="UTF-8" method="xml" indent="yes" omit-xml-declaration="yes" />
+	<xsl:output encoding="UTF-8" method="xml" indent="yes" omit-xml-declaration="yes" />
 	<xsl:param name="score"/>
 	<xsl:param name="target" select="'_blank'"/>
 	<xsl:param name="showinfo" select="true()"/>
