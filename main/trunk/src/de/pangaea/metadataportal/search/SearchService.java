@@ -315,7 +315,9 @@ public class SearchService {
 		if (f==null) throw new IllegalFieldConfigException("Field name '"+fieldName+"' is unknown!");
 		if (!f.indexed) throw new IllegalFieldConfigException("Field '"+fieldName+"' is not searchable!");
 		if (f.datatype==FieldConfig.DataType.TOKENIZEDTEXT) throw new IllegalFieldConfigException("A field used for sorting may not be tokenized!");
-		return new SortField(fieldName,SortField.STRING,reverse);
+		return (f.datatype==FieldConfig.DataType.NUMBER || f.datatype==FieldConfig.DataType.DATETIME) ?
+			cache.config.trieImpl.getSortField(fieldName,reverse) :
+			new SortField(fieldName,SortField.STRING,reverse);
 	}
 
 	/**
