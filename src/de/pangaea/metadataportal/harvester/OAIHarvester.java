@@ -56,7 +56,7 @@ public class OAIHarvester extends OAIHarvesterBase {
 		super.open(iconfig);
 
 		//*** ListRecords ***
-		listRecordsDig=new ExtendedDigester(StaticFactories.saxFactory.newSAXParser());
+		listRecordsDig=new ExtendedDigester();
 		digesterAddGeneralOAIRules(listRecordsDig);
 
 		listRecordsDig.addDoNothing("OAI-PMH/ListRecords");
@@ -85,7 +85,7 @@ public class OAIHarvester extends OAIHarvesterBase {
 		listRecordsDig.addCallParam("OAI-PMH/ListRecords/resumptionToken", 3, "completeListSize");
 
 		//*** Identify ***
-		identifyDig=new ExtendedDigester(StaticFactories.saxFactory.newSAXParser());
+		identifyDig=new ExtendedDigester();
 		digesterAddGeneralOAIRules(identifyDig);
 
 		identifyDig.addDoNothing("OAI-PMH/Identify");
@@ -101,6 +101,7 @@ public class OAIHarvester extends OAIHarvesterBase {
 		dig.setEntityResolver(getEntityResolver(dig.getEntityResolver()));
 		dig.setNamespaceAware(true);
 		dig.setValidating(false);
+		dig.setXIncludeAware(false);
 		dig.setRulesWithInvalidElementCheck( new ExtendedBaseRules() );
 
 		//*** create rules ***

@@ -126,11 +126,10 @@ public final class Package {
 	 */
 	public static void checkMinimumRequirements() {
 		if (!BooleanParser.parseBoolean(System.getProperty(SKIP_VERSION_CHECK_PROPERTY,"false"))) {
-			checkPackage(org.apache.lucene.LucenePackage.get(),"Apache Lucene","lucene","2.4");
+			checkPackage(org.apache.lucene.LucenePackage.get(),"Apache Lucene","lucene","2.9");
 			checkPackage("org.apache.lucene.search.trie.TrieUtils","Apache Lucene Contrib-Queries","queries","2.9");
-			checkPackage("org.apache.commons.collections.map.LRUMap","Apache Commons Collections","collections","3.0");
 			checkPackage("org.apache.commons.beanutils.BeanUtils","Apache Commons BeanUtils","beanutils","1.6");
-			checkPackage("org.apache.commons.digester.Digester","Apache Commons Digester","digester","1.7");
+			checkPackage("org.apache.commons.digester.Digester","Apache Commons Digester","digester","2.0");
 		}
 	}
 

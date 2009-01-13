@@ -21,10 +21,10 @@ import java.io.UnsupportedEncodingException;
 import java.io.IOException;
 import de.pangaea.metadataportal.config.*;
 import de.pangaea.metadataportal.utils.IndexConstants;
+import de.pangaea.metadataportal.utils.LRUMap;
 import org.apache.lucene.index.*;
 import org.apache.lucene.search.*;
 import org.apache.lucene.document.*;
-import org.apache.commons.collections.map.LRUMap;
 
 /**
  * Implementation of the caching algorithm behind the <b>panFMP</b> search engine.
@@ -48,11 +48,11 @@ public final class LuceneCache {
 		this.config=config;
 		
 		int maxStoredQueries=Integer.parseInt(config.searchProperties.getProperty("maxStoredQueries",Integer.toString(DEFAULT_MAX_STORED_QUERIES)));
-		@SuppressWarnings("unchecked") Map<UUID,Query> storedQueries=(Map<UUID,Query>)new LRUMap(maxStoredQueries);
+		final Map<UUID,Query> storedQueries=new LRUMap<UUID,Query>(maxStoredQueries);
 		this.storedQueries=Collections.synchronizedMap(storedQueries);
 		
 		int cacheMaxSessions=Integer.parseInt(config.searchProperties.getProperty("cacheMaxSessions",Integer.toString(DEFAULT_CACHE_MAX_SESSIONS)));
-		@SuppressWarnings("unchecked") Map<String,Session> sessions=(Map<String,Session>)new LRUMap(cacheMaxSessions);
+		final Map<String,Session> sessions=new LRUMap<String,Session>(cacheMaxSessions);
 		this.sessions=sessions;
 		
 		cacheMaxAge=Integer.parseInt(config.searchProperties.getProperty("cacheMaxAge",Integer.toString(DEFAULT_CACHE_MAX_AGE)));

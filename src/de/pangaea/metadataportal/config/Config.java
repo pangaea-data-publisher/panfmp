@@ -61,9 +61,10 @@ public class Config {
 		try {
 			final Class[] DIGSTRING_PARAMS=new Class[]{ExtendedDigester.class,String.class};
 
-			dig=new ExtendedDigester(StaticFactories.xinclSaxFactory.newSAXParser());
+			dig=new ExtendedDigester();
 			dig.setNamespaceAware(true);
 			dig.setValidating(false);
+			dig.setXIncludeAware(true);
 			dig.setRulesWithInvalidElementCheck( new ExtendedBaseRules() );
 			dig.setRuleNamespaceURI("urn:java:"+getClass().getName());
 
