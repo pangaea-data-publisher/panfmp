@@ -34,8 +34,9 @@ public class ExtendedDigester extends Digester {
 	protected final HashMap<String,LinkedList<String>> currentNamespaceMap=new HashMap<String,LinkedList<String>>();
 	protected ContentHandler custContentHandler=null;
 
-	public ExtendedDigester() { super(); }
-	public ExtendedDigester(javax.xml.parsers.SAXParser parser) { super(parser); }
+	public ExtendedDigester() {
+		super();
+	}
 
 	/** Sets a custom {@link ContentHandler}, that receives all SAX events until disabled (<code>null</code>). */
 	@Override

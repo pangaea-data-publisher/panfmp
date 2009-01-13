@@ -133,19 +133,21 @@
 				<cfg:transform src="./ns-convert.xslt"/>
 			b) inline stylesheet. Please note, previously declared namespace prefixes are reported to the stylesheet, so you may remove them with "exclude-result-prefixes"!
 			For example, this one converts the harvested documents namespace, which may be different or missing in case of old DIFs to the correct new namespace (you may also use xinclude to include it):
-				<xsl:stylesheet version="1.0" xmlns:dif="http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" exclude-result-prefixes="xsl cfg ib" >
-					<xsl:template match="/*">
-						<dif:DIF xsi:schemaLocation="http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/ http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/dif_v9.4.xsd">
-							<xsl:apply-templates />
-						</dif:DIF>
-					</xsl:template>
-					<xsl:template match="*">
-						<xsl:element namespace="http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/" name="{concat('dif:',local-name())}">
-							<xsl:copy-of select="@*" />
-							<xsl:apply-templates />
-						</xsl:element>
-					</xsl:template>
-				</xsl:stylesheet>
+				<cfg:transform>
+					<xsl:stylesheet version="1.0" xmlns:dif="http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" exclude-result-prefixes="xsl cfg ib" >
+						<xsl:template match="/*">
+							<dif:DIF xsi:schemaLocation="http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/ http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/dif_v9.4.xsd">
+								<xsl:apply-templates />
+							</dif:DIF>
+						</xsl:template>
+						<xsl:template match="*">
+							<xsl:element namespace="http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/" name="{concat('dif:',local-name())}">
+								<xsl:copy-of select="@*" />
+								<xsl:apply-templates />
+							</xsl:element>
+						</xsl:template>
+					</xsl:stylesheet>
+				</cfg:transform>
 			If you want to use one of the internal variables of IndexBuilder (the "$ib:XXXX"-ones),
 			declare them as XSL parameters for the stylesheet (possible in both inline and external stylesheets). They are automatically set as
 			input parameters to the transformation.

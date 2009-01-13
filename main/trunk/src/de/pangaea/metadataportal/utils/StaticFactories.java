@@ -32,7 +32,7 @@ public final class StaticFactories {
 
 	public static final XPathFactory xpathFactory;
 	public static final SAXTransformerFactory transFactory;
-	public static final SAXParserFactory xinclSaxFactory,saxFactory;
+	public static final SAXParserFactory saxFactory;
 	public static final DocumentBuilderFactory dbf;
 	public static final DocumentBuilder dombuilder;
 	static {
@@ -42,15 +42,6 @@ public final class StaticFactories {
 			saxFactory=SAXParserFactory.newInstance();
 			saxFactory.setNamespaceAware(true);
 			saxFactory.setValidating(false);
-
-			xinclSaxFactory=SAXParserFactory.newInstance();
-			xinclSaxFactory.setNamespaceAware(true);
-			xinclSaxFactory.setValidating(false);
-			try {
-				xinclSaxFactory.setXIncludeAware(true);
-			} catch (UnsupportedOperationException e) {
-				log.warn("Your XML parser is not XInclude aware! Please update it to a Java 1.5 compatible one for full functionality!");
-			}
 
 			transFactory=(SAXTransformerFactory)SAXTransformerFactory.newInstance();
 			transFactory.setErrorListener(new LoggingErrorListener(transFactory.getClass()));

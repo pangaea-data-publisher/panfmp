@@ -53,11 +53,12 @@ public class OAIStaticRepositoryHarvester extends OAIHarvesterBase {
 		validIdentifiers=new HashSet<String>();
 
 		//*** ListRecords ***
-		dig=new ExtendedDigester(StaticFactories.saxFactory.newSAXParser());
+		dig=new ExtendedDigester();
 
 		dig.setEntityResolver(getEntityResolver(dig.getEntityResolver()));
 		dig.setNamespaceAware(true);
 		dig.setValidating(false);
+		dig.setXIncludeAware(false);
 		dig.setRulesWithInvalidElementCheck( new ExtendedBaseRules() );
 
 		//*** create rules ***
