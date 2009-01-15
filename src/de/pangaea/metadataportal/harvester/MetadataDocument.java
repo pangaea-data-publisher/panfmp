@@ -271,7 +271,10 @@ public class MetadataDocument {
 			return null; // to delete
 		} else {
 			Document ldoc = new Document();
-			ldoc.add(new Field(IndexConstants.FIELDNAME_IDENTIFIER, identifier, Field.Store.YES, Field.Index.NOT_ANALYZED));
+			// identifier without
+			final Field f=new Field(IndexConstants.FIELDNAME_IDENTIFIER, identifier, Field.Store.YES, Field.Index.NOT_ANALYZED_NO_NORMS);
+			f.setOmitTf(true);
+			ldoc.add(f);
 			ldoc.add(new Field(IndexConstants.FIELDNAME_MDOC_IMPL, getClass().getName(), Field.Store.YES, Field.Index.NO));
 			if (datestamp!=null) iconfig.parent.trieImpl.addDateTrieCodedDocumentField(ldoc,IndexConstants.FIELDNAME_DATESTAMP,datestamp,true,Field.Store.YES);
 			return ldoc;
@@ -562,8 +565,10 @@ public class MetadataDocument {
 				// fall-through
 			default:
 				Field.Index in=Field.Index.NO;
-				if (f.indexed) in=token?Field.Index.ANALYZED:Field.Index.NOT_ANALYZED;
-				ldoc.add(new Field(f.name, val, f.storage, in, f.termVectors));
+				if (f.indexed) in=token?Field.Index.ANALYZED:Field.Index.NOT_ANALYZED_NO_NORMS;
+				final Field field=new Field(f.name, val, f.storage, in, f.termVectors);
+				if (!token) field.setOmitTf(true);
+				ldoc.add(field);
 		}
 	}
 
