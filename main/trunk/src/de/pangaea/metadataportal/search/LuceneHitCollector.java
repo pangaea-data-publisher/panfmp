@@ -46,7 +46,7 @@ public final class LuceneHitCollector extends HitCollector {
 	 * Flushes the internal buffer by calling {@link SearchResultCollector#collect} with
 	 * the loaded document instance for each buffer entry.
 	 */
-	protected synchronized void flushBuffer() {
+	protected void flushBuffer() {
 		if (log.isDebugEnabled()) log.debug("Flushing buffer containing "+count+" search results...");
 		try {
 			// we do the buffer in index order which is less IO expensive!
@@ -66,9 +66,11 @@ public final class LuceneHitCollector extends HitCollector {
 	/**
 	 * Called by Lucene to collect search result items.
 	 */
-	public synchronized void collect(int doc, float score) {
-		buffer[count++]=new Item(doc,score);
-		if (count==buffer.length) flushBuffer();
+	public void collect(int doc, float score) {
+		if (score > 0.0f) {
+			buffer[count++]=new Item(doc,score);
+			if (count==buffer.length) flushBuffer();
+		}
 	}
 
 	private int count=0;
