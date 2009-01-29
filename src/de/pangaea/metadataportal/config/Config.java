@@ -36,6 +36,7 @@ import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.analysis.StopAnalyzer;
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.store.*;
 import org.apache.lucene.search.trie.TrieUtils;
 
 /**
@@ -56,8 +57,6 @@ public class Config {
 		de.pangaea.metadataportal.Package.checkMinimumRequirements();
 
 		setAnalyzerClass(StandardAnalyzer.class);
-		BooleanQuery.setMaxClauseCount(DEFAULT_MAX_CLAUSE_COUNT);
-		BooleanQuery.setAllowDocsOutOfOrder(true);
 		try {
 			final Class[] DIGSTRING_PARAMS=new Class[]{ExtendedDigester.class,String.class};
 
@@ -153,6 +152,9 @@ public class Config {
 			// *** TrieImpl ***/
 			dig.addCallMethod("config/numericTrieImplementation", "setTrieImpl", 0);
 			
+			// *** Directory Impl ***/
+			dig.addCallMethod("config/indexDirImplementation", "setIndexDirImplementation", 0);
+			
 			// *** ANALYZER ***
 			dig.addDoNothing("config/analyzer");
 			dig.addCallMethod("config/analyzer/class", "setAnalyzer", 0);
@@ -180,9 +182,7 @@ public class Config {
 			dig.addRule("config/indexes/index/transform", (configMode==ConfigMode.HARVESTING) ? new IndexConfigTransformerSaxRule() : SaxRule.emptyRule());
 
 			dig.addDoNothing("config/indexes/index/harvesterProperties");
-			dig.addCallMethod("config/indexes/index/harvesterProperties/*","addHarvesterProperty",2, DIGSTRING_PARAMS);
-			dig.addObjectParam("config/indexes/index/harvesterProperties/*", 0, dig);
-			dig.addCallParam("config/indexes/index/harvesterProperties/*", 1);
+			dig.addCallMethod("config/indexes/index/harvesterProperties/*","addHarvesterProperty",0);
 
 			// VirtualIndex
 			dig.addFactoryCreate("config/indexes/virtualIndex", new AbstractObjectCreationFactory() {
@@ -223,6 +223,14 @@ public class Config {
 		// *** After loading do final checks ***
 		// consistency in indexes:
 		for (IndexConfig iconf : indexes.values()) iconf.check();
+
+		// init boolean query constraints and properties
+		final String mcc=searchProperties.getProperty("maxClauseCount",Integer.toString(DEFAULT_MAX_CLAUSE_COUNT));
+		BooleanQuery.setMaxClauseCount("inf".equalsIgnoreCase(mcc) ? Integer.MAX_VALUE : Integer.parseInt(mcc));
+		BooleanQuery.setAllowDocsOutOfOrder(true);
+		
+		// cleanup
+		templatesCache.clear();
 	}
 
 	/** makes the given local filesystem path absolute and resolve it relative to config directory **/
@@ -377,26 +385,25 @@ public class Config {
 
 	@PublicForDigesterUse
 	@Deprecated
-	public void addSearchProperty(String value) {
-		final String name=dig.getCurrentElementName();
-		if (value==null) return;
-		value=value.trim();
-		if ("maxClauseCount".equals(name)) {
-			if ("inf".equals(value))
-				BooleanQuery.setMaxClauseCount(Integer.MAX_VALUE);
-			else
-				BooleanQuery.setMaxClauseCount(Integer.parseInt(value));
-		} else {
-			// default
-			searchProperties.setProperty(name,value);
+	public void setIndexDirImplementation(String v) throws Exception {
+		try {
+			indexDirImplementation=IndexDirImplementation.valueOf(v.toUpperCase());
+		} catch (IllegalArgumentException e) {
+			throw new IllegalArgumentException("Invalid value '"+v+"' for <cfg:indexDirImplementation>, valid ones are: "+
+				Arrays.toString(IndexDirImplementation.values()));
 		}
 	}
 
 	@PublicForDigesterUse
 	@Deprecated
+	public void addSearchProperty(String value) {
+		searchProperties.setProperty(dig.getCurrentElementName(),value);
+	}
+
+	@PublicForDigesterUse
+	@Deprecated
 	public void addGlobalHarvesterProperty(String value) {
-		String name=dig.getCurrentElementName();
-		globalHarvesterProperties.setProperty(name,value);
+		globalHarvesterProperties.setProperty(dig.getCurrentElementName(),value);
 	}
 
 	public void setSchema(String namespace, String url) throws Exception {
@@ -444,16 +451,14 @@ public class Config {
 		}
 	}
 	
-	protected Templates loadTemplate(String file) throws Exception {
+	private Templates loadTemplate(String file) throws Exception {
 		file=makePathAbsolute(file,true);
-		synchronized(templatesCache) {
-			Templates templ=templatesCache.get(file);
-			if (templ==null) {
-				log.info("Loading XSL transformation from '"+file+"'...");
-				templatesCache.put(file,templ=StaticFactories.transFactory.newTemplates(new StreamSource(file)));
-			}
-			return templ;
+		Templates templ=templatesCache.get(file);
+		if (templ==null) {
+			log.info("Loading XSL transformation from '"+file+"'...");
+			templatesCache.put(file,templ=StaticFactories.transFactory.newTemplates(new StreamSource(file)));
 		}
+		return templ;
 	}
 
 	// members "the configuration"
@@ -480,6 +485,9 @@ public class Config {
 	// Trie implementation
 	public TrieUtils trieImpl=TrieUtils.VARIANT_8BIT;
 	
+	// Implementation of the Lucene index directory
+	public IndexDirImplementation indexDirImplementation=IndexDirImplementation.getFromSystemProperty();
+
 	/*public Templates xsltBeforeXPath=null;*/
 
 	// Template cache
@@ -491,7 +499,7 @@ public class Config {
 	public final Set<String> luceneStopWords=new HashSet<String>();
 	protected Class<? extends Analyzer> analyzerClass=null;
 	protected Constructor<? extends Analyzer> analyzerConstructor=null;
-
+	
 	public String file;
 	private ConfigMode configMode;
 
@@ -500,6 +508,29 @@ public class Config {
 	public static final int DEFAULT_MAX_CLAUSE_COUNT = 131072;
 
 	public static enum ConfigMode { HARVESTING,SEARCH };
+
+	public static enum IndexDirImplementation {
+		STANDARD, MMAP, NIO;
+		
+		public final Directory getDirectory(final File dir) throws IOException {
+			switch(this) {
+				case STANDARD: return new FSDirectory(dir,null);
+				case MMAP: return new MMapDirectory(dir,null);
+				case NIO: return new NIOFSDirectory(dir,null);
+			}
+			throw new Error(); // should never happen
+		}
+		
+		public static final IndexDirImplementation getFromSystemProperty() {
+			final String clazz=System.getProperty("org.apache.lucene.FSDirectory.class");
+			if (clazz==null || FSDirectory.class.getName().equals(clazz)) return STANDARD;
+			if (MMapDirectory.class.getName().equals(clazz)) return MMAP;
+			if (NIOFSDirectory.class.getName().equals(clazz)) return NIO;
+			throw new IllegalArgumentException("Invalid directory class specified in deprecated system property "+
+				"'org.apache.lucene.FSDirectory.class'. Please use the new panFMP config entry <cfg:indexDirectoryType> "+
+				"for specifying STANDARD, MMAP, or NIO!");
+		}
+	};
 
 	// internal classes
 	private abstract class TransformerSaxRule extends SaxRule {
