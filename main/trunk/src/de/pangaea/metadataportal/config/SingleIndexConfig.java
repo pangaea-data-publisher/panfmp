@@ -17,6 +17,7 @@
 package de.pangaea.metadataportal.config;
 
 import java.util.*;
+import java.io.File;
 import de.pangaea.metadataportal.utils.*;
 import de.pangaea.metadataportal.harvester.Harvester;
 import javax.xml.transform.Templates;
@@ -60,9 +61,9 @@ public class SingleIndexConfig extends IndexConfig {
 	/** Adds property for harvester (called from Digester on config load). **/
 	@PublicForDigesterUse
 	@Deprecated
-	public void addHarvesterProperty(ExtendedDigester dig, String value) {
+	public void addHarvesterProperty(String value) {
 		if (checked) throw new IllegalStateException("Index configuration cannot be changed anymore!");
-		if (value!=null) harvesterProperties.setProperty(dig.getCurrentElementName(),value.trim());
+		if (value!=null) harvesterProperties.setProperty(parent.dig.getCurrentElementName(),value.trim());
 	}
 
 	@Override
@@ -87,7 +88,8 @@ public class SingleIndexConfig extends IndexConfig {
 
 	/** Returns the directory implementation, that contains the index. **/
 	public synchronized Directory getIndexDirectory() throws java.io.IOException {
-		if (indexDirImpl==null) indexDirImpl=FSDirectory.getDirectory(getFullIndexPath());
+		if (indexDirImpl==null)
+			indexDirImpl=parent.indexDirImplementation.getDirectory(new File(getFullIndexPath()));
 		return indexDirImpl;
 	}
 

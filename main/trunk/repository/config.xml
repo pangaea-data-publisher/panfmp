@@ -94,6 +94,8 @@
 		during operation.
 	-->
 	<cfg:numericTrieImplementation>8bit</cfg:numericTrieImplementation>
+	<!-- for best performance use "mmap" (only in 64bit Java VMs) or "nio" (but not on Windows) . In all other cases use "standard". -->
+	<cfg:indexDirImplementation>standard</cfg:indexDirImplementation>
 	<!-- the Lucene Analyzer used to tokenize the strings (default field and tokenizedText fields -->
 	<cfg:analyzer>
 		<cfg:class>org.apache.lucene.analysis.standard.StandardAnalyzer</cfg:class>
