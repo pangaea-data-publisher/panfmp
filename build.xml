@@ -70,7 +70,7 @@
 	<target name="javadocs" depends="init">
 		<delete dir="${docs}"/>
 		<mkdir dir="${docs}"/>
-		<javadoc sourcepath="${src}" destdir="${docs}" source="1.5" packagenames="*" classpathref="classpath" windowtitle="${ant.project.name} ${version} Documentation">
+		<javadoc sourcepath="${src}" destdir="${docs}" source="1.5" packagenames="*" classpathref="classpath" windowtitle="${ant.project.name} ${version} Documentation" overview="${src}/overview.html">
 			<link href="${javadoc.link.sun}"/>
 			<link href="${javadoc.link.lucene}"/>
 			<doctitle><![CDATA[<H1>${ant.project.name} ${version}</H1>]]></doctitle>
