@@ -19,6 +19,7 @@ package de.pangaea.metadataportal.search;
 import de.pangaea.metadataportal.config.Config;
 import org.apache.lucene.search.*;
 import org.apache.lucene.document.*;
+import org.apache.lucene.util.SorterTemplate;
 import java.io.IOException;
 import java.util.*;
 
@@ -35,7 +36,8 @@ public final class LuceneHitCollector extends HitCollector {
 	 */
 	protected LuceneHitCollector(int bufferSize, SearchResultCollector coll, Config config, Searcher searcher, FieldSelector fields) {
 		if (bufferSize<=0) throw new IllegalArgumentException("Buffer must have a size >0");
-		buffer=new Item[bufferSize];
+		docIds=new int[bufferSize];
+		scores=new float[bufferSize];
 		this.coll=coll;
 		this.config=config;
 		this.searcher=searcher;
@@ -50,10 +52,25 @@ public final class LuceneHitCollector extends HitCollector {
 		if (log.isDebugEnabled()) log.debug("Flushing buffer containing "+count+" search results...");
 		try {
 			// we do the buffer in index order which is less IO expensive!
-			Arrays.sort(buffer,0,count);
+			new SorterTemplate() {
+				@Override
+				protected final void swap(int i,int j) {
+					final int tempId=docIds[i];
+					docIds[i]=docIds[j];
+					docIds[j]=tempId;
+					final float tempScore=scores[i];
+					scores[i]=scores[j];
+					scores[j]=tempScore;
+				}
+				
+				@Override
+				protected final int compare(int i,int j) {
+					return docIds[i]-docIds[j];
+				}
+			}.quickSort(0,count-1);
 			try {
 				for (int i=0; i<count; i++) {
-					if (!coll.collect(new SearchResultItem(config, buffer[i].score, searcher.doc(buffer[i].doc, fields) ))) throw new StopException();
+					if (!coll.collect(new SearchResultItem(config, scores[i], searcher.doc(docIds[i], fields) ))) throw new StopException();
 				}
 			} finally {
 				count=0;
@@ -66,15 +83,18 @@ public final class LuceneHitCollector extends HitCollector {
 	/**
 	 * Called by Lucene to collect search result items.
 	 */
-	public void collect(int doc, float score) {
+	public final void collect(final int doc, final float score) {
 		if (score > 0.0f) {
-			buffer[count++]=new Item(doc,score);
-			if (count==buffer.length) flushBuffer();
+			docIds[count]=doc;
+			scores[count]=score;
+			count++;
+			if (count==docIds.length) flushBuffer();
 		}
 	}
 
+	protected int[] docIds; // protected because of speed with inner class
+	protected float[] scores; // protected because of speed with inner class
 	private int count=0;
-	private Item[] buffer;
 	private SearchResultCollector coll;
 	private Config config;
 	private Searcher searcher;
@@ -86,20 +106,6 @@ public final class LuceneHitCollector extends HitCollector {
 	protected static final class StopException extends RuntimeException {
 		protected StopException() {
 			super();
-		}
-	}
-
-	private static final class Item implements Comparable<Item> {
-		protected int doc;
-		protected float score;
-
-		protected Item(int doc, float score) {
-			this.doc=doc;
-			this.score=score;
-		}
-
-		public int compareTo(Item o) {
-			return Integer.valueOf(doc).compareTo(Integer.valueOf(o.doc));
 		}
 	}
 
