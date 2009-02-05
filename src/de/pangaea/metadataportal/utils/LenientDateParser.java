@@ -71,6 +71,11 @@ public final class LenientDateParser {
 		return new Date(d1.getTime()+d2.getTime());
 	}
 
+	/** For testing the parser from command line. */
+	public static void main(String[] argv) throws Exception {
+		for (String d : argv) System.out.println(parseDate(d));
+	}
+
 	// static constants
 	private static Pattern tzpat=Pattern.compile("([\\+\\-]\\d\\d)\\:(\\d\\d)\\z");
 	private static DateFormat[] dateFormats={
