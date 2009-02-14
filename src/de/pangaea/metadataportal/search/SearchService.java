@@ -20,7 +20,7 @@ import de.pangaea.metadataportal.config.*;
 import de.pangaea.metadataportal.utils.IndexConstants;
 import de.pangaea.metadataportal.utils.LenientDateParser;
 import org.apache.lucene.search.*;
-import org.apache.lucene.search.trie.TrieRangeQuery;
+import org.apache.lucene.search.trie.TrieUtils;
 import org.apache.lucene.queryParser.QueryParser;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.analysis.Analyzer;
@@ -221,7 +221,7 @@ public class SearchService {
 		if (!f.indexed) throw new IllegalFieldConfigException("Field '"+fieldName+"' is not searchable!");
 		if (f.datatype!=FieldConfig.DataType.DATETIME) throw new IllegalFieldConfigException("The data type of field '"+fieldName+"' must be DATETIME!");
 		if (min==null && max==null) throw new NullPointerException("A min or max value must be given for field '"+fieldName+"'!");
-		return new TrieRangeQuery(fieldName,min,max,true,true,cache.config.trieImpl);
+		return new TrieRangeQuery(fieldName,cache.config.triePrecisionStep,min,max,true,true);
 	}
 
 	/**
@@ -257,7 +257,7 @@ public class SearchService {
 		if (!f.indexed) throw new IllegalFieldConfigException("Field '"+fieldName+"' is not searchable!");
 		if (f.datatype!=FieldConfig.DataType.NUMBER) throw new IllegalFieldConfigException("The data type of field '"+fieldName+"' must be NUMBER!");
 		if (min==null && max==null) throw new NullPointerException("A min or max value must be given for field '"+fieldName+"'!");
-		return new TrieRangeQuery(fieldName,min,max,true,true,cache.config.trieImpl);
+		return new TrieRangeQuery(fieldName,cache.config.triePrecisionStep,min,max,true,true);
 	}
 
 	/**
@@ -316,7 +316,7 @@ public class SearchService {
 		if (!f.indexed) throw new IllegalFieldConfigException("Field '"+fieldName+"' is not searchable!");
 		if (f.datatype==FieldConfig.DataType.TOKENIZEDTEXT) throw new IllegalFieldConfigException("A field used for sorting may not be tokenized!");
 		return (f.datatype==FieldConfig.DataType.NUMBER || f.datatype==FieldConfig.DataType.DATETIME) ?
-			cache.config.trieImpl.getSortField(fieldName,reverse) :
+			TrieUtils.getLongSortField(fieldName,reverse) :
 			new SortField(fieldName,SortField.STRING,reverse);
 	}
 

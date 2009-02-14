@@ -37,7 +37,6 @@ import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.analysis.StopAnalyzer;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.store.*;
-import org.apache.lucene.search.trie.TrieUtils;
 
 /**
  * Main panFMP configuration class. It loads the configuration from a XML file.
@@ -58,7 +57,7 @@ public class Config {
 
 		setAnalyzerClass(StandardAnalyzer.class);
 		try {
-			final Class[] DIGSTRING_PARAMS=new Class[]{ExtendedDigester.class,String.class};
+			final Class[] DIGSTRING_PARAMS=new Class<?>[]{ExtendedDigester.class,String.class};
 
 			dig=new ExtendedDigester();
 			dig.setNamespaceAware(true);
@@ -149,8 +148,8 @@ public class Config {
 			dig.addCallMethod("config/metadata/schema/haltOnError", "setHaltOnSchemaError", 0);
 			dig.addCallMethod("config/metadata/schema/augmentation", "setAugmentation", 0);
 
-			// *** TrieImpl ***/
-			dig.addCallMethod("config/numericTrieImplementation", "setTrieImpl", 0);
+			// *** Trie parameters ***/
+			dig.addCallMethod("config/triePrecisionStep", "setTriePrecisionStep", 0, new Class<?>[]{int.class});
 			
 			// *** Directory Impl ***/
 			dig.addCallMethod("config/indexDirImplementation", "setIndexDirImplementation", 0);
@@ -376,11 +375,9 @@ public class Config {
 
 	@PublicForDigesterUse
 	@Deprecated
-	public void setTrieImpl(String v) throws Exception {
-		if ("8bit".equals(v)) trieImpl=TrieUtils.VARIANT_8BIT;
-		else if ("4bit".equals(v)) trieImpl=TrieUtils.VARIANT_4BIT;
-		else if ("2bit".equals(v)) trieImpl=TrieUtils.VARIANT_2BIT;
-		else throw new IllegalArgumentException("numericTrieImplementation may only be [8bit,4bit,2bit].");
+	public void setTriePrecisionStep(int v) throws Exception {
+		if (v<1 || v>64) throw new IllegalArgumentException("Invalid trie precision step [1..64].");
+		triePrecisionStep=v;
 	}
 
 	@PublicForDigesterUse
@@ -483,7 +480,7 @@ public class Config {
 	public ExpressionConfig documentBoost=null;
 
 	// Trie implementation
-	public TrieUtils trieImpl=TrieUtils.VARIANT_8BIT;
+	public int triePrecisionStep=8;
 	
 	// Implementation of the Lucene index directory
 	public IndexDirImplementation indexDirImplementation=IndexDirImplementation.getFromSystemProperty();

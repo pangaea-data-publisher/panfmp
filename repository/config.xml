@@ -88,12 +88,13 @@
 	</cfg:globalHarvesterProperties>
 	<!--
 		When indexing numerical fields, they are saved in a special trie-encoded form to optimize range queries.
-		There are three possibilities for encoding these values: 8bit, 4bit, 2bit; default is 8bit
-		8bit is slowest but has lowest index size, 4bit is faster, 2bit maybe faster, but uses much more disk IO.
-		If you change this value, the indexes must be rebuilt, if you do not do this, you will get spurious NumberFormatExceptions
-		during operation.
+		The trie precision step is the precision, how many bits of the numeric values are stored additionally
+		for the next higher precision. Indexes with lower precision steps can be queried by
+		a config with a multiple of the index-time precision step (e.g. if indexed with 2, 8 for queriying is also possible).
+		The default value is 8 and most moderate space usage and speed. Lower values may make queries faster
+		but need much more space in index.
 	-->
-	<cfg:numericTrieImplementation>8bit</cfg:numericTrieImplementation>
+	<cfg:triePrecisionStep>8</cfg:triePrecisionStep>
 	<!-- for best performance use "mmap" (only in 64bit Java VMs) or "nio" (but not on Windows) . In all other cases use "standard". -->
 	<cfg:indexDirImplementation>standard</cfg:indexDirImplementation>
 	<!-- the Lucene Analyzer used to tokenize the strings (default field and tokenizedText fields -->
