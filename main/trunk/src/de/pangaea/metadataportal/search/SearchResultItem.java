@@ -20,6 +20,7 @@ import de.pangaea.metadataportal.config.*;
 import de.pangaea.metadataportal.utils.*;
 import org.apache.lucene.document.*;
 import org.apache.lucene.index.*;
+import org.apache.lucene.search.trie.TrieUtils;
 import java.io.IOException;
 import java.util.*;
 
@@ -102,9 +103,9 @@ public class SearchResultItem {
 			for (String val : data) try {
 				switch(f.datatype) {
 					case NUMBER:
-						vals.add(Double.valueOf(config.trieImpl.trieCodedToDouble(val))); break;
+						vals.add(Double.valueOf(TrieUtils.sortableLongToDouble(TrieUtils.prefixCodedToLong(val)))); break;
 					case DATETIME:
-						vals.add(config.trieImpl.trieCodedToDate(val)); break;
+						vals.add(new Date(TrieUtils.prefixCodedToLong(val))); break;
 					default:
 						vals.add(val); break;
 				}

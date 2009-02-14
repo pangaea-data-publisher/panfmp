@@ -111,9 +111,9 @@ public class MetadataDocument {
 		// try to read date stamp
 		try {
 			String d=ldoc.get(IndexConstants.FIELDNAME_DATESTAMP);
-			if (d!=null) datestamp=TrieUtils.trieCodedToDateAuto(d);
+			if (d!=null) datestamp=new Date(TrieUtils.prefixCodedToLong(d));
 		} catch (NumberFormatException ne) {
-			log.warn("Datestamp of document '"+identifier+"' is invalid (trie implementation changed?): "+ne.getMessage()+" - Deleting datestamp.");
+			log.warn("Datestamp of document '"+identifier+"' is invalid: "+ne.getMessage()+" - Deleting datestamp.");
 		}
 		// read XML
 		String xml=ldoc.get(IndexConstants.FIELDNAME_XML);
@@ -276,7 +276,10 @@ public class MetadataDocument {
 			f.setOmitTf(true);
 			ldoc.add(f);
 			ldoc.add(new Field(IndexConstants.FIELDNAME_MDOC_IMPL, getClass().getName(), Field.Store.YES, Field.Index.NO));
-			if (datestamp!=null) iconfig.parent.trieImpl.addDateTrieCodedDocumentField(ldoc,IndexConstants.FIELDNAME_DATESTAMP,datestamp,true,Field.Store.YES);
+			if (datestamp!=null) {
+				TrieUtils.addIndexedFields(ldoc, IndexConstants.FIELDNAME_DATESTAMP, TrieUtils.trieCodeLong(datestamp.getTime(), iconfig.parent.triePrecisionStep));
+				ldoc.add(new Field(IndexConstants.FIELDNAME_DATESTAMP, TrieUtils.longToPrefixCoded(datestamp.getTime()), Field.Store.YES, Field.Index.NO));
+			}
 			return ldoc;
 		}
 	}
@@ -555,10 +558,14 @@ public class MetadataDocument {
 		boolean token=false;
 		switch(f.datatype) {
 			case NUMBER:
-				iconfig.parent.trieImpl.addDoubleTrieCodedDocumentField(ldoc, f.name, Double.parseDouble(val), f.indexed, f.storage);
+				long l=TrieUtils.doubleToSortableLong(Double.parseDouble(val));
+				if (f.indexed) TrieUtils.addIndexedFields(ldoc, f.name, TrieUtils.trieCodeLong(l, iconfig.parent.triePrecisionStep));
+				if (f.storage!=Field.Store.NO) ldoc.add(new Field(f.name, TrieUtils.longToPrefixCoded(l), f.storage, Field.Index.NO));
 				break;
 			case DATETIME:
-				iconfig.parent.trieImpl.addDateTrieCodedDocumentField(ldoc, f.name, LenientDateParser.parseDate(val), f.indexed, f.storage);
+				l=LenientDateParser.parseDate(val).getTime();
+				if (f.indexed) TrieUtils.addIndexedFields(ldoc, f.name, TrieUtils.trieCodeLong(l, iconfig.parent.triePrecisionStep));
+				if (f.storage!=Field.Store.NO) ldoc.add(new Field(f.name, TrieUtils.longToPrefixCoded(l), f.storage, Field.Index.NO));
 				break;
 			case TOKENIZEDTEXT: 
 				token=true;
