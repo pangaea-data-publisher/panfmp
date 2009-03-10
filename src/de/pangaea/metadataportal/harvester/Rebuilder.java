@@ -50,11 +50,14 @@ public class Rebuilder extends Harvester {
 
 	// harvester interface
 	private IndexReader reader=null;
+	private String savedAutoOptimize=null;
 
 	@Override
 	public void open(SingleIndexConfig iconfig) throws Exception {
 		log.info("Opening index \""+iconfig.id+"\" for harvesting all documents...");
 		reader = iconfig.newIndexReader(true);
+		// enable optimization
+		savedAutoOptimize=(String)iconfig.harvesterProperties.setProperty("autoOptimize","true");
 		super.open(iconfig);
 	}
 
@@ -63,6 +66,7 @@ public class Rebuilder extends Harvester {
 		if (reader!=null) reader.close();
 		reader=null;
 		super.close(cleanShutdown);
+		iconfig.harvesterProperties.setProperty("autoOptimize",savedAutoOptimize);
 	}
 
 	@Override
