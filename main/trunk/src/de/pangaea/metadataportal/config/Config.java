@@ -565,13 +565,13 @@ public class Config {
 				setContentHandler(new org.xml.sax.helpers.DefaultHandler() {
 					@Override
 					public void startElement(String namespaceURI, String localName, String qName, Attributes atts) throws SAXException {
-						throw new SAXException("No element content allowed here. You can either include an XSL template directly into the config file or use the 'href' attribute!");
+						throw new SAXException("No element content allowed here. You can either include an XSL template directly into the config file or use the 'src' attribute!");
 					}
 					@Override
 					public void characters(char[] ch, int start, int length) throws SAXException {
 						for (int i=0; i<length; i++) {
 							if (Character.isWhitespace(ch[start+i])) continue;
-							throw new SAXException("No element content allowed here. You can either include an XSL template directly into the config file or use the 'href' attribute!");
+							throw new SAXException("No element content allowed here. You can either include an XSL template directly into the config file or use the 'src' attribute!");
 						}
 					}
 				});
