@@ -66,7 +66,11 @@ public class Rebuilder extends Harvester {
 		if (reader!=null) reader.close();
 		reader=null;
 		super.close(cleanShutdown);
-		iconfig.harvesterProperties.setProperty("autoOptimize",savedAutoOptimize);
+		if (savedAutoOptimize==null) {
+			iconfig.harvesterProperties.remove("autoOptimize");
+		} else {
+			iconfig.harvesterProperties.setProperty("autoOptimize",savedAutoOptimize);
+		}
 	}
 
 	@Override
