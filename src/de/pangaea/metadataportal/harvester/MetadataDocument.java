@@ -20,6 +20,7 @@ import de.pangaea.metadataportal.utils.*;
 import de.pangaea.metadataportal.config.*;
 import org.apache.lucene.document.*;
 import org.apache.lucene.search.trie.TrieUtils;
+import org.apache.lucene.search.trie.LongTrieTokenStream;
 import java.io.StringWriter;
 import java.io.StringReader;
 import java.util.UUID;
@@ -272,12 +273,14 @@ public class MetadataDocument {
 		} else {
 			Document ldoc = new Document();
 			// identifier without
-			final Field f=new Field(IndexConstants.FIELDNAME_IDENTIFIER, identifier, Field.Store.YES, Field.Index.NOT_ANALYZED_NO_NORMS);
-			f.setOmitTf(true);
+			Field f=new Field(IndexConstants.FIELDNAME_IDENTIFIER, identifier, Field.Store.YES, Field.Index.NOT_ANALYZED_NO_NORMS);
+			f.setOmitTermFreqAndPositions(true);
 			ldoc.add(f);
 			ldoc.add(new Field(IndexConstants.FIELDNAME_MDOC_IMPL, getClass().getName(), Field.Store.YES, Field.Index.NO));
 			if (datestamp!=null) {
-				TrieUtils.addIndexedFields(ldoc, IndexConstants.FIELDNAME_DATESTAMP, TrieUtils.trieCodeLong(datestamp.getTime(), iconfig.parent.triePrecisionStep));
+				f=new Field(IndexConstants.FIELDNAME_DATESTAMP, new LongTrieTokenStream(datestamp.getTime(), iconfig.parent.triePrecisionStep));
+				f.setOmitNorms(true); f.setOmitTermFreqAndPositions(true);
+				ldoc.add(f);
 				ldoc.add(new Field(IndexConstants.FIELDNAME_DATESTAMP, TrieUtils.longToPrefixCoded(datestamp.getTime()), Field.Store.YES, Field.Index.NO));
 			}
 			return ldoc;
@@ -353,8 +356,8 @@ public class MetadataDocument {
 							walkNodeTexts(sb,nodes.item(i),true);
 							String val=sb.toString().trim();
 							if (!"".equals(val)) {
-							    addField(ldoc,f,val);
-							    needDefault=false;
+								addField(ldoc,f,val);
+								needDefault=false;
 							}
 						}
 					}
@@ -559,12 +562,20 @@ public class MetadataDocument {
 		switch(f.datatype) {
 			case NUMBER:
 				long l=TrieUtils.doubleToSortableLong(Double.parseDouble(val));
-				if (f.indexed) TrieUtils.addIndexedFields(ldoc, f.name, TrieUtils.trieCodeLong(l, iconfig.parent.triePrecisionStep));
+				if (f.indexed) {
+					Field fld=new Field(f.name, new LongTrieTokenStream(l, iconfig.parent.triePrecisionStep));
+					fld.setOmitNorms(true); fld.setOmitTermFreqAndPositions(true);
+					ldoc.add(fld);
+				}
 				if (f.storage!=Field.Store.NO) ldoc.add(new Field(f.name, TrieUtils.longToPrefixCoded(l), f.storage, Field.Index.NO));
 				break;
 			case DATETIME:
 				l=LenientDateParser.parseDate(val).getTime();
-				if (f.indexed) TrieUtils.addIndexedFields(ldoc, f.name, TrieUtils.trieCodeLong(l, iconfig.parent.triePrecisionStep));
+				if (f.indexed) {
+					Field fld=new Field(f.name, new LongTrieTokenStream(l, iconfig.parent.triePrecisionStep));
+					fld.setOmitNorms(true); fld.setOmitTermFreqAndPositions(true);
+					ldoc.add(fld);
+				}
 				if (f.storage!=Field.Store.NO) ldoc.add(new Field(f.name, TrieUtils.longToPrefixCoded(l), f.storage, Field.Index.NO));
 				break;
 			case TOKENIZEDTEXT: 
@@ -574,7 +585,7 @@ public class MetadataDocument {
 				Field.Index in=Field.Index.NO;
 				if (f.indexed) in=token?Field.Index.ANALYZED:Field.Index.NOT_ANALYZED_NO_NORMS;
 				final Field field=new Field(f.name, val, f.storage, in, f.termVectors);
-				if (!token) field.setOmitTf(true);
+				if (!token) field.setOmitNorms(true);
 				ldoc.add(field);
 		}
 	}

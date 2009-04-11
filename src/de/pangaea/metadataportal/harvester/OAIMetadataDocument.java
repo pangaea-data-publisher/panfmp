@@ -70,7 +70,7 @@ public class OAIMetadataDocument extends MetadataDocument {
 		if (ldoc!=null) {
 			for (String set : sets) {
 				final Field field=new Field(IndexConstants.FIELDNAME_SET, set, Field.Store.YES, Field.Index.NOT_ANALYZED_NO_NORMS);
-				field.setOmitTf(true);
+				field.setOmitTermFreqAndPositions(true);
 				ldoc.add(field);
 			}
 		}
@@ -85,6 +85,6 @@ public class OAIMetadataDocument extends MetadataDocument {
 	/**
 	 * @see #getSets
 	 */
-	protected HashSet<String> sets=new HashSet<String>();
+	protected Set<String> sets=new LinkedHashSet<String>();
 
 }
