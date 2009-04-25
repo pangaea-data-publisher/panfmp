@@ -537,15 +537,15 @@ public class SearchService {
 		log.info("Collecting results for index={"+index.id+"}; query={"+query.toString(IndexConstants.FIELDNAME_CONTENT)+"}");
 
 		Searcher searcher=index.newSearcher();
-		LuceneHitCollector coll=new LuceneHitCollector(
+		LuceneCollector coll=new LuceneCollector(
 			collectorBufferSize,collector,
-			cache.config,searcher,
+			cache.config,
 			cache.getFieldSelector(loadXml,fieldsToLoad)
 		);
 		try {
 			searcher.search(query,coll);
 			coll.flushBuffer();
-		} catch (LuceneHitCollector.StopException se) {
+		} catch (LuceneCollector.StopException se) {
 			// we are finished
 		} catch (RuntimeException e) {
 			Throwable t=e.getCause();
