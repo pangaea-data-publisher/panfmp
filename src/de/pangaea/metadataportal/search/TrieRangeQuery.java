@@ -18,6 +18,8 @@ package de.pangaea.metadataportal.search;
 
 import java.util.Date;
 
+import de.pangaea.metadataportal.utils.ISODateFormatter;
+
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ConstantScoreQuery;
 import org.apache.lucene.util.ToStringUtils;
@@ -90,10 +92,14 @@ public final class TrieRangeQuery extends ConstantScoreQuery {
 		// return a more convenient representation of this query than ConstantScoreQuery does:
 		final StringBuilder sb=new StringBuilder();
 		if (!this.field.equals(field)) sb.append(this.field).append(':');
+		String min="*";
+		if (minUnconverted instanceof Date) min=ISODateFormatter.formatLong((Date)minUnconverted);
+		else if (minUnconverted!=null) min=minUnconverted.toString();
+		String max="*";
+		if (maxUnconverted instanceof Date) max=ISODateFormatter.formatLong((Date)maxUnconverted);
+		else if (maxUnconverted!=null) max=maxUnconverted.toString();
 		return sb.append(minInclusive ? '[' : '{')
-			.append((minUnconverted==null) ? "*" : minUnconverted.toString())
-			.append(" TO ")
-			.append((maxUnconverted==null) ? "*" : maxUnconverted.toString())
+			.append(min).append(" TO ").append(max)
 			.append(maxInclusive ? ']' : '}').append(ToStringUtils.boost(getBoost())).toString();
 	}
 	
