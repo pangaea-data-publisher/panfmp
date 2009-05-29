@@ -511,9 +511,9 @@ public class Config {
 		
 		public final Directory getDirectory(final File dir) throws IOException {
 			switch(this) {
-				case STANDARD: return new FSDirectory(dir,null);
-				case MMAP: return new MMapDirectory(dir,null);
-				case NIO: return new NIOFSDirectory(dir,null);
+				case STANDARD: return new FSDirectory(dir,new NativeFSLockFactory(dir));
+				case MMAP: return new MMapDirectory(dir,new NativeFSLockFactory(dir));
+				case NIO: return new NIOFSDirectory(dir,new NativeFSLockFactory(dir));
 			}
 			throw new Error(); // should never happen
 		}
