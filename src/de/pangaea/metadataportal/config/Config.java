@@ -507,11 +507,12 @@ public class Config {
 	public static enum ConfigMode { HARVESTING,SEARCH };
 
 	public static enum IndexDirImplementation {
-		STANDARD, MMAP, NIO;
+		AUTO, SIMPLE, MMAP, NIO;
 		
 		public final Directory getDirectory(final File dir) throws IOException {
 			switch(this) {
-				case STANDARD: return new FSDirectory(dir,new NativeFSLockFactory(dir));
+				case AUTO: return FSDirectory.open(dir,new NativeFSLockFactory(dir));
+				case SIMPLE: return new SimpleFSDirectory(dir,new NativeFSLockFactory(dir));
 				case MMAP: return new MMapDirectory(dir,new NativeFSLockFactory(dir));
 				case NIO: return new NIOFSDirectory(dir,new NativeFSLockFactory(dir));
 			}
@@ -519,13 +520,16 @@ public class Config {
 		}
 		
 		public static final IndexDirImplementation getFromSystemProperty() {
-			final String clazz=System.getProperty("org.apache.lucene.FSDirectory.class");
-			if (clazz==null || FSDirectory.class.getName().equals(clazz)) return STANDARD;
+			String clazz=System.getProperty("org.apache.lucene.FSDirectory.class");
+			if (clazz==null || (clazz=clazz.trim()).length()==0) return AUTO;
+			log.warn("The use of system property 'org.apache.lucene.FSDirectory.class' for choosing the index directory type is outdated.");
+			log.info("Please use the new panFMP config entry <cfg:indexDirectoryType>.");
+			if (FSDirectory.class.getName().equals(clazz) || SimpleFSDirectory.class.getName().equals(clazz)) return SIMPLE;
 			if (MMapDirectory.class.getName().equals(clazz)) return MMAP;
 			if (NIOFSDirectory.class.getName().equals(clazz)) return NIO;
-			throw new IllegalArgumentException("Invalid directory class specified in deprecated system property "+
+			throw new IllegalArgumentException("Invalid directory class ("+clazz+") specified in deprecated system property "+
 				"'org.apache.lucene.FSDirectory.class'. Please use the new panFMP config entry <cfg:indexDirectoryType> "+
-				"for specifying STANDARD, MMAP, or NIO!");
+				"for specifying AUTO, SIMPLE, MMAP, or NIO!");
 		}
 	};
 

@@ -95,8 +95,9 @@
 		but need much more space in index.
 	-->
 	<cfg:triePrecisionStep>8</cfg:triePrecisionStep>
-	<!-- for best performance use "mmap" (only in 64bit Java VMs) or "nio" (but not on Windows) . In all other cases use "standard". -->
-	<cfg:indexDirImplementation>standard</cfg:indexDirImplementation>
+	<!-- for best performance use "mmap" (only in 64bit Java VMs) or "nio" (but not on Windows) .
+	In all other cases use "simple" or "auto" (which chooses simple or nio dependent on system). -->
+	<cfg:indexDirImplementation>auto</cfg:indexDirImplementation>
 	<!-- the Lucene Analyzer used to tokenize the strings (default field and tokenizedText fields -->
 	<cfg:analyzer>
 		<cfg:class>org.apache.lucene.analysis.standard.StandardAnalyzer</cfg:class>
