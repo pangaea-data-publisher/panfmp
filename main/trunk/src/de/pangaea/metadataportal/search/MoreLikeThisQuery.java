@@ -337,7 +337,7 @@ public final class MoreLikeThisQuery extends Query {
 			if (minDocFreq > 0 && docFreq < minDocFreq) continue; // filter out words that don't occur in enough docs
 			if (docFreq == 0) continue; // index update problem?
 			
-			q.insert(new Freq(terms[i], freqs[i] * similarity.idf(docFreq, numDocs)));
+			q.insertWithOverflow(new Freq(terms[i], freqs[i] * similarity.idf(docFreq, numDocs)));
 		}
 
 		int qterms = 0;
