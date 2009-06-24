@@ -26,17 +26,15 @@ import org.apache.lucene.util.ToStringUtils;
 import org.apache.lucene.search.NumericRangeFilter;
 
 /**
-* A Lucene {@link Query} that implements a trie-based range query.
-* This query depends on a specific structure of terms in the index that can only be created
-* by {@link TrieUtils} methods.
-* <p>This class wraps a {@link NumericRangeFilter} from Lucene.
+* A Lucene {@link Query} that implements a trie-based range query on date fields.
+* This class wraps a {@link NumericRangeFilter} from Lucene.
 * @see NumericRangeFilter
 */
 public final class DateRangeQuery extends ConstantScoreQuery {
 
 	/**
 	* A trie query using the supplied field with range bounds in date/time form.
-	* You can set <code>min</code> or <code>max</code> (but not both) to <code>null</code> to leave one bound open.
+	* You can set <code>min</code> or <code>max</code> to <code>null</code> to leave one bound open.
 	* With <code>minInclusive</code> and <code>maxInclusive</code> can be choosen, if the corresponding
 	* bound should be included or excluded from the range.
 	*/
