@@ -77,10 +77,12 @@ public final class LuceneCollector extends Collector {
 		}
 	}
 
+	@Override
 	public final void setScorer(Scorer scorer) {
 		this.currScorer=scorer;
 	}
 	
+	@Override
 	public final void setNextReader(IndexReader reader, int docBase) throws IOException {
 		flushBuffer();
 		this.currReader=reader;
@@ -89,6 +91,7 @@ public final class LuceneCollector extends Collector {
 	/**
 	 * Called by Lucene to collect search result items.
 	 */
+	@Override
 	public final void collect(final int doc) throws IOException {
 		docIds[count]=doc;
 		scores[count]=currScorer.score();
@@ -96,6 +99,7 @@ public final class LuceneCollector extends Collector {
 		if (count==docIds.length) flushBuffer();
 	}
 	
+	@Override
 	public boolean acceptsDocsOutOfOrder() {
 		return true;
 	}
