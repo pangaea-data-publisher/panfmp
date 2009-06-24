@@ -226,7 +226,6 @@ public class Config {
 		// init boolean query constraints and properties
 		final String mcc=searchProperties.getProperty("maxClauseCount",Integer.toString(DEFAULT_MAX_CLAUSE_COUNT));
 		BooleanQuery.setMaxClauseCount("inf".equalsIgnoreCase(mcc) ? Integer.MAX_VALUE : Integer.parseInt(mcc));
-		BooleanQuery.setAllowDocsOutOfOrder(true);
 		
 		// cleanup
 		templatesCache.clear();
