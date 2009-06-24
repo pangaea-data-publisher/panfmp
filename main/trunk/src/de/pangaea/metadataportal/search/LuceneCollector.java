@@ -95,6 +95,10 @@ public final class LuceneCollector extends Collector {
 		count++;
 		if (count==docIds.length) flushBuffer();
 	}
+	
+	public boolean acceptsDocsOutOfOrder() {
+		return true;
+	}
 
 	protected int[] docIds; // protected because of speed with inner class
 	protected float[] scores; // protected because of speed with inner class

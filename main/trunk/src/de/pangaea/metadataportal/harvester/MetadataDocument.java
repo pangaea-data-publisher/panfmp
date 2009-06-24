@@ -19,8 +19,7 @@ package de.pangaea.metadataportal.harvester;
 import de.pangaea.metadataportal.utils.*;
 import de.pangaea.metadataportal.config.*;
 import org.apache.lucene.document.*;
-import org.apache.lucene.search.trie.TrieUtils;
-import org.apache.lucene.search.trie.LongTrieTokenStream;
+import org.apache.lucene.util.NumericUtils;
 import java.io.StringWriter;
 import java.io.StringReader;
 import java.util.UUID;
@@ -112,7 +111,7 @@ public class MetadataDocument {
 		// try to read date stamp
 		try {
 			String d=ldoc.get(IndexConstants.FIELDNAME_DATESTAMP);
-			if (d!=null) datestamp=new Date(TrieUtils.prefixCodedToLong(d));
+			if (d!=null) datestamp=new Date(NumericUtils.prefixCodedToLong(d));
 		} catch (NumberFormatException ne) {
 			log.warn("Datestamp of document '"+identifier+"' is invalid: "+ne.getMessage()+" - Deleting datestamp.");
 		}
@@ -278,10 +277,8 @@ public class MetadataDocument {
 			ldoc.add(f);
 			ldoc.add(new Field(IndexConstants.FIELDNAME_MDOC_IMPL, getClass().getName(), Field.Store.YES, Field.Index.NO));
 			if (datestamp!=null) {
-				f=new Field(IndexConstants.FIELDNAME_DATESTAMP, new LongTrieTokenStream(datestamp.getTime(), iconfig.parent.triePrecisionStep));
-				f.setOmitNorms(true); f.setOmitTermFreqAndPositions(true);
-				ldoc.add(f);
-				ldoc.add(new Field(IndexConstants.FIELDNAME_DATESTAMP, TrieUtils.longToPrefixCoded(datestamp.getTime()), Field.Store.YES, Field.Index.NO));
+				ldoc.add(new NumericField(IndexConstants.FIELDNAME_DATESTAMP, iconfig.parent.triePrecisionStep).setLongValue(datestamp.getTime()));
+				ldoc.add(new Field(IndexConstants.FIELDNAME_DATESTAMP, NumericUtils.longToPrefixCoded(datestamp.getTime()), Field.Store.YES, Field.Index.NO));
 			}
 			return ldoc;
 		}
@@ -561,22 +558,16 @@ public class MetadataDocument {
 		boolean token=false;
 		switch(f.datatype) {
 			case NUMBER:
-				long l=TrieUtils.doubleToSortableLong(Double.parseDouble(val));
-				if (f.indexed) {
-					Field fld=new Field(f.name, new LongTrieTokenStream(l, iconfig.parent.triePrecisionStep));
-					fld.setOmitNorms(true); fld.setOmitTermFreqAndPositions(true);
-					ldoc.add(fld);
-				}
-				if (f.storage!=Field.Store.NO) ldoc.add(new Field(f.name, TrieUtils.longToPrefixCoded(l), f.storage, Field.Index.NO));
+				long l=NumericUtils.doubleToSortableLong(Double.parseDouble(val));
+				if (f.indexed)
+					ldoc.add(new NumericField(f.name, iconfig.parent.triePrecisionStep).setLongValue(l));
+				if (f.storage!=Field.Store.NO) ldoc.add(new Field(f.name, NumericUtils.longToPrefixCoded(l), f.storage, Field.Index.NO));
 				break;
 			case DATETIME:
 				l=LenientDateParser.parseDate(val).getTime();
-				if (f.indexed) {
-					Field fld=new Field(f.name, new LongTrieTokenStream(l, iconfig.parent.triePrecisionStep));
-					fld.setOmitNorms(true); fld.setOmitTermFreqAndPositions(true);
-					ldoc.add(fld);
-				}
-				if (f.storage!=Field.Store.NO) ldoc.add(new Field(f.name, TrieUtils.longToPrefixCoded(l), f.storage, Field.Index.NO));
+				if (f.indexed)
+					ldoc.add(new NumericField(f.name, iconfig.parent.triePrecisionStep).setLongValue(l));
+				if (f.storage!=Field.Store.NO) ldoc.add(new Field(f.name, NumericUtils.longToPrefixCoded(l), f.storage, Field.Index.NO));
 				break;
 			case TOKENIZEDTEXT: 
 				token=true;

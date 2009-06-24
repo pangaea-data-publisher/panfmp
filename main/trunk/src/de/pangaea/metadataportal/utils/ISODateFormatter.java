@@ -54,8 +54,18 @@ public final class ISODateFormatter {
 		return longDate.format(date);
 	}
 
+	/** Formats a long date. */
+	public static synchronized String formatLong(long date) {
+		return longDate.format(date);
+	}
+
 	/** Formats a short date. */
 	public static synchronized String formatShort(Date date) {
+		return shortDate.format(date);
+	}
+
+	/** Formats a short date. */
+	public static synchronized String formatShort(long date) {
 		return shortDate.format(date);
 	}
 
