@@ -20,7 +20,6 @@ import de.pangaea.metadataportal.config.Config;
 import org.apache.lucene.search.*;
 import org.apache.lucene.document.*;
 import org.apache.lucene.index.IndexReader;
-import org.apache.lucene.util.SorterTemplate;
 import java.io.IOException;
 
 /**
@@ -49,23 +48,6 @@ public final class LuceneCollector extends Collector {
 	 */
 	protected void flushBuffer() throws IOException {
 		if (log.isDebugEnabled()) log.debug("Flushing buffer containing "+count+" search results...");
-		// we do the buffer in index order which is less IO expensive!
-		new SorterTemplate() {
-			@Override
-			protected final void swap(int i,int j) {
-				final int tempId=docIds[i];
-				docIds[i]=docIds[j];
-				docIds[j]=tempId;
-				final float tempScore=scores[i];
-				scores[i]=scores[j];
-				scores[j]=tempScore;
-			}
-			
-			@Override
-			protected final int compare(int i,int j) {
-				return docIds[i]-docIds[j];
-			}
-		}.quickSort(0,count-1);
 		try {
 			for (int i=0; i<count; i++) {
 				Document doc = currReader.document(docIds[i], fields);
@@ -101,7 +83,8 @@ public final class LuceneCollector extends Collector {
 	
 	@Override
 	public boolean acceptsDocsOutOfOrder() {
-		return true;
+		// should be ordered for performance
+		return false;
 	}
 
 	protected int[] docIds; // protected because of speed with inner class
