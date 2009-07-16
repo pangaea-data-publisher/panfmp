@@ -57,7 +57,7 @@ public class ExternalIndexHarvester extends SingleFileEntitiesHarvester {
 	private Query query=null;
 	
 	private static final SetBasedFieldSelector FIELD_SELECTOR=new SetBasedFieldSelector(
-		new HashSet(Arrays.asList(IndexConstants.FIELDNAME_IDENTIFIER,IndexConstants.FIELDNAME_DATESTAMP)),
+		new HashSet<String>(Arrays.asList(IndexConstants.FIELDNAME_IDENTIFIER,IndexConstants.FIELDNAME_DATESTAMP)),
 		Collections.singleton(IndexConstants.FIELDNAME_XML)
 	);
 
