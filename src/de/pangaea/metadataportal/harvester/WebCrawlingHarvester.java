@@ -111,8 +111,16 @@ public class WebCrawlingHarvester extends SingleFileEntitiesHarvester {
 		} catch (ClassNotFoundException cfe) {
 			throw new ClassNotFoundException(getClass().getName()+" needs the NekoHTML parser in classpath!");
 		}
+
+		SimpleCookieHandler.INSTANCE.enable();
 	}
 
+	@Override
+	public void close(boolean cleanShutdown) throws Exception {
+		SimpleCookieHandler.INSTANCE.disable();
+		super.close(cleanShutdown);
+	}
+	
 	@Override
 	public void harvest() throws Exception {
 		// process this URL directly and save possible redirect as new base

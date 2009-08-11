@@ -77,6 +77,8 @@ public abstract class OAIHarvesterBase extends Harvester {
 		if ((s=iconfig.harvesterProperties.getProperty("timeoutAfterSeconds"))!=null) timeout=Integer.parseInt(s);
 		metadataPrefix=iconfig.harvesterProperties.getProperty("metadataPrefix");
 		if (metadataPrefix==null) throw new NullPointerException("No metadataPrefix for the OAI repository was given!");
+
+		SimpleCookieHandler.INSTANCE.enable();
 	}
 
 	@Override
@@ -259,6 +261,7 @@ public abstract class OAIHarvesterBase extends Harvester {
 	@Override
 	public void close(boolean cleanShutdown) throws Exception {
 		reset();
+		SimpleCookieHandler.INSTANCE.disable();
 		super.close(cleanShutdown);
 	}
 	
