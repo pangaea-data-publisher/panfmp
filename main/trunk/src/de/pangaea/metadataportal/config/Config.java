@@ -19,6 +19,7 @@ package de.pangaea.metadataportal.config;
 import java.util.*;
 import java.io.*;
 import java.net.URL;
+import java.net.CookieHandler;
 import java.net.MalformedURLException;
 import de.pangaea.metadataportal.utils.*;
 import org.apache.commons.digester.*;
@@ -54,6 +55,15 @@ public class Config {
 		String version=de.pangaea.metadataportal.Package.getFullPackageDescription();
 		if (version!=null) log.info(version);
 		de.pangaea.metadataportal.Package.checkMinimumRequirements();
+		
+		if (configMode==ConfigMode.HARVESTING) {
+			final CookieHandler defCookieH=CookieHandler.getDefault();
+			if (defCookieH != null && defCookieH != SimpleCookieHandler.INSTANCE) {
+				log.warn("There is a CookieHandler already registered with the JVM, panFMP's customized HTTP cookie handling will be not available during harvesting.");
+			} else {
+				CookieHandler.setDefault(SimpleCookieHandler.INSTANCE);
+			}
+		}
 
 		setAnalyzerClass(StandardAnalyzer.class);
 		try {
