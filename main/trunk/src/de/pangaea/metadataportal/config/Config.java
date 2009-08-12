@@ -572,6 +572,10 @@ public class Config {
 
 		@Override
 		public void begin(String namespace, String name, Attributes attributes) throws Exception {
+			final Object o=digester.peek();
+			if (!(o instanceof SingleIndexConfig)) throw new RuntimeException("An XSLT tree is not allowed here!");
+			final SingleIndexConfig iconf=(SingleIndexConfig)o;
+
 			final String file=attributes.getValue(XMLConstants.NULL_NS_URI,"src");
 			if (file!=null) {
 				setResult(loadTemplate(file));
@@ -589,15 +593,24 @@ public class Config {
 					}
 				});
 			}
+			// collect all params to additionally pass to XSL and store in Map
+			iconf.xsltParams=new HashMap<QName,Object>();
+			for (int i=0,c=attributes.getLength(); i<c; i++) {
+				QName qname=new QName(attributes.getURI(i),attributes.getLocalName(i));
+				// filter src attribute
+				if (new QName(XMLConstants.NULL_NS_URI,"src").equals(qname)) continue;
+				iconf.xsltParams.put(qname,attributes.getValue(i));
+			}
 			super.begin(namespace,name,attributes);
 		}
 
 		@Override
 		protected void setResult(Templates t) {
-			Object o=digester.peek();
-			if (o instanceof SingleIndexConfig) ((SingleIndexConfig)o).xslt=t;
-			/*else if (o instanceof Config) ((Config)o).xsltBeforeXPath=t; // the config itsself*/
-			else throw new RuntimeException("An XSLT tree is not allowed here!");
+			final Object o=digester.peek();
+			if (!(o instanceof SingleIndexConfig)) throw new RuntimeException("An XSLT tree is not allowed here!");
+			final SingleIndexConfig iconf=(SingleIndexConfig)o;
+			
+			iconf.xslt=t;
 		}
 
 	}

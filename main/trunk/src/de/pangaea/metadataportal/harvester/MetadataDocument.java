@@ -653,8 +653,8 @@ public class MetadataDocument {
 
 		private void setTransformerProperties(final Transformer trans) throws TransformerException {
 			trans.setErrorListener(new LoggingErrorListener(log));
-			// set variables
-			addSystemVariables(new AbstractMap<QName,Object>() {
+			// create a Map view on the transformer properties
+			final Map<QName,Object> paramMap=new AbstractMap<QName,Object>() {
 				@Override
 				public Set<Map.Entry<QName,Object>> entrySet() {
 					throw new UnsupportedOperationException(); // should never be called
@@ -665,7 +665,11 @@ public class MetadataDocument {
 					trans.setParameter(key.toString(), value);
 					return null; // dummy
 				}
-			});
+			};
+			// set variables
+			addSystemVariables(paramMap);
+			// set additional variables from <cfg:transform/> attributes
+			if (iconfig.xsltParams!=null) paramMap.putAll(iconfig.xsltParams);
 		}
 
 		private final DOMSource DOMResult2Source(DOMResult dr) {
