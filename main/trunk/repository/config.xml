@@ -162,7 +162,7 @@
 			<cfg:indexDir>./lucene-store/copepod</cfg:indexDir>
 			<cfg:harvesterClass>de.pangaea.metadataportal.harvester.WebCrawlingHarvester</cfg:harvesterClass>
 			<cfg:harvesterProperties>
-				<cfg:baseUrl>http://www.st.nmfs.gov/plankton/content/xml_src/</cfg:baseUrl>
+				<cfg:baseUrl>http://www.st.nmfs.noaa.gov/plankton/content/xml_src/</cfg:baseUrl>
 				<cfg:filenameFilter>.*\.xml</cfg:filenameFilter>
 				<cfg:autoOptimize>true</cfg:autoOptimize>
 				<cfg:validate>true</cfg:validate>
