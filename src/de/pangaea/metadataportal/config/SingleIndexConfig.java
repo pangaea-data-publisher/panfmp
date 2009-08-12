@@ -27,6 +27,7 @@ import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.store.Directory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import javax.xml.namespace.QName;
 
 /**
  * Configuration of a real lucene index. Such indexes can be the target of a harvest operation.
@@ -152,4 +153,5 @@ public class SingleIndexConfig extends IndexConfig {
 	public Class<? extends Harvester> harvesterClass=null;
 	public final Properties harvesterProperties;
 	public Templates xslt=null;
+	public Map<QName,Object> xsltParams=null;
 }

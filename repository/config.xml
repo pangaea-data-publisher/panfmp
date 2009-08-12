@@ -154,7 +154,7 @@
 				</cfg:transform>
 			If you want to use one of the internal variables of IndexBuilder (the "$ib:XXXX"-ones),
 			declare them as XSL parameters for the stylesheet (possible in both inline and external stylesheets). They are automatically set as
-			input parameters to the transformation.
+			input parameters to the transformation. Additional declared XSL parameters can simply be passed to the XSL as string attributes of the <cfg:transform/> element.
 			-->
 		</cfg:index>
 		<cfg:index id="copepod">
