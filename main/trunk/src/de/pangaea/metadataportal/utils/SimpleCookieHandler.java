@@ -54,7 +54,7 @@ public final class SimpleCookieHandler extends CookieHandler {
 			if (!("Set-Cookie".equalsIgnoreCase(entry.getKey()) || "Set-Cookie2".equalsIgnoreCase(entry.getKey()))) continue;
 			List<String> setCookieList = entry.getValue();
 			for (String gItem : setCookieList) {
-				for (String item : gItem.split(",")) {
+				for (String item : gItem.split(",")) try {
 					final Cookie cookie = new Cookie(uri, item);
 					if (log.isDebugEnabled()) log.debug("Received cookie: "+cookie);
 					for (Iterator<Cookie> it = cache.get().iterator(); it.hasNext();) {
@@ -62,6 +62,8 @@ public final class SimpleCookieHandler extends CookieHandler {
 						if (cookie.getName().equals(existingCookie.getName())) it.remove();
 					}
 					cache.get().add(cookie);
+				} catch (Exception e) {
+					log.warn("Parsing cookie failed: "+e);
 				}
 			}
 		}
@@ -125,7 +127,7 @@ public final class SimpleCookieHandler extends CookieHandler {
 							value = "." + value;
 						}
 						if (!uriDomain.toLowerCase().endsWith(value.toLowerCase())) {
-							throw new IllegalArgumentException("Trying to set foreign cookie");
+							throw new IllegalArgumentException("Trying to set foreign cookie '"+toString()+"'");
 						}
 						this._domain = value;
 					}
@@ -144,7 +146,8 @@ public final class SimpleCookieHandler extends CookieHandler {
 								this._expires = EXPIRES_FORMAT_2.parse(value);
 							}
 						} catch (ParseException e2) {
-							throw new IllegalArgumentException("Bad date format in cookie header: " + value);
+							log.warn("Bad date format in cookie header (ignoring expires value): "+value);
+							this._expires=null;
 						}
 					}
 				}
@@ -181,8 +184,8 @@ public final class SimpleCookieHandler extends CookieHandler {
 			return new StringBuilder(_name).append("=").append(_value).toString();
 		}
 
-		private static DateFormat EXPIRES_FORMAT_1 = new SimpleDateFormat("E, dd MMM yyyy H:m:s z", Locale.US);
-		private static DateFormat EXPIRES_FORMAT_2 = new SimpleDateFormat("E, dd-MMM-yyyy H:m:s z", Locale.US);
+		private static final DateFormat EXPIRES_FORMAT_1 = new SimpleDateFormat("E, dd MMM yyyy H:m:s z", Locale.US);
+		private static final DateFormat EXPIRES_FORMAT_2 = new SimpleDateFormat("E, dd-MMM-yyyy H:m:s z", Locale.US);
 	}
 
 }
