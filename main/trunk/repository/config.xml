@@ -102,10 +102,7 @@
 	<cfg:analyzer>
 		<cfg:class>org.apache.lucene.analysis.standard.StandardAnalyzer</cfg:class>
 		<cfg:importEnglishStopWords/>
-		<cfg:addStopWords>
-            latitude,longitude,elevation,depth,source,e-mail,north,south,east,west, 
-            area,location,geocode,method,parameter
-        </cfg:addStopWords>
+		<!--<cfg:addStopWords>and,or,a,...</cfg:addStopWords>-->
 	</cfg:analyzer>
 	<!-- Definition of Indexes to harvester and their properties -->
 	<cfg:indexes>
