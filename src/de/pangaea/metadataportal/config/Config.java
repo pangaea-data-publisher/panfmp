@@ -520,10 +520,10 @@ public class Config {
 		
 		public final Directory getDirectory(final File dir) throws IOException {
 			switch(this) {
-				case AUTO: return FSDirectory.open(dir,new NativeFSLockFactory(dir));
-				case SIMPLE: return new SimpleFSDirectory(dir,new NativeFSLockFactory(dir));
-				case MMAP: return new MMapDirectory(dir,new NativeFSLockFactory(dir));
-				case NIO: return new NIOFSDirectory(dir,new NativeFSLockFactory(dir));
+				case AUTO: return FSDirectory.open(dir,new NativeFSLockFactory());
+				case SIMPLE: return new SimpleFSDirectory(dir,new NativeFSLockFactory());
+				case MMAP: return new MMapDirectory(dir,new NativeFSLockFactory());
+				case NIO: return new NIOFSDirectory(dir,new NativeFSLockFactory());
 			}
 			throw new Error(); // should never happen
 		}
