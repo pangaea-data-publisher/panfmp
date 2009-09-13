@@ -229,6 +229,7 @@ public class MetadataDocument {
 	 * @throws Exception if an exception occurs during transformation (various types of exceptions can be thrown).
 	 * @throws IllegalStateException if index configuration is unknown
 	 */
+	@SuppressWarnings("deprecation")
 	public Document getLuceneDocument() throws Exception {
 		Document ldoc = createEmptyDocument();
 		if (!deleted) {
