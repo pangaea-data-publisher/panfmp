@@ -57,7 +57,9 @@ public abstract class IndexConfig {
 	/** returns a Searcher on the shared IndexReader, should be closed after using. **/
 	public Searcher newSearcher() throws java.io.IOException {
 		if (!checked) throw new IllegalStateException("Index config not initialized and checked!");
-		return new IndexSearcher(getSharedIndexReader());
+		IndexSearcher searcher=new IndexSearcher(getSharedIndexReader());
+		searcher.setDefaultFieldSortScoring(true,true);
+		return searcher;
 	}
 
 	/** checks, if shared IndexReader is current and the underlying disk store was not changed **/
