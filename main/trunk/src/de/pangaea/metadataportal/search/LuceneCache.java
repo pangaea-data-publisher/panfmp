@@ -252,11 +252,7 @@ public final class LuceneCache {
 				}
 				log.debug("Fetching "+count+" top docs...");
 				long start=System.currentTimeMillis();
-				final TopDocsCollector tc = (sort!=null) ?
-					TopFieldCollector.create(sort, count, false /* fillFields */, true /* trackDocScores */, true /* trackMaxScore */, false /* docsInOrder */) :
-					TopScoreDocCollector.create(count, false);
-				
-				topDocs = (sort!=null) ? searcher.search(query,(Filter) null,count,sort) : searcher.search(query,(Filter) null,count);
+				topDocs = (sort!=null) ? searcher.search(query,(Filter)null,count,sort) : searcher.search(query,(Filter)null,count);
 				queryTime=System.currentTimeMillis()-start;
 				fetchedCount=count;
 			}
