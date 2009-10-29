@@ -22,6 +22,7 @@ import java.util.*;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import de.pangaea.metadataportal.harvester.Harvester;
 
 /**
  * @author Uwe Schindler
