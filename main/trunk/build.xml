@@ -95,12 +95,14 @@
 				<include name="*.txt"/>
 			</zipfileset>
 		</zip>
+		<panfmp-checksum file="${basedir}/${pkgname}-bin.zip"/>
 	</target>
 
 	<target name="srcpackage" depends="clean">
 		<zip destfile="${basedir}/${pkgname}-src.zip">
 			<zipfileset dir="${basedir}" prefix="${pkgname}"/>
 		</zip>
+		<panfmp-checksum file="${basedir}/${pkgname}-src.zip"/>
 	</target>
 	
 	<target name="package">
@@ -120,6 +122,9 @@
 		</delete>
 		<delete>
 			<fileset dir="${basedir}" includes="*.zip"/>
+			<fileset dir="${basedir}" includes="*.md5"/>
+			<fileset dir="${basedir}" includes="*.sha1"/>
+			<fileset dir="${basedir}" includes="*.asc"/>
 			<fileset dir="${basedir}/repository" includes="**/*.log"/>
 		</delete>
 		<ant dir="${examples}" target="clean" inheritAll="false">
@@ -127,4 +132,16 @@
 		</ant>
 	</target>
 	
+	<!-- Macro for building checksum files
+	This is only needed until the "format" option is supported
+	by ant's built in checksum task
+	-->
+	<macrodef name="panfmp-checksum">
+		<attribute name="file"/>
+		<sequential>
+			<checksum file="@{file}" algorithm="md5" format="MD5SUM" forceoverwrite="yes" readbuffersize="65536"/>
+			<checksum file="@{file}" algorithm="sha1" format="MD5SUM" forceoverwrite="yes" readbuffersize="65536"/>
+		</sequential>
+	</macrodef>
+
 </project>
