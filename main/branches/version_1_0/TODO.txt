@@ -1,0 +1,11 @@
+Harvester:
+* Rewrite LenientDateParser and add some options to field definition (e.g. default timezone)
+* Fake IndexBuilder, that only prints out all harvested documents for debugging
+
+Search:
+o/o
+
+General:
+* When Lucene 2.9 is released change all JavaDocs links (build.xml),
+  remove the snapshot information, and so on! Cleanup webserver
+  (www.panfmp.org) redirects.

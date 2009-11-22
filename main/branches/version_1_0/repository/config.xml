@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<cfg:config xmlns:cfg="urn:java:de.pangaea.metadataportal.config.Config" xmlns:ib="urn:java:de.pangaea.metadataportal.harvester.IndexBuilder">
+	<!-- Definition of the metadata schema and fileds for indexing: -->
+	<cfg:metadata xmlns:dif="http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/">
+		<!--
+			Variables are evaluated at beginning of indexing process and can be used in all filters, fields, field-templates.
+			The index builder also has some internal variables and functions in its namespace, that can be used:
+			- $ib:index: the ID of the current index
+			- $ib:indexDisplayName: the displayName of the current index
+			- $ib:docIdentifier: the identifier of the harvested document
+			- $ib:docDatestamp: the datestamp of the harvested document (if available), else ""
+		-->
+		<cfg:variables>
+			<cfg:variable name="startdate">/dif:DIF/dif:Temporal_Coverage/dif:Start_Date</cfg:variable>
+			<cfg:variable name="enddate">/dif:DIF/dif:Temporal_Coverage/dif:Stop_Date</cfg:variable>
+			<cfg:variable-template name="boost" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+				<xsl:choose>
+					<xsl:when test="/dif:DIF/dif:Parent_DIF">1.0</xsl:when>
+					<xsl:otherwise>5.0</xsl:otherwise>
+				</xsl:choose>
+			</cfg:variable-template>
+		</cfg:variables>
+		<!--
+			Each harvested document goes through filter steps:
+			The default is to accept all documents. You can give boolean XPath queries, that filter out documents.
+			Interesting it the special function ib:isDocIdentifierUnique([index name,...]) to filter out duplicate identifiers!
+		-->
+		<cfg:filters default="accept">
+			<!-- we want to remove all documents harvested into index 'pangaea-carboocean' that are from project 'JGOFS' -->
+			<cfg:deny>$ib:index='pangaea-carboocean' and /dif:DIF/dif:Project/dif:Short_Name[contains(.,'JGOFS')]</cfg:deny>
+			<!-- we want to remove all documents with wrong namespace -->
+			<cfg:deny>namespace-uri(/*)!='http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/'</cfg:deny>
+			<!--
+				We want to remove all duplicates; this is the simple approach: it checks if every harvested
+				identifier is in no other currently existing index.
+				Because of this every NEW document will stay in the index that was harvested first.
+				You can create more complicated dependencies by using the $ib:index variable and also IDs
+				as string parameters given to the ib:isDocIdentifierUnique() function.
+			-->
+			<cfg:deny>not(ib:isDocIdentifierUnique())</cfg:deny>
+		</cfg:filters>
+		<!--
+			Field definitions:
+			You can declare fields using <cfg:field> or <cfg:field-template> (for the latter see the example in variables-section).
+			Each field has a name and some properties for Lucene:
+			- lucenestorage: the field may be retrieved from query results (like a column in a database)
+			- luceneindexed: the field is indexed and can be used in search strings or other querys
+			- datatype: tokenizedText (standard fulltext indexing field, you can use it in query strings), string (the whole field content is indexed as string, but not tokenized),
+			  number (numerical values, works with the TrieRangeQuery), dateTime (date/time values, works with the TrieRangeQuery),
+			  xml (field is stored as XML in index, ideal for field templates), xhtml (only works with field-templates because it needs a XSL-template
+			  that outputs XHTML. Can be used to generate thumbnail information for search results in HTML form).
+			  The field template should not declare the XHTML namespace.
+		-->
+		<cfg:fields>
+			<cfg:field name="citation" datatype="tokenizedText" lucenestorage="false" luceneindexed="true" lucenetermvectors="true">/dif:DIF/dif:Data_Set_Citation|/dif:DIF/dif:Entry_Title|/dif:DIF/dif:Entry_ID</cfg:field>
+			<cfg:field name="investigator" datatype="tokenizedText" lucenestorage="false" luceneindexed="true">/dif:DIF/dif:Personnel[contains(dif:Role,'nvestigat')]</cfg:field>
+			<cfg:field name="parameter" datatype="tokenizedText" lucenestorage="false" luceneindexed="true">/dif:DIF/dif:Parameters</cfg:field>
+			<cfg:field name="method" datatype="tokenizedText" lucenestorage="false" luceneindexed="true">/dif:DIF/dif:Sensor_Name</cfg:field>
+			<cfg:field name="project" datatype="tokenizedText" lucenestorage="false" luceneindexed="true">/dif:DIF/dif:Project</cfg:field>
+			<cfg:field name="projectFull" datatype="string" lucenestorage="true" luceneindexed="true">/dif:DIF/dif:Project/dif:Short_Name</cfg:field>
+			<cfg:field name="minLatitude" datatype="number" lucenestorage="true" luceneindexed="true">/dif:DIF/dif:Spatial_Coverage/dif:Southernmost_Latitude</cfg:field>
+			<cfg:field name="maxLatitude" datatype="number" lucenestorage="true" luceneindexed="true">/dif:DIF/dif:Spatial_Coverage/dif:Northernmost_Latitude</cfg:field>
+			<cfg:field name="minLongitude" datatype="number" lucenestorage="true" luceneindexed="true">/dif:DIF/dif:Spatial_Coverage/dif:Westernmost_Longitude</cfg:field>
+			<cfg:field name="maxLongitude" datatype="number" lucenestorage="true" luceneindexed="true">/dif:DIF/dif:Spatial_Coverage/dif:Easternmost_Longitude</cfg:field>
+			<cfg:field name="minDateTime" datatype="dateTime" lucenestorage="true" luceneindexed="true" default="1900-01-01T00:00:00">$startdate</cfg:field>
+			<cfg:field name="maxDateTime" datatype="dateTime" lucenestorage="true" luceneindexed="true" default="2038-12-31T23:59:59">$enddate</cfg:field>
+			<cfg:field name="minMonth" datatype="number" lucenestorage="true" luceneindexed="true">substring-before(substring-after($startdate,'-'),'-')</cfg:field>
+			<cfg:field name="maxMonth" datatype="number" lucenestorage="true" luceneindexed="true">substring-before(substring-after($enddate,'-'),'-')</cfg:field>
+			<cfg:field name="dataCenter" datatype="tokenizedText" lucenestorage="false" luceneindexed="true">/dif:DIF/dif:Data_Center/dif:Data_Center_Name</cfg:field>
+			<cfg:field name="dataCenterFull" datatype="string" lucenestorage="true" luceneindexed="true">/dif:DIF/dif:Data_Center/dif:Data_Center_Name/dif:Short_Name</cfg:field>
+			<cfg:default lucenetermvectors="termPositions">.</cfg:default>
+		</cfg:fields>
+		<!-- document boost may only be a XPath query that returns a "number". To generate it, we use a variable defined by a template and cast it here to "number". -->
+		<cfg:documentBoost>number($boost)</cfg:documentBoost>
+		<cfg:schema>
+			<cfg:url>http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/dif_v9.4.xsd</cfg:url>
+			<cfg:haltOnError>false</cfg:haltOnError>
+			<!-- if the validator augments the source document (e.g., adds default attributes), use this as basis for indexing? -->
+			<cfg:augmentation>false</cfg:augmentation>
+		</cfg:schema>
+	</cfg:metadata>
+	<!-- global harvester properties are inherited to each index, so only give properties available to all harvester types -->
+	<cfg:globalHarvesterProperties>
+		<cfg:numConverterThreads>2</cfg:numConverterThreads>
+		<cfg:maxConverterQueue>250</cfg:maxConverterQueue>
+		<cfg:maxIndexerQueue>250</cfg:maxIndexerQueue>
+		<cfg:maxBufferedIndexChanges>1000</cfg:maxBufferedIndexChanges>
+	</cfg:globalHarvesterProperties>
+	<!--
+		When indexing numerical fields, they are saved in a special trie-encoded form to optimize range queries.
+		The trie precision step is the precision, how many bits of the numeric values are stored additionally
+		for the next higher precision. Indexes with lower precision steps can be queried by
+		a config with a multiple of the index-time precision step (e.g. if indexed with 2, 8 for queriying is also possible).
+		The default value is 8 and most moderate space usage and speed. Lower values may make queries faster
+		but need much more space in index.
+	-->
+	<cfg:triePrecisionStep>8</cfg:triePrecisionStep>
+	<!-- for best performance use "mmap" (only in 64bit Java VMs) or "nio" (but not on Windows) .
+	In all other cases use "simple" or "auto" (which chooses simple or nio dependent on system). -->
+	<cfg:indexDirImplementation>auto</cfg:indexDirImplementation>
+	<!-- the Lucene Analyzer used to tokenize the strings (default field and tokenizedText fields -->
+	<cfg:analyzer>
+		<cfg:class>org.apache.lucene.analysis.standard.StandardAnalyzer</cfg:class>
+		<cfg:importEnglishStopWords/>
+		<!--<cfg:addStopWords>and,or,a,...</cfg:addStopWords>-->
+	</cfg:analyzer>
+	<!-- Definition of Indexes to harvester and their properties -->
+	<cfg:indexes>
+		<cfg:index id="pangaea-carboocean">
+			<cfg:displayName>PANGAEA datasets for CARBOOCEAN</cfg:displayName>
+			<cfg:indexDir>./lucene-store/pangaea-carboocean</cfg:indexDir>
+			<cfg:harvesterClass>de.pangaea.metadataportal.harvester.OAIHarvester</cfg:harvesterClass>
+			<cfg:harvesterProperties>
+				<cfg:baseUrl>http://ws.pangaea.de/oai/</cfg:baseUrl>
+				<cfg:metadataPrefix>dif</cfg:metadataPrefix>
+				<cfg:setSpec>CARBOOCEAN</cfg:setSpec>
+				<cfg:autoOptimize>true</cfg:autoOptimize>
+				<cfg:validate>false</cfg:validate>
+			</cfg:harvesterProperties>
+		</cfg:index>
+		<cfg:index id="ifremer">
+			<cfg:displayName>IFREMER datasets</cfg:displayName>
+			<cfg:indexDir>./lucene-store/ifremer</cfg:indexDir>
+			<cfg:harvesterClass>de.pangaea.metadataportal.harvester.OAIHarvester</cfg:harvesterClass>
+			<cfg:harvesterProperties>
+				<cfg:baseUrl>http://www.ifremer.fr/oai/provider</cfg:baseUrl>
+				<cfg:metadataPrefix>dif</cfg:metadataPrefix>
+				<cfg:autoOptimize>true</cfg:autoOptimize>
+				<cfg:validate>true</cfg:validate>
+			</cfg:harvesterProperties>
+			<!--
+			Here are two possibilities to do a inline transformation of harvested metadata (just as example):
+			a) reference to external stylesheet (relative to this config file):
+				<cfg:transform src="./ns-convert.xslt"/>
+			b) inline stylesheet. Please note, previously declared namespace prefixes are reported to the stylesheet, so you may remove them with "exclude-result-prefixes"!
+			For example, this one converts the harvested documents namespace, which may be different or missing in case of old DIFs to the correct new namespace (you may also use xinclude to include it):
+				<cfg:transform>
+					<xsl:stylesheet version="1.0" xmlns:dif="http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" exclude-result-prefixes="xsl cfg ib" >
+						<xsl:template match="/*">
+							<dif:DIF xsi:schemaLocation="http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/ http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/dif_v9.4.xsd">
+								<xsl:apply-templates />
+							</dif:DIF>
+						</xsl:template>
+						<xsl:template match="*">
+							<xsl:element namespace="http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/" name="{concat('dif:',local-name())}">
+								<xsl:copy-of select="@*" />
+								<xsl:apply-templates />
+							</xsl:element>
+						</xsl:template>
+					</xsl:stylesheet>
+				</cfg:transform>
+			If you want to use one of the internal variables of IndexBuilder (the "$ib:XXXX"-ones),
+			declare them as XSL parameters for the stylesheet (possible in both inline and external stylesheets). They are automatically set as
+			input parameters to the transformation. Additional declared XSL parameters can simply be passed to the XSL as string attributes of the <cfg:transform/> element.
+			-->
+		</cfg:index>
+		<cfg:index id="copepod">
+			<cfg:displayName>COPEPOD</cfg:displayName>
+			<cfg:indexDir>./lucene-store/copepod</cfg:indexDir>
+			<cfg:harvesterClass>de.pangaea.metadataportal.harvester.WebCrawlingHarvester</cfg:harvesterClass>
+			<cfg:harvesterProperties>
+				<cfg:baseUrl>http://www.st.nmfs.noaa.gov/plankton/content/xml_src/</cfg:baseUrl>
+				<cfg:filenameFilter>.*\.xml</cfg:filenameFilter>
+				<cfg:autoOptimize>true</cfg:autoOptimize>
+				<cfg:validate>true</cfg:validate>
+			</cfg:harvesterProperties>
+		</cfg:index>
+		<cfg:virtualIndex id="dataportal">
+			<cfg:displayName>Test Dataportal</cfg:displayName>
+			<cfg:index ref="pangaea-carboocean"/>
+			<cfg:index ref="ifremer"/>
+			<cfg:index ref="copepod"/>
+		</cfg:virtualIndex>
+	</cfg:indexes>
+	<!-- Defaults properties for the SearchService and AXIS web service -->
+	<cfg:search>
+		<!-- default SearchService properties -->
+		<cfg:cacheMaxAge>300</cfg:cacheMaxAge>
+		<cfg:cacheMaxSessions>10</cfg:cacheMaxSessions>
+		<cfg:reloadIndexIfChangedAfter>60</cfg:reloadIndexIfChangedAfter>
+		<cfg:keepOldReaderAlive>60</cfg:keepOldReaderAlive>
+		<cfg:indexChangeCheckInterval>30</cfg:indexChangeCheckInterval>
+		<cfg:maxStoredQueries>200</cfg:maxStoredQueries>
+		<cfg:queryParserClass>org.apache.lucene.queryParser.QueryParser</cfg:queryParserClass>
+		<cfg:defaultQueryParserOperator>and</cfg:defaultQueryParserOperator>
+		<!-- AXIS special properties -->
+		<cfg:returnXML>true</cfg:returnXML>
+		<cfg:returnStoredFields>true</cfg:returnStoredFields>
+	</cfg:search>
+</cfg:config>
