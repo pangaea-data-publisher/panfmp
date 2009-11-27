@@ -116,7 +116,9 @@ public class MetadataDocument {
 			log.warn("Datestamp of document '"+identifier+"' is invalid: "+ne.getMessage()+" - Deleting datestamp.");
 		}
 		// read XML
-		String xml=ldoc.get(IndexConstants.FIELDNAME_XML);
+		final Fieldable fld=ldoc.getFieldable(IndexConstants.FIELDNAME_XML);
+		String xml=null;
+		if (fld!=null) xml=fld.isBinary() ? CompressionTools.decompressString(fld.getBinaryValue()) : fld.stringValue();
 		if (xml==null) {
 			setFinalDOM(null);
 		} else {
@@ -229,7 +231,6 @@ public class MetadataDocument {
 	 * @throws Exception if an exception occurs during transformation (various types of exceptions can be thrown).
 	 * @throws IllegalStateException if index configuration is unknown
 	 */
-	@SuppressWarnings("deprecation")
 	public Document getLuceneDocument() throws Exception {
 		Document ldoc = createEmptyDocument();
 		if (!deleted) {
@@ -247,11 +248,15 @@ public class MetadataDocument {
 			} finally {
 				XPathResolverImpl.getInstance().unsetVariables();
 			}
-			ldoc.add(new Field(IndexConstants.FIELDNAME_XML,
-				this.getXML(),
-				(BooleanParser.parseBoolean(iconfig.harvesterProperties.getProperty("compressXML","true")) ? Field.Store.COMPRESS : Field.Store.YES),
-				Field.Index.NO
-			));
+			if (BooleanParser.parseBoolean(iconfig.harvesterProperties.getProperty("compressXML","true"))) {
+				ldoc.add(new Field(IndexConstants.FIELDNAME_XML,
+					CompressionTools.compressString(this.getXML()), Field.Store.YES
+				));
+			} else {
+				ldoc.add(new Field(IndexConstants.FIELDNAME_XML,
+					this.getXML(), Field.Store.YES, Field.Index.NO
+				));
+			}
 		}
 		return ldoc;
 	}
@@ -575,10 +580,17 @@ public class MetadataDocument {
 				// fall-through
 			default:
 				Field.Index in=Field.Index.NO;
+				Field.Store stor=f.storage;
 				if (f.indexed) in=token?Field.Index.ANALYZED:Field.Index.NOT_ANALYZED_NO_NORMS;
-				final Field field=new Field(f.name, val, f.storage, in, f.termVectors);
-				if (!token) field.setOmitNorms(true);
-				ldoc.add(field);
+				if (f.compressed && stor==Field.Store.YES && val.length()>1024) {
+					ldoc.add(new Field(f.name, CompressionTools.compressString(val), Field.Store.YES));
+					stor=Field.Store.NO;
+				}
+				if (in!=Field.Index.NO || stor!=Field.Store.NO) {
+					final Field field=new Field(f.name, val, stor, in, f.termVectors);
+					if (!token) field.setOmitNorms(true);
+					ldoc.add(field);
+				}
 		}
 	}
 

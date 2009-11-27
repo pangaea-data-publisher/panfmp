@@ -22,6 +22,7 @@ import org.apache.lucene.document.*;
 import org.apache.lucene.index.*;
 import org.apache.lucene.util.NumericUtils;
 import java.io.IOException;
+import java.util.zip.DataFormatException;
 import java.util.*;
 
 /**
@@ -52,7 +53,13 @@ public class SearchResultItem {
 	 * Returns the XML source code as String. Can be fed into a XML parser via {@link java.io.StringReader}.
 	 */
 	public String getXml() {
-		return doc.get(IndexConstants.FIELDNAME_XML);
+		try {
+			final Fieldable fld=doc.getFieldable(IndexConstants.FIELDNAME_XML);
+			if (fld==null) return null;
+			return fld.isBinary() ? CompressionTools.decompressString(fld.getBinaryValue()) : fld.stringValue();
+		} catch (DataFormatException de) {
+			throw new RuntimeException("Cannot decompress XML source document.",de);
+		}
 	}
 
 	/**
@@ -97,16 +104,22 @@ public class SearchResultItem {
 	}
 
 	private Object[] getField(FieldConfig f) {
-		String[] data=doc.getValues(f.name);
+		final Fieldable[] data=doc.getFieldables(f.name);
 		if (data!=null) {
 			java.util.ArrayList<Object> vals=new java.util.ArrayList<Object>(data.length);
-			for (String val : data) try {
+			for (Fieldable fld : data) try {
+				String val=fld.stringValue();
 				switch(f.datatype) {
 					case NUMBER:
-						vals.add(Double.valueOf(NumericUtils.sortableLongToDouble(NumericUtils.prefixCodedToLong(val)))); break;
+						if (val!=null) vals.add(Double.valueOf(NumericUtils.sortableLongToDouble(NumericUtils.prefixCodedToLong(val)))); break;
 					case DATETIME:
-						vals.add(new Date(NumericUtils.prefixCodedToLong(val))); break;
+						if (val!=null) vals.add(new Date(NumericUtils.prefixCodedToLong(val))); break;
 					default:
+						if (fld.isBinary()) try {
+							val=CompressionTools.decompressString(fld.getBinaryValue());
+						} catch (DataFormatException de) {
+							throw new RuntimeException("Cannot decompress field '"+f.name+"'.",de);
+						}
 						vals.add(val); break;
 				}
 			} catch (NumberFormatException ex) {

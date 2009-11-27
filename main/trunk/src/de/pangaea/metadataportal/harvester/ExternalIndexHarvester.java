@@ -20,17 +20,21 @@ import java.io.*;
 import java.util.*;
 import java.lang.reflect.Constructor;
 import javax.xml.transform.stream.StreamSource;
+import java.util.zip.DataFormatException;
 
 import de.pangaea.metadataportal.utils.*;
 import de.pangaea.metadataportal.config.*;
 
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.document.CompressionTools;
+import org.apache.lucene.document.Fieldable;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.SetBasedFieldSelector;
 import org.apache.lucene.search.*;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.NumericUtils;
+import org.apache.lucene.util.Version;
 import org.apache.lucene.queryParser.QueryParser;
 
 /**
@@ -83,7 +87,7 @@ public class ExternalIndexHarvester extends SingleFileEntitiesHarvester {
 				// load query parser (code borrowed from SearchService)
 				final Class<?> c=Class.forName(iconfig.harvesterProperties.getProperty("queryParserClass",QueryParser.class.getName()));
 				Class<? extends QueryParser> queryParserClass=c.asSubclass(QueryParser.class);
-				Constructor<? extends QueryParser> queryParserConstructor=queryParserClass.getConstructor(String.class,Analyzer.class);
+				Constructor<? extends QueryParser> queryParserConstructor=queryParserClass.getConstructor(Version.class,String.class,Analyzer.class);
 				// default operator for query parser
 				final String operator=iconfig.harvesterProperties.getProperty("defaultQueryParserOperator","AND").toUpperCase();
 				final QueryParser.Operator defaultQueryParserOperator;
@@ -92,7 +96,7 @@ public class ExternalIndexHarvester extends SingleFileEntitiesHarvester {
 				else throw new IllegalArgumentException("Search property 'defaultQueryParserOperator' is not 'AND'/'OR'");
 				String anaCls=iconfig.harvesterProperties.getProperty("analyzerClass");
 				if (anaCls!=null) iconfig.parent.setAnalyzerClass(Class.forName(anaCls).asSubclass(Analyzer.class));
-				QueryParser qp=queryParserConstructor.newInstance(IndexConstants.FIELDNAME_CONTENT, iconfig.parent.getAnalyzer());
+				QueryParser qp=queryParserConstructor.newInstance(Version.LUCENE_24, IndexConstants.FIELDNAME_CONTENT, iconfig.parent.getAnalyzer());
 				qp.setDefaultOperator(defaultQueryParserOperator);
 				query=qp.parse(qstr);
 			} finally {
@@ -191,11 +195,17 @@ public class ExternalIndexHarvester extends SingleFileEntitiesHarvester {
 		}
 		// read XML
 		if (isDocumentOutdated(datestamp)) {
-			String xml=ldoc.get(IndexConstants.FIELDNAME_XML);
-			if (xml!=null) {
-				addDocument(identifier,datestamp,new StreamSource(new StringReader(xml),identifier));
-			} else {
-				log.warn("Document '"+identifier+"' has no XML contents, ignoring.");
+			try {
+				final Fieldable fld=ldoc.getFieldable(IndexConstants.FIELDNAME_XML);
+				String xml=null;
+        if (fld!=null) xml=fld.isBinary() ? CompressionTools.decompressString(fld.getBinaryValue()) : fld.stringValue();
+				if (xml!=null) {
+					addDocument(identifier,datestamp,new StreamSource(new StringReader(xml),identifier));
+				} else {
+					log.warn("Document '"+identifier+"' has no XML contents, ignoring.");
+				}
+			} catch (DataFormatException de) {
+				log.warn("Document '"+identifier+"' has invalid compressed XML contents, ignoring.");
 			}
 		} else {
 			addDocument(identifier,datestamp,null);

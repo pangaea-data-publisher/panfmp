@@ -34,10 +34,12 @@ import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.*;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.analysis.CharArraySet;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.analysis.StopAnalyzer;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.store.*;
+import org.apache.lucene.util.Version;
 
 /**
  * Main panFMP configuration class. It loads the configuration from a XML file.
@@ -362,7 +364,7 @@ public class Config {
 	@PublicForDigesterUse
 	@Deprecated
 	public void importEnglishStopWords(String dummy) {
-		luceneStopWords.addAll(Arrays.asList(StopAnalyzer.ENGLISH_STOP_WORDS));
+		luceneStopWords.addAll(StopAnalyzer.ENGLISH_STOP_WORDS_SET);
 	}
 
 	@PublicForDigesterUse
@@ -371,14 +373,48 @@ public class Config {
 		Class<?> c=Class.forName(v.trim());
 		setAnalyzerClass(c.asSubclass(Analyzer.class));
 	}
+	
+	private static abstract class AnalyzerFactory {
+		public abstract Analyzer newAnalyzer(Set<?> stopWords) throws Exception;
+	}
 
 	public void setAnalyzerClass(Class<? extends Analyzer> c) throws Exception {
 		analyzerClass=c;
+		analyzerFactory=null;
 		try {
-			analyzerConstructor=analyzerClass.getConstructor(String[].class);
-		} catch (NoSuchMethodException nsm) {
-			analyzerConstructor=null;
-			log.warn("The given analyzer class is not capable of assigning stop words - <stopWords> discarded!");
+			final Constructor<? extends Analyzer> ctor=analyzerClass.getConstructor(Version.class,Set.class);
+			analyzerFactory=new AnalyzerFactory() {
+				public Analyzer newAnalyzer(Set<?> stopWords) throws Exception {
+					return ctor.newInstance(Version.LUCENE_24,stopWords);
+				}
+			};
+		} catch (NoSuchMethodException nsm1) {
+			try {
+				final Constructor<? extends Analyzer> ctor=analyzerClass.getConstructor(Set.class);
+				analyzerFactory=new AnalyzerFactory() {
+					public Analyzer newAnalyzer(Set<?> stopWords) throws Exception {
+						return ctor.newInstance(stopWords);
+					}
+				};
+			} catch (NoSuchMethodException nsm2) {
+				try {
+					final Constructor<? extends Analyzer> ctor=analyzerClass.getConstructor(Version.class);
+					analyzerFactory=new AnalyzerFactory() {
+						public Analyzer newAnalyzer(Set<?> stopWords) throws Exception {
+							return ctor.newInstance(Version.LUCENE_24);
+						}
+					};
+					log.warn("The given analyzer class is not capable of assigning stop words - <stopWords> discarded!");
+				} catch (NoSuchMethodException nsm3) {
+					final Constructor<? extends Analyzer> ctor=analyzerClass.getConstructor();
+					analyzerFactory=new AnalyzerFactory() {
+						public Analyzer newAnalyzer(Set<?> stopWords) throws Exception {
+							return ctor.newInstance();
+						}
+					};
+					log.warn("The given analyzer class is not capable of assigning stop words - <stopWords> discarded!");
+				}
+			}
 		}
 	}
 
@@ -444,14 +480,7 @@ public class Config {
 
 	public Analyzer getAnalyzer() {
 		try {
-			if (analyzerConstructor!=null) {
-				if (log.isDebugEnabled()) log.debug("Using stop words: "+luceneStopWords);
-
-				String[] sw=new String[luceneStopWords.size()];
-				sw=luceneStopWords.toArray(sw);
-				return analyzerConstructor.newInstance(new Object[]{sw});
-			} else
-				return analyzerClass.newInstance();
+			return analyzerFactory.newAnalyzer(luceneStopWords);
 		} catch (Exception e) {
 			throw new RuntimeException("Error instantiating analyzer (this should never happen)!",e);
 		}
@@ -502,9 +531,9 @@ public class Config {
 	public final Properties searchProperties=new Properties();
 	public final Properties globalHarvesterProperties=new Properties();
 
-	public final Set<String> luceneStopWords=new HashSet<String>();
+	public final CharArraySet luceneStopWords=new CharArraySet(64,true);
 	protected Class<? extends Analyzer> analyzerClass=null;
-	protected Constructor<? extends Analyzer> analyzerConstructor=null;
+	protected AnalyzerFactory analyzerFactory=null;
 	
 	public String file;
 	private ConfigMode configMode;
