@@ -49,6 +49,8 @@ import org.apache.lucene.queryParser.QueryParser;
  * <li><code>queryParserClass</code>: class name of {@link QueryParser} to use for the above query string (default: "org.apache.lucene.queryParser.QueryParser")</li>
  * <li><code>defaultQueryParserOperator</code>: default operator when parsing above query string (AND/OR) (default: "AND")</li>
  * <li><code>identifierPrefix</code>: This prefix is added in front of all identifiers from the foreign index (default: "")</li>
+ * <li><code>indexVersionCompatibility</code>: The {@link Version} constant passed to the analyzer and query parser of the foreign
+ * index (default is the one from panFMP's global config)</li>
  * </ul>
  * @author Uwe Schindler
  */
@@ -82,7 +84,8 @@ public class ExternalIndexHarvester extends SingleFileEntitiesHarvester {
 		} else {
 			info="documents matching query ["+qstr+"]";
 			// save original analyzer class
-			Class<? extends Analyzer> savedAnalyzerClass=iconfig.parent.getAnalyzer().getClass();
+			final Class<? extends Analyzer> savedAnalyzerClass=iconfig.parent.getAnalyzer().getClass();
+			final Version savedIndexVersionCompatibility=iconfig.parent.indexVersionCompatibility;
 			try {
 				// load query parser (code borrowed from SearchService)
 				final Class<?> c=Class.forName(iconfig.harvesterProperties.getProperty("queryParserClass",QueryParser.class.getName()));
@@ -94,12 +97,23 @@ public class ExternalIndexHarvester extends SingleFileEntitiesHarvester {
 				if ("AND".equals(operator)) defaultQueryParserOperator=QueryParser.AND_OPERATOR;
 				else if ("OR".equals(operator)) defaultQueryParserOperator=QueryParser.OR_OPERATOR;
 				else throw new IllegalArgumentException("Search property 'defaultQueryParserOperator' is not 'AND'/'OR'");
+				// analyzer
 				String anaCls=iconfig.harvesterProperties.getProperty("analyzerClass");
 				if (anaCls!=null) iconfig.parent.setAnalyzerClass(Class.forName(anaCls).asSubclass(Analyzer.class));
-				QueryParser qp=queryParserConstructor.newInstance(Version.LUCENE_24, IndexConstants.FIELDNAME_CONTENT, iconfig.parent.getAnalyzer());
+				// version
+				String v=iconfig.harvesterProperties.getProperty("indexVersionCompatibility",iconfig.parent.indexVersionCompatibility.toString()).toUpperCase();
+				try {
+					iconfig.parent.indexVersionCompatibility=Version.valueOf(v);
+				} catch (IllegalArgumentException iae) {
+					throw new IllegalArgumentException("Invalid value '"+v+"' for property 'indexVersionCompatibility', valid ones are: "+
+						Arrays.toString(Version.values()));
+				}
+				// create QP
+				QueryParser qp=queryParserConstructor.newInstance(iconfig.parent.indexVersionCompatibility, IndexConstants.FIELDNAME_CONTENT, iconfig.parent.getAnalyzer());
 				qp.setDefaultOperator(defaultQueryParserOperator);
 				query=qp.parse(qstr);
 			} finally {
+				iconfig.parent.indexVersionCompatibility=savedIndexVersionCompatibility;
 				iconfig.parent.setAnalyzerClass(savedAnalyzerClass);
 			}
 		}
@@ -171,6 +185,7 @@ public class ExternalIndexHarvester extends SingleFileEntitiesHarvester {
 			"queryParserClass",
 			"defaultQueryParserOperator",
 			"analyzerClass",
+			"indexVersionCompatibility",
 			"identifierPrefix"
 		));
 	}

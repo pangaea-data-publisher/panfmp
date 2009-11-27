@@ -674,7 +674,7 @@ public class SearchService {
 		Analyzer a=cache.config.getAnalyzer();
 		QueryParser p;
 		try {
-			p=queryParserConstructor.newInstance(Version.LUCENE_24, fieldName, a);
+			p=queryParserConstructor.newInstance(cache.config.indexVersionCompatibility, fieldName, a);
 		} catch (Exception e) {
 			throw new RuntimeException("Cannot instantiate query parser (this should never happen).");
 		}
