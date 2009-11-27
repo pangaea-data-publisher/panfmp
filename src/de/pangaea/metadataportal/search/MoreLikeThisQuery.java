@@ -344,7 +344,7 @@ public final class MoreLikeThisQuery extends Query {
 		float bestScore = 0;
 		BooleanQuery query=new BooleanQuery();
 
-		for (Freq ar=(Freq)(q.pop()); ar!=null; ) {
+		for (Freq ar=q.pop(); ar!=null; ) {
 			TermQuery tq = new TermQuery(new Term(matchingField, ar.term));
 
 			if (boostByScore) {
@@ -417,13 +417,13 @@ public final class MoreLikeThisQuery extends Query {
 	/**
 	 * PriorityQueue that orders words by score.
 	 */
-	private static final class FreqQ extends PriorityQueue {
+	private static final class FreqQ extends PriorityQueue<Freq> {
 		FreqQ(int s) {
 			initialize(s);
 		}
 
-		protected boolean lessThan(Object a, Object b) {
-			return ((Freq)a).score > ((Freq)b).score;
+		protected boolean lessThan(Freq a, Freq b) {
+			return a.score > b.score;
 		}
 	}    
 	

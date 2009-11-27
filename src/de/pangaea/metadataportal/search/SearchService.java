@@ -27,6 +27,7 @@ import org.apache.lucene.index.*;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.FieldSelector;
+import org.apache.lucene.util.Version;
 import java.io.IOException;
 import java.util.*;
 
@@ -107,7 +108,7 @@ public class SearchService {
 		// detect query parser
 		final Class<?> c=Class.forName(cache.config.searchProperties.getProperty("queryParserClass",QueryParser.class.getName()));
 		queryParserClass=c.asSubclass(QueryParser.class);
-		queryParserConstructor=queryParserClass.getConstructor(String.class,Analyzer.class);
+		queryParserConstructor=queryParserClass.getConstructor(Version.class,String.class,Analyzer.class);
 		// default operator for query parser
 		final String operator=cache.config.searchProperties.getProperty("defaultQueryParserOperator","AND").toUpperCase();
 		if ("AND".equals(operator)) defaultQueryParserOperator=QueryParser.AND_OPERATOR;
@@ -365,14 +366,13 @@ public class SearchService {
 
 				// scan
 				List<String> list=new ArrayList<String>((count>100)?50:count/2);
-				TermEnum terms=index.getSharedIndexReader().terms(base);
+				TermEnum terms=new PrefixTermEnum(index.getSharedIndexReader(),base);
 				try {
 					int c=0;
 					do {
-						Term t=terms.term();
-						if (t!=null && base.field()==t.field() && t.text().startsWith(base.text()) && terms.docFreq()>0) {
-							list.add(before+t.text()+after);
-						} else break;
+						final Term t=terms.term();
+						if (t==null) break;
+						list.add(before+t.text()+after);
 					} while (list.size()<count && terms.next());
 					return Collections.unmodifiableList(list);
 				} finally {
@@ -439,14 +439,12 @@ public class SearchService {
 
 		// scan
 		IndexReader reader=index.getSharedIndexReader();
-		fieldName=fieldName.intern();
-		TermEnum terms=reader.terms(new Term(fieldName,prefix));
+		TermEnum terms=new PrefixTermEnum(reader,new Term(fieldName,prefix));
 		try {
 			ArrayList<String> termList=new ArrayList<String>((count>100)?50:count/2);
 			do {
-				Term t=terms.term();
-				if (t!=null && fieldName==t.field() && t.text().startsWith(prefix) && terms.docFreq()>0) termList.add(t.text());
-				else break;
+				if (terms.term()==null) break;
+				termList.add(terms.term().text());
 			} while (termList.size()<count && terms.next());
 			return Collections.unmodifiableList(termList);
 		} finally {
@@ -676,7 +674,7 @@ public class SearchService {
 		Analyzer a=cache.config.getAnalyzer();
 		QueryParser p;
 		try {
-			p=queryParserConstructor.newInstance(fieldName, a);
+			p=queryParserConstructor.newInstance(Version.LUCENE_24, fieldName, a);
 		} catch (Exception e) {
 			throw new RuntimeException("Cannot instantiate query parser (this should never happen).");
 		}

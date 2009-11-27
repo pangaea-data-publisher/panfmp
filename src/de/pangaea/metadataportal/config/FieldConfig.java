@@ -53,8 +53,11 @@ public class FieldConfig extends ExpressionConfig {
 	public void setStorage(String v) {
 		if (v==null) return;
 		v=v.toUpperCase();
-		if ("COMPRESS".equals(v) || "COMPRESSED".equals(v)) storage=Field.Store.COMPRESS;
-		else if ("TRUE".equals(v) || "YES".equals(v) || "ON".equals(v)) storage=Field.Store.YES;
+		compressed=false;
+		if ("COMPRESS".equals(v) || "COMPRESSED".equals(v)) {
+			storage=Field.Store.YES;
+			compressed=true;
+		} else if ("TRUE".equals(v) || "YES".equals(v) || "ON".equals(v)) storage=Field.Store.YES;
 		else if ("FALSE".equals(v) || "NO".equals(v) || "OFF".equals(v)) storage=Field.Store.NO;
 		else throw new IllegalArgumentException("Attribute lucenestorage must be one of: [YES,TRUE,ON]; [NO,FALSE,OFF]; [COMPRESS,COMPRESSED]");
 	}
@@ -98,6 +101,7 @@ public class FieldConfig extends ExpressionConfig {
 	public String defaultValue=null;
 	public DataType datatype=DataType.TOKENIZEDTEXT;
 	public Field.Store storage=Field.Store.YES;
+	public boolean compressed=false;
 	public Field.TermVector termVectors=Field.TermVector.NO;
 	public boolean indexed=true;
 
