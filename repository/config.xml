@@ -104,6 +104,12 @@
 		<cfg:importEnglishStopWords/>
 		<!--<cfg:addStopWords>and,or,a,...</cfg:addStopWords>-->
 	</cfg:analyzer>
+	<!-- This setting affects indexing and searching by enabling analyzer features of a specific version (and also bugs).
+	If you change this value, you *have* to reindex, as the tokeized terms may not be identical! The allowed values
+	can be found in the Version class of Lucene: http://lucene.apache.org/java/3_0_0/api/core/org/apache/lucene/util/Version.html 
+	The default is LUCENE_24 for backwards compatibility, for new indexes you should upgrade. Do *not* use LUCENE_CURRENT,
+	as you have to reindex on every Lucene update after that! Recommended is LUCENE_30 at the moment. -->
+	<cfg:indexVersionCompatibility>LUCENE_24</cfg:indexVersionCompatibility>
 	<!-- Definition of Indexes to harvester and their properties -->
 	<cfg:indexes>
 		<cfg:index id="pangaea-carboocean">

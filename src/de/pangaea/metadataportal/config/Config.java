@@ -166,6 +166,9 @@ public class Config {
 			// *** Directory Impl ***/
 			dig.addCallMethod("config/indexDirImplementation", "setIndexDirImplementation", 0);
 			
+			// *** Index version compatibility ***/
+			dig.addCallMethod("config/indexVersionCompatibility", "setIndexVersionCompatibility", 0);
+			
 			// *** ANALYZER ***
 			dig.addDoNothing("config/analyzer");
 			dig.addCallMethod("config/analyzer/class", "setAnalyzer", 0);
@@ -385,7 +388,7 @@ public class Config {
 			final Constructor<? extends Analyzer> ctor=analyzerClass.getConstructor(Version.class,Set.class);
 			analyzerFactory=new AnalyzerFactory() {
 				public Analyzer newAnalyzer(Set<?> stopWords) throws Exception {
-					return ctor.newInstance(Version.LUCENE_24,stopWords);
+					return ctor.newInstance(indexVersionCompatibility,stopWords);
 				}
 			};
 		} catch (NoSuchMethodException nsm1) {
@@ -401,7 +404,7 @@ public class Config {
 					final Constructor<? extends Analyzer> ctor=analyzerClass.getConstructor(Version.class);
 					analyzerFactory=new AnalyzerFactory() {
 						public Analyzer newAnalyzer(Set<?> stopWords) throws Exception {
-							return ctor.newInstance(Version.LUCENE_24);
+							return ctor.newInstance(indexVersionCompatibility);
 						}
 					};
 					log.warn("The given analyzer class is not capable of assigning stop words - <stopWords> discarded!");
@@ -433,6 +436,17 @@ public class Config {
 		} catch (IllegalArgumentException e) {
 			throw new IllegalArgumentException("Invalid value '"+v+"' for <cfg:indexDirImplementation>, valid ones are: "+
 				Arrays.toString(IndexDirImplementation.values()));
+		}
+	}
+	
+	@PublicForDigesterUse
+	@Deprecated
+	public void setIndexVersionCompatibility(String v) throws Exception {
+		try {
+			indexVersionCompatibility=Version.valueOf(v.toUpperCase());
+		} catch (IllegalArgumentException e) {
+			throw new IllegalArgumentException("Invalid value '"+v+"' for <cfg:indexVersionCompatibility>, valid ones are: "+
+				Arrays.toString(Version.values()));
 		}
 	}
 
@@ -522,6 +536,8 @@ public class Config {
 	
 	// Implementation of the Lucene index directory
 	public IndexDirImplementation indexDirImplementation=IndexDirImplementation.getFromSystemProperty();
+	
+	public Version indexVersionCompatibility=Version.LUCENE_24;
 
 	/*public Templates xsltBeforeXPath=null;*/
 
