@@ -8,6 +8,7 @@
    <parameter name="sendMultiRefs" value="true"/>
    <parameter name="sendXMLDeclaration" value="true"/>
    <parameter name="dotNetSoapEncFix" value="true"/>
+   <parameter name="syncConfiguration" value="false"/>
    <parameter name="axis.servicesPath" value="/axis/"/>
    <!-- Configuration of Lucene Indices: -->
    <parameter name="de.pangaea.metadataportal.search.axis.indexConfigFile" value="../../repository/config.xml"/>

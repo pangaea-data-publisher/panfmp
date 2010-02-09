@@ -76,6 +76,6 @@ public final class AutoCloseIndexReader extends FilterIndexReader {
 		}
 	}
 
-	private volatile boolean finalizationStarted=false;
+	private boolean finalizationStarted=false;
 	private final String name;
 }

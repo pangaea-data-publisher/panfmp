@@ -81,6 +81,9 @@ public abstract class IndexConfig {
 	/** reopens the shared index reader. **/
 	public abstract void reopenSharedIndex() throws java.io.IOException;
 	
+	/** called by SearchService to warm the shared index reader during webapp initialization **/
+	public abstract void warmSharedIndexReader() throws java.io.IOException;
+	
 	/** called by {@link de.pangaea.metadataportal.search.LuceneCache} to release the old reader, if not done automatically by GC. **/
 	public synchronized void releaseOldSharedReader() throws java.io.IOException {
 		if (oldReaderRef!=null) {

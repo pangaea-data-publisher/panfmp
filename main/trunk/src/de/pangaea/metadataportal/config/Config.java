@@ -33,6 +33,7 @@ import javax.xml.transform.sax.*;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.*;
 import org.apache.lucene.document.Field;
+import org.apache.lucene.index.IndexWriter.IndexReaderWarmer;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.analysis.CharArraySet;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
@@ -553,6 +554,8 @@ public class Config {
 	
 	public String file;
 	private ConfigMode configMode;
+	
+	public final Set<IndexReaderWarmer> indexReaderWarmers = new LinkedHashSet<IndexReaderWarmer>();
 
 	protected ExtendedDigester dig=null;
 

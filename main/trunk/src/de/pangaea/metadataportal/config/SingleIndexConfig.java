@@ -17,12 +17,14 @@
 package de.pangaea.metadataportal.config;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.io.File;
 import de.pangaea.metadataportal.utils.*;
 import de.pangaea.metadataportal.harvester.Harvester;
 import javax.xml.transform.Templates;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.index.IndexWriter.IndexReaderWarmer;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.store.Directory;
 import org.apache.commons.logging.Log;
@@ -97,7 +99,10 @@ public class SingleIndexConfig extends IndexConfig {
 	@Override
 	public synchronized IndexReader getSharedIndexReader() throws java.io.IOException {
 		if (!checked) throw new IllegalStateException("Index config not initialized and checked!");
-		if (indexReader==null) indexReader=new AutoCloseIndexReader(IndexReader.open(getIndexDirectory(),true),id);
+		if (indexReader==null) {
+			indexReader=new AutoCloseIndexReader(IndexReader.open(getIndexDirectory(),true),id);
+			warmed.set(false);
+		}
 		return indexReader;
 	}
 
@@ -124,19 +129,38 @@ public class SingleIndexConfig extends IndexConfig {
 	}
 	
 	@Override
-	public synchronized void reopenSharedIndex() throws java.io.IOException {
+	public void reopenSharedIndex() throws java.io.IOException {
 		if (!checked) throw new IllegalStateException("Index config not initialized and checked!");
-		if (indexReader!=null) {
-			IndexReader n=indexReader.reopen();
-			if (n!=indexReader) {
+		final AutoCloseIndexReader r;
+		synchronized(this) {
+			r = indexReader;
+		}
+		if (r!=null) {
+			IndexReader n=r.reopen();
+			if (n!=r) {
+				warmed.set(false);
+				warmSharedIndexReader(n);
 				replaceSharedIndexReader((AutoCloseIndexReader)n); // should be castable!
-			} else if (!indexReader.isCurrent()) { // it should be current now... (we hope)
+			} else if (!r.isCurrent()) { // it should be current now... (we hope)
 				log.warn("Index '"+id+"' was reopened but is still not up-to-date (maybe a bug in Lucene, we try to investigate this). Doing a hard reopen (close & open later).");
 				replaceSharedIndexReader(null);
 			}
 		}
 	}
+	
+	/** warms the shared index readers after reopen or when triggered */
+	protected void warmSharedIndexReader(final IndexReader r) throws java.io.IOException {
+		if (warmed.getAndSet(true))
+			return;
+		for (IndexReaderWarmer warmer : parent.indexReaderWarmers) {
+			warmer.warm(r);
+		}
+	}
 
+	public void warmSharedIndexReader() throws java.io.IOException {
+		warmSharedIndexReader(getSharedIndexReader());
+	}
+	
 	@Override
 	protected void finalize() throws Throwable {
 		try {
@@ -154,4 +178,5 @@ public class SingleIndexConfig extends IndexConfig {
 	public final Properties harvesterProperties;
 	public Templates xslt=null;
 	public Map<QName,Object> xsltParams=null;
+	private AtomicBoolean warmed = new AtomicBoolean(false);
 }

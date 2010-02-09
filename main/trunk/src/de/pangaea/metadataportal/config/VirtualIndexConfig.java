@@ -102,6 +102,12 @@ public class VirtualIndexConfig extends IndexConfig {
 		replaceSharedIndexReader(null);
 	}	
 
+	public void warmSharedIndexReader() throws java.io.IOException {
+		for (IndexConfig iconf: indexes) {
+			iconf.warmSharedIndexReader();
+		}
+	}
+	
 	private final Set<String> indexIds=new HashSet<String>();
 
 	// members "the configuration"
