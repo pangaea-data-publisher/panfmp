@@ -59,6 +59,8 @@ public final class LuceneCache {
 		reloadIndexIfChangedAfter=Integer.parseInt(config.searchProperties.getProperty("reloadIndexIfChangedAfter",Integer.toString(DEFAULT_RELOAD_AFTER)));
 		keepOldReaderAlive=Integer.parseInt(config.searchProperties.getProperty("keepOldReaderAlive",Integer.toString(DEFAULT_KEEP_OLD_READER_ALIVE)));
 		fetchFactor=Integer.parseInt(config.searchProperties.getProperty("fetchFactor",Integer.toString(DEFAULT_FETCH_FACTOR)));
+		
+		warmer=new IndexReaderWarmerImpl(config);
 
 		final long indexChangeCheckInterval=1000L*(long)(Integer.parseInt(config.searchProperties.getProperty("indexChangeCheckInterval",Integer.toString(DEFAULT_INDEX_CHANGE_CHECK_INTERVAL))));
 		timer.schedule(new TimerTask() {
@@ -213,8 +215,9 @@ public final class LuceneCache {
 	private int fetchFactor=DEFAULT_FETCH_FACTOR;
 	private final Map<UUID,Query> storedQueries;
 	private final Map<String,Session> sessions;
-
-	protected final Config config;
+	
+	public final IndexReaderWarmerImpl warmer;
+	public final Config config;
 
 	public static final int DEFAULT_CACHE_MAX_AGE=5*60; // default 5 minutes
 	public static final int DEFAULT_INDEX_CHANGE_CHECK_INTERVAL=30; // 30 seconds to poll for index change
@@ -255,6 +258,7 @@ public final class LuceneCache {
 				topDocs = (sort!=null) ? searcher.search(query,(Filter)null,count,sort) : searcher.search(query,(Filter)null,count);
 				queryTime=System.currentTimeMillis()-start;
 				fetchedCount=count;
+				parent.warmer.addLifeQuery(query,sort);
 			}
 		}
 

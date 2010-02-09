@@ -114,6 +114,17 @@ public class SearchService {
 		if ("AND".equals(operator)) defaultQueryParserOperator=QueryParser.AND_OPERATOR;
 		else if ("OR".equals(operator)) defaultQueryParserOperator=QueryParser.OR_OPERATOR;
 		else throw new IllegalArgumentException("Search property 'defaultQueryParserOperator' is not 'AND'/'OR'");
+		
+		String warmSortFields=cache.config.searchProperties.getProperty("warmSortFields",null);
+		if (warmSortFields!=null && (warmSortFields=warmSortFields.trim()).length()>0) {
+			String[] fields=warmSortFields.split(",");
+			SortField[] sf=new SortField[fields.length];
+			for (int i=0; i<fields.length; i++) {
+				sf[i]=newFieldBasedSort(fields[i].trim(),false);
+			}
+			cache.warmer.addFixedQuery(newMatchAllDocsQuery(),newSort(sf));
+		}
+		index.warmSharedIndexReader();
 	}
 
 	/**
@@ -310,7 +321,6 @@ public class SearchService {
 	 * <p><em>Please note:</em> You cannot sort fields that are <b>only stored</b>!
 	 */
 	public SortField newFieldBasedSort(String fieldName, boolean reverse) {
-		// TODO: create a SortComparator or something like that to help sorting less memory expensive! (needs further investigation)
 		FieldConfig f=cache.config.fields.get(fieldName);
 		if (f==null) throw new IllegalFieldConfigException("Field name '"+fieldName+"' is unknown!");
 		if (!f.indexed) throw new IllegalFieldConfigException("Field '"+fieldName+"' is not searchable!");

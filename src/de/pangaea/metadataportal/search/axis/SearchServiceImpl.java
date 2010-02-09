@@ -25,8 +25,9 @@ public class SearchServiceImpl {
 
 	private static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(SearchServiceImpl.class);
 
-	public SearchServiceImpl(String cfgFile) {
+	public SearchServiceImpl(String cfgFile) throws Exception {
 		this.cfgFile=cfgFile;
+		LuceneCache.getInstance(cfgFile); // preload
 	}
 
 	// Search
