@@ -159,7 +159,7 @@ public abstract class OAIHarvesterBase extends Harvester {
 			public InputSource resolveEntity(String publicId, String systemId) throws IOException,SAXException {
 				try {
 				   URL url=new URL(systemId);
-				   String proto=url.getProtocol().toLowerCase();
+				   String proto=url.getProtocol().toLowerCase(Locale.ENGLISH);
 				   if ("http".equals(proto) || "https".equals(proto)) return getInputSource(url,null);
 				   else return (parent==null)?null:parent.resolveEntity(publicId,systemId);
 				} catch (MalformedURLException malu) {
@@ -177,7 +177,7 @@ public abstract class OAIHarvesterBase extends Harvester {
 	 * @see #getEntityResolver
 	 */
 	protected InputSource getInputSource(URL url, AtomicReference<Date> checkModifiedDate) throws IOException {
-		String proto=url.getProtocol().toLowerCase();
+		String proto=url.getProtocol().toLowerCase(Locale.ENGLISH);
 		if (!("http".equals(proto) || "https".equals(proto)))
 			throw new IllegalArgumentException("OAI only allows HTTP(S) as network protocol!");
 		HttpURLConnection conn=(HttpURLConnection)url.openConnection();
@@ -226,7 +226,7 @@ public abstract class OAIHarvesterBase extends Harvester {
 		
 		String encoding=conn.getContentEncoding();
 		if (encoding==null) encoding="identity";
-		encoding=encoding.toLowerCase();
+		encoding=encoding.toLowerCase(Locale.ENGLISH);
 		log.debug("HTTP server uses "+encoding+" content encoding.");
 		if ("gzip".equals(encoding)) in=new GZIPInputStream(in);
 		else if ("deflate".equals(encoding)) in=new InflaterInputStream(in);
@@ -237,7 +237,7 @@ public abstract class OAIHarvesterBase extends Harvester {
 		String contentType=conn.getContentType();
 		String charset=null;
 		if (contentType!=null) {
-			contentType=contentType.toLowerCase();
+			contentType=contentType.toLowerCase(Locale.ENGLISH);
 			int charsetStart=contentType.indexOf("charset=");
 			if (charsetStart>=0) {
 				int charsetEnd=contentType.indexOf(";",charsetStart);

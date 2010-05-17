@@ -301,7 +301,7 @@ public class Config {
 		if (configMode!=ConfigMode.HARVESTING) return;
 		if (f.xPathExpr==null) throw new IllegalArgumentException("A filter needs an XPath expression");
 		if (f.xslt!=null) throw new IllegalArgumentException("A filter may not contain a template");
-		f.type=FilterConfig.FilterType.valueOf(dig.getCurrentElementName().toUpperCase());
+		f.type=FilterConfig.FilterType.valueOf(dig.getCurrentElementName().toUpperCase(Locale.ENGLISH));
 		filters.add(f);
 	}
 
@@ -360,7 +360,7 @@ public class Config {
 	@Deprecated
 	public void addStopWords(String stopWords) {
 		for (String w : stopWords.split("[\\,\\;\\s]+")) {
-			w=w.trim().toLowerCase();
+			w=w.trim().toLowerCase(Locale.ENGLISH);
 			if (!"".equals(w)) luceneStopWords.add(w);
 		}
 	}
@@ -433,7 +433,7 @@ public class Config {
 	@Deprecated
 	public void setIndexDirImplementation(String v) throws Exception {
 		try {
-			indexDirImplementation=IndexDirImplementation.valueOf(v.toUpperCase());
+			indexDirImplementation=IndexDirImplementation.valueOf(v.toUpperCase(Locale.ENGLISH));
 		} catch (IllegalArgumentException e) {
 			throw new IllegalArgumentException("Invalid value '"+v+"' for <cfg:indexDirImplementation>, valid ones are: "+
 				Arrays.toString(IndexDirImplementation.values()));
@@ -444,7 +444,7 @@ public class Config {
 	@Deprecated
 	public void setIndexVersionCompatibility(String v) throws Exception {
 		try {
-			indexVersionCompatibility=Version.valueOf(v.toUpperCase());
+			indexVersionCompatibility=Version.valueOf(v.toUpperCase(Locale.ENGLISH));
 		} catch (IllegalArgumentException e) {
 			throw new IllegalArgumentException("Invalid value '"+v+"' for <cfg:indexVersionCompatibility>, valid ones are: "+
 				Arrays.toString(Version.values()));

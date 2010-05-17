@@ -92,7 +92,7 @@ public class ExternalIndexHarvester extends SingleFileEntitiesHarvester {
 				Class<? extends QueryParser> queryParserClass=c.asSubclass(QueryParser.class);
 				Constructor<? extends QueryParser> queryParserConstructor=queryParserClass.getConstructor(Version.class,String.class,Analyzer.class);
 				// default operator for query parser
-				final String operator=iconfig.harvesterProperties.getProperty("defaultQueryParserOperator","AND").toUpperCase();
+				final String operator=iconfig.harvesterProperties.getProperty("defaultQueryParserOperator","AND").toUpperCase(Locale.ENGLISH);
 				final QueryParser.Operator defaultQueryParserOperator;
 				if ("AND".equals(operator)) defaultQueryParserOperator=QueryParser.AND_OPERATOR;
 				else if ("OR".equals(operator)) defaultQueryParserOperator=QueryParser.OR_OPERATOR;
@@ -101,7 +101,7 @@ public class ExternalIndexHarvester extends SingleFileEntitiesHarvester {
 				String anaCls=iconfig.harvesterProperties.getProperty("analyzerClass");
 				if (anaCls!=null) iconfig.parent.setAnalyzerClass(Class.forName(anaCls).asSubclass(Analyzer.class));
 				// version
-				String v=iconfig.harvesterProperties.getProperty("indexVersionCompatibility",iconfig.parent.indexVersionCompatibility.toString()).toUpperCase();
+				String v=iconfig.harvesterProperties.getProperty("indexVersionCompatibility",iconfig.parent.indexVersionCompatibility.toString()).toUpperCase(Locale.ENGLISH);
 				try {
 					iconfig.parent.indexVersionCompatibility=Version.valueOf(v);
 				} catch (IllegalArgumentException iae) {

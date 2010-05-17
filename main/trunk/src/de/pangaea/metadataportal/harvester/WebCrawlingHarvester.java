@@ -83,14 +83,14 @@ public class WebCrawlingHarvester extends SingleFileEntitiesHarvester {
 		String s=iconfig.harvesterProperties.getProperty("baseUrl");
 		if (s==null) throw new IllegalArgumentException("Missing base URL to start harvesting (property \"baseUrl\")");
 		URL u=new URL(s);
-		String proto=u.getProtocol().toLowerCase();
+		String proto=u.getProtocol().toLowerCase(Locale.ENGLISH);
 		if (!("http".equals(proto) || "https".equals(proto)))
 			throw new IllegalArgumentException("WebCrawlingHarvester only allows HTTP(S) as network protocol!");
 		baseURL=u.toString();
 
 		s=iconfig.harvesterProperties.getProperty("contentTypes","text/xml,application/xml");
 		for (String c : s.split("[\\,\\;\\s]+")) {
-			c=c.trim().toLowerCase();
+			c=c.trim().toLowerCase(Locale.ENGLISH);
 			if (!"".equals(c)) contentTypes.add(c);
 		}
 
@@ -229,7 +229,7 @@ public class WebCrawlingHarvester extends SingleFileEntitiesHarvester {
 			if (!"HEAD".equals(method)) {
 				String encoding=conn.getContentEncoding();
 				if (encoding==null) encoding="identity";
-				encoding=encoding.toLowerCase();
+				encoding=encoding.toLowerCase(Locale.ENGLISH);
 
 				log.debug("HTTP server uses "+encoding+" content encoding.");
 				if ("gzip".equals(encoding)) in=new GZIPInputStream(in);
@@ -350,7 +350,7 @@ public class WebCrawlingHarvester extends SingleFileEntitiesHarvester {
 				String contentType=conn.getContentType();
 				String charset=null;
 				if (contentType!=null) {
-					contentType=contentType.toLowerCase();
+					contentType=contentType.toLowerCase(Locale.ENGLISH);
 					int charsetStart=contentType.indexOf("charset=");
 					if (charsetStart>=0) {
 						int charsetEnd=contentType.indexOf(";",charsetStart);

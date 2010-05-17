@@ -110,7 +110,7 @@ public class SearchService {
 		queryParserClass=c.asSubclass(QueryParser.class);
 		queryParserConstructor=queryParserClass.getConstructor(Version.class,String.class,Analyzer.class);
 		// default operator for query parser
-		final String operator=cache.config.searchProperties.getProperty("defaultQueryParserOperator","AND").toUpperCase();
+		final String operator=cache.config.searchProperties.getProperty("defaultQueryParserOperator","AND").toUpperCase(Locale.ENGLISH);
 		if ("AND".equals(operator)) defaultQueryParserOperator=QueryParser.AND_OPERATOR;
 		else if ("OR".equals(operator)) defaultQueryParserOperator=QueryParser.OR_OPERATOR;
 		else throw new IllegalArgumentException("Search property 'defaultQueryParserOperator' is not 'AND'/'OR'");
@@ -367,7 +367,7 @@ public class SearchService {
 			Term base=findLastTerm(q);
 			if (base!=null) {
 				// get strings before and after this term
-				int pos=query.toLowerCase().lastIndexOf(base.text().toLowerCase()); // case insensitive
+				int pos=query.toLowerCase(Locale.ENGLISH).lastIndexOf(base.text().toLowerCase(Locale.ENGLISH)); // case insensitive
 				if (pos<0) {
 					log.error("Term '"+base+"' not found in query '"+query+"' (should never happen)!");
 					Collections.<String>emptyList(); // should never happen
