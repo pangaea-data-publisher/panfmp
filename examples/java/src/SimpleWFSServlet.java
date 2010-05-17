@@ -215,7 +215,7 @@ public class SimpleWFSServlet extends HttpServlet {
 			String value=req.getParameter(key);
 			// some WFS client implementations create additional '?' in query string which are wrong, strip them
 			if (key.startsWith("?")) key=key.substring(1);
-			if (value!=null) params.put(key.toUpperCase(),value);
+			if (value!=null) params.put(key.toUpperCase(Locale.ENGLISH),value);
 		}
 
 		ContentHandler out=null;

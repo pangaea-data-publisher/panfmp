@@ -17,6 +17,7 @@
 package de.pangaea.metadataportal;
 
 import de.pangaea.metadataportal.utils.BooleanParser;
+import java.util.Locale;
 
 /**
  * Class to get version information about panFMP.
@@ -99,8 +100,8 @@ public final class Package {
 	private static void checkPackage(java.lang.Package pkg, String name, String nameMatch, String desired) {
 		String s;
 		if (pkg==null || !(
-			((s=pkg.getSpecificationTitle())!=null && s.toLowerCase().indexOf(nameMatch)>=0) ||
-			((s=pkg.getImplementationTitle())!=null && s.toLowerCase().indexOf(nameMatch)>=0)
+			((s=pkg.getSpecificationTitle())!=null && s.toLowerCase(Locale.ENGLISH).indexOf(nameMatch)>=0) ||
+			((s=pkg.getImplementationTitle())!=null && s.toLowerCase(Locale.ENGLISH).indexOf(nameMatch)>=0)
 		)) {
 			log.warn(
 				"Cannot determine version of component '"+name+"'. "+getProductName()+

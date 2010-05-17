@@ -73,7 +73,7 @@ public class IndexBuilder {
 
 		String s=iconfig.harvesterProperties.getProperty("conversionErrorAction");
 		if (s!=null) try {
-			conversionErrorAction=DocumentErrorAction.valueOf(s.toUpperCase());
+			conversionErrorAction=DocumentErrorAction.valueOf(s.toUpperCase(Locale.ENGLISH));
 		} catch (IllegalArgumentException e) {
 			throw new IllegalArgumentException("Invalid value '"+s+"' for harvester property 'conversionErrorAction', valid ones are: "+Arrays.toString(DocumentErrorAction.values()));
 		}
