@@ -1,0 +1,147 @@
+<project name="panFMP" default="dist" basedir=".">
+
+	<!-- PROPERTIES -->
+	<property name="src" location="src"/>
+	<property name="build" location="build"/>
+	<property name="dist" location="dist"/>
+	<property name="docs" location="apidocs"/>
+	<property name="libs" location="libs"/>
+	<property name="examples" location="examples/java"/>
+	
+	<property name="debug" value="on"/>
+	
+	<property name="version" value="trunk"/>
+	<property name="versionsuffix" value="-${version}"/>
+	<property name="pkgname" value="${ant.project.name}${versionsuffix}"/>
+	
+	<property name="year" value="2007-2009"/>
+	
+	<property name="javadoc.projectWebSite" value="http://www.panFMP.org/" />
+	<property name="javadoc.link.sun" value="http://java.sun.com/j2se/1.5/docs/api/" />
+	<property name="javadoc.link.lucene" value="http://hudson.zones.apache.org/hudson/job/Lucene-trunk/javadoc/core/" />
+
+	<!-- GLOBALS -->
+	<target name="init">
+	</target>
+		
+	<!-- BUILD TARGETS -->
+  	<path id="classpath">
+		<fileset dir="${libs}">
+			<include name="core/*.jar"/>
+			<include name="axis/*.jar"/>
+			<include name="optional/*.jar"/>
+			<include name="jetty/servlet-api-*.jar"/>
+			<!-- exclude local version of metadataportal itsself from compile classpath! -->
+			<exclude name="**/${ant.project.name}*.jar"/>
+		</fileset>
+	</path>
+	
+	<target name="compile" depends="init">
+		<mkdir dir="${build}"/>
+		<javac srcdir="${src}" destdir="${build}" source="1.5" target="1.5" classpathref="classpath" deprecation="on" debug="${debug}">
+			<compilerarg line="-Xlint:unchecked"/>
+		</javac>
+	</target>
+	
+	<target name="dist" depends="compile">
+		<mkdir dir="${dist}"/>
+		<jar destfile="${dist}/${ant.project.name}${versionsuffix}.jar" basedir="${build}">
+			<manifest>
+				<attribute name="Package" value="de.pangaea.metadataportal"/>
+				<attribute name="Implementation-Title" value="${ant.project.name}"/>
+				<attribute name="Implementation-Version" value="${version}"/>
+				<attribute name="Implementation-Vendor" value="${ant.project.name} Developers c/o Uwe Schindler"/>
+			</manifest>    	
+			<metainf dir="${basedir}">
+				<include name="LICENSE.txt"/>
+				<include name="NOTICE.txt"/>
+			</metainf>
+		</jar>
+	</target>
+	
+	<!-- compile the examples (with default ant task) -->
+	<target name="examples" depends="dist">
+		<ant dir="${examples}" inheritAll="false">
+			<property name="root" location="${basedir}"/>
+		</ant>
+	</target>
+	
+	<!-- JAVADOCS TARGET -->
+	<target name="javadocs" depends="init">
+		<delete dir="${docs}"/>
+		<mkdir dir="${docs}"/>
+		<javadoc sourcepath="${src}" destdir="${docs}" source="1.5" packagenames="*" classpathref="classpath" windowtitle="${ant.project.name} ${version} Documentation" overview="${src}/overview.html">
+			<link href="${javadoc.link.sun}"/>
+			<link href="${javadoc.link.lucene}"/>
+			<doctitle><![CDATA[<H1>${ant.project.name} ${version}</H1>]]></doctitle>
+			<bottom><![CDATA[<ADDRESS>Copyright &copy;${year} <A HREF='${javadoc.projectWebSite}' TARGET='_blank'>${ant.project.name}</A> Developers c/o Uwe Schindler</ADDRESS>]]></bottom>
+		</javadoc>
+	</target>	
+	
+	<!-- PACKAGING -->
+	<target name="binpackage" depends="dist,javadocs,examples">
+		<zip destfile="${basedir}/${pkgname}-bin.zip">
+			<zipfileset dir="${libs}/axis" prefix="${pkgname}/libs/axis"/>
+			<zipfileset dir="${libs}/core" prefix="${pkgname}/libs/core"/>
+			<zipfileset dir="${dist}" prefix="${pkgname}/libs/core"/>
+			<zipfileset dir="${libs}/optional" prefix="${pkgname}/libs/optional"/>
+			<zipfileset dir="${libs}/jetty" prefix="${pkgname}/libs/jetty"/>
+			<zipfileset dir="${basedir}/repository" prefix="${pkgname}/repository"/>
+			<zipfileset dir="${basedir}/scripts" prefix="${pkgname}/scripts"/>
+			<zipfileset dir="${basedir}/axis-webapp" prefix="${pkgname}/axis-webapp"/>
+			<zipfileset dir="${basedir}/examples" prefix="${pkgname}/examples"/>
+			<zipfileset dir="${docs}" prefix="${pkgname}/javadocs"/>
+			<zipfileset dir="${basedir}" prefix="${pkgname}">
+				<include name="*.txt"/>
+			</zipfileset>
+		</zip>
+		<panfmp-checksum file="${basedir}/${pkgname}-bin.zip"/>
+	</target>
+
+	<target name="srcpackage" depends="clean">
+		<zip destfile="${basedir}/${pkgname}-src.zip">
+			<zipfileset dir="${basedir}" prefix="${pkgname}"/>
+		</zip>
+		<panfmp-checksum file="${basedir}/${pkgname}-src.zip"/>
+	</target>
+	
+	<target name="package">
+		<!-- this target was created as a target without dependencies and uses subcalls
+		     to do it as two really separate targets in the right order -->
+		<antcall target="srcpackage"/>
+		<antcall target="binpackage"/>
+	</target>
+
+	<!-- CLEANUP TARGET -->
+	<target name="clean">
+		<delete dir="${build}"/>
+		<delete dir="${dist}"/>
+		<delete dir="${docs}"/>
+		<delete includeEmptyDirs="true">
+			<fileset dir="${basedir}/repository/lucene-store" includes="**/*"/>
+		</delete>
+		<delete>
+			<fileset dir="${basedir}" includes="*.zip"/>
+			<fileset dir="${basedir}" includes="*.md5"/>
+			<fileset dir="${basedir}" includes="*.sha1"/>
+			<fileset dir="${basedir}" includes="*.asc"/>
+			<fileset dir="${basedir}/repository" includes="**/*.log"/>
+		</delete>
+		<ant dir="${examples}" target="clean" inheritAll="false">
+			<property name="root" location="${basedir}"/>
+		</ant>
+	</target>
+	
+	<!-- Macro for building checksum files
+	This is only needed until the "format" option is supported
+	by ant's built in checksum task
+	-->
+	<macrodef name="panfmp-checksum">
+		<attribute name="file"/>
+		<sequential>
+			<checksum file="@{file}" algorithm="md5" format="MD5SUM" forceoverwrite="yes" readbuffersize="65536"/>
+			<checksum file="@{file}" algorithm="sha1" format="MD5SUM" forceoverwrite="yes" readbuffersize="65536"/>
+		</sequential>
+	</macrodef>
+
+</project>
