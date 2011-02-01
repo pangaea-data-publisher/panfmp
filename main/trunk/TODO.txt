@@ -6,6 +6,6 @@ Search:
 o/o
 
 General:
-* When Lucene 2.9 is released change all JavaDocs links (build.xml),
+* When Lucene/Solr 3.1 is released change all JavaDocs links (build.xml),
   remove the snapshot information, and so on! Cleanup webserver
   (www.panfmp.org) redirects.
