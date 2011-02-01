@@ -23,9 +23,9 @@
 	<!-- GLOBALS -->
 	<target name="init">
 	</target>
-		
+	
 	<!-- BUILD TARGETS -->
-  	<path id="classpath">
+	<path id="classpath">
 		<fileset dir="${libs}">
 			<include name="core/*.jar"/>
 			<include name="axis/*.jar"/>
@@ -34,9 +34,38 @@
 			<!-- exclude local version of metadataportal itsself from compile classpath! -->
 			<exclude name="**/${ant.project.name}*.jar"/>
 		</fileset>
+		<fileset dir="lucene_solr_build/solr/lib">
+			<exclude name="servlet-api*.jar" />
+			<exclude name="easymock.jar" />
+			<exclude name="junit-*.jar" />
+			<exclude name="*.txt" />
+			<exclude name="*.template" />
+		</fileset>
+		<fileset dir="lucene_solr_build/solr/lucene-libs"/>
+		<fileset dir="lucene_solr_build/solr/dist">
+			<include name="${fullname}-solrj-${version}.jar" />
+			<include name="${fullname}-core-${version}.jar" />
+		</fileset>
 	</path>
 	
-	<target name="compile" depends="init">
+	<!-- SOLR -->
+	<target name="build-solr" depends="init">
+		<subant inheritall="false" failonerror="true">
+			<fileset dir="lucene_solr_build/solr" includes="build.xml" />
+			<target name="init-forrest-entities" />
+			<target name="dist-solrj" />
+			<target name="dist-jar" />
+			<target name="lucene-jars-to-solr" />
+		</subant>
+	</target>
+		
+	<target name="clean-solr" depends="init">
+		<subant target="clean" inheritall="false" failonerror="true">
+			<fileset dir="lucene_solr_build" includes="build.xml" />
+		</subant>
+	</target>
+		
+	<target name="compile" depends="build-solr">
 		<mkdir dir="${build}"/>
 		<javac srcdir="${src}" destdir="${build}" source="1.5" target="1.5" classpathref="classpath" deprecation="on" debug="${debug}">
 			<compilerarg line="-Xlint:unchecked"/>
@@ -113,7 +142,7 @@
 	</target>
 
 	<!-- CLEANUP TARGET -->
-	<target name="clean">
+	<target name="clean" depends="clean-solr">
 		<delete dir="${build}"/>
 		<delete dir="${dist}"/>
 		<delete dir="${docs}"/>
