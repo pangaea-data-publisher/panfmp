@@ -14,11 +14,11 @@
 	<property name="versionsuffix" value="-${version}"/>
 	<property name="pkgname" value="${ant.project.name}${versionsuffix}"/>
 	
-	<property name="year" value="2007-2009"/>
+	<property name="year" value="2007-2011"/>
 	
 	<property name="javadoc.projectWebSite" value="http://www.panFMP.org/" />
 	<property name="javadoc.link.sun" value="http://java.sun.com/j2se/1.5/docs/api/" />
-	<property name="javadoc.link.lucene" value="http://hudson.zones.apache.org/hudson/job/Lucene-trunk/javadoc/core/" />
+	<property name="javadoc.link.lucene" value="http://hudson.apache.org/hudson/job/Lucene-3.x/javadoc/core/" />
 
 	<!-- GLOBALS -->
 	<target name="init">
