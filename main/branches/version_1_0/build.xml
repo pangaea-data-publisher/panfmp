@@ -18,7 +18,7 @@
 	
 	<property name="javadoc.projectWebSite" value="http://www.panFMP.org/" />
 	<property name="javadoc.link.sun" value="http://java.sun.com/j2se/1.5/docs/api/" />
-	<property name="javadoc.link.lucene" value="http://lucene.apache.org/java/2_9_1/api/core/" />
+	<property name="javadoc.link.lucene" value="http://lucene.apache.org/java/2_9_4/api/core/" />
 
 	<!-- GLOBALS -->
 	<target name="init">
