@@ -108,17 +108,33 @@ public class SearchResultItem {
 		if (data!=null) {
 			java.util.ArrayList<Object> vals=new java.util.ArrayList<Object>(data.length);
 			for (Fieldable fld : data) try {
-				String val=fld.stringValue();
 				switch(f.datatype) {
 					case NUMBER:
-						if (val!=null) vals.add(Double.valueOf(NumericUtils.sortableLongToDouble(NumericUtils.prefixCodedToLong(val)))); break;
+						if (fld instanceof NumericField) {
+							vals.add(((NumericField)fld).getNumericValue());
+						} else {
+							// backwards code
+							final String val=fld.stringValue();
+							vals.add(Double.valueOf(NumericUtils.sortableLongToDouble(NumericUtils.prefixCodedToLong(val))));
+						}
+						break;
 					case DATETIME:
-						if (val!=null) vals.add(new Date(NumericUtils.prefixCodedToLong(val))); break;
+						if (fld instanceof NumericField) {
+							vals.add(new Date(((NumericField)fld).getNumericValue().longValue()));
+						} else {
+							// backwards code
+							final String val=fld.stringValue();
+							vals.add(new Date(NumericUtils.prefixCodedToLong(val)));
+						}
+						break;
 					default:
+						final String val;
 						if (fld.isBinary()) try {
 							val=CompressionTools.decompressString(fld.getBinaryValue());
 						} catch (DataFormatException de) {
 							throw new RuntimeException("Cannot decompress field '"+f.name+"'.",de);
+						} else {
+							val=fld.stringValue();
 						}
 						vals.add(val); break;
 				}

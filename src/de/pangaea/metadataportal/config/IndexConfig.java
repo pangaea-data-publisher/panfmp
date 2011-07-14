@@ -18,7 +18,6 @@ package de.pangaea.metadataportal.config;
 
 import java.lang.ref.WeakReference;
 import org.apache.lucene.index.IndexReader;
-import org.apache.lucene.search.Searcher;
 import org.apache.lucene.search.IndexSearcher;
 import de.pangaea.metadataportal.utils.AutoCloseIndexReader;
 
@@ -54,8 +53,8 @@ public abstract class IndexConfig {
 		checked=true;
 	}
 	
-	/** returns a Searcher on the shared IndexReader, should be closed after using. **/
-	public Searcher newSearcher() throws java.io.IOException {
+	/** returns a IndexSearcher on the shared IndexReader, should be closed after using. **/
+	public IndexSearcher newSearcher() throws java.io.IOException {
 		if (!checked) throw new IllegalStateException("Index config not initialized and checked!");
 		IndexSearcher searcher=new IndexSearcher(getSharedIndexReader());
 		searcher.setDefaultFieldSortScoring(true,true);

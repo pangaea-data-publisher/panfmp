@@ -69,7 +69,7 @@ public final class IndexReaderWarmerImpl extends IndexReaderWarmer {
 		}
 	}
 	
-	protected void runQuery(final Searcher searcher, final Entry e) throws IOException {
+	protected void runQuery(final IndexSearcher searcher, final Entry e) throws IOException {
 		final SortField[] sf=(e.sort==null)?null:e.sort.getSort();
 		final FieldComparator[] comparators;
 		if (sf==null) {

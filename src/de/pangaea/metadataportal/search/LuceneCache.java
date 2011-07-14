@@ -236,7 +236,7 @@ public final class LuceneCache {
 	 */
 	protected static final class Session {
 
-		private Session(LuceneCache parent, Searcher searcher, Query query, Sort sort) {
+		private Session(LuceneCache parent, IndexSearcher searcher, Query query, Sort sort) {
 			this.parent=parent;
 			this.searcher=searcher;
 			this.query=query;
@@ -284,7 +284,7 @@ public final class LuceneCache {
 		private final Query query;
 		private final Sort sort;
 		
-		protected Searcher searcher;
+		protected IndexSearcher searcher;
 		protected long lastAccess;
 		protected long queryTime=0L;
 		protected TopDocs topDocs=null;

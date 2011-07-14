@@ -24,9 +24,11 @@ import de.pangaea.metadataportal.harvester.Harvester;
 import javax.xml.transform.Templates;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.IndexWriter.IndexReaderWarmer;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.store.Directory;
+import org.apache.lucene.util.Version;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import javax.xml.namespace.QName;
@@ -115,10 +117,11 @@ public class SingleIndexConfig extends IndexConfig {
 	/** Opens an IndexWriter for adding Documents to Index. **/
 	public IndexWriter newIndexWriter(boolean create) throws java.io.IOException {
 		if (!checked) throw new IllegalStateException("Index config not initialized and checked!");
-		final IndexWriter writer=new IndexWriter(getIndexDirectory(), parent.getAnalyzer(), create, IndexWriter.MaxFieldLength.UNLIMITED);
+		final IndexWriterConfig config=new IndexWriterConfig(Version.LUCENE_33, parent.getAnalyzer());
+		config.setOpenMode(create ? IndexWriterConfig.OpenMode.CREATE : IndexWriterConfig.OpenMode.APPEND);
+		final IndexWriter writer=new IndexWriter(getIndexDirectory(), config);
 		final Log iwlog=LogFactory.getLog(writer.getClass());
 		if (iwlog.isDebugEnabled()) writer.setInfoStream(LogUtil.getDebugStream(iwlog));
-		writer.setUseCompoundFile(true);
 		return writer;
 	}
 
