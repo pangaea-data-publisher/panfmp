@@ -28,6 +28,7 @@ import de.pangaea.metadataportal.config.*;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.CompressionTools;
 import org.apache.lucene.document.Fieldable;
+import org.apache.lucene.document.NumericField;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.SetBasedFieldSelector;
 import org.apache.lucene.search.*;
@@ -58,7 +59,7 @@ public class ExternalIndexHarvester extends SingleFileEntitiesHarvester {
 
 	// Class members
 	private String identifierPrefix="";
-	private Searcher searcher=null;
+	private IndexSearcher searcher=null;
 	private Directory indexDir=null;
 	private Query query=null;
 	
@@ -201,9 +202,14 @@ public class ExternalIndexHarvester extends SingleFileEntitiesHarvester {
 		identifier=identifierPrefix+identifier;
 		// try to read date stamp
 		long datestamp=-1L;
+		// try to read date stamp
 		try {
-			String d=ldoc.get(IndexConstants.FIELDNAME_DATESTAMP);
-			if (d!=null) datestamp=NumericUtils.prefixCodedToLong(d);
+			final Fieldable fld=ldoc.getFieldable(IndexConstants.FIELDNAME_DATESTAMP);
+			if (fld instanceof NumericField) {
+				datestamp=((NumericField)fld).getNumericValue().longValue();
+			} else if (fld!=null) {
+				datestamp=NumericUtils.prefixCodedToLong(fld.stringValue());
+			}
 		} catch (NumberFormatException ne) {
 			log.warn("Datestamp of document '"+identifier+"' is invalid: "+ne.getMessage()+" - Ignoring datestamp.");
 			datestamp=-1L;

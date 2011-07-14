@@ -264,8 +264,9 @@ public class IndexBuilder {
 		boolean finished=false;
 		try {
 			writer=iconfig.newIndexWriter(create);
-			writer.setMaxBufferedDocs(maxBufferedChanges);
-			writer.setMaxBufferedDeleteTerms(maxBufferedChanges);
+			final IndexWriterConfig icfg = writer.getConfig();
+			icfg.setMaxBufferedDocs(maxBufferedChanges);
+			icfg.setMaxBufferedDeleteTerms(maxBufferedChanges);
 
 			HashSet<String> committedIdentifiers=new HashSet<String>(maxBufferedChanges);
 

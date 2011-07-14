@@ -548,7 +548,7 @@ public class Config {
 	public final Properties searchProperties=new Properties();
 	public final Properties globalHarvesterProperties=new Properties();
 
-	public final CharArraySet luceneStopWords=new CharArraySet(64,true);
+	public final CharArraySet luceneStopWords=new CharArraySet(Version.LUCENE_33, 64,true);
 	protected Class<? extends Analyzer> analyzerClass=null;
 	protected AnalyzerFactory analyzerFactory=null;
 	

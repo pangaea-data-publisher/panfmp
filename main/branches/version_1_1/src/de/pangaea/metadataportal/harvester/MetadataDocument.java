@@ -110,8 +110,12 @@ public class MetadataDocument {
 		}
 		// try to read date stamp
 		try {
-			String d=ldoc.get(IndexConstants.FIELDNAME_DATESTAMP);
-			if (d!=null) datestamp=new Date(NumericUtils.prefixCodedToLong(d));
+			final Fieldable fld=ldoc.getFieldable(IndexConstants.FIELDNAME_DATESTAMP);
+			if (fld instanceof NumericField) {
+				datestamp=new Date(((NumericField)fld).getNumericValue().longValue());
+			} else if (fld!=null) {
+				datestamp=new Date(NumericUtils.prefixCodedToLong(fld.stringValue()));
+			}
 		} catch (NumberFormatException ne) {
 			log.warn("Datestamp of document '"+identifier+"' is invalid: "+ne.getMessage()+" - Deleting datestamp.");
 		}
@@ -250,7 +254,7 @@ public class MetadataDocument {
 			}
 			if (BooleanParser.parseBoolean(iconfig.harvesterProperties.getProperty("compressXML","true"))) {
 				ldoc.add(new Field(IndexConstants.FIELDNAME_XML,
-					CompressionTools.compressString(this.getXML()), Field.Store.YES
+					CompressionTools.compressString(this.getXML())
 				));
 			} else {
 				ldoc.add(new Field(IndexConstants.FIELDNAME_XML,
@@ -283,8 +287,7 @@ public class MetadataDocument {
 			ldoc.add(f);
 			ldoc.add(new Field(IndexConstants.FIELDNAME_MDOC_IMPL, getClass().getName(), Field.Store.YES, Field.Index.NO));
 			if (datestamp!=null) {
-				ldoc.add(new NumericField(IndexConstants.FIELDNAME_DATESTAMP, iconfig.parent.triePrecisionStep).setLongValue(datestamp.getTime()));
-				ldoc.add(new Field(IndexConstants.FIELDNAME_DATESTAMP, NumericUtils.longToPrefixCoded(datestamp.getTime()), Field.Store.YES, Field.Index.NO));
+				ldoc.add(new NumericField(IndexConstants.FIELDNAME_DATESTAMP, iconfig.parent.triePrecisionStep, Field.Store.YES, true).setLongValue(datestamp.getTime()));
 			}
 			return ldoc;
 		}
@@ -564,16 +567,12 @@ public class MetadataDocument {
 		boolean token=false;
 		switch(f.datatype) {
 			case NUMBER:
-				long l=NumericUtils.doubleToSortableLong(Double.parseDouble(val));
-				if (f.indexed)
-					ldoc.add(new NumericField(f.name, iconfig.parent.triePrecisionStep).setLongValue(l));
-				if (f.storage!=Field.Store.NO) ldoc.add(new Field(f.name, NumericUtils.longToPrefixCoded(l), f.storage, Field.Index.NO));
+				final double d=Double.parseDouble(val);
+				ldoc.add(new NumericField(f.name, iconfig.parent.triePrecisionStep, f.storage, f.indexed).setDoubleValue(d));
 				break;
 			case DATETIME:
-				l=LenientDateParser.parseDate(val).getTime();
-				if (f.indexed)
-					ldoc.add(new NumericField(f.name, iconfig.parent.triePrecisionStep).setLongValue(l));
-				if (f.storage!=Field.Store.NO) ldoc.add(new Field(f.name, NumericUtils.longToPrefixCoded(l), f.storage, Field.Index.NO));
+				final long l=LenientDateParser.parseDate(val).getTime();
+				ldoc.add(new NumericField(f.name, iconfig.parent.triePrecisionStep, f.storage, f.indexed).setLongValue(l));
 				break;
 			case TOKENIZEDTEXT: 
 				token=true;
@@ -583,7 +582,7 @@ public class MetadataDocument {
 				Field.Store stor=f.storage;
 				if (f.indexed) in=token?Field.Index.ANALYZED:Field.Index.NOT_ANALYZED_NO_NORMS;
 				if (f.compressed && stor==Field.Store.YES && val.length()>1024) {
-					ldoc.add(new Field(f.name, CompressionTools.compressString(val), Field.Store.YES));
+					ldoc.add(new Field(f.name, CompressionTools.compressString(val)));
 					stor=Field.Store.NO;
 				}
 				if (in!=Field.Index.NO || stor!=Field.Store.NO) {

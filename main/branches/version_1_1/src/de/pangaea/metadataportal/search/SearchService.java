@@ -543,7 +543,7 @@ public class SearchService {
 	public void search(SearchResultCollector collector, Query query, boolean loadXml, Collection<String> fieldsToLoad) throws IOException {
 		log.info("Collecting results for index={"+index.id+"}; query={"+query.toString(IndexConstants.FIELDNAME_CONTENT)+"}");
 
-		Searcher searcher=index.newSearcher();
+		IndexSearcher searcher=index.newSearcher();
 		LuceneCollector coll=new LuceneCollector(
 			collectorBufferSize,collector,
 			cache.config,
