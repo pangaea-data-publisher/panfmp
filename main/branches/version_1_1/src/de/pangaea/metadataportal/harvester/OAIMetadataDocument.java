@@ -20,6 +20,7 @@ import de.pangaea.metadataportal.utils.*;
 import de.pangaea.metadataportal.config.SingleIndexConfig;
 import java.util.*;
 import org.apache.lucene.document.*;
+import org.apache.lucene.index.FieldInfo.IndexOptions;
 
 /**
  * Special implementation of {@link MetadataDocument} that adds OAI set support to internal fields
@@ -70,7 +71,7 @@ public class OAIMetadataDocument extends MetadataDocument {
 		if (ldoc!=null) {
 			for (String set : sets) {
 				final Field field=new Field(IndexConstants.FIELDNAME_SET, set, Field.Store.YES, Field.Index.NOT_ANALYZED_NO_NORMS);
-				field.setOmitTermFreqAndPositions(true);
+				field.setIndexOptions(IndexOptions.DOCS_ONLY);
 				ldoc.add(field);
 			}
 		}

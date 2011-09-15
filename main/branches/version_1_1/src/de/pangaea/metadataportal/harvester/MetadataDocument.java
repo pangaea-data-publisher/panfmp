@@ -39,6 +39,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.DocumentFragment;
 import org.xml.sax.*;
 import java.lang.reflect.Constructor;
+import org.apache.lucene.index.FieldInfo.IndexOptions;
 
 /**
  * This class holds all information harvested and provides methods for {@link IndexBuilder} to create
@@ -283,7 +284,7 @@ public class MetadataDocument {
 			Document ldoc = new Document();
 			// identifier without
 			Field f=new Field(IndexConstants.FIELDNAME_IDENTIFIER, identifier, Field.Store.YES, Field.Index.NOT_ANALYZED_NO_NORMS);
-			f.setOmitTermFreqAndPositions(true);
+			f.setIndexOptions(IndexOptions.DOCS_ONLY);
 			ldoc.add(f);
 			ldoc.add(new Field(IndexConstants.FIELDNAME_MDOC_IMPL, getClass().getName(), Field.Store.YES, Field.Index.NO));
 			if (datestamp!=null) {
