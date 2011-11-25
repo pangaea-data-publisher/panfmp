@@ -361,7 +361,7 @@ public class IndexBuilder {
 			if (BooleanParser.parseBoolean(iconfig.harvesterProperties.getProperty("autoOptimize","false"))) {
 				if (writer==null) writer=iconfig.newIndexWriter(false);
 				log.info("Optimizing index...");
-				writer.optimize(true);
+				writer.forceMerge(1, true);
 				log.info("Index optimized.");
 			}
 		} catch (IOException e) {

@@ -60,7 +60,7 @@ public class Optimizer {
 					if (!siconf.isIndexAvailable()) throw new java.io.FileNotFoundException("Index directory with segments file does not exist.");
 					writer = siconf.newIndexWriter(false);
 					log.info("Optimizing...");
-					writer.optimize(true);
+					writer.forceMerge(1,true);
 					log.info("Finished index optimizing of index \""+iconf.id+"\".");
 				} catch (java.io.IOException e) {
 					log.fatal("Exception during index optimization.",e);
