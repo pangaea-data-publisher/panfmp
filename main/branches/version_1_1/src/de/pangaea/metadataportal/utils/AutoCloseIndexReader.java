@@ -46,12 +46,29 @@ public final class AutoCloseIndexReader extends FilterIndexReader {
 	}
 
 	@Override
-	public final IndexReader reopen() throws CorruptIndexException, IOException {
-		final IndexReader n=in.reopen();
-		if (n!=in) return new AutoCloseIndexReader(n,name,true);
-		return this;
+	protected IndexReader doOpenIfChanged() throws CorruptIndexException, IOException {
+		final IndexReader n=IndexReader.openIfChanged(in);
+		return (n==null) ? null : new AutoCloseIndexReader(n,name,true);
 	}
-	
+
+	@Override
+	protected IndexReader doOpenIfChanged(boolean openReadOnly) throws CorruptIndexException, IOException {
+		final IndexReader n=IndexReader.openIfChanged(in,openReadOnly);
+		return (n==null) ? null : new AutoCloseIndexReader(n,name,true);
+	}
+
+	@Override
+	protected IndexReader doOpenIfChanged(final IndexCommit commit) throws CorruptIndexException, IOException {
+		final IndexReader n=IndexReader.openIfChanged(in,commit);
+		return (n==null) ? null : new AutoCloseIndexReader(n,name,true);
+	}
+
+	@Override
+	protected IndexReader doOpenIfChanged(IndexWriter writer, boolean applyAllDeletes) throws CorruptIndexException, IOException {
+		final IndexReader n=IndexReader.openIfChanged(in,writer,applyAllDeletes);
+		return (n==null) ? null : new AutoCloseIndexReader(n,name,true);
+	}
+
 	public final synchronized void hardClose() throws CorruptIndexException, IOException {
 		finalizationStarted=true;
 		try {

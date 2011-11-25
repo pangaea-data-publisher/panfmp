@@ -59,7 +59,7 @@ public class ExternalIndexHarvester extends SingleFileEntitiesHarvester {
 
 	// Class members
 	private String identifierPrefix="";
-	private IndexSearcher searcher=null;
+	private IndexReader reader=null;
 	private Directory indexDir=null;
 	private Query query=null;
 	
@@ -121,13 +121,13 @@ public class ExternalIndexHarvester extends SingleFileEntitiesHarvester {
 
 		log.info("Opening index in directory '"+dir+"' for harvesting "+info+"...");
 		indexDir=iconfig.parent.indexDirImplementation.getDirectory(dir);
-		searcher=new IndexSearcher(indexDir,true);
+		reader=IndexReader.open(indexDir,true);
 	}
 
 	@Override
 	public void close(boolean cleanShutdown) throws Exception {
-		if (searcher!=null) searcher.close();
-		searcher=null;
+		if (reader!=null) reader.close();
+		reader=null;
 		if (indexDir!=null) indexDir.close();
 		indexDir=null;
 		query=null;
@@ -136,9 +136,9 @@ public class ExternalIndexHarvester extends SingleFileEntitiesHarvester {
 
 	@Override
 	public void harvest() throws Exception {
-		if (searcher==null) throw new IllegalStateException("Harvester was not opened!");
+		if (reader==null) throw new IllegalStateException("Harvester was not opened!");
 		try {
-			searcher.search(query, new Collector() {
+			new IndexSearcher(reader).search(query, new Collector() {
 				private IndexReader currReader=null;
 			
 				@Override

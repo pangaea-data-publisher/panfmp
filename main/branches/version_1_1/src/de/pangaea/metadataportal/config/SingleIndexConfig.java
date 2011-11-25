@@ -139,8 +139,8 @@ public class SingleIndexConfig extends IndexConfig {
 			r = indexReader;
 		}
 		if (r!=null) {
-			IndexReader n=r.reopen();
-			if (n!=r) {
+			final IndexReader n=IndexReader.openIfChanged(r);
+			if (n!=null) {
 				warmed.set(false);
 				warmSharedIndexReader(n);
 				replaceSharedIndexReader((AutoCloseIndexReader)n); // should be castable!
