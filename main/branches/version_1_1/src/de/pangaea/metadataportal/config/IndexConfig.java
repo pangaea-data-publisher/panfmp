@@ -71,8 +71,8 @@ public abstract class IndexConfig {
 	/** returns a shared, read-only IndexReader. This reader may not be closed by {@link IndexReader#close()}.  **/
 	public abstract IndexReader getSharedIndexReader() throws java.io.IOException;
 
-	/**  returns a new IndexReader, optionally read-only. This reader must be closed after using. **/
-	public abstract IndexReader newIndexReader(boolean readOnly) throws java.io.IOException;
+	/**  returns a new IndexReader. This reader must be closed after using. **/
+	public abstract IndexReader newIndexReader() throws java.io.IOException;
 
 	/** checks, if index is available (a segment file is available) **/
 	public abstract boolean isIndexAvailable() throws java.io.IOException;

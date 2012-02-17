@@ -55,7 +55,7 @@ public class Rebuilder extends Harvester {
 	@Override
 	public void open(SingleIndexConfig iconfig) throws Exception {
 		log.info("Opening index \""+iconfig.id+"\" for harvesting all documents...");
-		reader = iconfig.newIndexReader(true);
+		reader = iconfig.newIndexReader();
 		// enable optimization
 		savedAutoOptimize=(String)iconfig.harvesterProperties.setProperty("autoOptimize","true");
 		super.open(iconfig);

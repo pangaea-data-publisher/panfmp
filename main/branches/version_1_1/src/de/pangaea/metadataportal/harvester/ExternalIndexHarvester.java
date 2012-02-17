@@ -121,7 +121,7 @@ public class ExternalIndexHarvester extends SingleFileEntitiesHarvester {
 
 		log.info("Opening index in directory '"+dir+"' for harvesting "+info+"...");
 		indexDir=iconfig.parent.indexDirImplementation.getDirectory(dir);
-		reader=IndexReader.open(indexDir,true);
+		reader=IndexReader.open(indexDir);
 	}
 
 	@Override
