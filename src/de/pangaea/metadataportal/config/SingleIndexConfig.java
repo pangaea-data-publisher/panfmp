@@ -102,16 +102,16 @@ public class SingleIndexConfig extends IndexConfig {
 	public synchronized IndexReader getSharedIndexReader() throws java.io.IOException {
 		if (!checked) throw new IllegalStateException("Index config not initialized and checked!");
 		if (indexReader==null) {
-			indexReader=new AutoCloseIndexReader(IndexReader.open(getIndexDirectory(),true),id);
+			indexReader=new AutoCloseIndexReader(IndexReader.open(getIndexDirectory()),id);
 			warmed.set(false);
 		}
 		return indexReader;
 	}
 
 	@Override
-	public IndexReader newIndexReader(final boolean readOnly) throws java.io.IOException {
+	public IndexReader newIndexReader() throws java.io.IOException {
 		if (!checked) throw new IllegalStateException("Index config not initialized and checked!");
-		return IndexReader.open(getIndexDirectory(),readOnly);
+		return IndexReader.open(getIndexDirectory());
 	}
 	
 	/** Opens an IndexWriter for adding Documents to Index. **/

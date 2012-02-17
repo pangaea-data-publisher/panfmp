@@ -82,7 +82,7 @@ public final class XPathResolverImpl implements XPathFunctionResolver,XPathVaria
 			log.info("Opening virtual index reader containing "+ids+" for duplicates checking...");
 			IndexReader[] l=new IndexReader[ids.size()];
 			Iterator<String> it=ids.iterator();
-			for (int i=0; it.hasNext(); i++) l[i]=conf.indexes.get(it.next()).newIndexReader(true);
+			for (int i=0; it.hasNext(); i++) l[i]=conf.indexes.get(it.next()).newIndexReader();
 			ci.put(ids,reader=new org.apache.lucene.index.MultiReader(l,true));
 		}
 		return reader;

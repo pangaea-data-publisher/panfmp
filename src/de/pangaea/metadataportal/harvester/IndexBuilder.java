@@ -320,24 +320,31 @@ public class IndexBuilder {
 			// check vor validIdentifiers Set and remove all unknown identifiers from index, if available (but not if new-created index)
 			Set<String> validIdentifiers=this.validIdentifiers.get();
 			if (validIdentifiers!=null && !create) {
+				HarvesterCommitEvent ce=commitEvent.get();
+				
+				// only flush if commitEvent interface registered
+				if (ce!=null) writer.commit();
+
 				log.info(deleted+" docs presumably deleted (if existent) and "+updated+" docs (re-)indexed so far.");
-				writer.commit();
-				writer.close(); writer=null;
+
+				// notify Harvester of index commit
+				if (ce!=null) ce.harvesterCommitted(Collections.unmodifiableSet(committedIdentifiers));
+				committedIdentifiers.clear();
 
 				log.info("Removing documents not seen while harvesting (this may take a while)...");
 				IndexReader reader=null;
 				TermEnum terms=null;
 				Term base=new Term(IndexConstants.FIELDNAME_IDENTIFIER,"");
 				try {
-					reader = iconfig.newIndexReader(false);
+					reader = iconfig.newIndexReader();
 					terms=reader.terms(base);
 					do {
 						Term t=terms.term();
 						if (t!=null && base.field()==t.field()) {
 							if (!validIdentifiers.contains(t.text())) {
-							    int count=reader.deleteDocuments(t);
-							    if (count>0) committedIdentifiers.add(t.text());
-							    deleted+=count;
+								writer.deleteDocuments(t);
+								committedIdentifiers.add(t.text());
+								deleted++;
 							}
 						} else {
 							break;

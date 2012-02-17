@@ -51,7 +51,7 @@ public final class AutoCloseIndexReader extends FilterIndexReader {
 		return (n==null) ? null : new AutoCloseIndexReader(n,name,true);
 	}
 
-	@Override
+	@Override @Deprecated
 	protected IndexReader doOpenIfChanged(boolean openReadOnly) throws CorruptIndexException, IOException {
 		final IndexReader n=IndexReader.openIfChanged(in,openReadOnly);
 		return (n==null) ? null : new AutoCloseIndexReader(n,name,true);

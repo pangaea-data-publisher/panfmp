@@ -82,10 +82,10 @@ public class VirtualIndexConfig extends IndexConfig {
 	}
 
 	@Override
-	public IndexReader newIndexReader(final boolean readOnly) throws java.io.IOException {
+	public IndexReader newIndexReader() throws java.io.IOException {
 		if (indexes==null) throw new IllegalStateException("Virtual index configuration with id=\""+id+"\" not yet checked and initialized!");
 		IndexReader[] l=new IndexReader[indexes.length];
-		for (int i=0, c=indexes.length; i<c; i++) l[i]=indexes[i].newIndexReader(readOnly);
+		for (int i=0, c=indexes.length; i<c; i++) l[i]=indexes[i].newIndexReader();
 		return new MultiReader(l,true);
 	}
 
