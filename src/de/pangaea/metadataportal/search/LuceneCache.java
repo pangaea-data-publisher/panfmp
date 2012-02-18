@@ -20,6 +20,7 @@ import java.util.*;
 import java.io.UnsupportedEncodingException;
 import java.io.IOException;
 import de.pangaea.metadataportal.config.*;
+import de.pangaea.metadataportal.utils.BoostingCollector;
 import de.pangaea.metadataportal.utils.IndexConstants;
 import de.pangaea.metadataportal.utils.LRUMap;
 import org.apache.lucene.index.*;
@@ -255,7 +256,12 @@ public final class LuceneCache {
 				}
 				log.debug("Fetching "+count+" top docs...");
 				long start=System.currentTimeMillis();
-				topDocs = (sort!=null) ? searcher.search(query,(Filter)null,count,sort) : searcher.search(query,(Filter)null,count);
+				final Weight weight = searcher.createNormalizedWeight(query);
+				final TopDocsCollector collector = (sort == null) ?
+					TopScoreDocCollector.create(count, !weight.scoresDocsOutOfOrder()) :
+					TopFieldCollector.create(sort, count, false, true, true, !weight.scoresDocsOutOfOrder());
+				searcher.search(weight, (Filter)null, new BoostingCollector(collector, IndexConstants.FIELDNAME_BOOST));
+				topDocs = collector.topDocs();
 				queryTime=System.currentTimeMillis()-start;
 				fetchedCount=count;
 				parent.warmer.addLifeQuery(query,sort);
