@@ -17,6 +17,7 @@
 package de.pangaea.metadataportal.search;
 
 import de.pangaea.metadataportal.config.*;
+import de.pangaea.metadataportal.utils.BoostingCollector;
 import de.pangaea.metadataportal.utils.IndexConstants;
 import de.pangaea.metadataportal.utils.LenientDateParser;
 import org.apache.lucene.search.*;
@@ -550,7 +551,7 @@ public class SearchService {
 			cache.getFieldSelector(loadXml,fieldsToLoad)
 		);
 		try {
-			searcher.search(query,coll);
+			searcher.search(query,new BoostingCollector(coll, IndexConstants.FIELDNAME_BOOST));
 			coll.flushBuffer();
 		} catch (LuceneCollector.StopException se) {
 			// we are finished

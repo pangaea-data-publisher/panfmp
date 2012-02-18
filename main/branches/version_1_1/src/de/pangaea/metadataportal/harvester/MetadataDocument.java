@@ -398,7 +398,9 @@ public class MetadataDocument {
 				throw new javax.xml.xpath.XPathExpressionException("The XPath for document boost did not return a positive, finite NUMBER (default=1.0)!");
 		}
 		if (log.isTraceEnabled()) log.trace("DocumentBoost: "+boost);
-		ldoc.setBoost(boost);
+		if (boost!=1.0f) {
+			ldoc.add(new NumericField(IndexConstants.FIELDNAME_BOOST, Integer.MAX_VALUE, Field.Store.NO, true).setFloatValue(boost));
+		}
 	}
 
 	/**
