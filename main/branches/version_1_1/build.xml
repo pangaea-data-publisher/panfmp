@@ -17,8 +17,8 @@
 	<property name="year" value="2007-2011"/>
 	
 	<property name="javadoc.projectWebSite" value="http://www.panFMP.org/" />
-	<property name="javadoc.link.sun" value="http://java.sun.com/j2se/1.5/docs/api/" />
-	<property name="javadoc.link.lucene" value="http://lucene.apache.org/java/3_0_3/api/core/" />
+	<property name="javadoc.link.sun" value="http://docs.oracle.com/javase/1.5.0/docs/api/" />
+	<property name="javadoc.link.lucene" value="http://lucene.apache.org/core/3_6_0/api/core/" />
 
 	<!-- GLOBALS -->
 	<target name="init">
