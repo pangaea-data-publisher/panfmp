@@ -59,7 +59,11 @@ public abstract class OAIHarvesterBase extends Harvester {
 	protected int retryTime=DEFAULT_RETRY_TIME;
 	/** the timeout from configuration */
 	protected int timeout=DEFAULT_TIMEOUT;
-
+	
+	/** The harvester should filter incoming documents according to its set metadata.
+	 * Should be disabled for OAI-PMH protocol with only one set. Default is {@code true}. */
+	protected boolean filterIncomingSets = true;
+	
 	// construtor
 	@Override
 	public void open(SingleIndexConfig iconfig) throws Exception {
@@ -69,7 +73,7 @@ public abstract class OAIHarvesterBase extends Harvester {
 		if (s!=null) {
 			sets=new HashSet<String>();
 			Collections.addAll(sets,s.split("[\\,\\;\\s]+"));
-			if (sets.size()==0) sets=null;
+			if (sets.isEmpty()) sets=null;
 		}
 
 		if ((s=iconfig.harvesterProperties.getProperty("retryCount"))!=null) retryCount=Integer.parseInt(s);
@@ -83,7 +87,7 @@ public abstract class OAIHarvesterBase extends Harvester {
 
 	@Override
 	public void addDocument(MetadataDocument mdoc) throws IndexBuilderBackgroundFailure,InterruptedException {
-		if (sets!=null) {
+		if (filterIncomingSets && sets!=null) {
 			if (Collections.disjoint(((OAIMetadataDocument)mdoc).getSets(),sets)) mdoc.setDeleted(true);
 		}
 		super.addDocument(mdoc);

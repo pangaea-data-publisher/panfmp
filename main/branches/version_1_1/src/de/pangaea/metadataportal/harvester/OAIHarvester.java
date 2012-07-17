@@ -54,6 +54,7 @@ public class OAIHarvester extends OAIHarvesterBase {
 	@Override
 	public void open(SingleIndexConfig iconfig) throws Exception {
 		super.open(iconfig);
+		filterIncomingSets = sets!=null && sets.size()>1;
 
 		//*** ListRecords ***
 		listRecordsDig=new ExtendedDigester();
