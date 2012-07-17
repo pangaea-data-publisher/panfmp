@@ -42,6 +42,7 @@ public class OAIStaticRepositoryHarvester extends OAIHarvesterBase {
 	@Override
 	public void open(SingleIndexConfig iconfig) throws Exception {
 		super.open(iconfig);
+		filterIncomingSets = true; // always filter set names
 		
 		if (sets!=null) {
 			log.warn(
