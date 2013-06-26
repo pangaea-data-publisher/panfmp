@@ -14,11 +14,11 @@
 	<property name="versionsuffix" value="-${version}"/>
 	<property name="pkgname" value="${ant.project.name}${versionsuffix}"/>
 	
-	<property name="year" value="2007-2011"/>
+	<property name="year" value="2007-2013"/>
 	
 	<property name="javadoc.projectWebSite" value="http://www.panFMP.org/" />
 	<property name="javadoc.link.sun" value="http://docs.oracle.com/javase/1.5.0/docs/api/" />
-	<property name="javadoc.link.lucene" value="http://lucene.apache.org/core/3_6_0/api/core/" />
+	<property name="javadoc.link.lucene" value="http://lucene.apache.org/core/3_6_2/api/core/" />
 
 	<!-- GLOBALS -->
 	<target name="init">
@@ -38,7 +38,7 @@
 	
 	<target name="compile" depends="init">
 		<mkdir dir="${build}"/>
-		<javac srcdir="${src}" destdir="${build}" source="1.5" target="1.5" classpathref="classpath" deprecation="on" debug="${debug}">
+		<javac srcdir="${src}" destdir="${build}" source="1.5" target="1.5" classpathref="classpath" deprecation="on" debug="${debug}" encoding="UTF-8">
 			<compilerarg line="-Xlint:unchecked"/>
 		</javac>
 	</target>
@@ -70,14 +70,67 @@
 	<target name="javadocs" depends="init">
 		<delete dir="${docs}"/>
 		<mkdir dir="${docs}"/>
-		<javadoc sourcepath="${src}" destdir="${docs}" source="1.5" packagenames="*" classpathref="classpath" windowtitle="${ant.project.name} ${version} Documentation" overview="${src}/overview.html">
+		<javadoc sourcepath="${src}" destdir="${docs}" source="1.5" packagenames="*" classpathref="classpath" windowtitle="${ant.project.name} ${version} Documentation" overview="${src}/overview.html" charset="UTF-8" docencoding="UTF-8">
 			<link href="${javadoc.link.sun}"/>
 			<link href="${javadoc.link.lucene}"/>
 			<doctitle><![CDATA[<H1>${ant.project.name} ${version}</H1>]]></doctitle>
 			<bottom><![CDATA[<ADDRESS>Copyright &copy;${year} <A HREF='${javadoc.projectWebSite}' TARGET='_blank'>${ant.project.name}</A> Developers c/o Uwe Schindler</ADDRESS>]]></bottom>
 		</javadoc>
+    <patch-javadoc dir="${docs}" docencoding="UTF-8"/>
 	</target>	
 	
+  <macrodef name="patch-javadoc">
+    <attribute name="dir"/>
+    <attribute name="docencoding" default="${file.encoding}"/>
+    <sequential>
+      <replace encoding="@{docencoding}" summary="true" taskname="patch-javadoc">
+        <restrict>
+          <fileset dir="@{dir}" casesensitive="false" includes="**/index.html,**/index.htm,**/toc.html,**/toc.htm"/>
+          <!-- TODO: add encoding="@{docencoding}" to contains check, when we are on ANT 1.9.0: -->
+          <not><contains text="function validURL(url) {" casesensitive="true" /></not>
+        </restrict>
+        <replacetoken><![CDATA[function loadFrames() {]]></replacetoken>
+        <replacevalue expandProperties="false"><![CDATA[if (targetPage != "" && !validURL(targetPage))
+        targetPage = "undefined";
+    function validURL(url) {
+        var pos = url.indexOf(".html");
+        if (pos == -1 || pos != url.length - 5)
+            return false;
+        var allowNumber = false;
+        var allowSep = false;
+        var seenDot = false;
+        for (var i = 0; i < url.length - 5; i++) {
+            var ch = url.charAt(i);
+            if ('a' <= ch && ch <= 'z' ||
+                    'A' <= ch && ch <= 'Z' ||
+                    ch == '$' ||
+                    ch == '_') {
+                allowNumber = true;
+                allowSep = true;
+            } else if ('0' <= ch && ch <= '9'
+                    || ch == '-') {
+                if (!allowNumber)
+                     return false;
+            } else if (ch == '/' || ch == '.') {
+                if (!allowSep)
+                    return false;
+                allowNumber = false;
+                allowSep = false;
+                if (ch == '.')
+                     seenDot = true;
+                if (ch == '/' && seenDot)
+                     return false;
+            } else {
+                return false;
+            }
+        }
+        return true;
+    }
+    function loadFrames() {]]></replacevalue>
+      </replace>
+    </sequential>
+  </macrodef>
+
 	<!-- PACKAGING -->
 	<target name="binpackage" depends="dist,javadocs,examples">
 		<zip destfile="${basedir}/${pkgname}-bin.zip">
