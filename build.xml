@@ -6,18 +6,17 @@
 	<property name="dist" location="dist"/>
 	<property name="docs" location="apidocs"/>
 	<property name="libs" location="libs"/>
-	<property name="examples" location="examples/java"/>
 	
 	<property name="debug" value="on"/>
 	
-	<property name="version" value="1.1-dev"/>
+	<property name="version" value="2.0-dev"/>
 	<property name="versionsuffix" value="-${version}"/>
 	<property name="pkgname" value="${ant.project.name}${versionsuffix}"/>
 	
 	<property name="year" value="2007-2013"/>
 	
 	<property name="javadoc.projectWebSite" value="http://www.panFMP.org/" />
-	<property name="javadoc.link.sun" value="http://docs.oracle.com/javase/1.5.0/docs/api/" />
+	<property name="javadoc.link.sun" value="http://docs.oracle.com/javase/1.6.0/docs/api/" />
 	<property name="javadoc.link.lucene" value="http://lucene.apache.org/core/3_6_2/api/core/" />
 
 	<!-- GLOBALS -->
@@ -28,9 +27,7 @@
   	<path id="classpath">
 		<fileset dir="${libs}">
 			<include name="core/*.jar"/>
-			<include name="axis/*.jar"/>
 			<include name="optional/*.jar"/>
-			<include name="jetty/servlet-api-*.jar"/>
 			<!-- exclude local version of metadataportal itsself from compile classpath! -->
 			<exclude name="**/${ant.project.name}*.jar"/>
 		</fileset>
@@ -38,7 +35,8 @@
 	
 	<target name="compile" depends="init">
 		<mkdir dir="${build}"/>
-		<javac srcdir="${src}" destdir="${build}" source="1.5" target="1.5" classpathref="classpath" deprecation="on" debug="${debug}" encoding="UTF-8">
+		<javac srcdir="${src}" destdir="${build}" source="1.6" target="1.6" classpathref="classpath"
+			deprecation="on" debug="${debug}" encoding="UTF-8" includeantruntime="false">
 			<compilerarg line="-Xlint:unchecked"/>
 		</javac>
 	</target>
@@ -59,18 +57,11 @@
 		</jar>
 	</target>
 	
-	<!-- compile the examples (with default ant task) -->
-	<target name="examples" depends="dist">
-		<ant dir="${examples}" inheritAll="false">
-			<property name="root" location="${basedir}"/>
-		</ant>
-	</target>
-	
 	<!-- JAVADOCS TARGET -->
 	<target name="javadocs" depends="init">
 		<delete dir="${docs}"/>
 		<mkdir dir="${docs}"/>
-		<javadoc sourcepath="${src}" destdir="${docs}" source="1.5" packagenames="*" classpathref="classpath" windowtitle="${ant.project.name} ${version} Documentation" overview="${src}/overview.html" charset="UTF-8" docencoding="UTF-8">
+		<javadoc sourcepath="${src}" destdir="${docs}" source="1.6" packagenames="*" classpathref="classpath" windowtitle="${ant.project.name} ${version} Documentation" overview="${src}/overview.html" charset="UTF-8" docencoding="UTF-8">
 			<link href="${javadoc.link.sun}"/>
 			<link href="${javadoc.link.lucene}"/>
 			<doctitle><![CDATA[<H1>${ant.project.name} ${version}</H1>]]></doctitle>
@@ -132,17 +123,13 @@
   </macrodef>
 
 	<!-- PACKAGING -->
-	<target name="binpackage" depends="dist,javadocs,examples">
+	<target name="binpackage" depends="dist,javadocs">
 		<zip destfile="${basedir}/${pkgname}-bin.zip">
-			<zipfileset dir="${libs}/axis" prefix="${pkgname}/libs/axis"/>
 			<zipfileset dir="${libs}/core" prefix="${pkgname}/libs/core"/>
 			<zipfileset dir="${dist}" prefix="${pkgname}/libs/core"/>
 			<zipfileset dir="${libs}/optional" prefix="${pkgname}/libs/optional"/>
-			<zipfileset dir="${libs}/jetty" prefix="${pkgname}/libs/jetty"/>
 			<zipfileset dir="${basedir}/repository" prefix="${pkgname}/repository"/>
 			<zipfileset dir="${basedir}/scripts" prefix="${pkgname}/scripts"/>
-			<zipfileset dir="${basedir}/axis-webapp" prefix="${pkgname}/axis-webapp"/>
-			<zipfileset dir="${basedir}/examples" prefix="${pkgname}/examples"/>
 			<zipfileset dir="${docs}" prefix="${pkgname}/javadocs"/>
 			<zipfileset dir="${basedir}" prefix="${pkgname}">
 				<include name="*.txt"/>
@@ -180,9 +167,6 @@
 			<fileset dir="${basedir}" includes="*.asc"/>
 			<fileset dir="${basedir}/repository" includes="**/*.log"/>
 		</delete>
-		<ant dir="${examples}" target="clean" inheritAll="false">
-			<property name="root" location="${basedir}"/>
-		</ant>
 	</target>
 	
 	<!-- Macro for building checksum files
