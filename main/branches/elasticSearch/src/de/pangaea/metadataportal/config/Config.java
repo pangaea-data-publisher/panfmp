@@ -199,21 +199,6 @@ public class Config {
 			dig.addDoNothing("config/indexes/index/harvesterProperties");
 			dig.addCallMethod("config/indexes/index/harvesterProperties/*","addHarvesterProperty",0);
 
-			// VirtualIndex
-			dig.addFactoryCreate("config/indexes/virtualIndex", new AbstractObjectCreationFactory() {
-				@Override
-				public Object createObject(Attributes attributes) {
-					return new VirtualIndexConfig(Config.this);
-				}
-			});
-			dig.addSetNext("config/indexes/virtualIndex", "addIndex");
-			dig.addCallMethod("config/indexes/virtualIndex","setId", 1);
-			dig.addCallParam("config/indexes/virtualIndex", 0, "id");
-
-			dig.addCallMethod("config/indexes/virtualIndex/displayName","setDisplayName",0);
-			dig.addCallMethod("config/indexes/virtualIndex/index","addIndex",1);
-			dig.addCallParam("config/indexes/virtualIndex/index", 0, "ref");
-
 			// *** SEARCH PROPERTIES ***
 			dig.addDoNothing("config/search");
 			dig.addCallMethod("config/search/*","addSearchProperty",0);
