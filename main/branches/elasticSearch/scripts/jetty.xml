@@ -1,0 +1,49 @@
+<?xml version="1.0"?>
+<!DOCTYPE Configure PUBLIC "-//Mort Bay Consulting//DTD Configure//EN" "http://jetty.mortbay.org/configure.dtd">
+
+<Configure id="Server" class="org.mortbay.jetty.Server">
+
+	<Call name="addConnector">
+		<Arg>
+			<New class="org.mortbay.jetty.nio.SelectChannelConnector">
+				<Set name="host"><SystemProperty name="jetty.host" default="127.0.0.1"/></Set>
+				<Set name="port"><SystemProperty name="jetty.port" default="8801"/></Set>
+				<Set name="maxIdleTime">30000</Set>
+				<Set name="Acceptors">2</Set>
+				<Set name="statsOn">false</Set>
+				<Set name="lowResourcesConnections">5000</Set>
+				<Set name="lowResourcesMaxIdleTime">5000</Set>
+			</New>
+		</Arg>
+	</Call>
+
+	<Set name="handler">
+		<New id="handlers" class="org.mortbay.jetty.handler.HandlerCollection">
+			<Set name="handlers">
+				<Array type="org.mortbay.jetty.Handler">
+					<Item>
+						<New id="axis-webapp" class="org.mortbay.jetty.webapp.WebAppContext">
+							<Set name="contextPath">/</Set>
+							<Set name="war">../axis-webapp</Set>
+						</New>
+					</Item>
+					<Item>
+						<New id="DefaultHandler" class="org.mortbay.jetty.handler.DefaultHandler"/>
+					</Item>
+				</Array>
+			</Set>
+		</New>
+	</Set>
+	
+	<!-- Stops the server when ctrl+c is pressed (registers to Runtime.addShutdownHook)-->
+	<Set name="stopAtShutdown">true</Set>
+
+	<!-- send the server version in the response header? -->
+	<Set name="sendServerVersion">true</Set>
+
+	<!-- send the date header in the response header? -->
+	<Set name="sendDateHeader">true</Set>
+
+	<!-- allows requests(prior to shutdown) to finish gracefully -->
+	<Set name="gracefulShutdown">1000</Set>
+</Configure>

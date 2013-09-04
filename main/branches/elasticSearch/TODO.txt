@@ -1,0 +1,9 @@
+Harvester:
+* Rewrite LenientDateParser and add some options to field definition (e.g. default timezone)
+* Fake IndexBuilder, that only prints out all harvested documents for debugging
+
+Search:
+o/o
+
+General:
+o/o

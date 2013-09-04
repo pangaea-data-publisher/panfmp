@@ -1,0 +1,27 @@
+<html>
+<body>
+<p><strong>panFMP</strong> (PANGAEA<sup>&reg;</sup> Framework for Metadata Portals)
+is a generic and flexible framework for building geoscientific metadata portals independent of content standards for
+metadata and protocols. Data providers can be harvested with commonly used protocols (e.g.,
+<a href="http://www.openarchives.org/OAI/openarchivesprotocol.html" target="_blank"><em>Open Archives Initiative Protocol for Metadata Harvesting</em></a>)
+and metadata standards like <a href="http://dublincore.org/" target="_blank">Dublin Core</a>,&nbsp;<a href="http://gcmd.nasa.gov/User/difguide/difman.html" target="_blank">DIF</a>,
+or <a href="http://www.isotc211.org/" target="_blank">ISO 19115</a>. The new Java-based portal software supports any XML encoding and makes metadata searchable through
+<a href="http://lucene.apache.org/java/docs/" target="_blank">Apache Lucene</a>.
+Software administrators are free to define searchable fields independent of their type using
+<a href="http://www.w3.org/TR/xpath" target="_blank">XPath</a>&nbsp;and/or <a href="http://www.w3.org/TR/xslt" target="_blank">XSL Templates</a>.
+In addition, by extending the full-text search engine (FTS) Apache Lucene, we have significantly improved queries for numerical and date/time ranges
+by supplying a new trie-based algorithm, thus enabling high-performance space/time retrievals in FTS-based geo portals. The harvested metadata are
+stored in separate indexes, which makes it possible to combine these into different portals. The portal-specific Java API
+and web service interface is highly flexible and supports custom front-ends for users, provides automatic query completion (AJAX),
+and dynamic visualization with conventional mapping tools.</p>
+<h2>Important notice</h2>
+<p>Recently, the implementation of <strong>panFMP</strong>'s {@linkplain org.apache.lucene.search.NumericRangeQuery fast range-queries}
+was given to the <em>Apache Software Foundation</em> as contribution to <a href="http://lucene.apache.org/java/docs/" target="_blank">Apache Lucene</a> and was removed from
+current <strong>panFMP</strong> (see the corresponding <a href="https://issues.apache.org/jira/browse/LUCENE-1673" target="_blank">JIRA issue 1673</a>).
+It will be included into <b>Lucene 2.9</b>. By this it is possible for other projects, to use this great toolkit.
+The current snapshot version of <b>Lucene</b> is bundled with <b>panFMP</b>.</p>
+<p>Because of that classes <code>de.pangaea.metadataportal.search.TrieRangeQuery</code> (original version) and <code>de.pangaea.metadataportal.utils.TrieUtils</code> were
+removed from <b>panFMP</b> and included (with new names and new class structure) into <b>Lucene's core</b>. The documentation can be found
+{@linkplain org.apache.lucene.search.NumericRangeQuery here}.</p>
+</body>
+</html>
