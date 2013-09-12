@@ -22,10 +22,7 @@
   <condition property="build.java.runtime" value="1.6">
     <hasmethod classname="java.lang.String" method="isEmpty"/>
   </condition>
-  <condition property="build.java.runtime" value="1.5">
-    <available classname="java.lang.StringBuilder"/>
-  </condition>
-  <fail message="Minimum supported Java version is 1.5." unless="build.java.runtime"/>
+  <fail message="Minimum supported Java version is 1.6." unless="build.java.runtime"/>
 
 	<!-- PROPERTIES -->
 	<property name="src" location="src"/>
