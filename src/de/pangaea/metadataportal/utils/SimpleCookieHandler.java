@@ -29,7 +29,7 @@ import de.pangaea.metadataportal.harvester.Harvester;
  */
 public final class SimpleCookieHandler extends CookieHandler {
 
-	private static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(SimpleCookieHandler.class);
+	static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(SimpleCookieHandler.class);
 
 	/** Singleton instance of this class. Should be set with {@link CookieHandler#setDefault} as default. */
 	public static final SimpleCookieHandler INSTANCE = new SimpleCookieHandler();

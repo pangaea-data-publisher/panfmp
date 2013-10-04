@@ -35,9 +35,9 @@ import javax.xml.validation.*;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.index.IndexWriter.IndexReaderWarmer;
 import org.apache.lucene.search.BooleanQuery;
-import org.apache.lucene.analysis.CharArraySet;
+import org.apache.lucene.analysis.core.StopAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
-import org.apache.lucene.analysis.StopAnalyzer;
+import org.apache.lucene.analysis.util.CharArraySet;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.store.*;
 import org.apache.lucene.util.Version;
@@ -523,7 +523,7 @@ public class Config {
 	// Implementation of the Lucene index directory
 	public IndexDirImplementation indexDirImplementation=IndexDirImplementation.getFromSystemProperty();
 	
-	public Version indexVersionCompatibility=Version.LUCENE_24;
+	public Version indexVersionCompatibility=Version.LUCENE_40;
 
 	/*public Templates xsltBeforeXPath=null;*/
 
@@ -533,7 +533,7 @@ public class Config {
 	public final Properties searchProperties=new Properties();
 	public final Properties globalHarvesterProperties=new Properties();
 
-	public final CharArraySet luceneStopWords=new CharArraySet(Version.LUCENE_33, 64,true);
+	public final CharArraySet luceneStopWords=new CharArraySet(Version.LUCENE_40, 64,true);
 	protected Class<? extends Analyzer> analyzerClass=null;
 	protected AnalyzerFactory analyzerFactory=null;
 	

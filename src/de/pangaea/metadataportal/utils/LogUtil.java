@@ -29,7 +29,7 @@ import org.apache.commons.logging.LogFactory;
  * @author Uwe Schindler, J&#233;r&#244;me Charron (Nutch)
  */
 public class LogUtil { 
-	private static final Log log = LogFactory.getLog(LogUtil.class); 
+	static final Log log = LogFactory.getLog(LogUtil.class); 
 	
 	private static Method TRACE = null; 
 	private static Method DEBUG = null; 

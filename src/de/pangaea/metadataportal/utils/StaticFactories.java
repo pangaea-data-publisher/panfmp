@@ -26,8 +26,6 @@ import javax.xml.xpath.*;
  */
 public final class StaticFactories {
 
-	private static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(StaticFactories.class);
-
 	private StaticFactories() {} // no instance
 
 	public static final XPathFactory xpathFactory;

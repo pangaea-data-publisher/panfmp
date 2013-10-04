@@ -269,15 +269,15 @@ public class ExtendedDigester extends Digester {
 			}
 
 			public String getPrefix(String namespaceURI) {
-				Iterator i=getPrefixes(namespaceURI);
+				Iterator<String> i=getPrefixes(namespaceURI);
 				return i.hasNext() ? (String)i.next() : null;
 			}
 
-			public Iterator getPrefixes(String namespaceURI) {
+			public Iterator<String> getPrefixes(String namespaceURI) {
 				if (namespaceURI==null)
 					throw new IllegalArgumentException("Namespace URI cannot be null");
 				List<String> plist=nsToPrefix.get(namespaceURI);
-				if (plist==null) return Collections.EMPTY_LIST.iterator();
+				if (plist==null) return Collections.<String>emptyList().iterator();
 				else return Collections.unmodifiableList(plist).iterator();
 			}
 		};
@@ -290,7 +290,9 @@ public class ExtendedDigester extends Digester {
 
 	private static final class InvalidElementRule extends Rule {
 
-		public void begin(String namespace, String name, Attributes attributes) throws Exception {
+		InvalidElementRule() {}
+
+    public void begin(String namespace, String name, Attributes attributes) throws Exception {
 			throw new SAXException("Unknown element at XML path: '"+digester.getMatch()+"'; tagname: '{"+namespace+"}"+name+"'");
 		}
 

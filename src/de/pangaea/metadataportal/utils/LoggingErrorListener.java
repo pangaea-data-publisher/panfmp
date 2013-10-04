@@ -32,7 +32,7 @@ public final class LoggingErrorListener implements ErrorListener {
 	}
 
 	/** A error listener using the supplied class name as log target. */
-	public LoggingErrorListener(final Class c) {
+	public LoggingErrorListener(final Class<?> c) {
 		this(LogFactory.getLog(c));
 	}
 
