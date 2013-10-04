@@ -201,7 +201,7 @@
 
 	<target name="srcpackage" depends="clean">
 		<zip destfile="${basedir}/${pkgname}-src.zip">
-			<zipfileset dir="${basedir}" prefix="${pkgname}"/>
+			<zipfileset dir="${basedir}" prefix="${pkgname}" excludes=".*/**"/>
 		</zip>
 		<panfmp-checksum file="${basedir}/${pkgname}-src.zip"/>
 	</target>
