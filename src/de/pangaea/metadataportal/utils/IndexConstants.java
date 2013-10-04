@@ -18,22 +18,27 @@ package de.pangaea.metadataportal.utils;
 
 /**
  * Some constants used by <b>panFMP</b>.
+ * 
  * @author Uwe Schindler
  */
 public final class IndexConstants {
-
-	private IndexConstants() {} // no instance
-
-	public static final String FIELD_PREFIX = "internal-";
-
-	public static final String FIELDNAME_CONTENT    = "textcontent".intern();
-
-	public static final String FIELDNAME_IDENTIFIER = (FIELD_PREFIX+"identifier").intern();
-	public static final String FIELDNAME_BOOST      = (FIELD_PREFIX+"boost").intern();
-	public static final String FIELDNAME_SET        = (FIELD_PREFIX+"set").intern();
-	public static final String FIELDNAME_DATESTAMP  = (FIELD_PREFIX+"datestamp").intern();
-	public static final String FIELDNAME_XML        = (FIELD_PREFIX+"xml").intern();
-	public static final String FIELDNAME_MDOC_IMPL  = (FIELD_PREFIX+"mdoc-impl").intern();
-
-	public static final String FILENAME_LASTHARVESTED="lastharvested";
+  
+  private IndexConstants() {} // no instance
+  
+  public static final String FIELD_PREFIX = "internal-";
+  
+  public static final String FIELDNAME_CONTENT = "textcontent".intern();
+  
+  public static final String FIELDNAME_IDENTIFIER = (FIELD_PREFIX + "identifier")
+      .intern();
+  public static final String FIELDNAME_BOOST = (FIELD_PREFIX + "boost")
+      .intern();
+  public static final String FIELDNAME_SET = (FIELD_PREFIX + "set").intern();
+  public static final String FIELDNAME_DATESTAMP = (FIELD_PREFIX + "datestamp")
+      .intern();
+  public static final String FIELDNAME_XML = (FIELD_PREFIX + "xml").intern();
+  public static final String FIELDNAME_MDOC_IMPL = (FIELD_PREFIX + "mdoc-impl")
+      .intern();
+  
+  public static final String FILENAME_LASTHARVESTED = "lastharvested";
 }

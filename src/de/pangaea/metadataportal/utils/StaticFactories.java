@@ -22,38 +22,41 @@ import javax.xml.xpath.*;
 
 /**
  * Some pre-allocated XML factories.
+ * 
  * @author Uwe Schindler
  */
 public final class StaticFactories {
-
-	private StaticFactories() {} // no instance
-
-	public static final XPathFactory xpathFactory;
-	public static final SAXTransformerFactory transFactory;
-	public static final SAXParserFactory saxFactory;
-	public static final DocumentBuilderFactory dbf;
-	public static final DocumentBuilder dombuilder;
-	static {
-		try {
-			xpathFactory=XPathFactory.newInstance();
-
-			saxFactory=SAXParserFactory.newInstance();
-			saxFactory.setNamespaceAware(true);
-			saxFactory.setValidating(false);
-
-			transFactory=(SAXTransformerFactory)SAXTransformerFactory.newInstance();
-			transFactory.setErrorListener(new LoggingErrorListener(transFactory.getClass()));
-
-			dbf=DocumentBuilderFactory.newInstance();
-			dbf.setNamespaceAware(true);
-			dbf.setCoalescing(true);
-			dbf.setExpandEntityReferences(true);
-			dbf.setIgnoringComments(true);
-			dbf.setIgnoringElementContentWhitespace(true);
-			dombuilder = dbf.newDocumentBuilder();
-		} catch (Exception e) {
-			throw new RuntimeException("Failed to initialize XML components",e);
-		}
-	}
-
+  
+  private StaticFactories() {} // no instance
+  
+  public static final XPathFactory xpathFactory;
+  public static final SAXTransformerFactory transFactory;
+  public static final SAXParserFactory saxFactory;
+  public static final DocumentBuilderFactory dbf;
+  public static final DocumentBuilder dombuilder;
+  static {
+    try {
+      xpathFactory = XPathFactory.newInstance();
+      
+      saxFactory = SAXParserFactory.newInstance();
+      saxFactory.setNamespaceAware(true);
+      saxFactory.setValidating(false);
+      
+      transFactory = (SAXTransformerFactory) SAXTransformerFactory
+          .newInstance();
+      transFactory.setErrorListener(new LoggingErrorListener(transFactory
+          .getClass()));
+      
+      dbf = DocumentBuilderFactory.newInstance();
+      dbf.setNamespaceAware(true);
+      dbf.setCoalescing(true);
+      dbf.setExpandEntityReferences(true);
+      dbf.setIgnoringComments(true);
+      dbf.setIgnoringElementContentWhitespace(true);
+      dombuilder = dbf.newDocumentBuilder();
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to initialize XML components", e);
+    }
+  }
+  
 }
