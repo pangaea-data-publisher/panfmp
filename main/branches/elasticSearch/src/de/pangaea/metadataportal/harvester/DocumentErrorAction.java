@@ -16,8 +16,11 @@
 
 package de.pangaea.metadataportal.harvester;
 
-/** 
- * Enumeration that specifies what action should be taken on a document error. 
+/**
+ * Enumeration that specifies what action should be taken on a document error.
+ * 
  * @author Uwe Schindler
  */
-public enum DocumentErrorAction { STOP, IGNOREDOCUMENT, DELETEDOCUMENT };
+public enum DocumentErrorAction {
+  STOP, IGNOREDOCUMENT, DELETEDOCUMENT
+};

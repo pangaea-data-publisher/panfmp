@@ -21,34 +21,40 @@ import javax.xml.transform.*;
 import java.util.Locale;
 
 /**
- * A filter config element that filters harvested documents by a XPath expression
- * that returns a {@link javax.xml.xpath.XPathConstants#BOOLEAN} value.
+ * A filter config element that filters harvested documents by a XPath
+ * expression that returns a {@link javax.xml.xpath.XPathConstants#BOOLEAN}
+ * value.
+ * 
  * @author Uwe Schindler
  */
 public class FilterConfig extends ExpressionConfig {
-
-	@PublicForDigesterUse
-	@Deprecated
-	public void setType(String v) {
-		try {
-			type=FilterType.valueOf(v.toUpperCase(Locale.ENGLISH));
-		} catch (IllegalArgumentException e) {
-			throw new IllegalArgumentException("Invalid filter type: '"+v+"'");
-		}
-	}
-
-	@Override
-	public void setTemplate(Templates xslt) {
-		throw new UnsupportedOperationException("Cannot assign a template to a filter!");
-	}
-
-	@Override
-	public String toString() {
-		return new StringBuilder().append(type).append('(').append(super.toString()).append(')').toString();
-	}
-
-	// members "the configuration"
-	public FilterType type=null;
-
-	public static enum FilterType { ACCEPT,DENY };
+  
+  @PublicForDigesterUse
+  @Deprecated
+  public void setType(String v) {
+    try {
+      type = FilterType.valueOf(v.toUpperCase(Locale.ENGLISH));
+    } catch (IllegalArgumentException e) {
+      throw new IllegalArgumentException("Invalid filter type: '" + v + "'");
+    }
+  }
+  
+  @Override
+  public void setTemplate(Templates xslt) {
+    throw new UnsupportedOperationException(
+        "Cannot assign a template to a filter!");
+  }
+  
+  @Override
+  public String toString() {
+    return new StringBuilder().append(type).append('(')
+        .append(super.toString()).append(')').toString();
+  }
+  
+  // members "the configuration"
+  public FilterType type = null;
+  
+  public static enum FilterType {
+    ACCEPT, DENY
+  };
 }

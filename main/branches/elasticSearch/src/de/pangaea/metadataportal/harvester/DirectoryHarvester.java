@@ -25,81 +25,93 @@ import java.util.regex.Matcher;
 import javax.xml.transform.stream.StreamSource;
 
 /**
- * Harvester for traversing file system directories. Identifiers are build from the relative path of files against the base directory.
- * <p>This harvester supports the following additional <b>harvester properties</b>:<ul>
+ * Harvester for traversing file system directories. Identifiers are build from
+ * the relative path of files against the base directory.
+ * <p>
+ * This harvester supports the following additional <b>harvester properties</b>:
+ * <ul>
  * <li><code>directory</code>: file system directory to harvest</li>
  * <li><code>recursive</code>: traverse in subdirs (default: false)</li>
- * <li><code>identifierPrefix</code>: This prefix is appended before all relative file system pathes (that are the identifiers of the documents) (default: "")</li>
+ * <li><code>identifierPrefix</code>: This prefix is appended before all
+ * relative file system pathes (that are the identifiers of the documents)
+ * (default: "")</li>
  * <li><code>filenameFilter</code>: regex to match the filename (default: none)</li>
  * </ul>
-* @author Uwe Schindler
+ * 
+ * @author Uwe Schindler
  */
-public class DirectoryHarvester extends SingleFileEntitiesHarvester implements FilenameFilter {
-
-	// Class members
-	private File directory=null;
-	private boolean recursive=false;
-	private Pattern filenameFilter=null;
-	private String identifierPrefix="";
-
-	@Override
-	public void open(SingleIndexConfig iconfig) throws Exception {
-		super.open(iconfig);
-
-		String s=iconfig.harvesterProperties.getProperty("directory");
-		if (s==null) throw new IllegalArgumentException("Missing directory name to start harvesting (property \"directory\")");
-
-		directory=new File(iconfig.parent.makePathAbsolute(s,false));
-		recursive=BooleanParser.parseBoolean(iconfig.harvesterProperties.getProperty("recursive","false"));
-		identifierPrefix=iconfig.harvesterProperties.getProperty("identifierPrefix","");
-
-		s=iconfig.harvesterProperties.getProperty("filenameFilter");
-		filenameFilter=(s==null) ? null : Pattern.compile(s);
-	}
-
-	@Override
-	public void harvest() throws Exception {
-		processDirectory(directory);
-	}
-
-	@Override
-	protected void enumerateValidHarvesterPropertyNames(Set<String> props) {
-		super.enumerateValidHarvesterPropertyNames(props);
-		props.addAll(Arrays.<String>asList(
-			"directory",
-			"recursive",
-			"identifierPrefix",
-			"filenameFilter"
-		));
-	}
-
-	public boolean accept(File dir, String name) {
-		File file=new File(dir,name);
-		if (file.isDirectory()) return (recursive && !".".equals(name) && !"..".equals(name));
-		if (filenameFilter==null) return true;
-		Matcher m=filenameFilter.matcher(name);
-		return m.matches();
-	}
-
-	private void processFile(File file) throws Exception {
-		String identifier="file:"+identifierPrefix+directory.toURI().normalize().relativize(file.toURI().normalize()).toString();
-		addDocument(identifier,file.lastModified(),new StreamSource(file));
-	}
-
-	private void processDirectory(File dir) throws Exception {
-		StringBuilder logstr=new StringBuilder("Walking into directory \"").append(dir).append("\" (recursive=").append(recursive);
-		if (filenameFilter!=null) logstr.append(",filter=\"").append(filenameFilter).append("\"");
-		logstr.append(")...");
-		log.info(logstr);
-		
-		File[] files=dir.listFiles(this);
-		if (files==null) return;
-		for (File f : files) {
-			if (f.isDirectory()) processDirectory(f);
-			else if (f.isFile()) processFile(f);
-		}
-		
-		log.info("Finished directory \""+dir+"\".");
-	}
-
+public class DirectoryHarvester extends SingleFileEntitiesHarvester implements
+    FilenameFilter {
+  
+  // Class members
+  private File directory = null;
+  private boolean recursive = false;
+  private Pattern filenameFilter = null;
+  private String identifierPrefix = "";
+  
+  @Override
+  public void open(SingleIndexConfig iconfig) throws Exception {
+    super.open(iconfig);
+    
+    String s = iconfig.harvesterProperties.getProperty("directory");
+    if (s == null) throw new IllegalArgumentException(
+        "Missing directory name to start harvesting (property \"directory\")");
+    
+    directory = new File(iconfig.parent.makePathAbsolute(s, false));
+    recursive = BooleanParser.parseBoolean(iconfig.harvesterProperties
+        .getProperty("recursive", "false"));
+    identifierPrefix = iconfig.harvesterProperties.getProperty(
+        "identifierPrefix", "");
+    
+    s = iconfig.harvesterProperties.getProperty("filenameFilter");
+    filenameFilter = (s == null) ? null : Pattern.compile(s);
+  }
+  
+  @Override
+  public void harvest() throws Exception {
+    processDirectory(directory);
+  }
+  
+  @Override
+  protected void enumerateValidHarvesterPropertyNames(Set<String> props) {
+    super.enumerateValidHarvesterPropertyNames(props);
+    props.addAll(Arrays.<String> asList("directory", "recursive",
+        "identifierPrefix", "filenameFilter"));
+  }
+  
+  public boolean accept(File dir, String name) {
+    File file = new File(dir, name);
+    if (file.isDirectory()) return (recursive && !".".equals(name) && !".."
+        .equals(name));
+    if (filenameFilter == null) return true;
+    Matcher m = filenameFilter.matcher(name);
+    return m.matches();
+  }
+  
+  private void processFile(File file) throws Exception {
+    String identifier = "file:"
+        + identifierPrefix
+        + directory.toURI().normalize().relativize(file.toURI().normalize())
+            .toString();
+    addDocument(identifier, file.lastModified(), new StreamSource(file));
+  }
+  
+  private void processDirectory(File dir) throws Exception {
+    StringBuilder logstr = new StringBuilder("Walking into directory \"")
+        .append(dir).append("\" (recursive=").append(recursive);
+    if (filenameFilter != null) logstr.append(",filter=\"")
+        .append(filenameFilter).append("\"");
+    logstr.append(")...");
+    log.info(logstr);
+    
+    File[] files = dir.listFiles(this);
+    if (files == null) return;
+    for (File f : files) {
+      if (f.isDirectory()) processDirectory(f);
+      else if (f.isFile()) processFile(f);
+    }
+    
+    log.info("Finished directory \"" + dir + "\".");
+  }
+  
 }
