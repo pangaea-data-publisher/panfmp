@@ -22,6 +22,8 @@ import java.io.File;
 import de.pangaea.metadataportal.utils.*;
 import de.pangaea.metadataportal.harvester.Harvester;
 import javax.xml.transform.Templates;
+
+import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
@@ -102,7 +104,7 @@ public class SingleIndexConfig extends IndexConfig {
 	public synchronized IndexReader getSharedIndexReader() throws java.io.IOException {
 		if (!checked) throw new IllegalStateException("Index config not initialized and checked!");
 		if (indexReader==null) {
-			indexReader=new AutoCloseIndexReader(IndexReader.open(getIndexDirectory()),id);
+			indexReader=new AutoCloseIndexReader(DirectoryReader.open(getIndexDirectory()),id);
 			warmed.set(false);
 		}
 		return indexReader;
@@ -111,7 +113,7 @@ public class SingleIndexConfig extends IndexConfig {
 	@Override
 	public IndexReader newIndexReader() throws java.io.IOException {
 		if (!checked) throw new IllegalStateException("Index config not initialized and checked!");
-		return IndexReader.open(getIndexDirectory());
+		return DirectoryReader.open(getIndexDirectory());
 	}
 	
 	/** Opens an IndexWriter for adding Documents to Index. **/
@@ -128,7 +130,7 @@ public class SingleIndexConfig extends IndexConfig {
 	@Override
 	public boolean isIndexAvailable() throws java.io.IOException {
 		if (!checked) throw new IllegalStateException("Index config not initialized and checked!");
-		return IndexReader.indexExists(getIndexDirectory());
+		return DirectoryReader.indexExists(getIndexDirectory());
 	}
 	
 	@Override
@@ -139,7 +141,7 @@ public class SingleIndexConfig extends IndexConfig {
 			r = indexReader;
 		}
 		if (r!=null) {
-			final IndexReader n=IndexReader.openIfChanged(r);
+			final IndexReader n=DirectoryReader.openIfChanged(r);
 			if (n!=null) {
 				warmed.set(false);
 				warmSharedIndexReader(n);

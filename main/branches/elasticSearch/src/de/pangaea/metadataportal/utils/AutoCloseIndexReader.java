@@ -23,7 +23,7 @@ import java.io.IOException;
  * <code>AutoCloseIndexReader</code> is used by {@link de.pangaea.metadataportal.config.IndexConfig#getSharedIndexReader} to make IndexReaders cleanup by GC possible.
  * @author Uwe Schindler
  */
-public final class AutoCloseIndexReader extends FilterIndexReader {
+public final class AutoCloseIndexReader extends FilterDirectoryReader {
 
 	private static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(AutoCloseIndexReader.class);
 

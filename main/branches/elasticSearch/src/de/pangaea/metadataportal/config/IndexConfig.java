@@ -28,8 +28,6 @@ import de.pangaea.metadataportal.utils.AutoCloseIndexReader;
  */
 public abstract class IndexConfig {
 
-	private static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(IndexConfig.class);
-	
 	/** Default constructor **/
 	public IndexConfig(Config parent) {
 		this.parent=parent;
@@ -57,7 +55,7 @@ public abstract class IndexConfig {
 	public IndexSearcher newSearcher() throws java.io.IOException {
 		if (!checked) throw new IllegalStateException("Index config not initialized and checked!");
 		IndexSearcher searcher=new IndexSearcher(getSharedIndexReader());
-		searcher.setDefaultFieldSortScoring(true,true);
+		// TODO: searcher.setDefaultFieldSortScoring(true,true);
 		return searcher;
 	}
 

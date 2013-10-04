@@ -27,16 +27,17 @@ import de.pangaea.metadataportal.config.*;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.CompressionTools;
-import org.apache.lucene.document.Fieldable;
-import org.apache.lucene.document.NumericField;
 import org.apache.lucene.document.Document;
-import org.apache.lucene.document.SetBasedFieldSelector;
+import org.apache.lucene.document.DocumentStoredFieldVisitor;
+import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.*;
-import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.AtomicReader;
+import org.apache.lucene.index.AtomicReaderContext;
+import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.IndexableField;
 import org.apache.lucene.store.Directory;
-import org.apache.lucene.util.NumericUtils;
+import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.Version;
-import org.apache.lucene.queryParser.QueryParser;
 
 /**
  * This harvester supports replication XML contents from an foreign <b>panFMP</b> installation.
@@ -59,15 +60,10 @@ public class ExternalIndexHarvester extends SingleFileEntitiesHarvester {
 
 	// Class members
 	private String identifierPrefix="";
-	private IndexReader reader=null;
+	private DirectoryReader reader=null;
 	private Directory indexDir=null;
 	private Query query=null;
 	
-	private static final SetBasedFieldSelector FIELD_SELECTOR=new SetBasedFieldSelector(
-		new HashSet<String>(Arrays.asList(IndexConstants.FIELDNAME_IDENTIFIER,IndexConstants.FIELDNAME_DATESTAMP)),
-		Collections.singleton(IndexConstants.FIELDNAME_XML)
-	);
-
 	@Override
 	public void open(SingleIndexConfig iconfig) throws Exception {
 		super.open(iconfig);
@@ -121,7 +117,7 @@ public class ExternalIndexHarvester extends SingleFileEntitiesHarvester {
 
 		log.info("Opening index in directory '"+dir+"' for harvesting "+info+"...");
 		indexDir=iconfig.parent.indexDirImplementation.getDirectory(dir);
-		reader=IndexReader.open(indexDir);
+		reader=DirectoryReader.open(indexDir);
 	}
 
 	@Override
@@ -139,20 +135,24 @@ public class ExternalIndexHarvester extends SingleFileEntitiesHarvester {
 		if (reader==null) throw new IllegalStateException("Harvester was not opened!");
 		try {
 			new IndexSearcher(reader).search(query, new Collector() {
-				private IndexReader currReader=null;
+				private AtomicReader currReader=null;
 			
 				@Override
 				public void setScorer(final Scorer scorer) {
 				}
 				
 				@Override
-				public void setNextReader(final IndexReader reader, final int docBase) throws IOException {
-					this.currReader=reader;
+				public void setNextReader(final AtomicReaderContext ctx) throws IOException {
+					this.currReader=ctx.reader();
 				}
 				
 				@Override
 				public void collect(final int doc) throws IOException {
-					Document ldoc=currReader.document(doc,FIELD_SELECTOR);
+				  DocumentStoredFieldVisitor vis = new DocumentStoredFieldVisitor(
+			      IndexConstants.FIELDNAME_IDENTIFIER,IndexConstants.FIELDNAME_DATESTAMP,IndexConstants.FIELDNAME_XML
+			    );
+				  currReader.document(doc,vis);
+					Document ldoc=vis.getDocument();
 					try {
 						addLuceneDocument(ldoc);
 					} catch (IOException ioe) {
@@ -204,22 +204,21 @@ public class ExternalIndexHarvester extends SingleFileEntitiesHarvester {
 		long datestamp=-1L;
 		// try to read date stamp
 		try {
-			final Fieldable fld=ldoc.getFieldable(IndexConstants.FIELDNAME_DATESTAMP);
-			if (fld instanceof NumericField) {
-				datestamp=((NumericField)fld).getNumericValue().longValue();
-			} else if (fld!=null) {
-				datestamp=NumericUtils.prefixCodedToLong(fld.stringValue());
-			}
-		} catch (NumberFormatException ne) {
+			final IndexableField fld=ldoc.getField(IndexConstants.FIELDNAME_DATESTAMP);
+			datestamp=fld.numericValue().longValue();
+    } catch (NullPointerException npe) {
+      log.warn("Datestamp of document '"+identifier+"' is invalid - Ignoring datestamp.");
+      datestamp=-1L;
+    } catch (NumberFormatException ne) {
 			log.warn("Datestamp of document '"+identifier+"' is invalid: "+ne.getMessage()+" - Ignoring datestamp.");
 			datestamp=-1L;
 		}
 		// read XML
 		if (isDocumentOutdated(datestamp)) {
 			try {
-				final Fieldable fld=ldoc.getFieldable(IndexConstants.FIELDNAME_XML);
-				String xml=null;
-        if (fld!=null) xml=fld.isBinary() ? CompressionTools.decompressString(fld.getBinaryValue()) : fld.stringValue();
+				final IndexableField fld=ldoc.getField(IndexConstants.FIELDNAME_XML);
+				BytesRef bytes = fld.binaryValue();
+        String xml = (bytes!=null) ? CompressionTools.decompressString(bytes) : fld.stringValue();
 				if (xml!=null) {
 					addDocument(identifier,datestamp,new StreamSource(new StringReader(xml),identifier));
 				} else {

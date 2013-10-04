@@ -17,7 +17,6 @@
 package de.pangaea.metadataportal.utils;
 
 import java.util.*;
-import de.pangaea.metadataportal.utils.*;
 import org.xml.sax.helpers.XMLFilterImpl;
 import org.xml.sax.*;
 
@@ -39,7 +38,7 @@ public class SaxRule extends org.apache.commons.digester.Rule {
 	 */
 	protected Set<String> excludeNamespaces=Collections.<String>emptySet();
 
-	private ContentHandler lastContentHandler=null;
+	ContentHandler lastContentHandler=null;
 
 	/**
 	 * Default constructor
@@ -148,7 +147,8 @@ public class SaxRule extends org.apache.commons.digester.Rule {
 		}
 
 		/* SAX part */
-		@Override
+		@SuppressWarnings("synthetic-access")
+    @Override
 		public void endElement(String namespaceURI, String localName, String qName) throws SAXException {
 			if (elementCounter==0) {
 				// restore original ContentHandler in Digester and resubmit event
