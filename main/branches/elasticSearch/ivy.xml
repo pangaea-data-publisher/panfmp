@@ -7,21 +7,21 @@
      <conf name="buildtools" transitive="false" visibility="private" />
   </configurations>
   <dependencies>
-		<dependency org="commons-logging" name="commons-logging" rev="1.1.3" conf="build,bundle" transitive="false"/>
-		<dependency org="commons-digester" name="commons-digester" rev="2.1" conf="build,bundle"/>
-		<dependency org="org.elasticsearch" name="elasticsearch" rev="0.90.5" conf="build,bundle"/>
-		
-		<dependency org="log4j" name="log4j" rev="1.2.17" conf="bundle" transitive="false"/>
-		<dependency org="xerces" name="xercesImpl" rev="2.11.0" conf="bundle"/>
-		<dependency org="xalan" name="xalan" rev="2.7.1" conf="bundle"/>
-		<dependency org="net.sourceforge.nekohtml" name="nekohtml" rev="1.9.18" conf="bundle"/>
-		
+    <dependency org="commons-logging" name="commons-logging" rev="1.1.3" conf="build,bundle" transitive="false"/>
+    <dependency org="commons-digester" name="commons-digester" rev="2.1" conf="build,bundle"/>
+    <dependency org="org.elasticsearch" name="elasticsearch" rev="0.90.5" conf="build,bundle"/>
+    
+    <dependency org="log4j" name="log4j" rev="1.2.17" conf="bundle" transitive="false"/>
+    <dependency org="xerces" name="xercesImpl" rev="2.11.0" conf="bundle"/>
+    <dependency org="xalan" name="xalan" rev="2.7.1" conf="bundle"/>
+    <dependency org="net.sourceforge.nekohtml" name="nekohtml" rev="1.9.18" conf="bundle"/>
+    
     <!--<dependency org="com.googlecode.jarjar" name="jarjar" rev="1.3" conf="buildtools"/>-->
 
-		<!-- Those are already included with Java 6, or not used at all: -->
-		<exclude org="xml-apis" module="xml-apis"/>
-		<exclude org="xml-resolver" module="xml-resolver"/>
-		
+    <!-- Those are already included with Java 6, or not used at all: -->
+    <exclude org="xml-apis" module="xml-apis"/>
+    <exclude org="xml-resolver" module="xml-resolver"/>
+    
     <!--<exclude org="*" ext="*" matcher="regexp" type="source|javadoc"/>-->
   </dependencies>
 </ivy-module>
