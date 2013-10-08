@@ -19,7 +19,6 @@ package de.pangaea.metadataportal.harvester;
 import de.pangaea.metadataportal.utils.*;
 import de.pangaea.metadataportal.config.*;
 import java.util.*;
-import java.io.*;
 import java.net.URLEncoder;
 import org.apache.commons.digester.*;
 

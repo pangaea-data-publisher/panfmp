@@ -36,7 +36,7 @@ public final class BooleanParser {
    *           "NO", "OFF"
    */
   public static boolean parseBoolean(String v) {
-    v = v.toUpperCase(Locale.ENGLISH);
+    v = v.toUpperCase(Locale.ROOT);
     if ("TRUE".equals(v) || "YES".equals(v) || "ON".equals(v)) return true;
     else if ("FALSE".equals(v) || "NO".equals(v) || "OFF".equals(v)) return false;
     else throw new IllegalArgumentException(

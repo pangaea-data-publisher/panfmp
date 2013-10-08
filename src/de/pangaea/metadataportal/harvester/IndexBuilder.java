@@ -84,7 +84,7 @@ public class IndexBuilder {
     String s = iconfig.harvesterProperties.getProperty("conversionErrorAction");
     if (s != null) try {
       conversionErrorAction = DocumentErrorAction.valueOf(s
-          .toUpperCase(Locale.ENGLISH));
+          .toUpperCase(Locale.ROOT));
     } catch (IllegalArgumentException e) {
       throw new IllegalArgumentException(
           "Invalid value '"

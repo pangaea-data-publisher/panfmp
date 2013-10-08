@@ -324,7 +324,7 @@ public class Config {
     if (f.xslt != null) throw new IllegalArgumentException(
         "A filter may not contain a template");
     f.type = FilterConfig.FilterType.valueOf(dig.getCurrentElementName()
-        .toUpperCase(Locale.ENGLISH));
+        .toUpperCase(Locale.ROOT));
     filters.add(f);
   }
   
@@ -385,7 +385,7 @@ public class Config {
   @Deprecated
   public void addStopWords(String stopWords) {
     for (String w : stopWords.split("[\\,\\;\\s]+")) {
-      w = w.trim().toLowerCase(Locale.ENGLISH);
+      w = w.trim().toLowerCase(Locale.ROOT);
       if (!"".equals(w)) luceneStopWords.add(w);
     }
   }
@@ -464,7 +464,7 @@ public class Config {
   public void setIndexDirImplementation(String v) throws Exception {
     try {
       indexDirImplementation = IndexDirImplementation.valueOf(v
-          .toUpperCase(Locale.ENGLISH));
+          .toUpperCase(Locale.ROOT));
     } catch (IllegalArgumentException e) {
       throw new IllegalArgumentException("Invalid value '" + v
           + "' for <cfg:indexDirImplementation>, valid ones are: "
@@ -477,7 +477,7 @@ public class Config {
   public void setIndexVersionCompatibility(String v) throws Exception {
     try {
       indexVersionCompatibility = Version
-          .valueOf(v.toUpperCase(Locale.ENGLISH));
+          .valueOf(v.toUpperCase(Locale.ROOT));
     } catch (IllegalArgumentException e) {
       throw new IllegalArgumentException("Invalid value '" + v
           + "' for <cfg:indexVersionCompatibility>, valid ones are: "

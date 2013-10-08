@@ -54,7 +54,7 @@ public abstract class SingleFileEntitiesHarvester extends Harvester {
     String s = iconfig.harvesterProperties.getProperty("parseErrorAction");
     if (s != null) try {
       parseErrorAction = DocumentErrorAction.valueOf(s
-          .toUpperCase(Locale.ENGLISH));
+          .toUpperCase(Locale.ROOT));
     } catch (IllegalArgumentException e) {
       throw new IllegalArgumentException("Invalid value '" + s
           + "' for harvester property 'parseErrorAction', valid ones are: "
