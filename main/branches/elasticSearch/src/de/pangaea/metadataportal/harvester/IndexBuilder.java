@@ -18,6 +18,7 @@ package de.pangaea.metadataportal.harvester;
 
 import de.pangaea.metadataportal.utils.*;
 import de.pangaea.metadataportal.config.*;
+
 import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -39,7 +40,7 @@ public class IndexBuilder {
   private static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory
       .getLog(IndexBuilder.class);
   
-  protected SingleIndexConfig iconfig;
+  protected IndexConfig iconfig;
   
   private Date lastHarvested = null;
   private boolean create;
@@ -68,7 +69,7 @@ public class IndexBuilder {
   private Thread[] converterThreadList;
   private boolean threadsStarted = false;
   
-  public IndexBuilder(boolean create, SingleIndexConfig iconfig)
+  public IndexBuilder(boolean create, IndexConfig iconfig)
       throws IOException {
     if (!iconfig.isIndexAvailable()) create = true;
     this.create = create;

@@ -18,6 +18,7 @@ package de.pangaea.metadataportal.harvester;
 
 import de.pangaea.metadataportal.utils.*;
 import de.pangaea.metadataportal.config.*;
+
 import java.util.*;
 import java.net.*;
 import java.io.*;
@@ -76,7 +77,7 @@ public abstract class OAIHarvesterBase extends Harvester {
   
   // construtor
   @Override
-  public void open(SingleIndexConfig iconfig) throws Exception {
+  public void open(IndexConfig iconfig) throws Exception {
     super.open(iconfig);
     
     String s = iconfig.harvesterProperties.getProperty("setSpec");

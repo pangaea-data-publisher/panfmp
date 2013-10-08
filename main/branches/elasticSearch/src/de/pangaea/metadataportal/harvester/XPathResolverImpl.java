@@ -112,8 +112,8 @@ public final class XPathResolverImpl implements XPathFunctionResolver,
         // collect all indexes, excluding the current one
         for (IndexConfig iconfig : index.iconfig.parent.indexes.values()) {
           if (iconfig == index.iconfig) continue;
-          if (!(iconfig instanceof SingleIndexConfig)) continue;
-          if (!((SingleIndexConfig) iconfig).isIndexAvailable()) continue;
+          if (!(iconfig instanceof IndexConfig)) continue;
+          if (!((IndexConfig) iconfig).isIndexAvailable()) continue;
           indexIds.add(iconfig.id);
         }
       } else {
@@ -125,10 +125,10 @@ public final class XPathResolverImpl implements XPathFunctionResolver,
           String s = (String) o;
           if (s.equals(index.iconfig.id)) continue;
           IndexConfig iconfig = index.iconfig.parent.indexes.get(s);
-          if (!(iconfig instanceof SingleIndexConfig)) throw new XPathFunctionException(
+          if (!(iconfig instanceof IndexConfig)) throw new XPathFunctionException(
               FUNCTION_DOC_UNIQUE.toString() + " does not support index '" + s
                   + "' (not defined or wrong type)!");
-          if (!((SingleIndexConfig) iconfig).isIndexAvailable()) continue;
+          if (!((IndexConfig) iconfig).isIndexAvailable()) continue;
           indexIds.add(s);
         }
       }

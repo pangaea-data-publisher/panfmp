@@ -16,9 +16,24 @@
 
 package de.pangaea.metadataportal.config;
 
-import java.lang.ref.WeakReference;
-import org.apache.lucene.index.IndexReader;
-import org.apache.lucene.search.IndexSearcher;
+import java.io.File;
+import java.util.Enumeration;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+
+import javax.xml.namespace.QName;
+import javax.xml.transform.Templates;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.store.Directory;
+import org.apache.lucene.util.Version;
+
+import de.pangaea.metadataportal.harvester.Harvester;
+import de.pangaea.metadataportal.utils.PublicForDigesterUse;
 
 /**
  * Abstract configuration of an panFMP index. It not only configures its
@@ -27,11 +42,14 @@ import org.apache.lucene.search.IndexSearcher;
  * 
  * @author Uwe Schindler
  */
-public abstract class IndexConfig {
+public class IndexConfig {
+  
+  private static Log log = LogFactory.getLog(IndexConfig.class);
   
   /** Default constructor **/
   public IndexConfig(Config parent) {
     this.parent = parent;
+    harvesterProperties = new Properties(parent.globalHarvesterProperties);
   }
   
   /** Sets the ID of this index configuration. **/
@@ -46,6 +64,35 @@ public abstract class IndexConfig {
     displayName = v;
   }
   
+  /** Sets index directory (called from Digester on config load). **/
+  public synchronized void setIndexDir(String v)
+      throws java.io.IOException {
+        if (checked) throw new IllegalStateException(
+            "Index configuration cannot be changed anymore!");
+        if (indexDirImpl != null) indexDirImpl.close();
+        indexDirImpl = null;
+        indexDir = v;
+      }
+
+  /** Sets class name of harvester (called from Digester on config load). **/
+  @PublicForDigesterUse
+  @Deprecated
+  public void setHarvesterClass(String v) throws ClassNotFoundException {
+    if (checked) throw new IllegalStateException(
+        "Index configuration cannot be changed anymore!");
+    harvesterClass = Class.forName(v).asSubclass(Harvester.class);
+  }
+
+  /** Adds property for harvester (called from Digester on config load). **/
+  @PublicForDigesterUse
+  @Deprecated
+  public void addHarvesterProperty(String value) {
+    if (checked) throw new IllegalStateException(
+        "Index configuration cannot be changed anymore!");
+    if (value != null) harvesterProperties.setProperty(
+        parent.dig.getCurrentElementName(), value.trim());
+  }
+
   /**
    * Checks, if configuration is ok. After calling this, you are not able to
    * change anything in this instance.
@@ -55,95 +102,64 @@ public abstract class IndexConfig {
         "Every index needs a unique id!");
     if (displayName == null || "".equals(displayName)) throw new IllegalStateException(
         "Index with id=\"" + id + "\" has no displayName!");
+    if (indexDir == null || harvesterClass == null) throw new IllegalStateException(
+        "Some index configuration fields are missing for index with id=\"" + id
+            + "\"!");
+    Harvester h = harvesterClass.newInstance();
+    Set<String> validProperties = h.getValidHarvesterPropertyNames();
+    @SuppressWarnings("unchecked")
+    Enumeration<String> en = (Enumeration<String>) harvesterProperties
+        .propertyNames();
+    while (en.hasMoreElements()) {
+      String prop = en.nextElement();
+      if (!validProperties.contains(prop)) throw new IllegalArgumentException(
+          "Harvester '" + harvesterClass.getName() + "' for index '" + id
+              + "' does not support property '" + prop
+              + "'! Supported properties are: " + validProperties);
+    }
+
     checked = true;
   }
-  
-  /**
-   * returns a IndexSearcher on the shared IndexReader, should be closed after
-   * using.
-   **/
-  public IndexSearcher newSearcher() throws java.io.IOException {
+
+  /** Returns the local, expanded file system path to index. **/
+  public String getFullIndexPath() throws java.io.IOException {
+    return parent.makePathAbsolute(indexDir, false);
+  }
+
+  /** Returns the directory implementation, that contains the index. **/
+  public synchronized Directory getIndexDirectory() throws java.io.IOException {
+    if (indexDirImpl == null) indexDirImpl = parent.indexDirImplementation
+        .getDirectory(new File(getFullIndexPath()));
+    return indexDirImpl;
+  }
+
+  /** Opens an IndexWriter for adding Documents to Index. **/
+  public IndexWriter newIndexWriter(boolean create) throws java.io.IOException {
     if (!checked) throw new IllegalStateException(
         "Index config not initialized and checked!");
-    IndexSearcher searcher = new IndexSearcher(getSharedIndexReader());
-    // TODO: searcher.setDefaultFieldSortScoring(true,true);
-    return searcher;
+    final IndexWriterConfig config = new IndexWriterConfig(Version.LUCENE_33,
+        parent.getAnalyzer());
+    config.setOpenMode(create ? IndexWriterConfig.OpenMode.CREATE
+        : IndexWriterConfig.OpenMode.APPEND);
+    final IndexWriter writer = new IndexWriter(getIndexDirectory(), config);
+    return writer;
   }
-  
-  /**
-   * checks, if shared IndexReader is current and the underlying disk store was
-   * not changed
-   **/
-  public synchronized boolean isSharedIndexCurrent() throws java.io.IOException {
-    if (!checked) throw new IllegalStateException(
-        "Index config not initialized and checked!");
-    if (indexReader == null) return true;
-    return indexReader.isCurrent();
-  }
-  
-  /**
-   * returns a shared, read-only IndexReader. This reader may not be closed by
-   * {@link IndexReader#close()}.
-   **/
-  public abstract IndexReader getSharedIndexReader() throws java.io.IOException;
-  
-  /** returns a new IndexReader. This reader must be closed after using. **/
-  public abstract IndexReader newIndexReader() throws java.io.IOException;
-  
-  /** checks, if index is available (a segment file is available) **/
-  public abstract boolean isIndexAvailable() throws java.io.IOException;
-  
-  /** reopens the shared index reader. **/
-  public abstract void reopenSharedIndex() throws java.io.IOException;
-  
-  /**
-   * called by SearchService to warm the shared index reader during webapp
-   * initialization
-   **/
-  public abstract void warmSharedIndexReader() throws java.io.IOException;
-  
-  /**
-   * called by {@link de.pangaea.metadataportal.search.LuceneCache} to release
-   * the old reader, if not done automatically by GC.
-   **/
-  public synchronized void releaseOldSharedReader() throws java.io.IOException {
-    if (oldReaderRef != null) {
-      AutoCloseIndexReader old = oldReaderRef.get();
-      try {
-        if (old != null) old.hardClose();
-      } finally {
-        old = null;
-        oldReaderRef.clear();
-        oldReaderRef = null;
-      }
-    }
-  }
-  
-  /**
-   * this saves the old indexReader instance in a weak reference and replaces by
-   * new (reopened) one
-   **/
-  protected synchronized void replaceSharedIndexReader(
-      AutoCloseIndexReader indexReader) throws java.io.IOException {
-    releaseOldSharedReader();
-    oldReaderRef = new WeakReference<AutoCloseIndexReader>(this.indexReader);
-    this.indexReader = indexReader;
-  }
-  
-  @Override
-  protected void finalize() throws Throwable {
-    try {
-      releaseOldSharedReader();
-    } finally {
-      super.finalize();
-    }
-  }
-  
-  protected volatile AutoCloseIndexReader indexReader = null;
-  protected volatile WeakReference<AutoCloseIndexReader> oldReaderRef = null;
+
   protected boolean checked = false;
   
   // members "the configuration"
   public String displayName = null, id = null;
   public final Config parent;
+
+  private String indexDir = null;
+
+  private volatile Directory indexDirImpl = null;
+
+  public Class<? extends Harvester> harvesterClass = null;
+
+  public final Properties harvesterProperties;
+
+  public Templates xslt = null;
+
+  public Map<QName,Object> xsltParams = null;
 }

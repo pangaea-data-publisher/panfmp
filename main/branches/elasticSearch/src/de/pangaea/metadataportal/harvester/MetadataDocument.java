@@ -18,6 +18,7 @@ package de.pangaea.metadataportal.harvester;
 
 import de.pangaea.metadataportal.utils.*;
 import de.pangaea.metadataportal.config.*;
+
 import org.apache.lucene.document.*;
 import org.apache.lucene.util.NumericUtils;
 import java.io.StringWriter;
@@ -56,7 +57,7 @@ public class MetadataDocument {
    * configuration. Sub classes must always supply this exact constructor for
    * working with {@link Rebuilder} and {@link #createInstanceFromLucene}.
    */
-  public MetadataDocument(SingleIndexConfig iconfig) {
+  public MetadataDocument(IndexConfig iconfig) {
     this.iconfig = iconfig;
   }
   
@@ -74,7 +75,7 @@ public class MetadataDocument {
    * @return An instance of a subclass of <code>MetadataDocument</code>
    */
   public static final MetadataDocument createInstanceFromLucene(
-      SingleIndexConfig iconf, Document ldoc) throws Exception {
+      IndexConfig iconf, Document ldoc) throws Exception {
     String mdocImpl = ldoc.get(IndexConstants.FIELDNAME_MDOC_IMPL);
     Class<? extends MetadataDocument> cls = MetadataDocument.class;
     if (mdocImpl == null) {
@@ -95,7 +96,7 @@ public class MetadataDocument {
     // find constructor
     Constructor<? extends MetadataDocument> constructor;
     try {
-      constructor = cls.getConstructor(SingleIndexConfig.class);
+      constructor = cls.getConstructor(IndexConfig.class);
       MetadataDocument mdoc = constructor.newInstance(iconf);
       mdoc.loadFromLucene(ldoc);
       return mdoc;
@@ -731,7 +732,7 @@ public class MetadataDocument {
   /**
    * The index configuration.
    */
-  protected SingleIndexConfig iconfig = null;
+  protected IndexConfig iconfig = null;
   
   private org.w3c.dom.Document dom = null;
   private String xmlCache = null;

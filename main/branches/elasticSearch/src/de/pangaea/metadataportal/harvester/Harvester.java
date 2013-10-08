@@ -18,6 +18,7 @@ package de.pangaea.metadataportal.harvester;
 
 import java.util.*;
 import de.pangaea.metadataportal.config.*;
+
 import javax.xml.transform.TransformerException;
 import org.xml.sax.SAXParseException;
 
@@ -106,14 +107,14 @@ public abstract class Harvester {
       indexList = conf.indexes.values();
     } else {
       IndexConfig iconf = conf.indexes.get(index);
-      if (iconf == null || !(iconf instanceof SingleIndexConfig)) throw new IllegalArgumentException(
+      if (iconf == null || !(iconf instanceof IndexConfig)) throw new IllegalArgumentException(
           "There is no index defined with id=\"" + index + "\"!");
       indexList = Collections.singletonList(iconf);
     }
     
     for (IndexConfig iconf : indexList)
-      if (iconf instanceof SingleIndexConfig) {
-        SingleIndexConfig siconf = (SingleIndexConfig) iconf;
+      if (iconf instanceof IndexConfig) {
+        IndexConfig siconf = (IndexConfig) iconf;
         
         Class<? extends Harvester> hc = (harvesterClass == null) ? siconf.harvesterClass
             : harvesterClass;
@@ -171,7 +172,7 @@ public abstract class Harvester {
   /**
    * Index configuration
    */
-  protected SingleIndexConfig iconfig = null;
+  protected IndexConfig iconfig = null;
   
   /**
    * Count of harvested documents. Incremented by {@link #addDocument}.
@@ -204,7 +205,7 @@ public abstract class Harvester {
    *           if an exception occurs during opening (various types of
    *           exceptions can be thrown).
    */
-  public void open(SingleIndexConfig iconfig) throws Exception {
+  public void open(IndexConfig iconfig) throws Exception {
     if (iconfig == null) throw new IllegalArgumentException(
         "Missing index configuration");
     this.iconfig = iconfig;

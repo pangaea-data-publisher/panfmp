@@ -18,6 +18,7 @@ package de.pangaea.metadataportal.harvester;
 
 import de.pangaea.metadataportal.utils.*;
 import de.pangaea.metadataportal.config.*;
+
 import java.util.*;
 import java.net.URLEncoder;
 import org.apache.commons.digester.*;
@@ -49,7 +50,7 @@ public class OAIHarvester extends OAIHarvesterBase {
   
   // construtor
   @Override
-  public void open(SingleIndexConfig iconfig) throws Exception {
+  public void open(IndexConfig iconfig) throws Exception {
     super.open(iconfig);
     filterIncomingSets = sets != null && sets.size() > 1;
     
