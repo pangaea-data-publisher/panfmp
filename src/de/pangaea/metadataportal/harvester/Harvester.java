@@ -75,7 +75,7 @@ public abstract class Harvester {
     }
     
     try {
-      Config conf = new Config(args[0], Config.ConfigMode.HARVESTING);
+      Config conf = new Config(args[0]);
       runHarvester(conf, (args.length == 2) ? args[1] : "*");
     } catch (Exception e) {
       staticLog.fatal("Harvester general error:", e);

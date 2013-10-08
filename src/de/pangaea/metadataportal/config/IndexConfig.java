@@ -19,7 +19,6 @@ package de.pangaea.metadataportal.config;
 import java.lang.ref.WeakReference;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.search.IndexSearcher;
-import de.pangaea.metadataportal.utils.AutoCloseIndexReader;
 
 /**
  * Abstract configuration of an panFMP index. It not only configures its

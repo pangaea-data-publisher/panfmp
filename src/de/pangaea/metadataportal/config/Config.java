@@ -54,22 +54,19 @@ public class Config {
   
   // in configMode!=HARVESTER we leave out Schemas and XSLT to load config
   // faster!
-  public Config(String file, ConfigMode configMode) throws Exception {
+  public Config(String file) throws Exception {
     this.file = file;
-    this.configMode = configMode;
     
     String version = de.pangaea.metadataportal.Package
         .getFullPackageDescription();
     if (version != null) log.info(version);
     de.pangaea.metadataportal.Package.checkMinimumRequirements();
     
-    if (configMode == ConfigMode.HARVESTING) {
-      final CookieHandler defCookieH = CookieHandler.getDefault();
-      if (defCookieH != null && defCookieH != SimpleCookieHandler.INSTANCE) {
-        log.warn("There is a CookieHandler already registered with the JVM, panFMP's customized HTTP cookie handling will be not available during harvesting.");
-      } else {
-        CookieHandler.setDefault(SimpleCookieHandler.INSTANCE);
-      }
+    final CookieHandler defCookieH = CookieHandler.getDefault();
+    if (defCookieH != null && defCookieH != SimpleCookieHandler.INSTANCE) {
+      log.warn("There is a CookieHandler already registered with the JVM, panFMP's customized HTTP cookie handling will be not available during harvesting.");
+    } else {
+      CookieHandler.setDefault(SimpleCookieHandler.INSTANCE);
     }
     
     setAnalyzerClass(StandardAnalyzer.class);
@@ -99,12 +96,10 @@ public class Config {
           DIGSTRING_PARAMS);
       dig.addObjectParam("config/metadata/variables/variable", 0, dig);
       dig.addCallParam("config/metadata/variables/variable", 1, "name");
-      if (configMode == ConfigMode.HARVESTING) {
-        dig.addCallMethod("config/metadata/variables/variable", "setXPath", 2,
-            DIGSTRING_PARAMS);
-        dig.addObjectParam("config/metadata/variables/variable", 0, dig);
-        dig.addCallParam("config/metadata/variables/variable", 1);
-      }
+      dig.addCallMethod("config/metadata/variables/variable", "setXPath", 2,
+          DIGSTRING_PARAMS);
+      dig.addObjectParam("config/metadata/variables/variable", 0, dig);
+      dig.addCallParam("config/metadata/variables/variable", 1);
       
       dig.addObjectCreate("config/metadata/variables/variable-template",
           VariableConfig.class);
@@ -114,9 +109,7 @@ public class Config {
           "setName", 2, DIGSTRING_PARAMS);
       dig.addObjectParam("config/metadata/variables/variable-template", 0, dig);
       dig.addCallParam("config/metadata/variables/variable-template", 1, "name");
-      dig.addRule("config/metadata/variables/variable-template",
-          (configMode == ConfigMode.HARVESTING) ? new TemplateSaxRule()
-              : SaxRule.emptyRule());
+      dig.addRule("config/metadata/variables/variable-template", new TemplateSaxRule());
       
       // filters
       dig.addCallMethod("config/metadata/filters", "setFilterDefault", 1);
@@ -124,12 +117,10 @@ public class Config {
       
       dig.addObjectCreate("config/metadata/filters/*", FilterConfig.class);
       dig.addSetNext("config/metadata/filters/*", "addFilter");
-      if (configMode == ConfigMode.HARVESTING) {
-        dig.addCallMethod("config/metadata/filters/*", "setXPath", 2,
-            DIGSTRING_PARAMS);
-        dig.addObjectParam("config/metadata/filters/*", 0, dig);
-        dig.addCallParam("config/metadata/filters/*", 1);
-      }
+      dig.addCallMethod("config/metadata/filters/*", "setXPath", 2,
+          DIGSTRING_PARAMS);
+      dig.addObjectParam("config/metadata/filters/*", 0, dig);
+      dig.addCallParam("config/metadata/filters/*", 1);
       
       // fields
       dig.addDoNothing("config/metadata/fields");
@@ -143,12 +134,10 @@ public class Config {
               "dataType"});
       r.setIgnoreMissingProperty(false);
       dig.addRule("config/metadata/fields/field", r);
-      if (configMode == ConfigMode.HARVESTING) {
-        dig.addCallMethod("config/metadata/fields/field", "setXPath", 2,
-            DIGSTRING_PARAMS);
-        dig.addObjectParam("config/metadata/fields/field", 0, dig);
-        dig.addCallParam("config/metadata/fields/field", 1);
-      }
+      dig.addCallMethod("config/metadata/fields/field", "setXPath", 2,
+          DIGSTRING_PARAMS);
+      dig.addObjectParam("config/metadata/fields/field", 0, dig);
+      dig.addCallParam("config/metadata/fields/field", 1);
       
       dig.addObjectCreate("config/metadata/fields/field-template",
           FieldConfig.class);
@@ -156,9 +145,7 @@ public class Config {
       r = new SetPropertiesRule(propAttr, propMapping);
       r.setIgnoreMissingProperty(false);
       dig.addRule("config/metadata/fields/field-template", r);
-      dig.addRule("config/metadata/fields/field-template",
-          (configMode == ConfigMode.HARVESTING) ? new TemplateSaxRule()
-              : SaxRule.emptyRule());
+      dig.addRule("config/metadata/fields/field-template", new TemplateSaxRule());
       
       // default field
       dig.addCallMethod("config/metadata/fields/default", "setDefaultField", 2);
@@ -226,8 +213,7 @@ public class Config {
       
       dig.addRule(
           "config/indexes/index/transform",
-          (configMode == ConfigMode.HARVESTING) ? new IndexConfigTransformerSaxRule()
-              : SaxRule.emptyRule());
+          new IndexConfigTransformerSaxRule());
       
       dig.addDoNothing("config/indexes/index/harvesterProperties");
       dig.addCallMethod("config/indexes/index/harvesterProperties/*",
@@ -307,14 +293,12 @@ public class Config {
         "A field name is mandatory");
     if (fields.containsKey(f.name)) throw new IllegalArgumentException(
         "A field with name '" + f.name + "' already exists!");
-    if (configMode == ConfigMode.HARVESTING) {
-      if (f.xPathExpr == null && f.xslt == null) throw new IllegalArgumentException(
-          "A XPath or template itsself may not be empty");
-      if (f.xPathExpr != null && f.xslt != null) throw new IllegalArgumentException(
-          "It may not both XPath and template be defined");
-      if (f.datatype == FieldConfig.DataType.XHTML && f.xslt == null) throw new IllegalArgumentException(
-          "XHTML fields may only be declared as a XSLT template (using <field-template/>)");
-    }
+    if (f.xPathExpr == null && f.xslt == null) throw new IllegalArgumentException(
+        "A XPath or template itsself may not be empty");
+    if (f.xPathExpr != null && f.xslt != null) throw new IllegalArgumentException(
+        "It may not both XPath and template be defined");
+    if (f.datatype == FieldConfig.DataType.XHTML && f.xslt == null) throw new IllegalArgumentException(
+        "XHTML fields may only be declared as a XSLT template (using <field-template/>)");
     if (f.storage == Field.Store.NO && !f.indexed) throw new IllegalArgumentException(
         "A field must be at least indexed and/or stored");
     if (f.termVectors != Field.TermVector.NO
@@ -330,7 +314,6 @@ public class Config {
   }
   
   public void addVariable(VariableConfig f) {
-    if (configMode != ConfigMode.HARVESTING) return;
     if (filters.size() > 0 || fields.size() > 0) throw new IllegalStateException(
         "Variables must be declared before all fields and filters!");
     if (f.name == null) throw new IllegalArgumentException(
@@ -348,7 +331,6 @@ public class Config {
   }
   
   public void addFilter(FilterConfig f) {
-    if (configMode != ConfigMode.HARVESTING) return;
     if (f.xPathExpr == null) throw new IllegalArgumentException(
         "A filter needs an XPath expression");
     if (f.xslt != null) throw new IllegalArgumentException(
@@ -528,8 +510,6 @@ public class Config {
   }
   
   public void setSchema(String namespace, String url) throws Exception {
-    if (configMode != ConfigMode.HARVESTING) return; // no schema support when
-                                                     // search engine
     if (schema != null) throw new SAXException("Schema URL already defined!");
     url = makePathAbsolute(url.trim(), true);
     
@@ -627,17 +607,12 @@ public class Config {
   protected AnalyzerFactory analyzerFactory = null;
   
   public String file;
-  private ConfigMode configMode;
   
   public final Set<IndexReaderWarmer> indexReaderWarmers = new LinkedHashSet<IndexReaderWarmer>();
   
   protected ExtendedDigester dig = null;
   
   public static final int DEFAULT_MAX_CLAUSE_COUNT = 131072;
-  
-  public static enum ConfigMode {
-    HARVESTING, SEARCH
-  };
   
   public static enum IndexDirImplementation {
     AUTO, SIMPLE, MMAP, NIO;
