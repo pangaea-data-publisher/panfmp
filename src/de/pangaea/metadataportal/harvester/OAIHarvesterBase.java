@@ -257,7 +257,7 @@ public abstract class OAIHarvesterBase extends Harvester {
         .setIfModifiedSince(checkModifiedDate.get().getTime());
     
     conn.setUseCaches(false);
-    conn.setFollowRedirects(true);
+    conn.setInstanceFollowRedirects(true);
     log.debug("Opening connection...");
     InputStream in = null;
     try {

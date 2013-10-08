@@ -34,7 +34,6 @@ import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.*;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.index.IndexWriter.IndexReaderWarmer;
-import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.analysis.core.StopAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.analysis.util.CharArraySet;
@@ -71,7 +70,7 @@ public class Config {
     
     setAnalyzerClass(StandardAnalyzer.class);
     try {
-      final Class[] DIGSTRING_PARAMS = new Class<?>[] {ExtendedDigester.class,
+      final Class<?>[] DIGSTRING_PARAMS = new Class<?>[] {ExtendedDigester.class,
           String.class};
       
       dig = new ExtendedDigester();
@@ -218,11 +217,7 @@ public class Config {
       dig.addDoNothing("config/indexes/index/harvesterProperties");
       dig.addCallMethod("config/indexes/index/harvesterProperties/*",
           "addHarvesterProperty", 0);
-      
-      // *** SEARCH PROPERTIES ***
-      dig.addDoNothing("config/search");
-      dig.addCallMethod("config/search/*", "addSearchProperty", 0);
-      
+            
       // *** GLOBAL HARVESTER PROPERTIES ***
       dig.addDoNothing("config/globalHarvesterProperties");
       dig.addCallMethod("config/globalHarvesterProperties/*",
@@ -245,13 +240,6 @@ public class Config {
     // consistency in indexes:
     for (IndexConfig iconf : indexes.values())
       iconf.check();
-    
-    // init boolean query constraints and properties
-    final String mcc = searchProperties.getProperty("maxClauseCount",
-        Integer.toString(DEFAULT_MAX_CLAUSE_COUNT));
-    BooleanQuery
-        .setMaxClauseCount("inf".equalsIgnoreCase(mcc) ? Integer.MAX_VALUE
-            : Integer.parseInt(mcc));
     
     // cleanup
     templatesCache.clear();
@@ -415,7 +403,7 @@ public class Config {
     setAnalyzerClass(c.asSubclass(Analyzer.class));
   }
   
-  private static abstract class AnalyzerFactory {
+  static abstract class AnalyzerFactory {
     public abstract Analyzer newAnalyzer(Set<?> stopWords) throws Exception;
   }
   
@@ -499,12 +487,6 @@ public class Config {
   
   @PublicForDigesterUse
   @Deprecated
-  public void addSearchProperty(String value) {
-    searchProperties.setProperty(dig.getCurrentElementName(), value);
-  }
-  
-  @PublicForDigesterUse
-  @Deprecated
   public void addGlobalHarvesterProperty(String value) {
     globalHarvesterProperties.setProperty(dig.getCurrentElementName(), value);
   }
@@ -550,7 +532,7 @@ public class Config {
     }
   }
   
-  private Templates loadTemplate(String file) throws Exception {
+  Templates loadTemplate(String file) throws Exception {
     file = makePathAbsolute(file, true);
     Templates templ = templatesCache.get(file);
     if (templ == null) {
@@ -598,7 +580,6 @@ public class Config {
   // Template cache
   private final Map<String,Templates> templatesCache = new WeakHashMap<String,Templates>();
   
-  public final Properties searchProperties = new Properties();
   public final Properties globalHarvesterProperties = new Properties();
   
   public final CharArraySet luceneStopWords = new CharArraySet(
@@ -676,7 +657,7 @@ public class Config {
     
   }
   
-  private final class IndexConfigTransformerSaxRule extends TransformerSaxRule {
+  final class IndexConfigTransformerSaxRule extends TransformerSaxRule {
     
     @Override
     public void begin(String namespace, String name, Attributes attributes)
@@ -732,7 +713,7 @@ public class Config {
     
   }
   
-  private final class TemplateSaxRule extends TransformerSaxRule {
+  final class TemplateSaxRule extends TransformerSaxRule {
     
     @Override
     protected void initDocument() throws SAXException {

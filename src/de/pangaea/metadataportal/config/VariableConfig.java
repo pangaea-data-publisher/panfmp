@@ -17,7 +17,6 @@
 package de.pangaea.metadataportal.config;
 
 import de.pangaea.metadataportal.utils.*;
-import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
 
 /**
