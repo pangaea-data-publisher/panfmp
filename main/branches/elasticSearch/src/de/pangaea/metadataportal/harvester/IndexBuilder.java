@@ -25,6 +25,7 @@ import java.util.concurrent.atomic.*;
 import java.io.IOException;
 import org.apache.lucene.index.*;
 import org.apache.lucene.document.Document;
+import org.apache.lucene.store.IOContext;
 import org.apache.lucene.store.IndexInput;
 import org.apache.lucene.store.IndexOutput;
 
@@ -175,7 +176,7 @@ public class IndexBuilder {
     
     if (lastHarvested != null) {
       IndexOutput out = iconfig.getIndexDirectory().createOutput(
-          IndexConstants.FILENAME_LASTHARVESTED);
+          IndexConstants.FILENAME_LASTHARVESTED, IOContext.DEFAULT);
       out.writeLong(lastHarvested.getTime());
       out.close();
       lastHarvested = null;
@@ -227,7 +228,7 @@ public class IndexBuilder {
     Date d = null;
     try {
       in = iconfig.getIndexDirectory().openInput(
-          IndexConstants.FILENAME_LASTHARVESTED);
+          IndexConstants.FILENAME_LASTHARVESTED, IOContext.DEFAULT);
       d = new Date(in.readLong());
       in.close();
     } catch (IOException e) {
@@ -239,7 +240,7 @@ public class IndexBuilder {
     return d;
   }
   
-  private void converterThreadRun() {
+  void converterThreadRun() {
     org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory
         .getLog(Thread.currentThread().getName());
     log.info("Converter thread started.");
@@ -303,7 +304,7 @@ public class IndexBuilder {
     }
   }
   
-  private void indexerThreadRun() {
+  void indexerThreadRun() {
     org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory
         .getLog(Thread.currentThread().getName());
     log.info("Indexer thread started.");
@@ -312,7 +313,7 @@ public class IndexBuilder {
     boolean finished = false;
     try {
       writer = iconfig.newIndexWriter(create);
-      final IndexWriterConfig icfg = writer.getConfig();
+      final LiveIndexWriterConfig icfg = writer.getConfig();
       icfg.setMaxBufferedDocs(maxBufferedChanges);
       icfg.setMaxBufferedDeleteTerms(maxBufferedChanges);
       

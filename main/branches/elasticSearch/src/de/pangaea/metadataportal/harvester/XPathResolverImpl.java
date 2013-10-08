@@ -22,7 +22,6 @@ import javax.xml.xpath.*;
 import de.pangaea.metadataportal.config.*;
 import de.pangaea.metadataportal.utils.IndexConstants;
 import org.apache.lucene.index.IndexReader;
-import org.apache.lucene.index.TermDocs;
 import org.apache.lucene.index.Term;
 
 /**

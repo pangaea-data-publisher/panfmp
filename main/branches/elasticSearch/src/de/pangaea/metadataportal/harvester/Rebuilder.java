@@ -20,6 +20,8 @@ import de.pangaea.metadataportal.config.*;
 import de.pangaea.metadataportal.utils.*;
 import org.apache.lucene.document.*;
 import org.apache.lucene.index.*;
+import org.apache.lucene.util.Bits;
+
 import java.util.*;
 
 /**
@@ -47,7 +49,7 @@ public class Rebuilder extends Harvester {
     }
     
     try {
-      Config conf = new Config(args[0], Config.ConfigMode.HARVESTING);
+      Config conf = new Config(args[0]);
       runHarvester(conf, (args.length == 2) ? args[1] : "*", Rebuilder.class);
     } catch (Exception e) {
       staticLog.fatal("Rebuilder general error:", e);
@@ -92,22 +94,26 @@ public class Rebuilder extends Harvester {
   public void harvest() throws Exception {
     if (reader == null) throw new IllegalStateException(
         "Rebuilder was not opened!");
-    for (int i = 0, c = reader.maxDoc(); i < c; i++) {
-      if (!reader.isDeleted(i)) {
-        MetadataDocument mdoc = MetadataDocument.createInstanceFromLucene(
-            iconfig, reader.document(i));
-        if (mdoc.getIdentifier() == null) {
-          log.error("Cannot process or delete a document without an identifier! "
-              + "It will stay forever in index and pollute search results. "
-              + "You should drop index and re-harvest!");
-          continue;
+    for (final AtomicReaderContext ctx : reader.leaves()) {
+      final AtomicReader r = ctx.reader();
+      final Bits liveDocs = r.getLiveDocs();
+      for (int i = 0, c = r.maxDoc(); i < c; i++) {
+        if (liveDocs.get(i)) {
+          MetadataDocument mdoc = MetadataDocument.createInstanceFromLucene(
+              iconfig, r.document(i));
+          if (mdoc.getIdentifier() == null) {
+            log.error("Cannot process or delete a document without an identifier! "
+                + "It will stay forever in index and pollute search results. "
+                + "You should drop index and re-harvest!");
+            continue;
+          }
+          if (mdoc.getXML() == null) {
+            mdoc.setDeleted(true);
+            log.warn("Document '" + mdoc.getIdentifier()
+                + "' contains no XML code. It will be deleted!");
+          }
+          addDocument(mdoc);
         }
-        if (mdoc.getXML() == null) {
-          mdoc.setDeleted(true);
-          log.warn("Document '" + mdoc.getIdentifier()
-              + "' contains no XML code. It will be deleted!");
-        }
-        addDocument(mdoc);
       }
     }
   }
