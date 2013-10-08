@@ -140,8 +140,8 @@ public final class SimpleCookieHandler extends CookieHandler {
             if (!value.startsWith(".")) {
               value = "." + value;
             }
-            if (!uriDomain.toLowerCase(Locale.ENGLISH).endsWith(
-                value.toLowerCase(Locale.ENGLISH))) {
+            if (!uriDomain.toLowerCase(Locale.ROOT).endsWith(
+                value.toLowerCase(Locale.ROOT))) {
               throw new IllegalArgumentException(
                   "Trying to set foreign cookie '" + toString() + "'");
             }
@@ -187,8 +187,8 @@ public final class SimpleCookieHandler extends CookieHandler {
       if (uriDomain.equalsIgnoreCase(this._domain)) {
         ok = true;
       } else {
-        ok = (uriDomain.toLowerCase(Locale.ENGLISH).endsWith(this._domain
-            .toLowerCase(Locale.ENGLISH)));
+        ok = (uriDomain.toLowerCase(Locale.ROOT).endsWith(this._domain
+            .toLowerCase(Locale.ROOT)));
       }
       
       String path = uri.getPath();

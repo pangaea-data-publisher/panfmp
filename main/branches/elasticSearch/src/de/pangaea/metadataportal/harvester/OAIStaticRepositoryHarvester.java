@@ -21,7 +21,6 @@ import de.pangaea.metadataportal.config.*;
 import java.util.*;
 import org.apache.commons.digester.*;
 import org.xml.sax.*;
-import javax.xml.XMLConstants;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**

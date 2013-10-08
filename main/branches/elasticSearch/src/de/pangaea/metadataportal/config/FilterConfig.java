@@ -33,7 +33,7 @@ public class FilterConfig extends ExpressionConfig {
   @Deprecated
   public void setType(String v) {
     try {
-      type = FilterType.valueOf(v.toUpperCase(Locale.ENGLISH));
+      type = FilterType.valueOf(v.toUpperCase(Locale.ROOT));
     } catch (IllegalArgumentException e) {
       throw new IllegalArgumentException("Invalid filter type: '" + v + "'");
     }

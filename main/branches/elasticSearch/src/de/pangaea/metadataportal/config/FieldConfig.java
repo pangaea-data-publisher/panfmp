@@ -46,7 +46,7 @@ public class FieldConfig extends ExpressionConfig {
   @Deprecated
   public void setDataType(String v) {
     try {
-      datatype = DataType.valueOf(v.toUpperCase(Locale.ENGLISH));
+      datatype = DataType.valueOf(v.toUpperCase(Locale.ROOT));
     } catch (IllegalArgumentException e) {
       throw new IllegalArgumentException("Invalid value '" + v
           + "' for attribute datatype, valid ones are: "
@@ -63,7 +63,7 @@ public class FieldConfig extends ExpressionConfig {
   @Deprecated
   public void setStorage(String v) {
     if (v == null) return;
-    v = v.toUpperCase(Locale.ENGLISH);
+    v = v.toUpperCase(Locale.ROOT);
     compressed = false;
     if ("COMPRESS".equals(v) || "COMPRESSED".equals(v)) {
       storage = Field.Store.YES;
@@ -84,7 +84,7 @@ public class FieldConfig extends ExpressionConfig {
   @Deprecated
   public void setTermVectors(String v) {
     if (v == null) return;
-    v = v.toUpperCase(Locale.ENGLISH);
+    v = v.toUpperCase(Locale.ROOT);
     if ("TERMPOSITIONS".equals(v)) termVectors = Field.TermVector.WITH_POSITIONS_OFFSETS;
     else if ("TRUE".equals(v) || "YES".equals(v) || "ON".equals(v)) termVectors = Field.TermVector.YES;
     else if ("FALSE".equals(v) || "NO".equals(v) || "OFF".equals(v)) termVectors = Field.TermVector.NO;

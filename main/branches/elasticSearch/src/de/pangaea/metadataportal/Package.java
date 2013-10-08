@@ -109,8 +109,8 @@ public final class Package {
     String s;
     if (pkg == null
         || !(((s = pkg.getSpecificationTitle()) != null && s.toLowerCase(
-            Locale.ENGLISH).indexOf(nameMatch) >= 0) || ((s = pkg
-            .getImplementationTitle()) != null && s.toLowerCase(Locale.ENGLISH)
+            Locale.ROOT).indexOf(nameMatch) >= 0) || ((s = pkg
+            .getImplementationTitle()) != null && s.toLowerCase(Locale.ROOT)
             .indexOf(nameMatch) >= 0))) {
       log.warn("Cannot determine version of component '"
           + name
