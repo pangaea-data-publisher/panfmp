@@ -167,7 +167,7 @@ public class ZipFileHarvester extends SingleFileEntitiesHarvester {
           
           conn.setRequestProperty("Accept-Encoding", "identity, *;q=0");
           conn.setRequestProperty("Accept", "application/zip, *;q=0.1");
-          ((HttpURLConnection) conn).setFollowRedirects(true);
+          ((HttpURLConnection) conn).setInstanceFollowRedirects(true);
           
           // currently only for HTTP enabled
           if (fromDateReference != null && useZipFileDate) conn

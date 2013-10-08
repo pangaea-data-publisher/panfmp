@@ -235,7 +235,7 @@ public class WebCrawlingHarvester extends SingleFileEntitiesHarvester {
       conn.setRequestProperty("Accept", ac.toString());
       
       conn.setUseCaches(false);
-      conn.setFollowRedirects(true);
+      conn.setInstanceFollowRedirects(true);
       
       log.debug("Opening connection...");
       InputStream in = null;

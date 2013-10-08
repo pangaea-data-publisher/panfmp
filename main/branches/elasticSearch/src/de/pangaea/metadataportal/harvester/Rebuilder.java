@@ -17,12 +17,8 @@
 package de.pangaea.metadataportal.harvester;
 
 import de.pangaea.metadataportal.config.*;
-import de.pangaea.metadataportal.utils.*;
-import org.apache.lucene.document.*;
 import org.apache.lucene.index.*;
 import org.apache.lucene.util.Bits;
-
-import java.util.*;
 
 /**
  * Index rebuilder implemented as harvester that reads all documents from an
