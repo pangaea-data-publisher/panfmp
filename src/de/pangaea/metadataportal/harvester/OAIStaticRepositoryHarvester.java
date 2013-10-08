@@ -18,6 +18,7 @@ package de.pangaea.metadataportal.harvester;
 
 import de.pangaea.metadataportal.utils.*;
 import de.pangaea.metadataportal.config.*;
+
 import java.util.*;
 import org.apache.commons.digester.*;
 import org.xml.sax.*;
@@ -44,7 +45,7 @@ public class OAIStaticRepositoryHarvester extends OAIHarvesterBase {
   
   // construtor
   @Override
-  public void open(SingleIndexConfig iconfig) throws Exception {
+  public void open(IndexConfig iconfig) throws Exception {
     super.open(iconfig);
     filterIncomingSets = true; // always filter set names
     

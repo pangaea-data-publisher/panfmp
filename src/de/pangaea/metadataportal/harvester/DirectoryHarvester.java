@@ -18,6 +18,7 @@ package de.pangaea.metadataportal.harvester;
 
 import de.pangaea.metadataportal.utils.*;
 import de.pangaea.metadataportal.config.*;
+
 import java.io.*;
 import java.util.*;
 import java.util.regex.Pattern;
@@ -50,7 +51,7 @@ public class DirectoryHarvester extends SingleFileEntitiesHarvester implements
   private String identifierPrefix = "";
   
   @Override
-  public void open(SingleIndexConfig iconfig) throws Exception {
+  public void open(IndexConfig iconfig) throws Exception {
     super.open(iconfig);
     
     String s = iconfig.harvesterProperties.getProperty("directory");

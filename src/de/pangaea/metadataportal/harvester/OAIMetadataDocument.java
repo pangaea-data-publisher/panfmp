@@ -17,7 +17,8 @@
 package de.pangaea.metadataportal.harvester;
 
 import de.pangaea.metadataportal.utils.*;
-import de.pangaea.metadataportal.config.SingleIndexConfig;
+import de.pangaea.metadataportal.config.IndexConfig;
+
 import java.util.*;
 import org.apache.lucene.document.*;
 import org.apache.lucene.index.FieldInfo.IndexOptions;
@@ -34,7 +35,7 @@ public class OAIMetadataDocument extends MetadataDocument {
    * Constructor, that creates an empty instance for the supplied index
    * configuration.
    */
-  public OAIMetadataDocument(SingleIndexConfig iconfig) {
+  public OAIMetadataDocument(IndexConfig iconfig) {
     super(iconfig);
   }
   

@@ -71,7 +71,7 @@ public class ZipFileHarvester extends SingleFileEntitiesHarvester {
   protected int timeout = DEFAULT_TIMEOUT;
   
   @Override
-  public void open(SingleIndexConfig iconfig) throws Exception {
+  public void open(IndexConfig iconfig) throws Exception {
     super.open(iconfig);
     
     zipFile = iconfig.harvesterProperties.getProperty("zipFile");

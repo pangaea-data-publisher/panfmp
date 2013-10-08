@@ -17,7 +17,8 @@
 package de.pangaea.metadataportal.harvester;
 
 import java.util.*;
-import de.pangaea.metadataportal.config.SingleIndexConfig;
+
+import de.pangaea.metadataportal.config.IndexConfig;
 import de.pangaea.metadataportal.utils.*;
 import javax.xml.transform.Source;
 
@@ -48,7 +49,7 @@ public abstract class SingleFileEntitiesHarvester extends Harvester {
   private long newestDatestamp = -1;
   
   @Override
-  public void open(SingleIndexConfig iconfig) throws Exception {
+  public void open(IndexConfig iconfig) throws Exception {
     super.open(iconfig);
     
     String s = iconfig.harvesterProperties.getProperty("parseErrorAction");

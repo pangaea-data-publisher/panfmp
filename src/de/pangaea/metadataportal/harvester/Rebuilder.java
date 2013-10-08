@@ -17,6 +17,7 @@
 package de.pangaea.metadataportal.harvester;
 
 import de.pangaea.metadataportal.config.*;
+
 import org.apache.lucene.index.*;
 import org.apache.lucene.util.Bits;
 
@@ -57,7 +58,7 @@ public class Rebuilder extends Harvester {
   private String savedAutoOptimize = null;
   
   @Override
-  public void open(SingleIndexConfig iconfig) throws Exception {
+  public void open(IndexConfig iconfig) throws Exception {
     log.info("Opening index \"" + iconfig.id
         + "\" for harvesting all documents...");
     reader = iconfig.newIndexReader();

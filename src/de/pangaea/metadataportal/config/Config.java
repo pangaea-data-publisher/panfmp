@@ -198,7 +198,7 @@ public class Config {
           new AbstractObjectCreationFactory() {
             @Override
             public Object createObject(Attributes attributes) {
-              return new SingleIndexConfig(Config.this);
+              return new IndexConfig(Config.this);
             }
           });
       dig.addSetNext("config/indexes/index", "addIndex");
@@ -663,9 +663,9 @@ public class Config {
     public void begin(String namespace, String name, Attributes attributes)
         throws Exception {
       final Object o = digester.peek();
-      if (!(o instanceof SingleIndexConfig)) throw new RuntimeException(
+      if (!(o instanceof IndexConfig)) throw new RuntimeException(
           "An XSLT tree is not allowed here!");
-      final SingleIndexConfig iconf = (SingleIndexConfig) o;
+      final IndexConfig iconf = (IndexConfig) o;
       
       final String file = attributes.getValue(XMLConstants.NULL_NS_URI, "src");
       if (file != null) {
@@ -704,9 +704,9 @@ public class Config {
     @Override
     protected void setResult(Templates t) {
       final Object o = digester.peek();
-      if (!(o instanceof SingleIndexConfig)) throw new RuntimeException(
+      if (!(o instanceof IndexConfig)) throw new RuntimeException(
           "An XSLT tree is not allowed here!");
-      final SingleIndexConfig iconf = (SingleIndexConfig) o;
+      final IndexConfig iconf = (IndexConfig) o;
       
       iconf.xslt = t;
     }

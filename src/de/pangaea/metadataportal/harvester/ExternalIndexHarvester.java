@@ -78,7 +78,7 @@ public class ExternalIndexHarvester extends SingleFileEntitiesHarvester {
   private Query query = null;
   
   @Override
-  public void open(SingleIndexConfig iconfig) throws Exception {
+  public void open(IndexConfig iconfig) throws Exception {
     super.open(iconfig);
     
     identifierPrefix = iconfig.harvesterProperties.getProperty(
