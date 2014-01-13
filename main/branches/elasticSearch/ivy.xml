@@ -9,7 +9,7 @@
   <dependencies>
     <dependency org="commons-logging" name="commons-logging" rev="1.1.3" conf="build,bundle" transitive="false"/>
     <dependency org="commons-digester" name="commons-digester" rev="2.1" conf="build,bundle"/>
-    <dependency org="org.elasticsearch" name="elasticsearch" rev="0.90.5" conf="build,bundle"/>
+    <dependency org="org.elasticsearch" name="elasticsearch" rev="0.90.10" conf="build,bundle"/>
     
     <dependency org="log4j" name="log4j" rev="1.2.17" conf="bundle" transitive="false"/>
     <dependency org="xerces" name="xercesImpl" rev="2.11.0" conf="bundle"/>
