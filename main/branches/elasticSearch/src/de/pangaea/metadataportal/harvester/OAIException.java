@@ -22,6 +22,7 @@ package de.pangaea.metadataportal.harvester;
  * 
  * @author Uwe Schindler
  */
+@SuppressWarnings("serial")
 public class OAIException extends java.lang.Exception {
   
   public OAIException(String code, String message) {

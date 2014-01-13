@@ -22,6 +22,7 @@ package de.pangaea.metadataportal.harvester;
  * 
  * @author Uwe Schindler
  */
+@SuppressWarnings("serial")
 public class IndexBuilderBackgroundFailure extends java.lang.Exception {
   
   public IndexBuilderBackgroundFailure(Exception e) {
