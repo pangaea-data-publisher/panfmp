@@ -79,7 +79,7 @@ public final class XPathResolverImpl implements XPathFunctionResolver,
     return map.get(variableName);
   }
   
-  // private
+  /*
   private IndexReader openIndexReader(Config conf, Set<String> ids)
       throws java.io.IOException {
     Map<Set<String>,IndexReader> ci = cachedIndexes.get();
@@ -97,9 +97,12 @@ public final class XPathResolverImpl implements XPathFunctionResolver,
     }
     return reader;
   }
+  */
   
   private Boolean isDocIdentifierUnique(List args)
       throws XPathFunctionException {
+    return true; // TODO: Implement this!
+    /*
     IndexBuilder index = currentIndexBuilder.get();
     if (index == null) throw new IllegalStateException(
         "There is no IndexBuilder instance in thread local storage!");
@@ -112,8 +115,7 @@ public final class XPathResolverImpl implements XPathFunctionResolver,
         // collect all indexes, excluding the current one
         for (IndexConfig iconfig : index.iconfig.parent.indexes.values()) {
           if (iconfig == index.iconfig) continue;
-          if (!(iconfig instanceof IndexConfig)) continue;
-          if (!((IndexConfig) iconfig).isIndexAvailable()) continue;
+          if (!iconfig.isIndexAvailable()) continue;
           indexIds.add(iconfig.id);
         }
       } else {
@@ -146,6 +148,7 @@ public final class XPathResolverImpl implements XPathFunctionResolver,
     } catch (java.io.IOException ioe) {
       throw new XPathFunctionException("Error accessing index: " + ioe);
     }
+    */
   }
   
   // API
