@@ -22,6 +22,7 @@ package de.pangaea.metadataportal.harvester;
  * 
  * @author Uwe Schindler
  */
+@SuppressWarnings("serial")
 public class RetryAfterIOException extends java.io.IOException {
   
   public RetryAfterIOException(int retryAfter, java.io.IOException ioe) {

@@ -390,6 +390,7 @@ public class IndexBuilder {
             .unmodifiableSet(committedIdentifiers));
         committedIdentifiers.clear();
         
+        /* TODO: Add implementation, crazy with ES!
         log.info("Removing documents not seen while harvesting (this may take a while)...");
         IndexReader reader = null;
         TermEnum terms = null;
@@ -413,6 +414,7 @@ public class IndexBuilder {
           if (terms != null) terms.close();
           if (reader != null) reader.close();
         }
+        */
       }
       
       // notify Harvester of index commit

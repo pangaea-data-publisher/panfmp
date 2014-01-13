@@ -45,7 +45,6 @@ public class OAIHarvester extends OAIHarvesterBase {
   private String currResumptionToken = null;
   private long currResumptionExpiration = -1L;
   private Date currResponseDate = null;
-  private Map<String,String> currRequest = null;
   private boolean fineGranularity = false; // default for OAI 2.0
   
   // construtor
@@ -184,7 +183,6 @@ public class OAIHarvester extends OAIHarvesterBase {
   @PublicForDigesterUse
   @Deprecated
   public void setRequest(Map<String,String> req) {
-    currRequest = req;
   }
   
   // harvester code
@@ -206,7 +204,6 @@ public class OAIHarvester extends OAIHarvesterBase {
     super.reset();
     currResponseDate = null;
     currResumptionToken = null;
-    currRequest = null;
   }
   
   @Override
