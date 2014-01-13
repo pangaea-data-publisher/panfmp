@@ -61,7 +61,8 @@ public class Rebuilder extends Harvester {
   public void open(IndexConfig iconfig) throws Exception {
     log.info("Opening index \"" + iconfig.id
         + "\" for harvesting all documents...");
-    reader = iconfig.newIndexReader();
+    // TODO: This will OOM now!
+    // reader = iconfig.newIndexReader();
     // enable optimization
     savedAutoOptimize = (String) iconfig.harvesterProperties.setProperty(
         "autoOptimize", "true");
