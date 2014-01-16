@@ -20,6 +20,11 @@ import javax.xml.transform.sax.*;
 import javax.xml.parsers.*;
 import javax.xml.xpath.*;
 
+import org.apache.xalan.xsltc.trax.TransformerFactoryImpl;
+import org.apache.xerces.jaxp.DocumentBuilderFactoryImpl;
+import org.apache.xerces.jaxp.SAXParserFactoryImpl;
+import org.apache.xpath.jaxp.XPathFactoryImpl;
+
 /**
  * Some pre-allocated XML factories.
  * 
@@ -36,18 +41,17 @@ public final class StaticFactories {
   public static final DocumentBuilder dombuilder;
   static {
     try {
-      xpathFactory = XPathFactory.newInstance();
+      xpathFactory = new XPathFactoryImpl();
       
-      saxFactory = SAXParserFactory.newInstance();
+      saxFactory = new SAXParserFactoryImpl();
       saxFactory.setNamespaceAware(true);
       saxFactory.setValidating(false);
       
-      transFactory = (SAXTransformerFactory) SAXTransformerFactory
-          .newInstance();
+      transFactory = (SAXTransformerFactory) new TransformerFactoryImpl();
       transFactory.setErrorListener(new LoggingErrorListener(transFactory
           .getClass()));
       
-      dbf = DocumentBuilderFactory.newInstance();
+      dbf = new DocumentBuilderFactoryImpl();
       dbf.setNamespaceAware(true);
       dbf.setCoalescing(true);
       dbf.setExpandEntityReferences(true);
