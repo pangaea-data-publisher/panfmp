@@ -16,31 +16,47 @@
 
 package de.pangaea.metadataportal.harvester;
 
-import de.pangaea.metadataportal.utils.*;
-import de.pangaea.metadataportal.config.*;
-
-import org.apache.lucene.document.*;
-import org.apache.lucene.util.NumericUtils;
+import java.io.IOException;
 import java.io.StringWriter;
-import java.io.StringReader;
-import java.util.UUID;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.AbstractMap;
-import java.io.IOException;
-import java.util.Date;
-import javax.xml.transform.*;
-import javax.xml.transform.dom.*;
-import javax.xml.transform.sax.*;
-import javax.xml.transform.stream.*;
+
 import javax.xml.namespace.QName;
-import javax.xml.validation.*;
-import org.w3c.dom.NodeList;
-import org.w3c.dom.Node;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Source;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.dom.DOMResult;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.sax.TransformerHandler;
+import javax.xml.transform.stream.StreamResult;
+import javax.xml.validation.Validator;
+
+import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.common.xcontent.XContentFactory;
 import org.w3c.dom.DocumentFragment;
-import org.xml.sax.*;
-import java.lang.reflect.Constructor;
-import org.apache.lucene.index.FieldInfo.IndexOptions;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.ErrorHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
+
+import de.pangaea.metadataportal.config.ExpressionConfig;
+import de.pangaea.metadataportal.config.FieldConfig;
+import de.pangaea.metadataportal.config.FilterConfig;
+import de.pangaea.metadataportal.config.IndexConfig;
+import de.pangaea.metadataportal.config.VariableConfig;
+import de.pangaea.metadataportal.utils.BooleanParser;
+import de.pangaea.metadataportal.utils.ISODateFormatter;
+import de.pangaea.metadataportal.utils.IndexConstants;
+import de.pangaea.metadataportal.utils.LenientDateParser;
+import de.pangaea.metadataportal.utils.LoggingErrorListener;
+import de.pangaea.metadataportal.utils.StaticFactories;
 
 /**
  * This class holds all information harvested and provides methods for
@@ -74,7 +90,7 @@ public class MetadataDocument {
    * 
    * @return An instance of a subclass of <code>MetadataDocument</code>
    */
-  public static final MetadataDocument createInstanceFromLucene(
+  /*TODO: public static final MetadataDocument createInstanceFromLucene(
       IndexConfig iconf, Document ldoc) throws Exception {
     String mdocImpl = ldoc.get(IndexConstants.FIELDNAME_MDOC_IMPL);
     Class<? extends MetadataDocument> cls = MetadataDocument.class;
@@ -110,7 +126,7 @@ public class MetadataDocument {
       throw new RuntimeException("Error invoking constructor of class " + cls,
           e);
     }
-  }
+  }*/
   
   /**
    * "Harvests" a stored Lucene {@link Document} from index for re-parsing.
@@ -119,7 +135,7 @@ public class MetadataDocument {
    * XPath and Templates. {@link SingleIndexConfig} is used for index specific
    * conversions.
    */
-  public void loadFromLucene(Document ldoc) throws Exception {
+  /*public void loadFromLucene(Document ldoc) throws Exception {
     deleted = false;
     datestamp = null;
     // read identifier
@@ -157,7 +173,7 @@ public class MetadataDocument {
       trans.transform(s, r);
       setFinalDOM(dom);
     }
-  }
+  }*/
   
   /**
    * Returns XML contents as String (a cache is used).
@@ -270,9 +286,10 @@ public class MetadataDocument {
    * @throws IllegalStateException
    *           if index configuration is unknown
    */
-  public Document getLuceneDocument() throws Exception {
-    Document ldoc = createEmptyDocument();
+  public XContentBuilder getElasticSearchJSON() throws Exception {
+    XContentBuilder builder = createEmptyDocument();
     if (!deleted) {
+      assert builder != null;
       if (dom == null) throw new NullPointerException(
           "The DOM-Tree of document may not be 'null'!");
       processXPathVariables();
@@ -282,22 +299,14 @@ public class MetadataDocument {
           log.debug("Document filtered: " + identifier);
           return null;
         }
-        addDefaultField(ldoc);
-        addFields(ldoc);
-        processDocumentBoost(ldoc);
+        addDefaultField(builder);
+        addFields(builder);
+        processDocumentBoost(builder);
       } finally {
         XPathResolverImpl.getInstance().unsetVariables();
       }
-      if (BooleanParser.parseBoolean(iconfig.harvesterProperties.getProperty(
-          "compressXML", "true"))) {
-        ldoc.add(new Field(IndexConstants.FIELDNAME_XML, CompressionTools
-            .compressString(this.getXML())));
-      } else {
-        ldoc.add(new Field(IndexConstants.FIELDNAME_XML, this.getXML(),
-            Field.Store.YES, Field.Index.NO));
-      }
     }
-    return ldoc;
+    return builder;
   }
   
   /**
@@ -311,7 +320,7 @@ public class MetadataDocument {
    * @throws IllegalStateException
    *           if identifier is empty.
    */
-  protected Document createEmptyDocument() throws Exception {
+  protected XContentBuilder createEmptyDocument() throws Exception {
     if (identifier == null || "".equals(identifier)) throw new IllegalArgumentException(
         "The identifier of a document may not be empty!");
     
@@ -319,21 +328,22 @@ public class MetadataDocument {
     if (deleted) {
       return null; // to delete
     } else {
-      Document ldoc = new Document();
-      // identifier without
-      Field f = new Field(IndexConstants.FIELDNAME_IDENTIFIER, identifier,
-          Field.Store.YES, Field.Index.NOT_ANALYZED_NO_NORMS);
-      f.setIndexOptions(IndexOptions.DOCS_ONLY);
-      ldoc.add(f);
-      ldoc.add(new Field(IndexConstants.FIELDNAME_MDOC_IMPL, getClass()
-          .getName(), Field.Store.YES, Field.Index.NO));
+      XContentBuilder builder = XContentFactory.jsonBuilder().startObject()
+        .field(IndexConstants.FIELDNAME_IDENTIFIER, identifier)
+        .field(IndexConstants.FIELDNAME_MDOC_IMPL, getClass().getName());
       if (datestamp != null) {
-        ldoc.add(new NumericField(IndexConstants.FIELDNAME_DATESTAMP,
-            iconfig.parent.triePrecisionStep, Field.Store.YES, true)
-            .setLongValue(datestamp.getTime()));
+        builder.field(IndexConstants.FIELDNAME_DATESTAMP, datestamp);
       }
-      return ldoc;
+      return builder;
     }
+  }
+  
+  /**
+   * Helper method that finalizes the JSON document
+   */
+  protected void closeDocument(XContentBuilder builder) throws Exception {
+    builder.field(IndexConstants.FIELDNAME_XML, this.getXML())
+      .endObject();
   }
   
   /**
@@ -345,7 +355,7 @@ public class MetadataDocument {
    *           if an exception occurs during transformation (various types of
    *           exceptions can be thrown).
    */
-  protected void addDefaultField(Document ldoc) throws Exception {
+  protected void addDefaultField(XContentBuilder builder) throws Exception {
     StringBuilder sb = new StringBuilder();
     if (iconfig.parent.defaultField == null) {
       walkNodeTexts(sb, dom.getDocumentElement(), true);
@@ -358,9 +368,7 @@ public class MetadataDocument {
       }
     }
     if (log.isTraceEnabled()) log.trace("DefaultField: " + sb.toString());
-    ldoc.add(new Field(IndexConstants.FIELDNAME_CONTENT, sb.toString(),
-        Field.Store.NO, Field.Index.ANALYZED,
-        iconfig.parent.defaultFieldTermVectors));
+    builder.field(IndexConstants.FIELDNAME_CONTENT, sb.toString());
   }
   
   /**
@@ -372,10 +380,10 @@ public class MetadataDocument {
    *           if an exception occurs during transformation (various types of
    *           exceptions can be thrown).
    */
-  protected void addFields(Document ldoc) throws Exception {
+  protected void addFields(XContentBuilder builder) throws Exception {
     for (FieldConfig f : iconfig.parent.fields.values()) {
       if (f.datatype == FieldConfig.DataType.XHTML) {
-        addField(ldoc, f, evaluateTemplateAsXHTML(f));
+        addField(builder, f, evaluateTemplateAsXHTML(f));
       } else {
         boolean needDefault = (f.datatype == FieldConfig.DataType.NUMBER || f.datatype == FieldConfig.DataType.DATETIME);
         Object value = null;
@@ -407,8 +415,10 @@ public class MetadataDocument {
             trans.setOutputProperty(OutputKeys.INDENT, "no");
             trans.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
           }
-          NodeList nodes = (NodeList) value;
-          for (int i = 0, c = nodes.getLength(); i < c; i++) {
+          final NodeList nodes = (NodeList) value;
+          final int c = nodes.getLength();
+          final List<String> vals = new ArrayList<String>(c / 2);
+          for (int i = 0; i < c; i++) {
             if (f.datatype == FieldConfig.DataType.XML) {
               DOMSource in = new DOMSource(nodes.item(i));
               if (in.getNode().getNodeType() != Node.ELEMENT_NODE) continue; // only
@@ -423,31 +433,32 @@ public class MetadataDocument {
               StreamResult out = new StreamResult(xmlWriter);
               trans.transform(in, out);
               xmlWriter.close();
-              addField(ldoc, f, xmlWriter.toString());
+              vals.add(xmlWriter.toString());
             } else {
               StringBuilder sb = new StringBuilder();
               walkNodeTexts(sb, nodes.item(i), true);
               String val = sb.toString().trim();
               if (!"".equals(val)) {
-                addField(ldoc, f, val);
+                vals.add(val);
                 needDefault = false;
               }
             }
           }
+          addField(builder, f, vals.toArray(new String[vals.size()]));
         } else if (value instanceof String) {
           if (f.datatype == FieldConfig.DataType.XML) throw new UnsupportedOperationException(
               "Fields with datatype XML may only return NODESETs on evaluation!");
           String s = (String) value;
           s = s.trim();
           if (!"".equals(s)) {
-            addField(ldoc, f, s);
+            addField(builder, f, s);
             needDefault = false;
           }
         } else throw new UnsupportedOperationException(
             "Invalid Java data type of expression result: "
                 + value.getClass().getName());
         
-        if (needDefault && f.defaultValue != null) addField(ldoc, f,
+        if (needDefault && f.defaultValue != null) addField(builder, f,
             f.defaultValue);
       }
     }
@@ -462,7 +473,7 @@ public class MetadataDocument {
    *           if an exception occurs during transformation (various types of
    *           exceptions can be thrown).
    */
-  protected void processDocumentBoost(Document ldoc) throws Exception {
+  protected void processDocumentBoost(XContentBuilder builder) throws Exception {
     float boost = 1.0f;
     if (iconfig.parent.documentBoost != null
         && iconfig.parent.documentBoost.xPathExpr != null) {
@@ -476,8 +487,7 @@ public class MetadataDocument {
     }
     if (log.isTraceEnabled()) log.trace("DocumentBoost: " + boost);
     if (boost != 1.0f) {
-      ldoc.add(new NumericField(IndexConstants.FIELDNAME_BOOST,
-          Integer.MAX_VALUE, Field.Store.NO, true).setFloatValue(boost));
+      builder.field(IndexConstants.FIELDNAME_BOOST, boost);
     }
   }
   
@@ -679,38 +689,19 @@ public class MetadataDocument {
    *           if an exception occurs during transformation (various types of
    *           exceptions can be thrown).
    */
-  protected void addField(Document ldoc, FieldConfig f, String val)
+  protected void addField(XContentBuilder builder, FieldConfig f, String... vals)
       throws Exception {
-    if (log.isTraceEnabled()) log.trace("AddField: " + f.name + '=' + val);
-    boolean token = false;
+    if (log.isTraceEnabled()) log.trace("AddField: " + f.name + '=' + Arrays.toString(vals));
     switch (f.datatype) {
-      case NUMBER:
-        final double d = Double.parseDouble(val);
-        ldoc.add(new NumericField(f.name, iconfig.parent.triePrecisionStep,
-            f.storage, f.indexed).setDoubleValue(d));
-        break;
       case DATETIME:
-        final long l = LenientDateParser.parseDate(val).getTime();
-        ldoc.add(new NumericField(f.name, iconfig.parent.triePrecisionStep,
-            f.storage, f.indexed).setLongValue(l));
+        final Object[] dates = new Object[vals.length];
+        for (int i = 0; i < vals.length; i++) {
+          dates[i] = LenientDateParser.parseDate(vals[i]);
+        }
+        builder.field(f.name, dates);
         break;
-      case TOKENIZEDTEXT:
-        token = true;
-        // fall-through
       default:
-        Field.Index in = Field.Index.NO;
-        Field.Store stor = f.storage;
-        if (f.indexed) in = token ? Field.Index.ANALYZED
-            : Field.Index.NOT_ANALYZED_NO_NORMS;
-        if (f.compressed && stor == Field.Store.YES && val.length() > 1024) {
-          ldoc.add(new Field(f.name, CompressionTools.compressString(val)));
-          stor = Field.Store.NO;
-        }
-        if (in != Field.Index.NO || stor != Field.Store.NO) {
-          final Field field = new Field(f.name, val, stor, in, f.termVectors);
-          if (!token) field.setOmitNorms(true);
-          ldoc.add(field);
-        }
+        builder.field(f.name, vals);
     }
   }
   

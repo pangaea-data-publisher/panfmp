@@ -97,8 +97,7 @@ public class Rebuilder extends Harvester {
       final Bits liveDocs = r.getLiveDocs();
       for (int i = 0, c = r.maxDoc(); i < c; i++) {
         if (liveDocs.get(i)) {
-          MetadataDocument mdoc = MetadataDocument.createInstanceFromLucene(
-              iconfig, r.document(i));
+          MetadataDocument mdoc = null; //TODO: MetadataDocument.createInstanceFromLucene(iconfig, r.document(i));
           if (mdoc.getIdentifier() == null) {
             log.error("Cannot process or delete a document without an identifier! "
                 + "It will stay forever in index and pollute search results. "
