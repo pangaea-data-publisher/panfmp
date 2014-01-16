@@ -24,11 +24,13 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.*;
 import java.io.IOException;
+
 import org.apache.lucene.index.*;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.store.IOContext;
 import org.apache.lucene.store.IndexInput;
 import org.apache.lucene.store.IndexOutput;
+import org.elasticsearch.common.xcontent.XContentBuilder;
 
 /**
  * Component of <b>panFMP</b> that analyzes and indexes harvested documents in
@@ -71,7 +73,7 @@ public class IndexBuilder {
   
   public IndexBuilder(boolean create, IndexConfig iconfig)
       throws IOException {
-    if (!iconfig.isIndexAvailable()) create = true;
+    //TODO: if (!iconfig.isIndexAvailable()) create = true;
     this.create = create;
     this.iconfig = iconfig;
     if (create) try {
@@ -261,7 +263,7 @@ public class IndexBuilder {
         if (log.isTraceEnabled()) log.trace("XML: " + mdoc.getXML());
         try {
           IndexerQueueEntry en = new IndexerQueueEntry(mdoc.getIdentifier(),
-              mdoc.getLuceneDocument());
+              mdoc.getElasticSearchJSON());
           ldocBuffer.put(en);
         } catch (InterruptedException ie) {
           throw ie; // no handling here
@@ -309,14 +311,10 @@ public class IndexBuilder {
     org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory
         .getLog(Thread.currentThread().getName());
     log.info("Indexer thread started.");
-    IndexWriter writer = null;
     int updated = 0, deleted = 0;
     boolean finished = false;
     try {
-      writer = iconfig.newIndexWriter(create);
-      final LiveIndexWriterConfig icfg = writer.getConfig();
-      icfg.setMaxBufferedDocs(maxBufferedChanges);
-      icfg.setMaxBufferedDeleteTerms(maxBufferedChanges);
+      //TODO
       
       HashSet<String> committedIdentifiers = new HashSet<String>(
           maxBufferedChanges);
@@ -337,16 +335,18 @@ public class IndexBuilder {
         if (entry == LDOC_EOF) break;
         
         Term t = new Term(IndexConstants.FIELDNAME_IDENTIFIER, entry.identifier);
-        if (entry.ldoc == null) {
-          if (log.isDebugEnabled()) log.debug("Deleting document: "
+        if (entry.builder == null) {
+          /*if (log.isDebugEnabled()) log.debug*/log.info("Deleting document: "
               + entry.identifier);
-          writer.deleteDocuments(t);
+          //writer.deleteDocuments(t);
+          // TODO: do delete
           deleted++;
         } else {
-          if (log.isDebugEnabled()) log.debug("Updating document: "
+          /*if (log.isDebugEnabled()) log.debug*/log.info("Updating document: "
               + entry.identifier);
-          if (log.isTraceEnabled()) log.debug("Data: " + entry.ldoc.toString());
-          writer.updateDocument(t, entry.ldoc);
+          /*if (log.isTraceEnabled()) log.trace*/log.info("Data: " + entry.builder.toString());
+          //writer.updateDocument(t, entry.ldoc);
+          // TODO: do index
           updated++;
         }
         committedIdentifiers.add(entry.identifier);
@@ -355,7 +355,7 @@ public class IndexBuilder {
           HarvesterCommitEvent ce = commitEvent.get();
           
           // only flush if commitEvent interface registered
-          if (ce != null) writer.commit();
+          //TODO: if (ce != null) writer.commit();
           
           log.info(deleted + " docs presumably deleted (if existent) and "
               + updated + " docs (re-)indexed so far.");
@@ -380,7 +380,7 @@ public class IndexBuilder {
         HarvesterCommitEvent ce = commitEvent.get();
         
         // only flush if commitEvent interface registered
-        if (ce != null) writer.commit();
+        //TODO: if (ce != null) writer.commit();
         
         log.info(deleted + " docs presumably deleted (if existent) and "
             + updated + " docs (re-)indexed so far.");
@@ -419,7 +419,7 @@ public class IndexBuilder {
       
       // notify Harvester of index commit
       HarvesterCommitEvent ce = commitEvent.get();
-      if (writer != null && ce != null) writer.commit();
+      //TODO: if (writer != null && ce != null) writer.commit();
       if (ce != null && committedIdentifiers.size() > 0) ce
           .harvesterCommitted(Collections.unmodifiableSet(committedIdentifiers));
       committedIdentifiers.clear();
@@ -427,30 +427,22 @@ public class IndexBuilder {
       finished = true;
       log.info(deleted + " docs presumably deleted (only if existent) and "
           + updated + " docs (re-)indexed - finished.");
-      
-      if (BooleanParser.parseBoolean(iconfig.harvesterProperties.getProperty(
-          "autoOptimize", "false"))) {
-        if (writer == null) writer = iconfig.newIndexWriter(false);
-        log.info("Optimizing index...");
-        writer.forceMerge(1, true);
-        log.info("Index optimized.");
-      }
-    } catch (IOException e) {
+    } /*catch (IOException e) {
       if (!finished) log.warn("Only " + deleted
           + " docs presumably deleted (only if existent) and " + updated
           + " docs (re-)indexed before the following error occurred: " + e);
       // only store the first error in failure variable, other errors are logged
       // only
       if (!failure.compareAndSet(null, e)) log.error(e);
-    } finally {
+    } */finally {
       ldocBuffer.clear();
       // notify eventually waiting checkIndexerBuffer() calls, as we are
       // finished
       synchronized (indexerLock) {
         indexerLock.notifyAll();
       }
-      // close reader
-      if (writer != null) try {
+      // TODO: close writer
+      /*if (writer != null) try {
         writer.commit();
         writer.close();
       } catch (IOException ioe) {
@@ -458,7 +450,7 @@ public class IndexBuilder {
             "Failed to close Lucene IndexWriter, you may need to remove lock files!",
             ioe);
       }
-      writer = null;
+      writer = null;*/
       log.info("Indexer thread stopped.");
     }
   }
@@ -486,13 +478,13 @@ public class IndexBuilder {
   
   private static final class IndexerQueueEntry {
     
-    protected IndexerQueueEntry(String identifier, Document ldoc) {
+    protected IndexerQueueEntry(String identifier, XContentBuilder builder) {
       this.identifier = identifier;
-      this.ldoc = ldoc;
+      this.builder = builder;
     }
     
-    protected String identifier;
-    protected Document ldoc;
+    protected final String identifier;
+    protected final XContentBuilder builder;
     
   }
   

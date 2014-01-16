@@ -20,8 +20,8 @@ import de.pangaea.metadataportal.utils.*;
 import de.pangaea.metadataportal.config.IndexConfig;
 
 import java.util.*;
-import org.apache.lucene.document.*;
-import org.apache.lucene.index.FieldInfo.IndexOptions;
+
+import org.elasticsearch.common.xcontent.XContentBuilder;
 
 /**
  * Special implementation of {@link MetadataDocument} that adds OAI set support
@@ -62,27 +62,22 @@ public class OAIMetadataDocument extends MetadataDocument {
     return sets;
   }
   
-  @Override
+  /*@Override
   public void loadFromLucene(Document ldoc) throws Exception {
     sets.clear();
     super.loadFromLucene(ldoc);
     String[] sets = ldoc.getValues(IndexConstants.FIELDNAME_SET);
     if (sets != null) for (String set : sets)
       if (set != null) addSet(set);
-  }
+  }*/
   
   @Override
-  protected Document createEmptyDocument() throws Exception {
-    Document ldoc = super.createEmptyDocument();
-    if (ldoc != null) {
-      for (String set : sets) {
-        final Field field = new Field(IndexConstants.FIELDNAME_SET, set,
-            Field.Store.YES, Field.Index.NOT_ANALYZED_NO_NORMS);
-        field.setIndexOptions(IndexOptions.DOCS_ONLY);
-        ldoc.add(field);
-      }
+  protected XContentBuilder createEmptyDocument() throws Exception {
+    XContentBuilder builder = super.createEmptyDocument();
+    if (builder != null) {
+      builder.field(IndexConstants.FIELDNAME_SET, sets.toArray(new String[sets.size()]));
     }
-    return ldoc;
+    return builder;
   }
   
   @Override
