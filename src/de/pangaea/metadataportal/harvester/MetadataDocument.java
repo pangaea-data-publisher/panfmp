@@ -434,23 +434,26 @@ public class MetadataDocument {
               trans.transform(in, out);
               xmlWriter.close();
               vals.add(xmlWriter.toString());
+              needDefault = false;
             } else {
               StringBuilder sb = new StringBuilder();
               walkNodeTexts(sb, nodes.item(i), true);
               String val = sb.toString().trim();
-              if (!"".equals(val)) {
+              if (!val.isEmpty()) {
                 vals.add(val);
                 needDefault = false;
               }
             }
           }
-          addField(builder, f, vals.toArray(new String[vals.size()]));
+          if (!vals.isEmpty()) {
+            addField(builder, f, vals.toArray(new String[vals.size()]));
+          }
         } else if (value instanceof String) {
           if (f.datatype == FieldConfig.DataType.XML) throw new UnsupportedOperationException(
               "Fields with datatype XML may only return NODESETs on evaluation!");
           String s = (String) value;
           s = s.trim();
-          if (!"".equals(s)) {
+          if (!s.isEmpty()) {
             addField(builder, f, s);
             needDefault = false;
           }
@@ -483,7 +486,7 @@ public class MetadataDocument {
           "The XPath for document boost did not return a valid NUMBER value!");
       boost = n.floatValue();
       if (Float.isNaN(boost) || boost <= 0.0f || Float.isInfinite(boost)) throw new javax.xml.xpath.XPathExpressionException(
-          "The XPath for document boost did not return a positive, finite NUMBER (default=1.0)!");
+          "The XPath for document boost did not return a positive, finite NUMBER (default=1.0)! Value was: "+boost);
     }
     if (log.isTraceEnabled()) log.trace("DocumentBoost: " + boost);
     if (boost != 1.0f) {

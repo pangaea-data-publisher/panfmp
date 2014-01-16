@@ -65,20 +65,21 @@
       <equals arg1="${ivy.version}" arg2="${ivy.install.version}"/>
     </condition>
     <echo taskname="check-ivy" message="${ivy.version-message}"/>
-    <ivy:cachepath pathid="path.build" conf="build" log="${ivy.logging}"/>
+    <ivy:cachepath pathid="path.build" conf="build" type="jar" log="${ivy.logging}"/>
+    <ivy:cachepath pathid="path.bundle" conf="bundle" type="jar" log="${ivy.logging}"/>
     <!--<ivy:cachepath pathid="path.test" conf="test" log="${ivy.logging}"/>-->
     <path id="path.run">
-      <path refid="path.build"/>
-      <pathelement path="build/main"/>
+      <path refid="path.bundle"/>
+      <pathelement path="build"/>
     </path>
     <path id="path.tools-run">
       <path refid="path.build"/>
-      <pathelement path="build/tools"/>
+      <pathelement path="build"/>
     </path>
   </target>
 
   <!--<target name="-install-tasks" depends="-init" unless="installed.tasks">
-    <ivy:cachepath pathid="path.tasks" conf="buildtools" log="${ivy.logging}"/>
+    <ivy:cachepath pathid="path.tasks" conf="buildtools" type="jar" log="${ivy.logging}"/>
     <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpathref="path.tasks"/>
     <taskdef uri="antlib:org.apache.maven.artifact.ant" classpathref="path.tasks"/>
     <property name="installed.tasks" value="true"/>
@@ -109,6 +110,18 @@
       </metainf>
     </jar>
   </target>
+	
+	<!-- EXECUTE SCRIPTS WITH CLASSPATH target -->
+	<target name="execute-harvester" depends="compile">
+		<makeurl property="log4j-conf" file="scripts/console.log.properties"/>
+		<!--<pathconvert property="cp" refid="path.run"/>
+		<echo message="CLASSPATH: ${cp}"/>-->
+		<java fork="true" dir="." classname="de.pangaea.metadataportal.harvester.Harvester" classpathref="path.run">
+			 <sysproperty key="log4j.configuration" value="${log4j-conf}"/>
+			 <arg file="repository/config.xml"/>
+			 <arg value="pangaea-carboocean"/>
+		</java>
+	</target>
 
   <!-- JAVADOCS TARGET -->
   <target name="javadocs" depends="-init">

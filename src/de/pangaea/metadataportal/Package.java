@@ -60,7 +60,7 @@ public final class Package {
   public static String getFullPackageDescription() {
     java.lang.Package pkg = get();
     if (pkg == null) return null;
-    return new StringBuilder(pkg.getImplementationTitle()).append(" version ")
+    return new StringBuilder().append(pkg.getImplementationTitle()).append(" version ")
         .append(pkg.getImplementationVersion()).append(" (")
         .append(pkg.getImplementationVendor()).append(")").toString();
   }

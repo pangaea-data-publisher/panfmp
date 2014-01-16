@@ -16,13 +16,22 @@
 
 package de.pangaea.metadataportal.harvester;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import javax.xml.namespace.QName;
-import javax.xml.xpath.*;
-import de.pangaea.metadataportal.config.*;
-import de.pangaea.metadataportal.utils.IndexConstants;
+import javax.xml.xpath.XPathFunction;
+import javax.xml.xpath.XPathFunctionException;
+import javax.xml.xpath.XPathFunctionResolver;
+import javax.xml.xpath.XPathVariableResolver;
+
 import org.apache.lucene.index.IndexReader;
-import org.apache.lucene.index.Term;
+import org.apache.xalan.extensions.XPathFunctionResolverImpl;
 
 /**
  * Helper class that implements several XPath interfaces to supply variables and
@@ -41,15 +50,7 @@ public final class XPathResolverImpl implements XPathFunctionResolver,
   }
   
   private XPathResolverImpl() {
-    try {
-      parent = XPathFunctionResolver.class.cast(Class.forName(
-          "org.apache.xalan.extensions.XPathFunctionResolverImpl")
-          .newInstance());
-    } catch (ClassNotFoundException ce) {
-      log.warn("org.apache.xalan.extensions.XPathFunctionResolverImpl not found, extensions to XPath disabled!");
-    } catch (Exception oe) {
-      log.warn("org.apache.xalan.extensions.XPathFunctionResolverImpl not working, extensions to XPath disabled!");
-    }
+    parent = new XPathFunctionResolverImpl();
   }
   
   // XPathFunctionResolver
@@ -63,12 +64,7 @@ public final class XPathResolverImpl implements XPathFunctionResolver,
         }
       };
     }
-    if (parent != null) {
-      // try the Xalan Function Resolver
-      return parent.resolveFunction(functionName, arity);
-    }
-    // no function found
-    return null;
+    return parent.resolveFunction(functionName, arity);
   }
   
   // XPathVariableResolver
@@ -209,6 +205,6 @@ public final class XPathResolverImpl implements XPathFunctionResolver,
   private ThreadLocal<IndexBuilder> currentIndexBuilder = new ThreadLocal<IndexBuilder>();
   private ThreadLocal<Map<Set<String>,IndexReader>> cachedIndexes = new ThreadLocal<Map<Set<String>,IndexReader>>();
   
-  private XPathFunctionResolver parent = null;
+  private final XPathFunctionResolver parent;
   
 }

@@ -336,15 +336,15 @@ public class IndexBuilder {
         
         Term t = new Term(IndexConstants.FIELDNAME_IDENTIFIER, entry.identifier);
         if (entry.builder == null) {
-          /*if (log.isDebugEnabled()) log.debug*/log.info("Deleting document: "
+          if (log.isDebugEnabled()) log.debug("Deleting document: "
               + entry.identifier);
           //writer.deleteDocuments(t);
           // TODO: do delete
           deleted++;
         } else {
-          /*if (log.isDebugEnabled()) log.debug*/log.info("Updating document: "
+          if (log.isDebugEnabled()) log.debug("Updating document: "
               + entry.identifier);
-          /*if (log.isTraceEnabled()) log.trace*/log.info("Data: " + entry.builder.toString());
+          if (log.isTraceEnabled()) log.trace("Data: " + entry.builder.string());
           //writer.updateDocument(t, entry.ldoc);
           // TODO: do index
           updated++;
@@ -427,14 +427,14 @@ public class IndexBuilder {
       finished = true;
       log.info(deleted + " docs presumably deleted (only if existent) and "
           + updated + " docs (re-)indexed - finished.");
-    } /*catch (IOException e) {
+    } catch (IOException e) {
       if (!finished) log.warn("Only " + deleted
           + " docs presumably deleted (only if existent) and " + updated
           + " docs (re-)indexed before the following error occurred: " + e);
       // only store the first error in failure variable, other errors are logged
       // only
       if (!failure.compareAndSet(null, e)) log.error(e);
-    } */finally {
+    } finally {
       ldocBuffer.clear();
       // notify eventually waiting checkIndexerBuffer() calls, as we are
       // finished

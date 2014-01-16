@@ -81,7 +81,7 @@
 	</cfg:metadata>
 	<!-- global harvester properties are inherited to each index, so only give properties available to all harvester types -->
 	<cfg:globalHarvesterProperties>
-		<cfg:numConverterThreads>2</cfg:numConverterThreads>
+		<cfg:numConverterThreads>1</cfg:numConverterThreads>
 		<cfg:maxConverterQueue>250</cfg:maxConverterQueue>
 		<cfg:maxIndexerQueue>250</cfg:maxIndexerQueue>
 		<cfg:maxBufferedIndexChanges>1000</cfg:maxBufferedIndexChanges>
@@ -107,9 +107,9 @@
 	<!-- This setting affects indexing and searching by enabling analyzer features of a specific version (and also bugs).
 	If you change this value, you *have* to reindex, as the tokeized terms may not be identical! The allowed values
 	can be found in the Version class of Lucene: http://lucene.apache.org/java/3_0_0/api/core/org/apache/lucene/util/Version.html 
-	The default is LUCENE_24 for backwards compatibility, for new indexes you should upgrade. Do *not* use LUCENE_CURRENT,
+	The default is LUCENE_46 for backwards compatibility, for new indexes you should upgrade. Do *not* use LUCENE_CURRENT,
 	as you have to reindex on every Lucene update after that! Recommended is LUCENE_30 at the moment. -->
-	<cfg:indexVersionCompatibility>LUCENE_24</cfg:indexVersionCompatibility>
+	<cfg:indexVersionCompatibility>LUCENE_46</cfg:indexVersionCompatibility>
 	<!-- Definition of Indexes to harvester and their properties -->
 	<cfg:indexes>
 		<cfg:index id="pangaea-carboocean">
@@ -171,33 +171,5 @@
 				<cfg:validate>true</cfg:validate>
 			</cfg:harvesterProperties>
 		</cfg:index>
-		<cfg:virtualIndex id="dataportal">
-			<cfg:displayName>Test Dataportal</cfg:displayName>
-			<cfg:index ref="pangaea-carboocean"/>
-			<cfg:index ref="ifremer"/>
-			<cfg:index ref="copepod"/>
-		</cfg:virtualIndex>
 	</cfg:indexes>
-	<!-- Defaults properties for the SearchService and AXIS web service -->
-	<cfg:search>
-		<!-- default SearchService properties -->
-		<cfg:cacheMaxAge>300</cfg:cacheMaxAge>
-		<cfg:cacheMaxSessions>10</cfg:cacheMaxSessions>
-		<cfg:reloadIndexIfChangedAfter>60</cfg:reloadIndexIfChangedAfter>
-		<cfg:keepOldReaderAlive>60</cfg:keepOldReaderAlive>
-		<cfg:indexChangeCheckInterval>30</cfg:indexChangeCheckInterval>
-		<cfg:maxStoredQueries>200</cfg:maxStoredQueries>
-		<cfg:queryParserClass>org.apache.lucene.queryParser.QueryParser</cfg:queryParserClass>
-		<cfg:defaultQueryParserOperator>and</cfg:defaultQueryParserOperator>
-		<!-- some properties for managing the index reader warming -->
-		<cfg:warmLifeQueries>20</cfg:warmLifeQueries>
-		<!--
-		add here some indexed fields used for sorting,
-		that should be loaded into FieldCache to speed up initial sorting performance:
-		-->
-		<cfg:warmSortFields>projectFull,dataCenterFull</cfg:warmSortFields>
-		<!-- AXIS special properties -->
-		<cfg:returnXML>true</cfg:returnXML>
-		<cfg:returnStoredFields>true</cfg:returnStoredFields>
-	</cfg:search>
 </cfg:config>
