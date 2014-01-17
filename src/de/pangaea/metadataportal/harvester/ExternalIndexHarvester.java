@@ -39,6 +39,7 @@ import org.apache.lucene.index.AtomicReaderContext;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexableField;
 import org.apache.lucene.store.Directory;
+import org.apache.lucene.store.SimpleFSDirectory;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.Version;
 
@@ -142,7 +143,7 @@ public class ExternalIndexHarvester extends SingleFileEntitiesHarvester {
     
     log.info("Opening index in directory '" + dir + "' for harvesting " + info
         + "...");
-    indexDir = iconfig.parent.indexDirImplementation.getDirectory(dir);
+    indexDir = new SimpleFSDirectory(dir);
     reader = DirectoryReader.open(indexDir);
   }
   

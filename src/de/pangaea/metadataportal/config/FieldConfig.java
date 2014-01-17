@@ -18,8 +18,8 @@ package de.pangaea.metadataportal.config;
 
 import java.util.Arrays;
 import java.util.Locale;
-import de.pangaea.metadataportal.utils.*;
-import org.apache.lucene.document.Field;
+
+import de.pangaea.metadataportal.utils.PublicForDigesterUse;
 
 /**
  * Config element that contains the definition of a field. It contains its name

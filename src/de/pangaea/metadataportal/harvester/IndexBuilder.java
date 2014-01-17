@@ -16,21 +16,26 @@
 
 package de.pangaea.metadataportal.harvester;
 
-import de.pangaea.metadataportal.utils.*;
-import de.pangaea.metadataportal.config.*;
-
-import java.util.*;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Locale;
+import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.atomic.*;
-import java.io.IOException;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
-import org.apache.lucene.index.*;
-import org.apache.lucene.document.Document;
+import org.apache.lucene.index.Term;
 import org.apache.lucene.store.IOContext;
 import org.apache.lucene.store.IndexInput;
 import org.apache.lucene.store.IndexOutput;
 import org.elasticsearch.common.xcontent.XContentBuilder;
+
+import de.pangaea.metadataportal.config.IndexConfig;
+import de.pangaea.metadataportal.utils.IndexConstants;
 
 /**
  * Component of <b>panFMP</b> that analyzes and indexes harvested documents in

@@ -17,7 +17,6 @@
 package de.pangaea.metadataportal.config;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.CookieHandler;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -44,14 +43,7 @@ import javax.xml.validation.SchemaFactory;
 import org.apache.commons.digester.AbstractObjectCreationFactory;
 import org.apache.commons.digester.ExtendedBaseRules;
 import org.apache.commons.digester.SetPropertiesRule;
-import org.apache.lucene.document.Field;
 import org.apache.lucene.index.IndexWriter.IndexReaderWarmer;
-import org.apache.lucene.store.Directory;
-import org.apache.lucene.store.FSDirectory;
-import org.apache.lucene.store.MMapDirectory;
-import org.apache.lucene.store.NIOFSDirectory;
-import org.apache.lucene.store.NativeFSLockFactory;
-import org.apache.lucene.store.SimpleFSDirectory;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
@@ -147,10 +139,8 @@ public class Config {
       
       dig.addObjectCreate("config/metadata/fields/field", FieldConfig.class);
       dig.addSetNext("config/metadata/fields/field", "addField");
-      String[] propAttr, propMapping;
-      SetPropertiesRule r = new SetPropertiesRule(propAttr = new String[] {
-          "datatype"},
-          propMapping = new String[] {"dataType"});
+      String[] propAttr = new String[] { "datatype"}, propMapping = new String[] {"dataType"};
+      SetPropertiesRule r = new SetPropertiesRule(propAttr, propMapping);
       r.setIgnoreMissingProperty(false);
       dig.addRule("config/metadata/fields/field", r);
       dig.addCallMethod("config/metadata/fields/field", "setXPath", 2,
@@ -223,7 +213,7 @@ public class Config {
       try {
         dig.push(this);
         dig.parse(new File(file));
-      } catch (org.xml.sax.SAXException saxe) {
+      } catch (SAXException saxe) {
         // throw the real Exception not the digester one
         if (saxe.getException() != null) throw saxe.getException();
         else throw saxe;
@@ -407,7 +397,6 @@ public class Config {
   
   public final Map<String,FieldConfig> fields = new LinkedHashMap<String,FieldConfig>();
   public ExpressionConfig defaultField = null;
-  public Field.TermVector defaultFieldTermVectors = Field.TermVector.NO;
   
   // filters
   public FilterConfig.FilterType filterDefault = FilterConfig.FilterType.ACCEPT;
@@ -419,10 +408,6 @@ public class Config {
   // schema etc
   public Schema schema = null;
   public boolean haltOnSchemaError = false, validateWithAugmentation = true;
-  
-  // Implementation of the Lucene index directory
-  public IndexDirImplementation indexDirImplementation = IndexDirImplementation
-      .getFromSystemProperty();
   
   /* public Templates xsltBeforeXPath=null; */
   
@@ -438,41 +423,6 @@ public class Config {
   protected ExtendedDigester dig = null;
   
   public static final int DEFAULT_MAX_CLAUSE_COUNT = 131072;
-  
-  public static enum IndexDirImplementation {
-    AUTO, SIMPLE, MMAP, NIO;
-    
-    public final Directory getDirectory(final File dir) throws IOException {
-      switch (this) {
-        case AUTO:
-          return FSDirectory.open(dir, new NativeFSLockFactory());
-        case SIMPLE:
-          return new SimpleFSDirectory(dir, new NativeFSLockFactory());
-        case MMAP:
-          return new MMapDirectory(dir, new NativeFSLockFactory());
-        case NIO:
-          return new NIOFSDirectory(dir, new NativeFSLockFactory());
-      }
-      throw new Error(); // should never happen
-    }
-    
-    public static final IndexDirImplementation getFromSystemProperty() {
-      String clazz = System.getProperty("org.apache.lucene.FSDirectory.class");
-      if (clazz == null || (clazz = clazz.trim()).length() == 0) return AUTO;
-      log.warn("The use of system property 'org.apache.lucene.FSDirectory.class' for choosing the index directory type is outdated.");
-      log.info("Please use the new panFMP config entry <cfg:indexDirectoryType>.");
-      if (FSDirectory.class.getName().equals(clazz)
-          || SimpleFSDirectory.class.getName().equals(clazz)) return SIMPLE;
-      if (MMapDirectory.class.getName().equals(clazz)) return MMAP;
-      if (NIOFSDirectory.class.getName().equals(clazz)) return NIO;
-      throw new IllegalArgumentException(
-          "Invalid directory class ("
-              + clazz
-              + ") specified in deprecated system property "
-              + "'org.apache.lucene.FSDirectory.class'. Please use the new panFMP config entry <cfg:indexDirectoryType> "
-              + "for specifying AUTO, SIMPLE, MMAP, or NIO!");
-    }
-  };
   
   // internal classes
   private abstract class TransformerSaxRule extends SaxRule {
