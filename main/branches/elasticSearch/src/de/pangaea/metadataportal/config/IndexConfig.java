@@ -26,6 +26,7 @@ import javax.xml.namespace.QName;
 import javax.xml.transform.Templates;
 
 import org.apache.lucene.store.Directory;
+import org.apache.lucene.store.SimpleFSDirectory;
 
 import de.pangaea.metadataportal.harvester.Harvester;
 import de.pangaea.metadataportal.utils.PublicForDigesterUse;
@@ -121,8 +122,7 @@ public class IndexConfig {
 
   /** Returns the directory implementation, that contains the index. **/
   public synchronized Directory getIndexDirectory() throws java.io.IOException {
-    if (indexDirImpl == null) indexDirImpl = parent.indexDirImplementation
-        .getDirectory(new File(getFullIndexPath()));
+    if (indexDirImpl == null) indexDirImpl = new SimpleFSDirectory(new File(getFullIndexPath()));
     return indexDirImpl;
   }
 
