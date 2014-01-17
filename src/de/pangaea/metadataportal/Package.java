@@ -26,7 +26,7 @@ import java.util.Locale;
  */
 public final class Package {
   
-  private static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory
+  private static final org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory
       .getLog(Package.class);
   
   private Package() {}
@@ -142,8 +142,6 @@ public final class Package {
   public static void checkMinimumRequirements() {
     if (!BooleanParser.parseBoolean(System.getProperty(
         SKIP_VERSION_CHECK_PROPERTY, "false"))) {
-      checkPackage(org.apache.lucene.LucenePackage.get(), "Apache Lucene",
-          "lucene", "3.0");
       checkPackage("org.apache.commons.beanutils.BeanUtils",
           "Apache Commons BeanUtils", "beanutils", "1.6");
       checkPackage("org.apache.commons.digester.Digester",

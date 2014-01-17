@@ -62,7 +62,7 @@ import de.pangaea.metadataportal.utils.StaticFactories;
  */
 public class Config {
   
-  protected static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory
+  private static final org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory
       .getLog(Config.class);
   
   // in configMode!=HARVESTER we leave out Schemas and XSLT to load config

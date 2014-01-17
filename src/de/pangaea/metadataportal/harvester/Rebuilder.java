@@ -34,7 +34,7 @@ import org.apache.lucene.util.Bits;
  */
 public class Rebuilder extends Harvester {
   
-  private static org.apache.commons.logging.Log staticLog = org.apache.commons.logging.LogFactory
+  private static final org.apache.commons.logging.Log staticLog = org.apache.commons.logging.LogFactory
       .getLog(Rebuilder.class);
   
   // main-Methode
