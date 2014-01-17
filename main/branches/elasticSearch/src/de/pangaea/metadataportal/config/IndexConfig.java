@@ -25,12 +25,7 @@ import java.util.Set;
 import javax.xml.namespace.QName;
 import javax.xml.transform.Templates;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.lucene.index.IndexWriter;
-import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.store.Directory;
-import org.apache.lucene.util.Version;
 
 import de.pangaea.metadataportal.harvester.Harvester;
 import de.pangaea.metadataportal.utils.PublicForDigesterUse;
@@ -43,8 +38,6 @@ import de.pangaea.metadataportal.utils.PublicForDigesterUse;
  * @author Uwe Schindler
  */
 public class IndexConfig {
-  
-  private static Log log = LogFactory.getLog(IndexConfig.class);
   
   /** Default constructor **/
   public IndexConfig(Config parent) {
@@ -67,12 +60,12 @@ public class IndexConfig {
   /** Sets index directory (called from Digester on config load). **/
   public synchronized void setIndexDir(String v)
       throws java.io.IOException {
-        if (checked) throw new IllegalStateException(
-            "Index configuration cannot be changed anymore!");
-        if (indexDirImpl != null) indexDirImpl.close();
-        indexDirImpl = null;
-        indexDir = v;
-      }
+      if (checked) throw new IllegalStateException(
+          "Index configuration cannot be changed anymore!");
+      if (indexDirImpl != null) indexDirImpl.close();
+      indexDirImpl = null;
+      indexDir = v;
+    }
 
   /** Sets class name of harvester (called from Digester on config load). **/
   @PublicForDigesterUse
@@ -131,18 +124,6 @@ public class IndexConfig {
     if (indexDirImpl == null) indexDirImpl = parent.indexDirImplementation
         .getDirectory(new File(getFullIndexPath()));
     return indexDirImpl;
-  }
-
-  /** Opens an IndexWriter for adding Documents to Index. **/
-  public IndexWriter newIndexWriter(boolean create) throws java.io.IOException {
-    if (!checked) throw new IllegalStateException(
-        "Index config not initialized and checked!");
-    final IndexWriterConfig config = new IndexWriterConfig(Version.LUCENE_33,
-        parent.getAnalyzer());
-    config.setOpenMode(create ? IndexWriterConfig.OpenMode.CREATE
-        : IndexWriterConfig.OpenMode.APPEND);
-    final IndexWriter writer = new IndexWriter(getIndexDirectory(), config);
-    return writer;
   }
 
   protected boolean checked = false;

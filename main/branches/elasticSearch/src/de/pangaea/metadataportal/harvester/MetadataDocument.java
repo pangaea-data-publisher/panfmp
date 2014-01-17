@@ -301,7 +301,6 @@ public class MetadataDocument {
         }
         addDefaultField(builder);
         addFields(builder);
-        processDocumentBoost(builder);
       } finally {
         XPathResolverImpl.getInstance().unsetVariables();
       }
@@ -466,34 +465,7 @@ public class MetadataDocument {
       }
     }
   }
-  
-  /**
-   * Helper method that evaluates the document boost for the Lucene
-   * {@link Document} instance. This method executes the XPath and converts the
-   * results to a float (default is 1.0f).
-   * 
-   * @throws Exception
-   *           if an exception occurs during transformation (various types of
-   *           exceptions can be thrown).
-   */
-  protected void processDocumentBoost(XContentBuilder builder) throws Exception {
-    float boost = 1.0f;
-    if (iconfig.parent.documentBoost != null
-        && iconfig.parent.documentBoost.xPathExpr != null) {
-      Number n = (Number) iconfig.parent.documentBoost.xPathExpr.evaluate(dom,
-          javax.xml.xpath.XPathConstants.NUMBER);
-      if (n == null) throw new javax.xml.xpath.XPathExpressionException(
-          "The XPath for document boost did not return a valid NUMBER value!");
-      boost = n.floatValue();
-      if (Float.isNaN(boost) || boost <= 0.0f || Float.isInfinite(boost)) throw new javax.xml.xpath.XPathExpressionException(
-          "The XPath for document boost did not return a positive, finite NUMBER (default=1.0)! Value was: "+boost);
-    }
-    if (log.isTraceEnabled()) log.trace("DocumentBoost: " + boost);
-    if (boost != 1.0f) {
-      builder.field(IndexConstants.FIELDNAME_BOOST, boost);
-    }
-  }
-  
+    
   /**
    * Helper method that evaluates all filters. This method executes the XPath
    * and converts the results to a boolean. The results of all filters are

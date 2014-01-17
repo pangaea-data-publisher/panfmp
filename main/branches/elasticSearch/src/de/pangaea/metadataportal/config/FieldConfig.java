@@ -54,56 +54,6 @@ public class FieldConfig extends ExpressionConfig {
     }
   }
   
-  /*
-   * NOT YET USED public void setStorage(Field.Store v) { storage=v; } public
-   * Field.Store getStorage() { return storage; }
-   */
-  
-  @PublicForDigesterUse
-  @Deprecated
-  public void setStorage(String v) {
-    if (v == null) return;
-    v = v.toUpperCase(Locale.ROOT);
-    compressed = false;
-    if ("COMPRESS".equals(v) || "COMPRESSED".equals(v)) {
-      storage = Field.Store.YES;
-      compressed = true;
-    } else if ("TRUE".equals(v) || "YES".equals(v) || "ON".equals(v)) storage = Field.Store.YES;
-    else if ("FALSE".equals(v) || "NO".equals(v) || "OFF".equals(v)) storage = Field.Store.NO;
-    else throw new IllegalArgumentException(
-        "Attribute lucenestorage must be one of: [YES,TRUE,ON]; [NO,FALSE,OFF]; [COMPRESS,COMPRESSED]");
-  }
-  
-  /*
-   * NOT YET USED public void setTermVectors(Field.TermVector v) {
-   * termVectors=v; } public Field.TermVector getTermVectors() { return
-   * termVectors; }
-   */
-  
-  @PublicForDigesterUse
-  @Deprecated
-  public void setTermVectors(String v) {
-    if (v == null) return;
-    v = v.toUpperCase(Locale.ROOT);
-    if ("TERMPOSITIONS".equals(v)) termVectors = Field.TermVector.WITH_POSITIONS_OFFSETS;
-    else if ("TRUE".equals(v) || "YES".equals(v) || "ON".equals(v)) termVectors = Field.TermVector.YES;
-    else if ("FALSE".equals(v) || "NO".equals(v) || "OFF".equals(v)) termVectors = Field.TermVector.NO;
-    else throw new IllegalArgumentException(
-        "Attribute lucenetermvectors must be one of: [YES,TRUE,ON]; [NO,FALSE,OFF]; TERMPOSITIONS");
-  }
-  
-  /*
-   * NOT YET USED public void setIndexed(boolean v) { indexed=v; } public
-   * boolean isIndexed() { return indexed; }
-   */
-  
-  @PublicForDigesterUse
-  @Deprecated
-  public void setIndexed(String v) {
-    if (v == null) return;
-    indexed = BooleanParser.parseBoolean(v);
-  }
-  
   public void setDefault(String v) {
     defaultValue = v;
   }
@@ -121,10 +71,6 @@ public class FieldConfig extends ExpressionConfig {
   public String name = null;
   public String defaultValue = null;
   public DataType datatype = DataType.TOKENIZEDTEXT;
-  public Field.Store storage = Field.Store.YES;
-  public boolean compressed = false;
-  public Field.TermVector termVectors = Field.TermVector.NO;
-  public boolean indexed = true;
   
   public static enum DataType {
     TOKENIZEDTEXT, STRING, NUMBER, DATETIME, XML, XHTML
