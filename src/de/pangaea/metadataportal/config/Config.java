@@ -16,30 +16,52 @@
 
 package de.pangaea.metadataportal.config;
 
-import java.util.*;
-import java.io.*;
-import java.net.URL;
+import java.io.File;
+import java.io.IOException;
 import java.net.CookieHandler;
 import java.net.MalformedURLException;
-import de.pangaea.metadataportal.utils.*;
-import org.apache.commons.digester.*;
-import java.lang.reflect.Constructor;
-import org.xml.sax.*;
-import org.xml.sax.helpers.AttributesImpl;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.WeakHashMap;
+
 import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
-import javax.xml.transform.*;
-import javax.xml.transform.sax.*;
+import javax.xml.transform.Templates;
+import javax.xml.transform.sax.TemplatesHandler;
 import javax.xml.transform.stream.StreamSource;
-import javax.xml.validation.*;
+import javax.xml.validation.Schema;
+import javax.xml.validation.SchemaFactory;
+
+import org.apache.commons.digester.AbstractObjectCreationFactory;
+import org.apache.commons.digester.ExtendedBaseRules;
+import org.apache.commons.digester.SetPropertiesRule;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.index.IndexWriter.IndexReaderWarmer;
-import org.apache.lucene.analysis.core.StopAnalyzer;
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
-import org.apache.lucene.analysis.util.CharArraySet;
-import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.store.*;
-import org.apache.lucene.util.Version;
+import org.apache.lucene.store.Directory;
+import org.apache.lucene.store.FSDirectory;
+import org.apache.lucene.store.MMapDirectory;
+import org.apache.lucene.store.NIOFSDirectory;
+import org.apache.lucene.store.NativeFSLockFactory;
+import org.apache.lucene.store.SimpleFSDirectory;
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
+
+import de.pangaea.metadataportal.utils.BooleanParser;
+import de.pangaea.metadataportal.utils.ExtendedDigester;
+import de.pangaea.metadataportal.utils.PublicForDigesterUse;
+import de.pangaea.metadataportal.utils.SaxRule;
+import de.pangaea.metadataportal.utils.SimpleCookieHandler;
+import de.pangaea.metadataportal.utils.StaticFactories;
 
 /**
  * Main panFMP configuration class. It loads the configuration from a XML file.
@@ -68,7 +90,6 @@ public class Config {
       CookieHandler.setDefault(SimpleCookieHandler.INSTANCE);
     }
     
-    setAnalyzerClass(StandardAnalyzer.class);
     try {
       final Class<?>[] DIGSTRING_PARAMS = new Class<?>[] {ExtendedDigester.class,
           String.class};
@@ -128,9 +149,8 @@ public class Config {
       dig.addSetNext("config/metadata/fields/field", "addField");
       String[] propAttr, propMapping;
       SetPropertiesRule r = new SetPropertiesRule(propAttr = new String[] {
-          "lucenestorage", "luceneindexed", "lucenetermvectors", "datatype"},
-          propMapping = new String[] {"storage", "indexed", "termVectors",
-              "dataType"});
+          "datatype"},
+          propMapping = new String[] {"dataType"});
       r.setIgnoreMissingProperty(false);
       dig.addRule("config/metadata/fields/field", r);
       dig.addCallMethod("config/metadata/fields/field", "setXPath", 2,
@@ -147,12 +167,7 @@ public class Config {
       dig.addRule("config/metadata/fields/field-template", new TemplateSaxRule());
       
       // default field
-      dig.addCallMethod("config/metadata/fields/default", "setDefaultField", 2);
-      dig.addCallParam("config/metadata/fields/default", 0, "lucenetermvectors");
-      dig.addCallParam("config/metadata/fields/default", 1);
-      
-      // document boost
-      dig.addCallMethod("config/metadata/documentBoost", "setDocumentBoost", 0);
+      dig.addCallMethod("config/metadata/fields/default", "setDefaultField", 0);
       
       // transform
       /*
@@ -170,25 +185,6 @@ public class Config {
           "setHaltOnSchemaError", 0);
       dig.addCallMethod("config/metadata/schema/augmentation",
           "setAugmentation", 0);
-      
-      // *** Trie parameters ***/
-      dig.addCallMethod("config/triePrecisionStep", "setTriePrecisionStep", 0,
-          new Class<?>[] {int.class});
-      
-      // *** Directory Impl ***/
-      dig.addCallMethod("config/indexDirImplementation",
-          "setIndexDirImplementation", 0);
-      
-      // *** Index version compatibility ***/
-      dig.addCallMethod("config/indexVersionCompatibility",
-          "setIndexVersionCompatibility", 0);
-      
-      // *** ANALYZER ***
-      dig.addDoNothing("config/analyzer");
-      dig.addCallMethod("config/analyzer/class", "setAnalyzer", 0);
-      dig.addCallMethod("config/analyzer/importEnglishStopWords",
-          "importEnglishStopWords", 0);
-      dig.addCallMethod("config/analyzer/addStopWords", "addStopWords", 0);
       
       // *** INDEX CONFIG ***
       dig.addDoNothing("config/indexes");
@@ -287,17 +283,9 @@ public class Config {
         "It may not both XPath and template be defined");
     if (f.datatype == FieldConfig.DataType.XHTML && f.xslt == null) throw new IllegalArgumentException(
         "XHTML fields may only be declared as a XSLT template (using <field-template/>)");
-    if (f.storage == Field.Store.NO && !f.indexed) throw new IllegalArgumentException(
-        "A field must be at least indexed and/or stored");
-    if (f.termVectors != Field.TermVector.NO
-        && (!f.indexed || f.datatype != FieldConfig.DataType.TOKENIZEDTEXT)) throw new IllegalArgumentException(
-        "A field with term vectors enabled must be at least indexed and tokenized");
     if (f.defaultValue != null && f.datatype != FieldConfig.DataType.NUMBER
         && f.datatype != FieldConfig.DataType.DATETIME) throw new IllegalArgumentException(
         "A default value can only be given for NUMBER or DATETIME fields");
-    if ((f.datatype == FieldConfig.DataType.XML || f.datatype == FieldConfig.DataType.XHTML)
-        && (f.indexed || f.storage == Field.Store.NO)) throw new IllegalArgumentException(
-        "Fields with datatype XML or XHTML must be stored, but not indexed");
     fields.put(f.name, f);
   }
   
@@ -347,14 +335,8 @@ public class Config {
   
   @PublicForDigesterUse
   @Deprecated
-  public void setDefaultField(String termVectors, String xpath)
+  public void setDefaultField(String xpath)
       throws Exception {
-    // Term Vectors
-    if (termVectors != null) {
-      FieldConfig f = new FieldConfig();
-      f.setTermVectors(termVectors);
-      defaultFieldTermVectors = f.termVectors;
-    }
     // XPath
     if (xpath == null) {
       defaultField = null;
@@ -366,122 +348,6 @@ public class Config {
     } else {
       defaultField = new ExpressionConfig();
       defaultField.setXPath(dig, xpath);
-    }
-  }
-  
-  @PublicForDigesterUse
-  @Deprecated
-  public void setDocumentBoost(String v) throws Exception {
-    if (v == null) {
-      documentBoost = null;
-      return;
-    }
-    v = v.trim();
-    documentBoost = new ExpressionConfig();
-    documentBoost.setXPath(dig, v);
-  }
-  
-  @PublicForDigesterUse
-  @Deprecated
-  public void addStopWords(String stopWords) {
-    for (String w : stopWords.split("[\\,\\;\\s]+")) {
-      w = w.trim().toLowerCase(Locale.ROOT);
-      if (!"".equals(w)) luceneStopWords.add(w);
-    }
-  }
-  
-  @PublicForDigesterUse
-  @Deprecated
-  public void importEnglishStopWords(String dummy) {
-    luceneStopWords.addAll(StopAnalyzer.ENGLISH_STOP_WORDS_SET);
-  }
-  
-  @PublicForDigesterUse
-  @Deprecated
-  public void setAnalyzer(String v) throws Exception {
-    Class<?> c = Class.forName(v.trim());
-    setAnalyzerClass(c.asSubclass(Analyzer.class));
-  }
-  
-  static abstract class AnalyzerFactory {
-    public abstract Analyzer newAnalyzer(Set<?> stopWords) throws Exception;
-  }
-  
-  public void setAnalyzerClass(Class<? extends Analyzer> c) throws Exception {
-    analyzerClass = c;
-    analyzerFactory = null;
-    try {
-      final Constructor<? extends Analyzer> ctor = analyzerClass
-          .getConstructor(Version.class, Set.class);
-      analyzerFactory = new AnalyzerFactory() {
-        public Analyzer newAnalyzer(Set<?> stopWords) throws Exception {
-          return ctor.newInstance(indexVersionCompatibility, stopWords);
-        }
-      };
-    } catch (NoSuchMethodException nsm1) {
-      try {
-        final Constructor<? extends Analyzer> ctor = analyzerClass
-            .getConstructor(Set.class);
-        analyzerFactory = new AnalyzerFactory() {
-          public Analyzer newAnalyzer(Set<?> stopWords) throws Exception {
-            return ctor.newInstance(stopWords);
-          }
-        };
-      } catch (NoSuchMethodException nsm2) {
-        try {
-          final Constructor<? extends Analyzer> ctor = analyzerClass
-              .getConstructor(Version.class);
-          analyzerFactory = new AnalyzerFactory() {
-            public Analyzer newAnalyzer(Set<?> stopWords) throws Exception {
-              return ctor.newInstance(indexVersionCompatibility);
-            }
-          };
-          log.warn("The given analyzer class is not capable of assigning stop words - <stopWords> discarded!");
-        } catch (NoSuchMethodException nsm3) {
-          final Constructor<? extends Analyzer> ctor = analyzerClass
-              .getConstructor();
-          analyzerFactory = new AnalyzerFactory() {
-            public Analyzer newAnalyzer(Set<?> stopWords) throws Exception {
-              return ctor.newInstance();
-            }
-          };
-          log.warn("The given analyzer class is not capable of assigning stop words - <stopWords> discarded!");
-        }
-      }
-    }
-  }
-  
-  @PublicForDigesterUse
-  @Deprecated
-  public void setTriePrecisionStep(int v) throws Exception {
-    if (v < 1 || v > 64) throw new IllegalArgumentException(
-        "Invalid trie precision step [1..64].");
-    triePrecisionStep = v;
-  }
-  
-  @PublicForDigesterUse
-  @Deprecated
-  public void setIndexDirImplementation(String v) throws Exception {
-    try {
-      indexDirImplementation = IndexDirImplementation.valueOf(v
-          .toUpperCase(Locale.ROOT));
-    } catch (IllegalArgumentException e) {
-      throw new IllegalArgumentException("Invalid value '" + v
-          + "' for <cfg:indexDirImplementation>, valid ones are: "
-          + Arrays.toString(IndexDirImplementation.values()));
-    }
-  }
-  
-  @PublicForDigesterUse
-  @Deprecated
-  public void setIndexVersionCompatibility(String v) throws Exception {
-    try {
-      indexVersionCompatibility = Version
-          .valueOf(v.toUpperCase(Locale.ROOT));
-    } catch (IllegalArgumentException e) {
-      throw new IllegalArgumentException("Invalid value '" + v
-          + "' for <cfg:indexVersionCompatibility>, valid ones are: "
-          + Arrays.toString(Version.values()));
     }
   }
   
@@ -523,15 +389,6 @@ public class Config {
   
   // get configuration infos
   
-  public Analyzer getAnalyzer() {
-    try {
-      return analyzerFactory.newAnalyzer(luceneStopWords);
-    } catch (Exception e) {
-      throw new RuntimeException(
-          "Error instantiating analyzer (this should never happen)!", e);
-    }
-  }
-  
   Templates loadTemplate(String file) throws Exception {
     file = makePathAbsolute(file, true);
     Templates templ = templatesCache.get(file);
@@ -563,17 +420,9 @@ public class Config {
   public Schema schema = null;
   public boolean haltOnSchemaError = false, validateWithAugmentation = true;
   
-  // document boost
-  public ExpressionConfig documentBoost = null;
-  
-  // Trie implementation
-  public int triePrecisionStep = 8;
-  
   // Implementation of the Lucene index directory
   public IndexDirImplementation indexDirImplementation = IndexDirImplementation
       .getFromSystemProperty();
-  
-  public Version indexVersionCompatibility = Version.LUCENE_40;
   
   /* public Templates xsltBeforeXPath=null; */
   
@@ -581,12 +430,7 @@ public class Config {
   private final Map<String,Templates> templatesCache = new WeakHashMap<String,Templates>();
   
   public final Properties globalHarvesterProperties = new Properties();
-  
-  public final CharArraySet luceneStopWords = new CharArraySet(
-      Version.LUCENE_40, 64, true);
-  protected Class<? extends Analyzer> analyzerClass = null;
-  protected AnalyzerFactory analyzerFactory = null;
-  
+    
   public String file;
   
   public final Set<IndexReaderWarmer> indexReaderWarmers = new LinkedHashSet<IndexReaderWarmer>();

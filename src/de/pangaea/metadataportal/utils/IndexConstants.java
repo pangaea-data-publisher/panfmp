@@ -31,8 +31,6 @@ public final class IndexConstants {
   
   public static final String FIELDNAME_IDENTIFIER = (FIELD_PREFIX + "identifier")
       .intern();
-  public static final String FIELDNAME_BOOST = (FIELD_PREFIX + "boost")
-      .intern();
   public static final String FIELDNAME_SET = (FIELD_PREFIX + "set").intern();
   public static final String FIELDNAME_DATESTAMP = (FIELD_PREFIX + "datestamp")
       .intern();

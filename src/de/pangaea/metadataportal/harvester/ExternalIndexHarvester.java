@@ -19,13 +19,16 @@ package de.pangaea.metadataportal.harvester;
 import java.io.*;
 import java.util.*;
 import java.lang.reflect.Constructor;
+
 import javax.xml.transform.stream.StreamSource;
+
 import java.util.zip.DataFormatException;
 
 import de.pangaea.metadataportal.utils.*;
 import de.pangaea.metadataportal.config.*;
 
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.CompressionTools;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.DocumentStoredFieldVisitor;
@@ -95,53 +98,46 @@ public class ExternalIndexHarvester extends SingleFileEntitiesHarvester {
       query = new MatchAllDocsQuery();
     } else {
       info = "documents matching query [" + qstr + "]";
-      // save original analyzer class
-      final Class<? extends Analyzer> savedAnalyzerClass = iconfig.parent
-          .getAnalyzer().getClass();
-      final Version savedIndexVersionCompatibility = iconfig.parent.indexVersionCompatibility;
+
+      // load query parser (code borrowed from SearchService)
+      final Class<?> c = Class.forName(iconfig.harvesterProperties
+          .getProperty("queryParserClass", QueryParser.class.getName()));
+      Class<? extends QueryParser> queryParserClass = c
+          .asSubclass(QueryParser.class);
+      Constructor<? extends QueryParser> queryParserConstructor = queryParserClass
+          .getConstructor(Version.class, String.class, Analyzer.class);
+      // default operator for query parser
+      final String operator = iconfig.harvesterProperties.getProperty(
+          "defaultQueryParserOperator", "AND").toUpperCase(Locale.ROOT);
+      final QueryParser.Operator defaultQueryParserOperator;
+      if ("AND".equals(operator)) defaultQueryParserOperator = QueryParser.AND_OPERATOR;
+      else if ("OR".equals(operator)) defaultQueryParserOperator = QueryParser.OR_OPERATOR;
+      else throw new IllegalArgumentException(
+          "Search property 'defaultQueryParserOperator' is not 'AND'/'OR'");
+      // analyzer
+      /*TODO:
+      String anaCls = iconfig.harvesterProperties.getProperty("analyzerClass");
+      if (anaCls != null) iconfig.parent.setAnalyzerClass(Class.forName(
+          anaCls).asSubclass(Analyzer.class));
+      // version
+      String v = iconfig.harvesterProperties.getProperty(
+          "indexVersionCompatibility",
+          iconfig.parent.indexVersionCompatibility.toString()).toUpperCase(
+          Locale.ROOT);
       try {
-        // load query parser (code borrowed from SearchService)
-        final Class<?> c = Class.forName(iconfig.harvesterProperties
-            .getProperty("queryParserClass", QueryParser.class.getName()));
-        Class<? extends QueryParser> queryParserClass = c
-            .asSubclass(QueryParser.class);
-        Constructor<? extends QueryParser> queryParserConstructor = queryParserClass
-            .getConstructor(Version.class, String.class, Analyzer.class);
-        // default operator for query parser
-        final String operator = iconfig.harvesterProperties.getProperty(
-            "defaultQueryParserOperator", "AND").toUpperCase(Locale.ROOT);
-        final QueryParser.Operator defaultQueryParserOperator;
-        if ("AND".equals(operator)) defaultQueryParserOperator = QueryParser.AND_OPERATOR;
-        else if ("OR".equals(operator)) defaultQueryParserOperator = QueryParser.OR_OPERATOR;
-        else throw new IllegalArgumentException(
-            "Search property 'defaultQueryParserOperator' is not 'AND'/'OR'");
-        // analyzer
-        String anaCls = iconfig.harvesterProperties
-            .getProperty("analyzerClass");
-        if (anaCls != null) iconfig.parent.setAnalyzerClass(Class.forName(
-            anaCls).asSubclass(Analyzer.class));
-        // version
-        String v = iconfig.harvesterProperties.getProperty(
-            "indexVersionCompatibility",
-            iconfig.parent.indexVersionCompatibility.toString()).toUpperCase(
-            Locale.ROOT);
-        try {
-          iconfig.parent.indexVersionCompatibility = Version.valueOf(v);
-        } catch (IllegalArgumentException iae) {
-          throw new IllegalArgumentException("Invalid value '" + v
-              + "' for property 'indexVersionCompatibility', valid ones are: "
-              + Arrays.toString(Version.values()));
-        }
-        // create QP
-        QueryParser qp = queryParserConstructor.newInstance(
-            iconfig.parent.indexVersionCompatibility,
-            IndexConstants.FIELDNAME_CONTENT, iconfig.parent.getAnalyzer());
-        qp.setDefaultOperator(defaultQueryParserOperator);
-        query = qp.parse(qstr);
-      } finally {
-        iconfig.parent.indexVersionCompatibility = savedIndexVersionCompatibility;
-        iconfig.parent.setAnalyzerClass(savedAnalyzerClass);
+        iconfig.parent.indexVersionCompatibility = Version.valueOf(v);
+      } catch (IllegalArgumentException iae) {
+        throw new IllegalArgumentException("Invalid value '" + v
+            + "' for property 'indexVersionCompatibility', valid ones are: "
+            + Arrays.toString(Version.values()));
       }
+      */
+      // create QP
+      QueryParser qp = queryParserConstructor.newInstance(
+          Version.LUCENE_46,
+          IndexConstants.FIELDNAME_CONTENT, new StandardAnalyzer(Version.LUCENE_46));
+      qp.setDefaultOperator(defaultQueryParserOperator);
+      query = qp.parse(qstr);
     }
     
     log.info("Opening index in directory '" + dir + "' for harvesting " + info

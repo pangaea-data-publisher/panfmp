@@ -13,12 +13,6 @@
 		<cfg:variables>
 			<cfg:variable name="startdate">/dif:DIF/dif:Temporal_Coverage/dif:Start_Date</cfg:variable>
 			<cfg:variable name="enddate">/dif:DIF/dif:Temporal_Coverage/dif:Stop_Date</cfg:variable>
-			<cfg:variable-template name="boost" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
-				<xsl:choose>
-					<xsl:when test="/dif:DIF/dif:Parent_DIF">1.0</xsl:when>
-					<xsl:otherwise>5.0</xsl:otherwise>
-				</xsl:choose>
-			</cfg:variable-template>
 		</cfg:variables>
 		<!--
 			Each harvested document goes through filter steps:
@@ -43,8 +37,6 @@
 			Field definitions:
 			You can declare fields using <cfg:field> or <cfg:field-template> (for the latter see the example in variables-section).
 			Each field has a name and some properties for Lucene:
-			- lucenestorage: the field may be retrieved from query results (like a column in a database)
-			- luceneindexed: the field is indexed and can be used in search strings or other querys
 			- datatype: tokenizedText (standard fulltext indexing field, you can use it in query strings), string (the whole field content is indexed as string, but not tokenized),
 			  number (numerical values, works with the TrieRangeQuery), dateTime (date/time values, works with the TrieRangeQuery),
 			  xml (field is stored as XML in index, ideal for field templates), xhtml (only works with field-templates because it needs a XSL-template
@@ -52,26 +44,30 @@
 			  The field template should not declare the XHTML namespace.
 		-->
 		<cfg:fields>
-			<cfg:field name="citation" datatype="tokenizedText" lucenestorage="false" luceneindexed="true" lucenetermvectors="true">/dif:DIF/dif:Data_Set_Citation|/dif:DIF/dif:Entry_Title|/dif:DIF/dif:Entry_ID</cfg:field>
-			<cfg:field name="investigator" datatype="tokenizedText" lucenestorage="false" luceneindexed="true">/dif:DIF/dif:Personnel[contains(dif:Role,'nvestigat')]</cfg:field>
-			<cfg:field name="parameter" datatype="tokenizedText" lucenestorage="false" luceneindexed="true">/dif:DIF/dif:Parameters</cfg:field>
-			<cfg:field name="method" datatype="tokenizedText" lucenestorage="false" luceneindexed="true">/dif:DIF/dif:Sensor_Name</cfg:field>
-			<cfg:field name="project" datatype="tokenizedText" lucenestorage="false" luceneindexed="true">/dif:DIF/dif:Project</cfg:field>
-			<cfg:field name="projectFull" datatype="string" lucenestorage="true" luceneindexed="true">/dif:DIF/dif:Project/dif:Short_Name</cfg:field>
-			<cfg:field name="minLatitude" datatype="number" lucenestorage="true" luceneindexed="true">/dif:DIF/dif:Spatial_Coverage/dif:Southernmost_Latitude</cfg:field>
-			<cfg:field name="maxLatitude" datatype="number" lucenestorage="true" luceneindexed="true">/dif:DIF/dif:Spatial_Coverage/dif:Northernmost_Latitude</cfg:field>
-			<cfg:field name="minLongitude" datatype="number" lucenestorage="true" luceneindexed="true">/dif:DIF/dif:Spatial_Coverage/dif:Westernmost_Longitude</cfg:field>
-			<cfg:field name="maxLongitude" datatype="number" lucenestorage="true" luceneindexed="true">/dif:DIF/dif:Spatial_Coverage/dif:Easternmost_Longitude</cfg:field>
-			<cfg:field name="minDateTime" datatype="dateTime" lucenestorage="true" luceneindexed="true" default="1900-01-01T00:00:00">$startdate</cfg:field>
-			<cfg:field name="maxDateTime" datatype="dateTime" lucenestorage="true" luceneindexed="true" default="2038-12-31T23:59:59">$enddate</cfg:field>
-			<cfg:field name="minMonth" datatype="number" lucenestorage="true" luceneindexed="true">substring-before(substring-after($startdate,'-'),'-')</cfg:field>
-			<cfg:field name="maxMonth" datatype="number" lucenestorage="true" luceneindexed="true">substring-before(substring-after($enddate,'-'),'-')</cfg:field>
-			<cfg:field name="dataCenter" datatype="tokenizedText" lucenestorage="false" luceneindexed="true">/dif:DIF/dif:Data_Center/dif:Data_Center_Name</cfg:field>
-			<cfg:field name="dataCenterFull" datatype="string" lucenestorage="true" luceneindexed="true">/dif:DIF/dif:Data_Center/dif:Data_Center_Name/dif:Short_Name</cfg:field>
-			<cfg:default lucenetermvectors="termPositions">.</cfg:default>
+			<cfg:field name="citation" datatype="tokenizedText">/dif:DIF/dif:Data_Set_Citation|/dif:DIF/dif:Entry_Title|/dif:DIF/dif:Entry_ID</cfg:field>
+			<cfg:field name="investigator" datatype="tokenizedText">/dif:DIF/dif:Personnel[contains(dif:Role,'nvestigat')]</cfg:field>
+			<cfg:field name="parameter" datatype="tokenizedText">/dif:DIF/dif:Parameters</cfg:field>
+			<cfg:field name="method" datatype="tokenizedText">/dif:DIF/dif:Sensor_Name</cfg:field>
+			<cfg:field name="project" datatype="tokenizedText">/dif:DIF/dif:Project</cfg:field>
+			<cfg:field name="projectFull" datatype="string">/dif:DIF/dif:Project/dif:Short_Name</cfg:field>
+			<cfg:field name="minLatitude" datatype="number">/dif:DIF/dif:Spatial_Coverage/dif:Southernmost_Latitude</cfg:field>
+			<cfg:field name="maxLatitude" datatype="number">/dif:DIF/dif:Spatial_Coverage/dif:Northernmost_Latitude</cfg:field>
+			<cfg:field name="minLongitude" datatype="number">/dif:DIF/dif:Spatial_Coverage/dif:Westernmost_Longitude</cfg:field>
+			<cfg:field name="maxLongitude" datatype="number">/dif:DIF/dif:Spatial_Coverage/dif:Easternmost_Longitude</cfg:field>
+			<cfg:field name="minDateTime" datatype="dateTime" default="1900-01-01T00:00:00">$startdate</cfg:field>
+			<cfg:field name="maxDateTime" datatype="dateTime" default="2038-12-31T23:59:59">$enddate</cfg:field>
+			<cfg:field name="minMonth" datatype="number">substring-before(substring-after($startdate,'-'),'-')</cfg:field>
+			<cfg:field name="maxMonth" datatype="number">substring-before(substring-after($enddate,'-'),'-')</cfg:field>
+			<cfg:field name="dataCenter" datatype="tokenizedText">/dif:DIF/dif:Data_Center/dif:Data_Center_Name</cfg:field>
+			<cfg:field name="dataCenterFull" datatype="string">/dif:DIF/dif:Data_Center/dif:Data_Center_Name/dif:Short_Name</cfg:field>
+			<cfg:field-template name="boost" datatype="number" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+				<xsl:choose>
+					<xsl:when test="/dif:DIF/dif:Parent_DIF">1.0</xsl:when>
+					<xsl:otherwise>5.0</xsl:otherwise>
+				</xsl:choose>
+			</cfg:field-template>
+			<cfg:default>.</cfg:default>
 		</cfg:fields>
-		<!-- document boost may only be a XPath query that returns a "number". To generate it, we use a variable defined by a template and cast it here to "number". -->
-		<cfg:documentBoost>number($boost)</cfg:documentBoost>
 		<cfg:schema>
 			<cfg:url>http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/dif_v9.4.xsd</cfg:url>
 			<cfg:haltOnError>false</cfg:haltOnError>
@@ -86,30 +82,6 @@
 		<cfg:maxIndexerQueue>250</cfg:maxIndexerQueue>
 		<cfg:maxBufferedIndexChanges>1000</cfg:maxBufferedIndexChanges>
 	</cfg:globalHarvesterProperties>
-	<!--
-		When indexing numerical fields, they are saved in a special trie-encoded form to optimize range queries.
-		The trie precision step is the precision, how many bits of the numeric values are stored additionally
-		for the next higher precision. Indexes with lower precision steps can be queried by
-		a config with a multiple of the index-time precision step (e.g. if indexed with 2, 8 for queriying is also possible).
-		The default value is 8 and most moderate space usage and speed. Lower values may make queries faster
-		but need much more space in index.
-	-->
-	<cfg:triePrecisionStep>8</cfg:triePrecisionStep>
-	<!-- for best performance use "mmap" (only in 64bit Java VMs) or "nio" (but not on Windows) .
-	In all other cases use "simple" or "auto" (which chooses simple or nio dependent on system). -->
-	<cfg:indexDirImplementation>auto</cfg:indexDirImplementation>
-	<!-- the Lucene Analyzer used to tokenize the strings (default field and tokenizedText fields -->
-	<cfg:analyzer>
-		<cfg:class>org.apache.lucene.analysis.standard.StandardAnalyzer</cfg:class>
-		<cfg:importEnglishStopWords/>
-		<!--<cfg:addStopWords>and,or,a,...</cfg:addStopWords>-->
-	</cfg:analyzer>
-	<!-- This setting affects indexing and searching by enabling analyzer features of a specific version (and also bugs).
-	If you change this value, you *have* to reindex, as the tokeized terms may not be identical! The allowed values
-	can be found in the Version class of Lucene: http://lucene.apache.org/java/3_0_0/api/core/org/apache/lucene/util/Version.html 
-	The default is LUCENE_46 for backwards compatibility, for new indexes you should upgrade. Do *not* use LUCENE_CURRENT,
-	as you have to reindex on every Lucene update after that! Recommended is LUCENE_30 at the moment. -->
-	<cfg:indexVersionCompatibility>LUCENE_46</cfg:indexVersionCompatibility>
 	<!-- Definition of Indexes to harvester and their properties -->
 	<cfg:indexes>
 		<cfg:index id="pangaea-carboocean">
