@@ -42,7 +42,7 @@ import org.apache.xalan.extensions.XPathFunctionResolverImpl;
 public final class XPathResolverImpl implements XPathFunctionResolver,
     XPathVariableResolver {
   
-  private static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory
+  private static final org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory
       .getLog(XPathResolverImpl.class);
   
   public static XPathResolverImpl getInstance() {

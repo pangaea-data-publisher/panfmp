@@ -61,7 +61,7 @@ import org.xml.sax.SAXParseException;
  */
 public abstract class Harvester {
   
-  private static org.apache.commons.logging.Log staticLog = org.apache.commons.logging.LogFactory
+  private static final org.apache.commons.logging.Log staticLog = org.apache.commons.logging.LogFactory
       .getLog(Harvester.class);
   
   /**

@@ -65,7 +65,7 @@ import de.pangaea.metadataportal.utils.StaticFactories;
  * @author Uwe Schindler
  */
 public class MetadataDocument {
-  private static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory
+  private static final org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory
       .getLog(MetadataDocument.class);
   
   /**
