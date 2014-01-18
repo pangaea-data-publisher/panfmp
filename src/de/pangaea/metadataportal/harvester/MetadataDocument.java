@@ -321,15 +321,11 @@ public class MetadataDocument {
    *           if identifier is empty.
    */
   protected XContentBuilder createEmptyJSON() throws Exception {
-    if (identifier == null || "".equals(identifier)) throw new IllegalArgumentException(
-        "The identifier of a document may not be empty!");
-    
     // make a new, empty document
     if (deleted) {
       return null; // to delete
     } else {
       XContentBuilder builder = XContentFactory.jsonBuilder().startObject()
-        .field(IndexConstants.FIELDNAME_IDENTIFIER, identifier)
         .field(IndexConstants.FIELDNAME_MDOC_IMPL, getClass().getName());
       if (datestamp != null) {
         builder.field(IndexConstants.FIELDNAME_DATESTAMP, datestamp);
