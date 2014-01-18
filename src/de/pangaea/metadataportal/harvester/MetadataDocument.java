@@ -38,6 +38,7 @@ import javax.xml.validation.Validator;
 
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
+import org.w3c.dom.Document;
 import org.w3c.dom.DocumentFragment;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -60,7 +61,7 @@ import de.pangaea.metadataportal.utils.StaticFactories;
 
 /**
  * This class holds all information harvested and provides methods for
- * {@link IndexBuilder} to create a Lucene {@link Document} instance from it.
+ * {@link IndexBuilder} to create a {@link XContentBuilder} instance from it.
  * 
  * @author Uwe Schindler
  */
@@ -78,7 +79,7 @@ public class MetadataDocument {
   }
   
   /**
-   * This static method "harvests" a stored Lucene {@link Document} from index
+   * This static method "harvests" a stored {@link XContentBuilder} from index
    * for re-parsing. The class name for the correct
    * <code>MetadataDocument</code> class extension is read from field
    * {@link IndexConstants#FIELDNAME_MDOC_IMPL}. When the correct instance is
@@ -198,7 +199,7 @@ public class MetadataDocument {
   /**
    * Sets XML final (transformed) xml contents as DOM tree. Invalidates cache.
    */
-  public void setFinalDOM(org.w3c.dom.Document dom) {
+  public void setFinalDOM(Document dom) {
     this.dom = dom;
     xmlCache = null;
   }
@@ -206,7 +207,7 @@ public class MetadataDocument {
   /**
    * Returns XML contents as DOM tree.
    */
-  public org.w3c.dom.Document getFinalDOM() {
+  public Document getFinalDOM() {
     return dom;
   }
   
@@ -277,9 +278,9 @@ public class MetadataDocument {
   }
   
   /**
-   * Converts this instance to a Lucene {@link Document}.
+   * Converts this instance to a ElasticSearch JSON node
    * 
-   * @return Lucene {@link Document} or <code>null</code>, if doc was deleted.
+   * @return {@link XContentBuilder} or <code>null</code>, if doc was deleted.
    * @throws Exception
    *           if an exception occurs during transformation (various types of
    *           exceptions can be thrown).
@@ -287,7 +288,7 @@ public class MetadataDocument {
    *           if index configuration is unknown
    */
   public XContentBuilder getElasticSearchJSON() throws Exception {
-    XContentBuilder builder = createEmptyDocument();
+    XContentBuilder builder = createEmptyJSON();
     if (!deleted) {
       assert builder != null;
       if (dom == null) throw new NullPointerException(
@@ -309,17 +310,17 @@ public class MetadataDocument {
   }
   
   /**
-   * Helper method that generates an empty Lucene {@link Document} instance. The
+   * Helper method that generates an empty {@link XContentBuilder} instance. The
    * standard fields are set to the doc properties (identifier, datestamp)
    * 
-   * @return Lucene {@link Document} or <code>null</code>, if doc was deleted.
+   * @return {@link XContentBuilder} or <code>null</code>, if doc was deleted.
    * @throws Exception
    *           if an exception occurs during transformation (various types of
    *           exceptions can be thrown).
    * @throws IllegalStateException
    *           if identifier is empty.
    */
-  protected XContentBuilder createEmptyDocument() throws Exception {
+  protected XContentBuilder createEmptyJSON() throws Exception {
     if (identifier == null || "".equals(identifier)) throw new IllegalArgumentException(
         "The identifier of a document may not be empty!");
     
@@ -340,15 +341,14 @@ public class MetadataDocument {
   /**
    * Helper method that finalizes the JSON document
    */
-  protected void closeDocument(XContentBuilder builder) throws Exception {
+  protected void closeJSON(XContentBuilder builder) throws Exception {
     builder.field(IndexConstants.FIELDNAME_XML, this.getXML())
       .endObject();
   }
   
   /**
-   * Helper method that adds the default field to the given Lucene
-   * {@link Document} instance. This method executes the XPath for the default
-   * field.
+   * Helper method that adds the default field to the given {@link XContentBuilder}
+   * instance. This method executes the XPath for the default field.
    * 
    * @throws Exception
    *           if an exception occurs during transformation (various types of
@@ -371,7 +371,7 @@ public class MetadataDocument {
   }
   
   /**
-   * Helper method that adds all fields to the given Lucene {@link Document}
+   * Helper method that adds all fields to the given {@link XContentBuilder}
    * instance. This method executes all XPath/Templates and converts the
    * results.
    * 
@@ -420,14 +420,8 @@ public class MetadataDocument {
           for (int i = 0; i < c; i++) {
             if (f.datatype == FieldConfig.DataType.XML) {
               DOMSource in = new DOMSource(nodes.item(i));
-              if (in.getNode().getNodeType() != Node.ELEMENT_NODE) continue; // only
-                                                                             // element
-                                                                             // nodes
-                                                                             // are
-                                                                             // valid
-                                                                             // XML
-                                                                             // document
-                                                                             // roots!
+              if (in.getNode().getNodeType() != Node.ELEMENT_NODE)
+                continue;
               StringWriter xmlWriter = new StringWriter();
               StreamResult out = new StreamResult(xmlWriter);
               trans.transform(in, out);
@@ -493,8 +487,7 @@ public class MetadataDocument {
           if (b) accept = false;
           break;
         default:
-          throw new IllegalArgumentException(
-              "Invalid filter type (should never happen!)");
+          throw new AssertionError("Invalid filter type (should never happen!)");
       }
     }
     return accept;
@@ -654,8 +647,8 @@ public class MetadataDocument {
   }
   
   /**
-   * Helper method to add a field in the correct format to given Lucene
-   * {@link Document}. The format is defined by the {@link FieldConfig}. The
+   * Helper method to add a field in the correct format to given {@link XContentBuilder}.
+   * The format is defined by the {@link FieldConfig}. The
    * value is given as string.
    * <P>
    * For internal use only!
@@ -675,8 +668,18 @@ public class MetadataDocument {
         }
         builder.field(f.name, dates);
         break;
-      default:
+      case NUMBER:
+        final double[] numbers = new double[vals.length];
+        for (int i = 0; i < vals.length; i++) {
+          numbers[i] =Double.parseDouble(vals[i]);
+        }
+        builder.field(f.name, numbers);
+        break;
+      case STRING:
         builder.field(f.name, vals);
+        break;
+      default:
+        throw new AssertionError("Invalid field datatype for addField(): " + f.datatype);
     }
   }
   
@@ -700,7 +703,7 @@ public class MetadataDocument {
    */
   protected IndexConfig iconfig = null;
   
-  private org.w3c.dom.Document dom = null;
+  private Document dom = null;
   private String xmlCache = null;
   private XMLConverter converter = null;
   

@@ -72,8 +72,8 @@ public class OAIMetadataDocument extends MetadataDocument {
   }*/
   
   @Override
-  protected XContentBuilder createEmptyDocument() throws Exception {
-    XContentBuilder builder = super.createEmptyDocument();
+  protected XContentBuilder createEmptyJSON() throws Exception {
+    XContentBuilder builder = super.createEmptyJSON();
     if (builder != null) {
       builder.field(IndexConstants.FIELDNAME_SET, sets.toArray(new String[sets.size()]));
     }

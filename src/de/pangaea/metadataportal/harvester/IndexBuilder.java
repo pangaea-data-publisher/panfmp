@@ -28,7 +28,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.apache.lucene.index.Term;
 import org.apache.lucene.store.IOContext;
 import org.apache.lucene.store.IndexInput;
 import org.apache.lucene.store.IndexOutput;
@@ -339,7 +338,6 @@ public class IndexBuilder {
         }
         if (entry == LDOC_EOF) break;
         
-        Term t = new Term(IndexConstants.FIELDNAME_IDENTIFIER, entry.identifier);
         if (entry.builder == null) {
           if (log.isDebugEnabled()) log.debug("Deleting document: "
               + entry.identifier);
