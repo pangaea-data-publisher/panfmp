@@ -55,10 +55,6 @@ import org.apache.lucene.util.Version;
  * <li><code>indexDir</code>: file system directory with foreign index</li>
  * <li><code>query</code>: query that matches all documents to harvest (default:
  * all documents)</li>
- * <li><code>analyzerClass</code>: class name of {@link Analyzer} to use for the
- * above query string (default is the one from panFMP's global config; stop
- * words are always taken from the global config, for simplicity you should not
- * use any of them in your query string)</li>
  * <li><code>queryParserClass</code>: class name of {@link QueryParser} to use
  * for the above query string (default:
  * "org.apache.lucene.queryParser.QueryParser")</li>
@@ -66,9 +62,6 @@ import org.apache.lucene.util.Version;
  * above query string (AND/OR) (default: "AND")</li>
  * <li><code>identifierPrefix</code>: This prefix is added in front of all
  * identifiers from the foreign index (default: "")</li>
- * <li><code>indexVersionCompatibility</code>: The {@link Version} constant
- * passed to the analyzer and query parser of the foreign index (default is the
- * one from panFMP's global config)</li>
  * </ul>
  * 
  * @author Uwe Schindler
@@ -209,8 +202,7 @@ public class ExternalIndexHarvester extends SingleFileEntitiesHarvester {
   protected void enumerateValidHarvesterPropertyNames(Set<String> props) {
     super.enumerateValidHarvesterPropertyNames(props);
     props.addAll(Arrays.<String> asList("indexDir", "query",
-        "queryParserClass", "defaultQueryParserOperator", "analyzerClass",
-        "indexVersionCompatibility", "identifierPrefix"));
+        "queryParserClass", "defaultQueryParserOperator", "identifierPrefix"));
   }
   
   private void addLuceneDocument(Document ldoc) throws Exception {
