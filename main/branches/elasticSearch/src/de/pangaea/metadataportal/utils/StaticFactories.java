@@ -40,26 +40,26 @@ public final class StaticFactories {
   public static final DocumentBuilderFactory dbf;
   public static final DocumentBuilder dombuilder;
   static {
+    xpathFactory = new XPathFactoryImpl();
+    
+    saxFactory = new SAXParserFactoryImpl();
+    saxFactory.setNamespaceAware(true);
+    saxFactory.setValidating(false);
+    
+    transFactory = new TransformerFactoryImpl();
+    transFactory.setErrorListener(new LoggingErrorListener(transFactory
+        .getClass()));
+    
+    dbf = new DocumentBuilderFactoryImpl();
+    dbf.setNamespaceAware(true);
+    dbf.setCoalescing(true);
+    dbf.setExpandEntityReferences(true);
+    dbf.setIgnoringComments(true);
+    dbf.setIgnoringElementContentWhitespace(true);
     try {
-      xpathFactory = new XPathFactoryImpl();
-      
-      saxFactory = new SAXParserFactoryImpl();
-      saxFactory.setNamespaceAware(true);
-      saxFactory.setValidating(false);
-      
-      transFactory = (SAXTransformerFactory) new TransformerFactoryImpl();
-      transFactory.setErrorListener(new LoggingErrorListener(transFactory
-          .getClass()));
-      
-      dbf = new DocumentBuilderFactoryImpl();
-      dbf.setNamespaceAware(true);
-      dbf.setCoalescing(true);
-      dbf.setExpandEntityReferences(true);
-      dbf.setIgnoringComments(true);
-      dbf.setIgnoringElementContentWhitespace(true);
       dombuilder = dbf.newDocumentBuilder();
-    } catch (Exception e) {
-      throw new RuntimeException("Failed to initialize XML components", e);
+    } catch (ParserConfigurationException e) {
+      throw new Error("Failed to initialize DOM document builder", e);
     }
   }
   
