@@ -70,9 +70,9 @@ public class FieldConfig extends ExpressionConfig {
   // members "the configuration"
   public String name = null;
   public String defaultValue = null;
-  public DataType datatype = DataType.TOKENIZEDTEXT;
+  public DataType datatype = DataType.STRING;
   
   public static enum DataType {
-    TOKENIZEDTEXT, STRING, NUMBER, DATETIME, XML, XHTML
+    STRING, NUMBER, DATETIME, XML, XHTML
   };
 }
