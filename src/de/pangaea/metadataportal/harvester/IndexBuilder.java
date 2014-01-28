@@ -21,7 +21,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -29,17 +28,12 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.apache.lucene.store.IOContext;
-import org.apache.lucene.store.IndexInput;
-import org.apache.lucene.store.IndexOutput;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.elasticsearch.index.query.QueryBuilder;
 
 import de.pangaea.metadataportal.config.IndexConfig;
-import de.pangaea.metadataportal.utils.IndexConstants;
 
 /**
  * Component of <b>panFMP</b> that analyzes and indexes harvested documents in
@@ -226,9 +220,9 @@ public class IndexBuilder {
   }
   
   public Date getLastHarvestedFromDisk() {
-    IndexInput in = null;
     Date d = null;
-    /*try {
+    /*IndexInput in = null;
+    try {
       in = iconfig.getIndexDirectory().openInput(
           IndexConstants.FILENAME_LASTHARVESTED, IOContext.DEFAULT);
       d = new Date(in.readLong());
