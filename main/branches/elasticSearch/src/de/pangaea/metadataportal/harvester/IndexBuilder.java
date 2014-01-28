@@ -377,39 +377,8 @@ public class IndexBuilder {
         indexerLock.notifyAll();
       }
       
-      // check for validIdentifiers Set and remove all unknown identifiers from
-      // index, if available
-      Set<String> validIdentifiers = this.validIdentifiers.get();
-      if (validIdentifiers != null) {
-        if (bulkRequest.numberOfActions() > 0) {
-          BulkResponse bulkResponse = bulkRequest.execute().actionGet();
-          bulkRequest = null;
-          if (bulkResponse.hasFailures()) {
-            // TODO
-            throw new IOException("TODO: Add correct error handling");
-          }
-        } else {
-          bulkRequest = null;
-        }
-        
-        log.info(deleted + " docs presumably deleted (if existent) and "
-            + updated + " docs (re-)indexed so far.");
-        
-        // notify Harvester of index commit
-        final HarvesterCommitEvent ce = commitEvent.get();
-        if (ce != null) ce.harvesterCommitted(Collections
-            .unmodifiableSet(committedIdentifiers));
-        committedIdentifiers.clear();
-        
-        log.info("Removing documents not seen while harvesting (this may take a while)...");
-        final QueryBuilder qb = QueryBuilders.boolQuery()
-            .must(QueryBuilders.termQuery(IndexConstants.FIELDNAME_SOURCE, iconfig.id))
-            .mustNot(QueryBuilders.idsQuery().ids(validIdentifiers.toArray(new String[validIdentifiers.size()])));
-        client.prepareDeleteByQuery(iconfig.id).setTypes(iconfig.parent.typeName).setQuery(qb).execute().actionGet();
-      }
-      
       assert committedIdentifiers.size() == bulkRequest.numberOfActions();
-      if (bulkRequest != null && bulkRequest.numberOfActions() > 0) {
+      if (bulkRequest.numberOfActions() > 0) {
         BulkResponse bulkResponse = bulkRequest.execute().actionGet();
         bulkRequest = null;
         if (bulkResponse.hasFailures()) {
@@ -425,6 +394,17 @@ public class IndexBuilder {
       if (ce != null && committedIdentifiers.size() > 0) ce
           .harvesterCommitted(Collections.unmodifiableSet(committedIdentifiers));
       committedIdentifiers.clear();
+      
+      // check for validIdentifiers Set and remove all unknown identifiers from
+      // index, if available
+      Set<String> validIdentifiers = this.validIdentifiers.get();
+      if (validIdentifiers != null) {
+        log.info("Removing documents not seen while harvesting (this may take a while)...");
+        final QueryBuilder query = QueryBuilders.boolQuery()
+            .must(QueryBuilders.termQuery(IndexConstants.FIELDNAME_SOURCE, iconfig.id))
+            .mustNot(QueryBuilders.idsQuery(iconfig.parent.typeName).ids(validIdentifiers.toArray(new String[validIdentifiers.size()])));
+        client.prepareDeleteByQuery(iconfig.id).setTypes(iconfig.parent.typeName).setQuery(query).execute().actionGet();
+      }
       
       finished = true;
       log.info(deleted + " docs presumably deleted (only if existent) and "
