@@ -177,10 +177,11 @@ public class IndexBuilder {
     }
     
     if (lastHarvested != null) {
-      IndexOutput out = iconfig.getIndexDirectory().createOutput(
-          IndexConstants.FILENAME_LASTHARVESTED, IOContext.DEFAULT);
+      /* TODO:
+      IndexConstants.FILENAME_LASTHARVESTED, IOContext.DEFAULT);
       out.writeLong(lastHarvested.getTime());
       out.close();
+      */
       lastHarvested = null;
     }
     
@@ -227,7 +228,7 @@ public class IndexBuilder {
   public Date getLastHarvestedFromDisk() {
     IndexInput in = null;
     Date d = null;
-    try {
+    /*try {
       in = iconfig.getIndexDirectory().openInput(
           IndexConstants.FILENAME_LASTHARVESTED, IOContext.DEFAULT);
       d = new Date(in.readLong());
@@ -237,7 +238,7 @@ public class IndexBuilder {
         in.close();
       } catch (IOException ie) {}
       d = null;
-    }
+    }*/
     return d;
   }
   

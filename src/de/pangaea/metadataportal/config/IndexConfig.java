@@ -16,7 +16,6 @@
 
 package de.pangaea.metadataportal.config;
 
-import java.io.File;
 import java.util.Enumeration;
 import java.util.Map;
 import java.util.Properties;
@@ -24,9 +23,6 @@ import java.util.Set;
 
 import javax.xml.namespace.QName;
 import javax.xml.transform.Templates;
-
-import org.apache.lucene.store.Directory;
-import org.apache.lucene.store.SimpleFSDirectory;
 
 import de.pangaea.metadataportal.harvester.Harvester;
 import de.pangaea.metadataportal.utils.PublicForDigesterUse;
@@ -53,21 +49,6 @@ public class IndexConfig {
     id = v;
   }
   
-  /** Sets the user-readable name of this index configuration. **/
-  public void setDisplayName(String v) {
-    displayName = v;
-  }
-  
-  /** Sets index directory (called from Digester on config load). **/
-  public synchronized void setIndexDir(String v)
-      throws java.io.IOException {
-      if (checked) throw new IllegalStateException(
-          "Index configuration cannot be changed anymore!");
-      if (indexDirImpl != null) indexDirImpl.close();
-      indexDirImpl = null;
-      indexDir = v;
-    }
-
   /** Sets class name of harvester (called from Digester on config load). **/
   @PublicForDigesterUse
   @Deprecated
@@ -94,11 +75,6 @@ public class IndexConfig {
   public void check() throws Exception {
     if (id == null) throw new IllegalStateException(
         "Every index needs a unique id!");
-    if (displayName == null || "".equals(displayName)) throw new IllegalStateException(
-        "Index with id=\"" + id + "\" has no displayName!");
-    if (indexDir == null || harvesterClass == null) throw new IllegalStateException(
-        "Some index configuration fields are missing for index with id=\"" + id
-            + "\"!");
     Harvester h = harvesterClass.newInstance();
     Set<String> validProperties = h.getValidHarvesterPropertyNames();
     @SuppressWarnings("unchecked")
@@ -115,26 +91,11 @@ public class IndexConfig {
     checked = true;
   }
 
-  /** Returns the local, expanded file system path to index. **/
-  public String getFullIndexPath() throws java.io.IOException {
-    return parent.makePathAbsolute(indexDir, false);
-  }
-
-  /** Returns the directory implementation, that contains the index. **/
-  public synchronized Directory getIndexDirectory() throws java.io.IOException {
-    if (indexDirImpl == null) indexDirImpl = new SimpleFSDirectory(new File(getFullIndexPath()));
-    return indexDirImpl;
-  }
-
   protected boolean checked = false;
   
   // members "the configuration"
-  public String displayName = null, id = null;
+  public String id = null;
   public final Config parent;
-
-  private String indexDir = null;
-
-  private volatile Directory indexDirImpl = null;
 
   public Class<? extends Harvester> harvesterClass = null;
 

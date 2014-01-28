@@ -188,15 +188,13 @@ public final class XPathResolverImpl implements XPathFunctionResolver,
       INDEX_BUILDER_NAMESPACE, "docIdentifier");
   public static final QName VARIABLE_DOC_DATESTAMP = new QName(
       INDEX_BUILDER_NAMESPACE, "docDatestamp");
-  public static final QName VARIABLE_INDEX_DISPLAYNAME = new QName(
-      INDEX_BUILDER_NAMESPACE, "indexDisplayName");
   public static final QName VARIABLE_INDEX_ID = new QName(
       INDEX_BUILDER_NAMESPACE, "index");
   
   public static final Set<QName> BASE_VARIABLES = Collections
       .unmodifiableSet(new HashSet<QName>(Arrays.asList(
           VARIABLE_DOC_IDENTIFIER, VARIABLE_DOC_DATESTAMP,
-          VARIABLE_INDEX_DISPLAYNAME, VARIABLE_INDEX_ID)));
+          VARIABLE_INDEX_ID)));
   
   private static XPathResolverImpl instance = new XPathResolverImpl();
   

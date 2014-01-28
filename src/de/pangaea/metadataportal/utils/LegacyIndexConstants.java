@@ -21,19 +21,22 @@ package de.pangaea.metadataportal.utils;
  * 
  * @author Uwe Schindler
  */
-public final class IndexConstants {
+public final class LegacyIndexConstants {
   
-  private IndexConstants() {} // no instance
+  private LegacyIndexConstants() {} // no instance
   
-  public static final String FIELD_INTERNAL_PREFIX = "internal-";
+  public static final String FIELD_PREFIX = "internal-";
   
-  public static final String FIELDNAME_CONTENT = "_all";
-  public static final String FIELDNAME_XML = "xml";
+  public static final String FIELDNAME_CONTENT = "textcontent".intern();
   
-  public static final String FIELDNAME_SOURCE = FIELD_INTERNAL_PREFIX + "source";
-  public static final String FIELDNAME_SET = FIELD_INTERNAL_PREFIX + "set";
-  public static final String FIELDNAME_DATESTAMP = FIELD_INTERNAL_PREFIX + "datestamp";
-  public static final String FIELDNAME_MDOC_IMPL = FIELD_INTERNAL_PREFIX + "mdoc-impl";
+  public static final String FIELDNAME_IDENTIFIER = (FIELD_PREFIX + "identifier")
+      .intern();
+  public static final String FIELDNAME_SET = (FIELD_PREFIX + "set").intern();
+  public static final String FIELDNAME_DATESTAMP = (FIELD_PREFIX + "datestamp")
+      .intern();
+  public static final String FIELDNAME_XML = (FIELD_PREFIX + "xml").intern();
+  public static final String FIELDNAME_MDOC_IMPL = (FIELD_PREFIX + "mdoc-impl")
+      .intern();
   
   public static final String FILENAME_LASTHARVESTED = "lastharvested";
 }

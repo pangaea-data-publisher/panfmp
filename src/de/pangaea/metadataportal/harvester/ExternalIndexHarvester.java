@@ -16,32 +16,39 @@
 
 package de.pangaea.metadataportal.harvester;
 
-import java.io.*;
-import java.util.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.StringReader;
 import java.lang.reflect.Constructor;
-
-import javax.xml.transform.stream.StreamSource;
-
+import java.util.Arrays;
+import java.util.Locale;
+import java.util.Set;
 import java.util.zip.DataFormatException;
 
-import de.pangaea.metadataportal.utils.*;
-import de.pangaea.metadataportal.config.*;
+import javax.xml.transform.stream.StreamSource;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.CompressionTools;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.DocumentStoredFieldVisitor;
-import org.apache.lucene.queryparser.classic.QueryParser;
-import org.apache.lucene.search.*;
 import org.apache.lucene.index.AtomicReader;
 import org.apache.lucene.index.AtomicReaderContext;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexableField;
+import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.search.Collector;
+import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.MatchAllDocsQuery;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.search.Scorer;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.SimpleFSDirectory;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.Version;
+
+import de.pangaea.metadataportal.config.IndexConfig;
+import de.pangaea.metadataportal.utils.LegacyIndexConstants;
 
 /**
  * This harvester supports replication XML contents from an foreign
@@ -129,7 +136,7 @@ public class ExternalIndexHarvester extends SingleFileEntitiesHarvester {
       // create QP
       QueryParser qp = queryParserConstructor.newInstance(
           Version.LUCENE_46,
-          IndexConstants.FIELDNAME_CONTENT, new StandardAnalyzer(Version.LUCENE_46));
+          LegacyIndexConstants.FIELDNAME_CONTENT, new StandardAnalyzer(Version.LUCENE_46));
       qp.setDefaultOperator(defaultQueryParserOperator);
       query = qp.parse(qstr);
     }
@@ -170,8 +177,8 @@ public class ExternalIndexHarvester extends SingleFileEntitiesHarvester {
         @Override
         public void collect(final int doc) throws IOException {
           DocumentStoredFieldVisitor vis = new DocumentStoredFieldVisitor(
-              IndexConstants.FIELDNAME_IDENTIFIER,
-              IndexConstants.FIELDNAME_DATESTAMP, IndexConstants.FIELDNAME_XML);
+              LegacyIndexConstants.FIELDNAME_IDENTIFIER,
+              LegacyIndexConstants.FIELDNAME_DATESTAMP, LegacyIndexConstants.FIELDNAME_XML);
           currReader.document(doc, vis);
           Document ldoc = vis.getDocument();
           try {
@@ -207,7 +214,7 @@ public class ExternalIndexHarvester extends SingleFileEntitiesHarvester {
   
   private void addLuceneDocument(Document ldoc) throws Exception {
     // read identifier
-    String identifier = ldoc.get(IndexConstants.FIELDNAME_IDENTIFIER);
+    String identifier = ldoc.get(LegacyIndexConstants.FIELDNAME_IDENTIFIER);
     if (identifier == null) {
       log.warn("Document without identifier, ignoring.");
       return;
@@ -219,7 +226,7 @@ public class ExternalIndexHarvester extends SingleFileEntitiesHarvester {
     // try to read date stamp
     try {
       final IndexableField fld = ldoc
-          .getField(IndexConstants.FIELDNAME_DATESTAMP);
+          .getField(LegacyIndexConstants.FIELDNAME_DATESTAMP);
       datestamp = fld.numericValue().longValue();
     } catch (NullPointerException npe) {
       log.warn("Datestamp of document '" + identifier
@@ -233,7 +240,7 @@ public class ExternalIndexHarvester extends SingleFileEntitiesHarvester {
     // read XML
     if (isDocumentOutdated(datestamp)) {
       try {
-        final IndexableField fld = ldoc.getField(IndexConstants.FIELDNAME_XML);
+        final IndexableField fld = ldoc.getField(LegacyIndexConstants.FIELDNAME_XML);
         BytesRef bytes = fld.binaryValue();
         String xml = (bytes != null) ? CompressionTools.decompressString(bytes)
             : fld.stringValue();
