@@ -45,6 +45,9 @@
   <property name="ivy.install.version" value="2.3.0" />
   <property name="ivy.jar.dir" location=".ivy" />
   <property name="ivy.jar.file" location="${ivy.jar.dir}/ivy-${ivy.install.version}.jar" />
+	
+	<makeurl property="log4j-conf" file="scripts/console.log.properties"/>
+	<property name="harvester.index" value="*"/>
 
   <condition property="ivy.available">
     <typefound uri="antlib:org.apache.ivy.ant" name="configure" />
@@ -113,13 +116,10 @@
 	
 	<!-- EXECUTE SCRIPTS WITH CLASSPATH target -->
 	<target name="run-harvester" depends="compile">
-		<makeurl property="log4j-conf" file="scripts/console.log.properties"/>
-		<!--<pathconvert property="cp" refid="path.run"/>
-		<echo message="CLASSPATH: ${cp}"/>-->
 		<java fork="true" dir="." classname="de.pangaea.metadataportal.harvester.Harvester" classpathref="path.run">
 			 <sysproperty key="log4j.configuration" value="${log4j-conf}"/>
 			 <arg file="repository/config.xml"/>
-			 <arg value="pangaea-carboocean"/>
+			 <arg value="${harvester.index}"/>
 		</java>
 	</target>
 
