@@ -254,7 +254,7 @@ public class IndexBuilder {
     XPathResolverImpl.getInstance().setIndexBuilder(this);
     try {
       while (failure.get() == null) {
-        MetadataDocument mdoc;
+        final MetadataDocument mdoc;
         try {
           mdoc = mdocBuffer.take();
         } catch (InterruptedException ie) {
@@ -266,7 +266,7 @@ public class IndexBuilder {
             + mdoc.toString());
         if (log.isTraceEnabled()) log.trace("XML: " + mdoc.getXML());
         try {
-          IndexerQueueEntry en = new IndexerQueueEntry(mdoc.getIdentifier(),
+          final IndexerQueueEntry en = new IndexerQueueEntry(mdoc.getIdentifier(),
               mdoc.getElasticSearchJSON());
           ldocBuffer.put(en);
         } catch (InterruptedException ie) {
@@ -326,7 +326,7 @@ public class IndexBuilder {
       while (failure.get() == null) {
         // notify eventually waiting checkIndexerBuffer() calls
         synchronized (indexerLock) {
-          if (ldocBuffer.size() == 0) indexerLock.notifyAll();
+          if (ldocBuffer.isEmpty()) indexerLock.notifyAll();
         }
         
         // take entry from buffer

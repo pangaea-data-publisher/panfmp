@@ -21,8 +21,6 @@ import java.net.CookieHandler;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -33,9 +31,7 @@ import java.util.Set;
 import java.util.WeakHashMap;
 
 import javax.xml.XMLConstants;
-import javax.xml.namespace.QName;
 import javax.xml.transform.Templates;
-import javax.xml.transform.sax.TemplatesHandler;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
@@ -46,12 +42,10 @@ import org.apache.commons.digester.SetPropertiesRule;
 import org.apache.lucene.index.IndexWriter.IndexReaderWarmer;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
-import org.xml.sax.helpers.AttributesImpl;
 
 import de.pangaea.metadataportal.utils.BooleanParser;
 import de.pangaea.metadataportal.utils.ExtendedDigester;
 import de.pangaea.metadataportal.utils.PublicForDigesterUse;
-import de.pangaea.metadataportal.utils.SaxRule;
 import de.pangaea.metadataportal.utils.SimpleCookieHandler;
 import de.pangaea.metadataportal.utils.StaticFactories;
 
@@ -121,7 +115,7 @@ public class Config {
           "setName", 2, DIGSTRING_PARAMS);
       dig.addObjectParam("config/metadata/variables/variable-template", 0, dig);
       dig.addCallParam("config/metadata/variables/variable-template", 1, "name");
-      dig.addRule("config/metadata/variables/variable-template", new TemplateSaxRule());
+      dig.addRule("config/metadata/variables/variable-template", new TemplateSaxRule(this));
       
       // filters
       dig.addCallMethod("config/metadata/filters", "setFilterDefault", 1);
@@ -154,7 +148,7 @@ public class Config {
       r = new SetPropertiesRule(propAttr, propMapping);
       r.setIgnoreMissingProperty(false);
       dig.addRule("config/metadata/fields/field-template", r);
-      dig.addRule("config/metadata/fields/field-template", new TemplateSaxRule());
+      dig.addRule("config/metadata/fields/field-template", new TemplateSaxRule(this));
       
       // default field
       dig.addCallMethod("config/metadata/fields/default", "setDefaultField", 0);
@@ -198,7 +192,7 @@ public class Config {
       
       dig.addRule(
           "config/indexes/index/transform",
-          new IndexConfigTransformerSaxRule());
+          new IndexConfigTransformerSaxRule(this));
       
       dig.addDoNothing("config/indexes/index/harvesterProperties");
       dig.addCallMethod("config/indexes/index/harvesterProperties/*",
@@ -423,170 +417,5 @@ public class Config {
   protected ExtendedDigester dig = null;
   
   public static final int DEFAULT_MAX_CLAUSE_COUNT = 131072;
-  
-  // internal classes
-  private abstract class TransformerSaxRule extends SaxRule {
-    
-    private TemplatesHandler th = null;
-    
-    @Override
-    public void begin(String namespace, String name, Attributes attributes)
-        throws Exception {
-      if (getContentHandler() == null) {
-        th = StaticFactories.transFactory.newTemplatesHandler();
-        th.setSystemId(file);
-        setContentHandler(th);
-      }
-      super.begin(namespace, name, attributes);
-    }
-    
-    protected abstract void setResult(Templates t);
-    
-    @Override
-    public void end(String namespace, String name) throws Exception {
-      super.end(namespace, name);
-      if (th != null) setResult(th.getTemplates());
-      setContentHandler(th = null);
-    }
-    
-  }
-  
-  final class IndexConfigTransformerSaxRule extends TransformerSaxRule {
-    
-    @Override
-    public void begin(String namespace, String name, Attributes attributes)
-        throws Exception {
-      final Object o = digester.peek();
-      if (!(o instanceof IndexConfig)) throw new RuntimeException(
-          "An XSLT tree is not allowed here!");
-      final IndexConfig iconf = (IndexConfig) o;
-      
-      final String file = attributes.getValue(XMLConstants.NULL_NS_URI, "src");
-      if (file != null) {
-        setResult(loadTemplate(file));
-        setContentHandler(new org.xml.sax.helpers.DefaultHandler() {
-          @Override
-          public void startElement(String namespaceURI, String localName,
-              String qName, Attributes atts) throws SAXException {
-            throw new SAXException(
-                "No element content allowed here. You can either include an XSL template directly into the config file or use the 'src' attribute!");
-          }
-          
-          @Override
-          public void characters(char[] ch, int start, int length)
-              throws SAXException {
-            for (int i = 0; i < length; i++) {
-              if (Character.isWhitespace(ch[start + i])) continue;
-              throw new SAXException(
-                  "No element content allowed here. You can either include an XSL template directly into the config file or use the 'src' attribute!");
-            }
-          }
-        });
-      }
-      // collect all params to additionally pass to XSL and store in Map
-      iconf.xsltParams = new HashMap<QName,Object>();
-      for (int i = 0, c = attributes.getLength(); i < c; i++) {
-        QName qname = new QName(attributes.getURI(i),
-            attributes.getLocalName(i));
-        // filter src attribute
-        if (new QName(XMLConstants.NULL_NS_URI, "src").equals(qname)) continue;
-        iconf.xsltParams.put(qname, attributes.getValue(i));
-      }
-      super.begin(namespace, name, attributes);
-    }
-    
-    @Override
-    protected void setResult(Templates t) {
-      final Object o = digester.peek();
-      if (!(o instanceof IndexConfig)) throw new RuntimeException(
-          "An XSLT tree is not allowed here!");
-      final IndexConfig iconf = (IndexConfig) o;
-      
-      iconf.xslt = t;
-    }
-    
-  }
-  
-  final class TemplateSaxRule extends TransformerSaxRule {
-    
-    @Override
-    protected void initDocument() throws SAXException {
-      destContentHandler.startPrefixMapping(XSL_PREFIX, XSL_NAMESPACE);
-      
-      AttributesImpl atts = new AttributesImpl();
-      
-      // generate prefixes to exclude (all currently defined; if they appear,
-      // they will be explicitely defined by processor)
-      StringBuilder excludePrefixes = new StringBuilder("#default ")
-          .append(XSL_PREFIX);
-      for (String prefix : ((ExtendedDigester) digester)
-          .getCurrentAssignedPrefixes()) {
-        if (!XMLConstants.DEFAULT_NS_PREFIX.equals(prefix)) excludePrefixes
-            .append(' ').append(prefix);
-      }
-      atts.addAttribute(XMLConstants.NULL_NS_URI, "exclude-result-prefixes",
-          "exclude-result-prefixes", CNAME, excludePrefixes.toString());
-      
-      // root tag
-      atts.addAttribute(XMLConstants.NULL_NS_URI, "version", "version", CNAME,
-          "1.0");
-      destContentHandler.startElement(XSL_NAMESPACE, "stylesheet", XSL_PREFIX
-          + ":stylesheet", atts);
-      atts.clear();
-      
-      // register variables as params for template
-      HashSet<QName> vars = new HashSet<QName>(
-          de.pangaea.metadataportal.harvester.XPathResolverImpl.BASE_VARIABLES);
-      for (VariableConfig v : xPathVariables)
-        vars.add(v.name);
-      for (QName name : vars) {
-        // it is not clear why xalan does not allow a variable with no namespace
-        // declared by a prefix that points to the empty namespace
-        boolean nullNS = XMLConstants.NULL_NS_URI
-            .equals(name.getNamespaceURI());
-        if (nullNS) {
-          atts.addAttribute(XMLConstants.NULL_NS_URI, "name", "name", CNAME,
-              name.getLocalPart());
-        } else {
-          destContentHandler.startPrefixMapping("var", name.getNamespaceURI());
-          atts.addAttribute(XMLConstants.NULL_NS_URI, "name", "name", CNAME,
-              "var:" + name.getLocalPart());
-        }
-        destContentHandler.startElement(XSL_NAMESPACE, "param", XSL_PREFIX
-            + ":param", atts);
-        atts.clear();
-        destContentHandler.endElement(XSL_NAMESPACE, "param", XSL_PREFIX
-            + ":param");
-        if (!nullNS) destContentHandler.endPrefixMapping("var");
-      }
-      
-      // start a template
-      atts.addAttribute(XMLConstants.NULL_NS_URI, "match", "match", CNAME, "/");
-      destContentHandler.startElement(XSL_NAMESPACE, "template", XSL_PREFIX
-          + ":template", atts);
-      // atts.clear();
-    }
-    
-    @Override
-    protected void finishDocument() throws SAXException {
-      destContentHandler.endElement(XSL_NAMESPACE, "template", XSL_PREFIX
-          + ":template");
-      destContentHandler.endElement(XSL_NAMESPACE, "stylesheet", XSL_PREFIX
-          + ":stylesheet");
-      destContentHandler.endPrefixMapping(XSL_PREFIX);
-    }
-    
-    @Override
-    protected void setResult(Templates t) {
-      Object o = digester.peek();
-      if (o instanceof ExpressionConfig) ((ExpressionConfig) o).setTemplate(t);
-      else throw new RuntimeException("An XSLT template is not allowed here!");
-    }
-    
-    private static final String XSL_NAMESPACE = "http://www.w3.org/1999/XSL/Transform";
-    private static final String XSL_PREFIX = "int-tmpl-xsl";
-    private static final String CNAME = "CNAME";
-    
-  }
   
 }
