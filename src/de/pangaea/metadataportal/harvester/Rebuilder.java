@@ -58,15 +58,13 @@ public class Rebuilder extends Harvester {
   private String savedAutoOptimize = null;
   
   @Override
-  public void open(IndexConfig iconfig) throws Exception {
+  public void open(ElasticSearchConnection es, IndexConfig iconfig) throws Exception {
     log.info("Opening index \"" + iconfig.id
         + "\" for harvesting all documents...");
-    // TODO: This will OOM now!
-    // reader = iconfig.newIndexReader();
     // enable optimization
     savedAutoOptimize = (String) iconfig.harvesterProperties.setProperty(
         "autoOptimize", "true");
-    super.open(iconfig);
+    super.open(es, iconfig);
   }
   
   @Override

@@ -18,12 +18,15 @@ package de.pangaea.metadataportal.harvester;
 
 import de.pangaea.metadataportal.config.*;
 import de.pangaea.metadataportal.utils.BooleanParser;
+
 import java.io.*;
 import java.net.*;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+
 import javax.xml.transform.stream.StreamSource;
+
 import java.util.zip.*;
 
 /**
@@ -71,8 +74,8 @@ public class ZipFileHarvester extends SingleFileEntitiesHarvester {
   protected int timeout = DEFAULT_TIMEOUT;
   
   @Override
-  public void open(IndexConfig iconfig) throws Exception {
-    super.open(iconfig);
+  public void open(ElasticSearchConnection es, IndexConfig iconfig) throws Exception {
+    super.open(es, iconfig);
     
     zipFile = iconfig.harvesterProperties.getProperty("zipFile");
     if (zipFile == null) throw new IllegalArgumentException(
