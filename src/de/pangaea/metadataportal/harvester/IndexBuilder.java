@@ -404,8 +404,8 @@ public class IndexBuilder {
         log.info("Removing documents not seen while harvesting (this may take a while)...");
         final QueryBuilder qb = QueryBuilders.boolQuery()
             .must(QueryBuilders.termQuery(IndexConstants.FIELDNAME_SOURCE, iconfig.id))
-            .mustNot(QueryBuilders.idsQuery(iconfig.parent.typeName).ids(validIdentifiers.toArray(new String[validIdentifiers.size()])));
-        client.prepareDeleteByQuery(iconfig.id).setQuery(qb).execute().actionGet();
+            .mustNot(QueryBuilders.idsQuery().ids(validIdentifiers.toArray(new String[validIdentifiers.size()])));
+        client.prepareDeleteByQuery(iconfig.id).setTypes(iconfig.parent.typeName).setQuery(qb).execute().actionGet();
       }
       
       assert committedIdentifiers.size() == bulkRequest.numberOfActions();
