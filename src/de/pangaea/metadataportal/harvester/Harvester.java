@@ -210,7 +210,7 @@ public abstract class Harvester {
         .getProperty("harvestMessageStep", "100"));
     if (harvestMessageStep <= 0) throw new IllegalArgumentException(
         "Invalid value for harvestMessageStep: " + harvestMessageStep);
-    index = new IndexBuilder(false, iconfig);
+    index = new IndexBuilder(iconfig);
     
     fromDateReference = index.getLastHarvestedFromDisk();
   }

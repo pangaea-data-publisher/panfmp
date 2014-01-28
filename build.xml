@@ -112,7 +112,7 @@
   </target>
 	
 	<!-- EXECUTE SCRIPTS WITH CLASSPATH target -->
-	<target name="execute-harvester" depends="compile">
+	<target name="run-harvester" depends="compile">
 		<makeurl property="log4j-conf" file="scripts/console.log.properties"/>
 		<!--<pathconvert property="cp" refid="path.run"/>
 		<echo message="CLASSPATH: ${cp}"/>-->
