@@ -6,7 +6,6 @@
 			Variables are evaluated at beginning of indexing process and can be used in all filters, fields, field-templates.
 			The index builder also has some internal variables and functions in its namespace, that can be used:
 			- $ib:index: the ID of the current index
-			- $ib:indexDisplayName: the displayName of the current index
 			- $ib:docIdentifier: the identifier of the harvested document
 			- $ib:docDatestamp: the datestamp of the harvested document (if available), else ""
 		-->
@@ -85,8 +84,6 @@
 	<!-- Definition of Indexes to harvester and their properties -->
 	<cfg:indexes>
 		<cfg:index id="pangaea-carboocean">
-			<cfg:displayName>PANGAEA datasets for CARBOOCEAN</cfg:displayName>
-			<cfg:indexDir>./lucene-store/pangaea-carboocean</cfg:indexDir>
 			<cfg:harvesterClass>de.pangaea.metadataportal.harvester.OAIHarvester</cfg:harvesterClass>
 			<cfg:harvesterProperties>
 				<cfg:baseUrl>http://ws.pangaea.de/oai/</cfg:baseUrl>
@@ -97,8 +94,6 @@
 			</cfg:harvesterProperties>
 		</cfg:index>
 		<cfg:index id="ifremer">
-			<cfg:displayName>IFREMER datasets</cfg:displayName>
-			<cfg:indexDir>./lucene-store/ifremer</cfg:indexDir>
 			<cfg:harvesterClass>de.pangaea.metadataportal.harvester.OAIHarvester</cfg:harvesterClass>
 			<cfg:harvesterProperties>
 				<cfg:baseUrl>http://www.ifremer.fr/oai/provider</cfg:baseUrl>
@@ -133,8 +128,6 @@
 			-->
 		</cfg:index>
 		<cfg:index id="copepod">
-			<cfg:displayName>COPEPOD</cfg:displayName>
-			<cfg:indexDir>./lucene-store/copepod</cfg:indexDir>
 			<cfg:harvesterClass>de.pangaea.metadataportal.harvester.WebCrawlingHarvester</cfg:harvesterClass>
 			<cfg:harvesterProperties>
 				<cfg:baseUrl>http://www.st.nmfs.noaa.gov/plankton/content/xml_src/</cfg:baseUrl>

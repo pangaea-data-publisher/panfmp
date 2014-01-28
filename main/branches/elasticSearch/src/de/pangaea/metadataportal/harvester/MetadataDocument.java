@@ -302,6 +302,7 @@ public class MetadataDocument {
         }
         addDefaultField(builder);
         addFields(builder);
+        closeJSON(builder);
       } finally {
         XPathResolverImpl.getInstance().unsetVariables();
       }
@@ -326,7 +327,8 @@ public class MetadataDocument {
       return null; // to delete
     } else {
       XContentBuilder builder = XContentFactory.jsonBuilder().startObject()
-        .field(IndexConstants.FIELDNAME_MDOC_IMPL, getClass().getName());
+        .field(IndexConstants.FIELDNAME_MDOC_IMPL, getClass().getName())
+        .field(IndexConstants.FIELDNAME_SOURCE, iconfig.id);
       if (datestamp != null) {
         builder.field(IndexConstants.FIELDNAME_DATESTAMP, datestamp);
       }
@@ -496,10 +498,8 @@ public class MetadataDocument {
    * variables must be registered in the supplied {@link Map}.
    */
   protected void addSystemVariables(Map<QName,Object> vars) {
-    if (identifier == null || iconfig == null || iconfig.id == null
-        || iconfig.displayName == null) throw new NullPointerException();
+    if (identifier == null || iconfig == null || iconfig.id == null) throw new NullPointerException();
     vars.put(XPathResolverImpl.VARIABLE_INDEX_ID, iconfig.id);
-    vars.put(XPathResolverImpl.VARIABLE_INDEX_DISPLAYNAME, iconfig.displayName);
     vars.put(XPathResolverImpl.VARIABLE_DOC_IDENTIFIER, identifier);
     vars.put(XPathResolverImpl.VARIABLE_DOC_DATESTAMP, (datestamp == null) ? ""
         : ISODateFormatter.formatLong(datestamp));

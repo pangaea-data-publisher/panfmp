@@ -190,8 +190,6 @@ public class Config {
       dig.addCallMethod("config/indexes/index", "setId", 1);
       dig.addCallParam("config/indexes/index", 0, "id");
       
-      dig.addCallMethod("config/indexes/index/displayName", "setDisplayName", 0);
-      dig.addCallMethod("config/indexes/index/indexDir", "setIndexDir", 0);
       dig.addCallMethod("config/indexes/index/harvesterClass",
           "setHarvesterClass", 0);
       
