@@ -44,11 +44,12 @@ import de.pangaea.metadataportal.utils.IndexConstants;
  * 
  * @author Uwe Schindler
  */
-public class IndexBuilder {
+public final class IndexBuilder {
   private static final org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory
       .getLog(IndexBuilder.class);
   
-  protected IndexConfig iconfig;
+  protected final IndexConfig iconfig;
+  protected final Client client;
   
   private Date lastHarvested = null;
   
@@ -76,9 +77,8 @@ public class IndexBuilder {
   private Thread[] converterThreadList;
   private boolean threadsStarted = false;
   
-  public IndexBuilder(IndexConfig iconfig)
-      throws IOException {
-    //TODO: if (!iconfig.isIndexAvailable()) create = true;
+  IndexBuilder(Client client, IndexConfig iconfig) {
+    this.client = client;
     this.iconfig = iconfig;
     
     maxBufferedChanges = Integer.parseInt(iconfig.harvesterProperties
@@ -309,10 +309,7 @@ public class IndexBuilder {
     log.info("Indexer thread started.");
     int updated = 0, deleted = 0;
     boolean finished = false;
-    Client client = null;
     try {
-      client = iconfig.parent.getElasticSearchClient();
-      
       final HashSet<String> committedIdentifiers = new HashSet<String>(maxBufferedChanges);
       BulkRequestBuilder bulkRequest = client.prepareBulk();
       
@@ -423,8 +420,6 @@ public class IndexBuilder {
       synchronized (indexerLock) {
         indexerLock.notifyAll();
       }
-      client.close();
-      client = null;
       log.info("Indexer thread stopped.");
     }
   }

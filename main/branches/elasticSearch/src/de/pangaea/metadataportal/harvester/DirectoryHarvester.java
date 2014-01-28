@@ -51,8 +51,8 @@ public class DirectoryHarvester extends SingleFileEntitiesHarvester implements
   private String identifierPrefix = "";
   
   @Override
-  public void open(IndexConfig iconfig) throws Exception {
-    super.open(iconfig);
+  public void open(ElasticSearchConnection es, IndexConfig iconfig) throws Exception {
+    super.open(es, iconfig);
     
     String s = iconfig.harvesterProperties.getProperty("directory");
     if (s == null) throw new IllegalArgumentException(

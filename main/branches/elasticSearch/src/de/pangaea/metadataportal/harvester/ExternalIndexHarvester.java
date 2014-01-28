@@ -82,8 +82,8 @@ public class ExternalIndexHarvester extends SingleFileEntitiesHarvester {
   private Query query = null;
   
   @Override
-  public void open(IndexConfig iconfig) throws Exception {
-    super.open(iconfig);
+  public void open(ElasticSearchConnection es, IndexConfig iconfig) throws Exception {
+    super.open(es, iconfig);
     
     identifierPrefix = iconfig.harvesterProperties.getProperty(
         "identifierPrefix", "");

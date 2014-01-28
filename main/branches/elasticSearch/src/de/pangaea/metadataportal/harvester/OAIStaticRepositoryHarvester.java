@@ -20,8 +20,10 @@ import de.pangaea.metadataportal.utils.*;
 import de.pangaea.metadataportal.config.*;
 
 import java.util.*;
+
 import org.apache.commons.digester.*;
 import org.xml.sax.*;
+
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -45,8 +47,8 @@ public class OAIStaticRepositoryHarvester extends OAIHarvesterBase {
   
   // construtor
   @Override
-  public void open(IndexConfig iconfig) throws Exception {
-    super.open(iconfig);
+  public void open(ElasticSearchConnection es, IndexConfig iconfig) throws Exception {
+    super.open(es, iconfig);
     filterIncomingSets = true; // always filter set names
     
     if (sets != null) {

@@ -24,6 +24,7 @@ import java.net.*;
 import java.io.*;
 import java.util.zip.*;
 import java.util.concurrent.atomic.AtomicReference;
+
 import org.xml.sax.InputSource;
 import org.xml.sax.EntityResolver;
 import org.xml.sax.SAXException;
@@ -77,8 +78,8 @@ public abstract class OAIHarvesterBase extends Harvester {
   
   // construtor
   @Override
-  public void open(IndexConfig iconfig) throws Exception {
-    super.open(iconfig);
+  public void open(ElasticSearchConnection es, IndexConfig iconfig) throws Exception {
+    super.open(es, iconfig);
     
     String s = iconfig.harvesterProperties.getProperty("setSpec");
     if (s != null) {

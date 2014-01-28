@@ -112,52 +112,57 @@ public abstract class Harvester {
       indexList = Collections.singletonList(iconf);
     }
     
-    for (IndexConfig siconf : indexList) {
-      Class<? extends Harvester> hc = (harvesterClass == null) ? siconf.harvesterClass
-          : harvesterClass;
-      staticLog.info("Harvesting documents into index \"" + siconf.id
-          + "\" using harvester \"" + hc.getName() + "\"...");
-      Harvester h = null;
-      boolean cleanShutdown = false;
-      try {
-        h = hc.newInstance();
-        h.open(siconf);
-        h.harvest();
-        // everything OK => clean shutdown with storing all infos
-        cleanShutdown = true;
-      } catch (IndexBuilderBackgroundFailure ibf) {
-        // do nothing, this exception is only to break out, real exception is
-        // thrown on close
-      } catch (SAXParseException saxe) {
-        staticLog.fatal(
-            "Harvesting documents into index \"" + siconf.id
-                + "\" failed due to SAX parse error in \""
-                + saxe.getSystemId() + "\", line " + saxe.getLineNumber()
-                + ", column " + saxe.getColumnNumber() + ":", saxe);
-      } catch (TransformerException transfe) {
-        String loc = transfe.getLocationAsString();
-        staticLog.fatal("Harvesting documents into index \"" + siconf.id
-            + "\" failed due to transformer/parse error"
-            + ((loc != null) ? (" at " + loc) : "") + ":", transfe);
-      } catch (Exception e) {
-        staticLog.fatal("Harvesting documents into index \"" + siconf.id
-            + "\" failed!", e);
+    final ElasticSearchConnection es = new ElasticSearchConnection(conf);
+    try {
+      for (IndexConfig siconf : indexList) {
+        Class<? extends Harvester> hc = (harvesterClass == null) ? siconf.harvesterClass
+            : harvesterClass;
+        staticLog.info("Harvesting documents into index \"" + siconf.id
+            + "\" using harvester \"" + hc.getName() + "\"...");
+        Harvester h = null;
+        boolean cleanShutdown = false;
+        try {
+          h = hc.newInstance();
+          h.open(es, siconf);
+          h.harvest();
+          // everything OK => clean shutdown with storing all infos
+          cleanShutdown = true;
+        } catch (IndexBuilderBackgroundFailure ibf) {
+          // do nothing, this exception is only to break out, real exception is
+          // thrown on close
+        } catch (SAXParseException saxe) {
+          staticLog.fatal(
+              "Harvesting documents into index \"" + siconf.id
+                  + "\" failed due to SAX parse error in \""
+                  + saxe.getSystemId() + "\", line " + saxe.getLineNumber()
+                  + ", column " + saxe.getColumnNumber() + ":", saxe);
+        } catch (TransformerException transfe) {
+          String loc = transfe.getLocationAsString();
+          staticLog.fatal("Harvesting documents into index \"" + siconf.id
+              + "\" failed due to transformer/parse error"
+              + ((loc != null) ? (" at " + loc) : "") + ":", transfe);
+        } catch (Exception e) {
+          staticLog.fatal("Harvesting documents into index \"" + siconf.id
+              + "\" failed!", e);
+        }
+        // cleanup
+        if (h != null && !h.isClosed()) try {
+          h.close(cleanShutdown);
+          staticLog.info("Harvester for index \"" + siconf.id + "\" closed.");
+        } catch (Exception e) {
+          staticLog.fatal("Error during harvesting into index \"" + siconf.id
+              + "\" occurred:", e);
+        }
       }
-      // cleanup
-      if (h != null && !h.isClosed()) try {
-        h.close(cleanShutdown);
-        staticLog.info("Harvester for index \"" + siconf.id + "\" closed.");
-      } catch (Exception e) {
-        staticLog.fatal("Error during harvesting into index \"" + siconf.id
-            + "\" occurred:", e);
-      }
+    } finally {
+      es.close();
     }
   }
   
   /**
    * Logger instance (shared by all subclasses).
    */
-  protected org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory
+  protected final org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory
       .getLog(this.getClass());
   
   /**
@@ -202,7 +207,7 @@ public abstract class Harvester {
    *           if an exception occurs during opening (various types of
    *           exceptions can be thrown).
    */
-  public void open(IndexConfig iconfig) throws Exception {
+  public void open(ElasticSearchConnection es, IndexConfig iconfig) throws Exception {
     if (iconfig == null) throw new IllegalArgumentException(
         "Missing index configuration");
     this.iconfig = iconfig;
@@ -210,7 +215,7 @@ public abstract class Harvester {
         .getProperty("harvestMessageStep", "100"));
     if (harvestMessageStep <= 0) throw new IllegalArgumentException(
         "Invalid value for harvestMessageStep: " + harvestMessageStep);
-    index = new IndexBuilder(iconfig);
+    index = es.getIndexBuilder(iconfig);
     
     fromDateReference = index.getLastHarvestedFromDisk();
   }

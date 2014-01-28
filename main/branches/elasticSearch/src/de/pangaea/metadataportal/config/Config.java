@@ -19,16 +19,16 @@ package de.pangaea.metadataportal.config;
 import java.io.File;
 import java.net.CookieHandler;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 
 import javax.xml.XMLConstants;
 import javax.xml.transform.Templates;
@@ -39,9 +39,6 @@ import javax.xml.validation.SchemaFactory;
 import org.apache.commons.digester.AbstractObjectCreationFactory;
 import org.apache.commons.digester.ExtendedBaseRules;
 import org.apache.commons.digester.SetPropertiesRule;
-import org.apache.lucene.index.IndexWriter.IndexReaderWarmer;
-import org.elasticsearch.client.Client;
-import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
@@ -205,6 +202,21 @@ public class Config {
       dig.addDoNothing("config/globalHarvesterProperties");
       dig.addCallMethod("config/globalHarvesterProperties/*",
           "addGlobalHarvesterProperty", 0);
+      
+      // *** ELASTICSEARCH TransportClient settings ***
+      dig.addDoNothing("config/elasticSearchCluster");
+      dig.addCallMethod("config/elasticSearchCluster/address", "addEsAddress", 0);
+      dig.addFactoryCreate("config/elasticSearchCluster/settings",
+          new AbstractObjectCreationFactory() {
+            @Override
+            public Object createObject(Attributes attributes) {
+              return ImmutableSettings.settingsBuilder();
+            }
+          });
+      dig.addSetNext("config/elasticSearchCluster/settings", "setEsSettings");
+      dig.addCallMethod("config/elasticSearchCluster/settings/*", "put", 2);
+      dig.addCallParamPath("config/elasticSearchCluster/settings/*", 0);
+      dig.addCallParam("config/elasticSearchCluster/settings/*", 1);
       
       // parse config
       try {
@@ -374,14 +386,30 @@ public class Config {
     validateWithAugmentation = BooleanParser.parseBoolean(v.trim());
   }
   
-  public Client getElasticSearchClient() {
-    final Settings settings = ImmutableSettings.settingsBuilder()
-      .put("client.transport.ignore_cluster_name", true)
-      .put("client.transport.sniff", true)
-      .build();
-    final Client client = new TransportClient(settings)
-      .addTransportAddress(new InetSocketTransportAddress("127.0.0.1", 9300));
-    return client;
+  @PublicForDigesterUse
+  @Deprecated
+  public void addEsAddress(String v) {
+    // TODO: Better way to parse host:port, with working IPv6
+    try {
+      URI uri = new URI("dummy://" + v.trim() + "/");
+      String host = uri.getHost();
+      if (host == null)
+        throw new IllegalArgumentException("Missing hostname: " + v);
+      int port = uri.getPort();
+      if (port == -1) port = 9300;
+      esTransports.add(new InetSocketTransportAddress(host, port));
+    } catch (URISyntaxException use) {
+      throw new IllegalArgumentException("Invalid address: " + v);
+    }
+  }
+  
+  @PublicForDigesterUse
+  @Deprecated
+  public void setEsSettings(Settings.Builder bld) {
+    if (esSettings != null)
+      throw new IllegalArgumentException("Duplicate elasticSearchCluster/settings element");
+    // strip the XML matcher path -- TODO: more elegant way than Digester.addCallParamPath()?
+    esSettings = bld.build().getByPrefix("config/elasticSearchCluster/settings/");
   }
   
   // get configuration infos
@@ -399,9 +427,13 @@ public class Config {
     return templ;
   }
   
-  // members "the configuration"
+  // indexes
   public final Map<String,IndexConfig> indexes = new LinkedHashMap<String,IndexConfig>();
   
+  // metadata mapping name
+  public String typeName = "doc"; // TODO
+
+  // fields
   public final Map<String,FieldConfig> fields = new LinkedHashMap<String,FieldConfig>();
   public ExpressionConfig defaultField = null;
   
@@ -416,9 +448,11 @@ public class Config {
   public Schema schema = null;
   public boolean haltOnSchemaError = false, validateWithAugmentation = true;
   
-  /* public Templates xsltBeforeXPath=null; */
+  // TransportClient settings
+  public final List<InetSocketTransportAddress> esTransports = new ArrayList<InetSocketTransportAddress>();
+  public Settings esSettings = null;
   
-  public String typeName = "document"; // TODO: make configureable
+  /* public Templates xsltBeforeXPath=null; */
   
   // Template cache
   private final Map<String,Templates> templatesCache = new HashMap<String,Templates>();
@@ -426,8 +460,6 @@ public class Config {
   public final Properties globalHarvesterProperties = new Properties();
     
   public String file;
-  
-  public final Set<IndexReaderWarmer> indexReaderWarmers = new LinkedHashSet<IndexReaderWarmer>();
   
   protected ExtendedDigester dig = null;
   

@@ -137,4 +137,12 @@
 			</cfg:harvesterProperties>
 		</cfg:index>
 	</cfg:indexes>
+	<cfg:elasticSearchCluster>
+		<!-- multiple addresses allowed, just repeat. Uses default port of 9300 if omitted, otherwise give the port number separated by colon: -->
+		<cfg:address>localhost</cfg:address>
+		<cfg:settings>
+			<cfg:client.transport.ignore_cluster_name>true</cfg:client.transport.ignore_cluster_name>
+			<cfg:client.transport.sniff>true</cfg:client.transport.sniff>
+		</cfg:settings>
+	</cfg:elasticSearchCluster>
 </cfg:config>

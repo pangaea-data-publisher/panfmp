@@ -94,8 +94,8 @@ public class WebCrawlingHarvester extends SingleFileEntitiesHarvester {
   private Class<? extends XMLReader> htmlReaderClass = null;
   
   @Override
-  public void open(IndexConfig iconfig) throws Exception {
-    super.open(iconfig);
+  public void open(ElasticSearchConnection es, IndexConfig iconfig) throws Exception {
+    super.open(es, iconfig);
     
     String s = iconfig.harvesterProperties.getProperty("baseUrl");
     if (s == null) throw new IllegalArgumentException(
