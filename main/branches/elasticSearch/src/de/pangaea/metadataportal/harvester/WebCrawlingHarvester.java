@@ -25,7 +25,9 @@ import java.util.*;
 import java.util.zip.*;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+
 import javax.xml.transform.sax.SAXSource;
+
 import org.xml.sax.*;
 import org.xml.sax.helpers.DefaultHandler;
 
@@ -373,6 +375,7 @@ public class WebCrawlingHarvester extends SingleFileEntitiesHarvester {
     return m.matches();
   }
   
+  @SuppressWarnings("resource")
   private URL processURL(URL url) throws Exception {
     for (int retry = 0; retry <= retryCount; retry++) {
       log.info("Requesting props of '" + url + "'...");

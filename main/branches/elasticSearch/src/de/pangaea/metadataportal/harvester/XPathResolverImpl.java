@@ -59,6 +59,7 @@ public final class XPathResolverImpl implements XPathFunctionResolver,
       // FUNCTION: isDocIdentifierUnique() -- test if identifier of current
       // document is unique
       return new XPathFunction() {
+        @SuppressWarnings("rawtypes")
         public Object evaluate(List args) throws XPathFunctionException {
           return isDocIdentifierUnique(args);
         }
@@ -95,6 +96,7 @@ public final class XPathResolverImpl implements XPathFunctionResolver,
   }
   */
   
+  @SuppressWarnings("rawtypes")
   private Boolean isDocIdentifierUnique(List args)
       throws XPathFunctionException {
     return true; // TODO: Implement this!
