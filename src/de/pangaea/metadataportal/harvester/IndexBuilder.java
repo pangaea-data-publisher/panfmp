@@ -32,8 +32,11 @@ import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
 
 import de.pangaea.metadataportal.config.IndexConfig;
+import de.pangaea.metadataportal.utils.IndexConstants;
 
 /**
  * Component of <b>panFMP</b> that analyzes and indexes harvested documents in
@@ -347,6 +350,7 @@ public class IndexBuilder {
         committedIdentifiers.add(entry.identifier);
         
         if (committedIdentifiers.size() >= maxBufferedChanges) {
+          assert committedIdentifiers.size() == bulkRequest.numberOfActions();
           BulkResponse bulkResponse = bulkRequest.execute().actionGet();
           if (bulkResponse.hasFailures()) {
             // TODO
@@ -362,6 +366,7 @@ public class IndexBuilder {
               .unmodifiableSet(committedIdentifiers));
           committedIdentifiers.clear();
           
+          // create new bulk
           bulkRequest = client.prepareBulk();
         }
       }
@@ -372,19 +377,20 @@ public class IndexBuilder {
         indexerLock.notifyAll();
       }
       
-      // check vor validIdentifiers Set and remove all unknown identifiers from
-      // index, if available (but not if new-created index)
+      // check for validIdentifiers Set and remove all unknown identifiers from
+      // index, if available
       Set<String> validIdentifiers = this.validIdentifiers.get();
       if (validIdentifiers != null) {
-        /* TODO: Add implementation, crazy with ES!        
-        // only flush if commitEvent interface registered
-        BulkResponse bulkResponse = bulkRequest.execute().actionGet();
-        bulkRequest = null;
-        if (bulkResponse.hasFailures()) {
-          // TODO
-          throw new IOException("TODO: Add correct error handling");
+        if (bulkRequest.numberOfActions() > 0) {
+          BulkResponse bulkResponse = bulkRequest.execute().actionGet();
+          bulkRequest = null;
+          if (bulkResponse.hasFailures()) {
+            // TODO
+            throw new IOException("TODO: Add correct error handling");
+          }
+        } else {
+          bulkRequest = null;
         }
-
         
         log.info(deleted + " docs presumably deleted (if existent) and "
             + updated + " docs (re-)indexed so far.");
@@ -396,36 +402,22 @@ public class IndexBuilder {
         committedIdentifiers.clear();
         
         log.info("Removing documents not seen while harvesting (this may take a while)...");
-        IndexReader reader = null;
-        TermEnum terms = null;
-        Term base = new Term(IndexConstants.FIELDNAME_IDENTIFIER, "");
-        try {
-          reader = iconfig.newIndexReader();
-          terms = reader.terms(base);
-          do {
-            Term t = terms.term();
-            if (t != null && base.field() == t.field()) {
-              if (!validIdentifiers.contains(t.text())) {
-                writer.deleteDocuments(t);
-                committedIdentifiers.add(t.text());
-                deleted++;
-              }
-            } else {
-              break;
-            }
-          } while (terms.next());
-        } finally {
-          if (terms != null) terms.close();
-          if (reader != null) reader.close();
-        }
-        */
+        final QueryBuilder qb = QueryBuilders.boolQuery()
+            .must(QueryBuilders.termQuery(IndexConstants.FIELDNAME_SOURCE, iconfig.id))
+            .mustNot(QueryBuilders.idsQuery(iconfig.parent.typeName).ids(validIdentifiers.toArray(new String[validIdentifiers.size()])));
+        client.prepareDeleteByQuery(iconfig.id).setQuery(qb).execute().actionGet();
       }
       
-      BulkResponse bulkResponse = bulkRequest.execute().actionGet();
-      bulkRequest = null;
-      if (bulkResponse.hasFailures()) {
-        // TODO
-        throw new IOException("TODO: Add correct error handling");
+      assert committedIdentifiers.size() == bulkRequest.numberOfActions();
+      if (bulkRequest != null && bulkRequest.numberOfActions() > 0) {
+        BulkResponse bulkResponse = bulkRequest.execute().actionGet();
+        bulkRequest = null;
+        if (bulkResponse.hasFailures()) {
+          // TODO
+          throw new IOException("TODO: Add correct error handling");
+        }
+      } else {
+        bulkRequest = null;
       }
 
       // notify Harvester of index commit
