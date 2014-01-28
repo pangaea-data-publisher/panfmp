@@ -55,15 +55,11 @@ public class Rebuilder extends Harvester {
   
   // harvester interface
   private IndexReader reader = null;
-  private String savedAutoOptimize = null;
   
   @Override
   public void open(ElasticSearchConnection es, IndexConfig iconfig) throws Exception {
     log.info("Opening index \"" + iconfig.id
         + "\" for harvesting all documents...");
-    // enable optimization
-    savedAutoOptimize = (String) iconfig.harvesterProperties.setProperty(
-        "autoOptimize", "true");
     super.open(es, iconfig);
   }
   
@@ -72,12 +68,6 @@ public class Rebuilder extends Harvester {
     if (reader != null) reader.close();
     reader = null;
     super.close(cleanShutdown);
-    if (savedAutoOptimize == null) {
-      iconfig.harvesterProperties.remove("autoOptimize");
-    } else {
-      iconfig.harvesterProperties
-          .setProperty("autoOptimize", savedAutoOptimize);
-    }
   }
   
   @Override

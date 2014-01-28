@@ -89,7 +89,6 @@
 				<cfg:baseUrl>http://ws.pangaea.de/oai/</cfg:baseUrl>
 				<cfg:metadataPrefix>dif</cfg:metadataPrefix>
 				<cfg:setSpec>CARBOOCEAN</cfg:setSpec>
-				<cfg:autoOptimize>true</cfg:autoOptimize>
 				<cfg:validate>false</cfg:validate>
 			</cfg:harvesterProperties>
 		</cfg:index>
@@ -98,7 +97,6 @@
 			<cfg:harvesterProperties>
 				<cfg:baseUrl>http://www.ifremer.fr/oai/provider</cfg:baseUrl>
 				<cfg:metadataPrefix>dif</cfg:metadataPrefix>
-				<cfg:autoOptimize>true</cfg:autoOptimize>
 				<cfg:validate>true</cfg:validate>
 			</cfg:harvesterProperties>
 			<!--
@@ -132,7 +130,6 @@
 			<cfg:harvesterProperties>
 				<cfg:baseUrl>http://www.st.nmfs.noaa.gov/plankton/content/xml_src/</cfg:baseUrl>
 				<cfg:filenameFilter>.*\.xml</cfg:filenameFilter>
-				<cfg:autoOptimize>true</cfg:autoOptimize>
 				<cfg:validate>true</cfg:validate>
 			</cfg:harvesterProperties>
 		</cfg:index>

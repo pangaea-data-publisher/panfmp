@@ -332,7 +332,7 @@ public abstract class Harvester {
         "harvestMessageStep",
         // IndexBuilder
         "maxBufferedIndexChanges", "numConverterThreads", "maxConverterQueue",
-        "maxIndexerQueue", "autoOptimize", "conversionErrorAction",
+        "maxIndexerQueue", "conversionErrorAction",
         // IndexBuilder.XMLConverter
         "validate",
         // MetadataDocument
