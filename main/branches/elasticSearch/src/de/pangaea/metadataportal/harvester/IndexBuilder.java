@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -31,7 +32,11 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.apache.lucene.store.IOContext;
 import org.apache.lucene.store.IndexInput;
 import org.apache.lucene.store.IndexOutput;
+import org.elasticsearch.action.bulk.BulkRequestBuilder;
+import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.client.Client;
 import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.index.query.QueryBuilder;
 
 import de.pangaea.metadataportal.config.IndexConfig;
 import de.pangaea.metadataportal.utils.IndexConstants;
@@ -49,7 +54,6 @@ public class IndexBuilder {
   protected IndexConfig iconfig;
   
   private Date lastHarvested = null;
-  private boolean create;
   
   private static MetadataDocument MDOC_EOF = new MetadataDocument(null);
   private static IndexerQueueEntry LDOC_EOF = new IndexerQueueEntry(null, null);
@@ -75,18 +79,13 @@ public class IndexBuilder {
   private Thread[] converterThreadList;
   private boolean threadsStarted = false;
   
-  public IndexBuilder(boolean create, IndexConfig iconfig)
+  public IndexBuilder(IndexConfig iconfig)
       throws IOException {
     //TODO: if (!iconfig.isIndexAvailable()) create = true;
-    this.create = create;
     this.iconfig = iconfig;
-    if (create) try {
-      iconfig.getIndexDirectory().deleteFile(
-          IndexConstants.FILENAME_LASTHARVESTED);
-    } catch (IOException e) {}
     
     maxBufferedChanges = Integer.parseInt(iconfig.harvesterProperties
-        .getProperty("maxBufferedIndexChanges", "1000"));
+        .getProperty("maxBufferedIndexChanges", "100"));
     
     String s = iconfig.harvesterProperties.getProperty("conversionErrorAction");
     if (s != null) try {
@@ -135,10 +134,6 @@ public class IndexBuilder {
         indexerThreadRun();
       }
     }, getClass().getName() + "#Indexer");
-  }
-  
-  public boolean isCreatingNew() {
-    return create;
   }
   
   public boolean isFailed() {
@@ -230,7 +225,6 @@ public class IndexBuilder {
   }
   
   public Date getLastHarvestedFromDisk() {
-    if (create) return null;
     IndexInput in = null;
     Date d = null;
     try {
@@ -317,11 +311,12 @@ public class IndexBuilder {
     log.info("Indexer thread started.");
     int updated = 0, deleted = 0;
     boolean finished = false;
+    Client client = null;
     try {
-      //TODO
+      client = iconfig.parent.getElasticSearchClient();
       
-      HashSet<String> committedIdentifiers = new HashSet<String>(
-          maxBufferedChanges);
+      final HashSet<String> committedIdentifiers = new HashSet<String>(maxBufferedChanges);
+      BulkRequestBuilder bulkRequest = client.prepareBulk();
       
       while (failure.get() == null) {
         // notify eventually waiting checkIndexerBuffer() calls
@@ -341,32 +336,38 @@ public class IndexBuilder {
         if (entry.builder == null) {
           if (log.isDebugEnabled()) log.debug("Deleting document: "
               + entry.identifier);
-          //writer.deleteDocuments(t);
-          // TODO: do delete
+          bulkRequest.add(
+            client.prepareDelete(iconfig.id, iconfig.parent.typeName, entry.identifier)
+          );
           deleted++;
         } else {
           if (log.isDebugEnabled()) log.debug("Updating document: "
               + entry.identifier);
           if (log.isTraceEnabled()) log.trace("Data: " + entry.builder.string());
-          //writer.updateDocument(t, entry.ldoc);
-          // TODO: do index
+          bulkRequest.add(
+            client.prepareIndex(iconfig.id, iconfig.parent.typeName, entry.identifier).setSource(entry.builder)
+          );
           updated++;
         }
         committedIdentifiers.add(entry.identifier);
         
         if (committedIdentifiers.size() >= maxBufferedChanges) {
-          HarvesterCommitEvent ce = commitEvent.get();
-          
-          // only flush if commitEvent interface registered
-          //TODO: if (ce != null) writer.commit();
+          BulkResponse bulkResponse = bulkRequest.execute().actionGet();
+          if (bulkResponse.hasFailures()) {
+            // TODO
+            throw new IOException("TODO: Add correct error handling");
+          }
           
           log.info(deleted + " docs presumably deleted (if existent) and "
               + updated + " docs (re-)indexed so far.");
           
           // notify Harvester of index commit
+          final HarvesterCommitEvent ce = commitEvent.get();
           if (ce != null) ce.harvesterCommitted(Collections
               .unmodifiableSet(committedIdentifiers));
           committedIdentifiers.clear();
+          
+          bulkRequest = client.prepareBulk();
         }
       }
       
@@ -379,21 +380,26 @@ public class IndexBuilder {
       // check vor validIdentifiers Set and remove all unknown identifiers from
       // index, if available (but not if new-created index)
       Set<String> validIdentifiers = this.validIdentifiers.get();
-      if (validIdentifiers != null && !create) {
-        HarvesterCommitEvent ce = commitEvent.get();
-        
+      if (validIdentifiers != null) {
+        /* TODO: Add implementation, crazy with ES!        
         // only flush if commitEvent interface registered
-        //TODO: if (ce != null) writer.commit();
+        BulkResponse bulkResponse = bulkRequest.execute().actionGet();
+        bulkRequest = null;
+        if (bulkResponse.hasFailures()) {
+          // TODO
+          throw new IOException("TODO: Add correct error handling");
+        }
+
         
         log.info(deleted + " docs presumably deleted (if existent) and "
             + updated + " docs (re-)indexed so far.");
         
         // notify Harvester of index commit
+        final HarvesterCommitEvent ce = commitEvent.get();
         if (ce != null) ce.harvesterCommitted(Collections
             .unmodifiableSet(committedIdentifiers));
         committedIdentifiers.clear();
         
-        /* TODO: Add implementation, crazy with ES!
         log.info("Removing documents not seen while harvesting (this may take a while)...");
         IndexReader reader = null;
         TermEnum terms = null;
@@ -420,9 +426,15 @@ public class IndexBuilder {
         */
       }
       
+      BulkResponse bulkResponse = bulkRequest.execute().actionGet();
+      bulkRequest = null;
+      if (bulkResponse.hasFailures()) {
+        // TODO
+        throw new IOException("TODO: Add correct error handling");
+      }
+
       // notify Harvester of index commit
       HarvesterCommitEvent ce = commitEvent.get();
-      //TODO: if (writer != null && ce != null) writer.commit();
       if (ce != null && committedIdentifiers.size() > 0) ce
           .harvesterCommitted(Collections.unmodifiableSet(committedIdentifiers));
       committedIdentifiers.clear();
@@ -430,7 +442,7 @@ public class IndexBuilder {
       finished = true;
       log.info(deleted + " docs presumably deleted (only if existent) and "
           + updated + " docs (re-)indexed - finished.");
-    } catch (IOException e) {
+    } catch (Exception e) {
       if (!finished) log.warn("Only " + deleted
           + " docs presumably deleted (only if existent) and " + updated
           + " docs (re-)indexed before the following error occurred: " + e);
@@ -444,16 +456,8 @@ public class IndexBuilder {
       synchronized (indexerLock) {
         indexerLock.notifyAll();
       }
-      // TODO: close writer
-      /*if (writer != null) try {
-        writer.commit();
-        writer.close();
-      } catch (IOException ioe) {
-        log.warn(
-            "Failed to close Lucene IndexWriter, you may need to remove lock files!",
-            ioe);
-      }
-      writer = null;*/
+      client.close();
+      client = null;
       log.info("Indexer thread stopped.");
     }
   }

@@ -21,6 +21,7 @@ import java.net.CookieHandler;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -28,7 +29,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.WeakHashMap;
 
 import javax.xml.XMLConstants;
 import javax.xml.transform.Templates;
@@ -40,6 +40,11 @@ import org.apache.commons.digester.AbstractObjectCreationFactory;
 import org.apache.commons.digester.ExtendedBaseRules;
 import org.apache.commons.digester.SetPropertiesRule;
 import org.apache.lucene.index.IndexWriter.IndexReaderWarmer;
+import org.elasticsearch.client.Client;
+import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.common.settings.ImmutableSettings;
+import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
@@ -371,6 +376,16 @@ public class Config {
     validateWithAugmentation = BooleanParser.parseBoolean(v.trim());
   }
   
+  public Client getElasticSearchClient() {
+    final Settings settings = ImmutableSettings.settingsBuilder()
+      .put("client.transport.ignore_cluster_name", true)
+      .put("client.transport.sniff", true)
+      .build();
+    final Client client = new TransportClient(settings)
+      .addTransportAddress(new InetSocketTransportAddress("127.0.0.1", 9300));
+    return client;
+  }
+  
   // get configuration infos
   
   Templates loadTemplate(String file) throws Exception {
@@ -405,8 +420,10 @@ public class Config {
   
   /* public Templates xsltBeforeXPath=null; */
   
+  public String typeName = "document"; // TODO: make configureable
+  
   // Template cache
-  private final Map<String,Templates> templatesCache = new WeakHashMap<String,Templates>();
+  private final Map<String,Templates> templatesCache = new HashMap<String,Templates>();
   
   public final Properties globalHarvesterProperties = new Properties();
     
