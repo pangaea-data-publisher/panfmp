@@ -388,7 +388,7 @@ public class Config {
   @PublicForDigesterUse
   @Deprecated
   public void addEsAddress(String v) {
-    esTransports.add(new InetSocketTransportAddress(HostAndPort.parse(v.trim())));
+    esTransports.add(new InetSocketTransportAddress(HostAndPort.parse(v.trim(), 9300)));
   }
   
   @PublicForDigesterUse
