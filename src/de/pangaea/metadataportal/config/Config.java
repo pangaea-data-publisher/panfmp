@@ -65,10 +65,7 @@ public class Config {
   public Config(String file) throws Exception {
     this.file = file;
     
-    String version = de.pangaea.metadataportal.Package
-        .getFullPackageDescription();
-    if (version != null) log.info(version);
-    de.pangaea.metadataportal.Package.checkMinimumRequirements();
+    log.info(de.pangaea.metadataportal.Package.getFullPackageDescription());
     
     final CookieHandler defCookieH = CookieHandler.getDefault();
     if (defCookieH != null && defCookieH != SimpleCookieHandler.INSTANCE) {
