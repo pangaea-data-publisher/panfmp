@@ -36,7 +36,6 @@ import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 
 import de.pangaea.metadataportal.config.IndexConfig;
-import de.pangaea.metadataportal.harvester.HarvesterCommitEvent;
 import de.pangaea.metadataportal.utils.IndexConstants;
 
 /**
@@ -60,7 +59,7 @@ public final class IndexBuilder {
   private AtomicInteger runningConverters = new AtomicInteger(0);
   private AtomicReference<Exception> failure = new AtomicReference<Exception>(
       null);
-  private AtomicReference<HarvesterCommitEvent> commitEvent = new AtomicReference<HarvesterCommitEvent>(
+  private AtomicReference<CommitEvent> commitEvent = new AtomicReference<CommitEvent>(
       null);
   private AtomicReference<Set<String>> validIdentifiers = new AtomicReference<Set<String>>(
       null);
@@ -138,7 +137,7 @@ public final class IndexBuilder {
     return (failure.get() != null);
   }
   
-  public void registerHarvesterCommitEvent(HarvesterCommitEvent event) {
+  public void registerHarvesterCommitEvent(CommitEvent event) {
     commitEvent.set(event);
   }
   
@@ -359,7 +358,7 @@ public final class IndexBuilder {
               + updated + " docs (re-)indexed so far.");
           
           // notify Harvester of index commit
-          final HarvesterCommitEvent ce = commitEvent.get();
+          final CommitEvent ce = commitEvent.get();
           if (ce != null) ce.harvesterCommitted(Collections
               .unmodifiableSet(committedIdentifiers));
           committedIdentifiers.clear();
@@ -388,7 +387,7 @@ public final class IndexBuilder {
       }
 
       // notify Harvester of index commit
-      HarvesterCommitEvent ce = commitEvent.get();
+      CommitEvent ce = commitEvent.get();
       if (ce != null && committedIdentifiers.size() > 0) ce
           .harvesterCommitted(Collections.unmodifiableSet(committedIdentifiers));
       committedIdentifiers.clear();
