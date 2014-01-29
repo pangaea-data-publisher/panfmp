@@ -16,6 +16,8 @@
 
 package de.pangaea.metadataportal.harvester;
 
+import de.pangaea.metadataportal.processor.IndexBuilder;
+
 /**
  * This interface must be implemented to receive harvester commit events. Each
  * time after the {@link IndexBuilder} commits changes to the Lucene index it

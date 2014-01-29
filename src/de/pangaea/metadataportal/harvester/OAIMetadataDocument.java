@@ -16,12 +16,16 @@
 
 package de.pangaea.metadataportal.harvester;
 
-import de.pangaea.metadataportal.utils.*;
-import de.pangaea.metadataportal.config.IndexConfig;
-
-import java.util.*;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 import org.elasticsearch.common.xcontent.XContentBuilder;
+
+import de.pangaea.metadataportal.config.IndexConfig;
+import de.pangaea.metadataportal.processor.MetadataDocument;
+import de.pangaea.metadataportal.utils.ISODateFormatter;
+import de.pangaea.metadataportal.utils.IndexConstants;
+import de.pangaea.metadataportal.utils.PublicForDigesterUse;
 
 /**
  * Special implementation of {@link MetadataDocument} that adds OAI set support

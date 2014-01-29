@@ -293,10 +293,10 @@ public class Config {
         "Variables must be declared before all fields and filters!");
     if (f.name == null) throw new IllegalArgumentException(
         "A variable name is mandatory");
-    if (de.pangaea.metadataportal.harvester.XPathResolverImpl.INDEX_BUILDER_NAMESPACE
+    if (de.pangaea.metadataportal.processor.XPathResolverImpl.INDEX_BUILDER_NAMESPACE
         .equals(f.name.getNamespaceURI())) throw new IllegalArgumentException(
         "A XPath variable name may not be in the namespace for internal variables ('"
-            + de.pangaea.metadataportal.harvester.XPathResolverImpl.INDEX_BUILDER_NAMESPACE
+            + de.pangaea.metadataportal.processor.XPathResolverImpl.INDEX_BUILDER_NAMESPACE
             + "')");
     if (f.xPathExpr == null && f.xslt == null) throw new IllegalArgumentException(
         "A XPath or template itsself may not be empty");

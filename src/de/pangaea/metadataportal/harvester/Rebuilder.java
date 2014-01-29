@@ -16,10 +16,15 @@
 
 package de.pangaea.metadataportal.harvester;
 
-import de.pangaea.metadataportal.config.*;
-
-import org.apache.lucene.index.*;
+import org.apache.lucene.index.AtomicReader;
+import org.apache.lucene.index.AtomicReaderContext;
+import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.util.Bits;
+
+import de.pangaea.metadataportal.config.Config;
+import de.pangaea.metadataportal.config.IndexConfig;
+import de.pangaea.metadataportal.processor.ElasticSearchConnection;
+import de.pangaea.metadataportal.processor.MetadataDocument;
 
 /**
  * Index rebuilder implemented as harvester that reads all documents from an

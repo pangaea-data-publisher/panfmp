@@ -14,7 +14,7 @@
  *   limitations under the License.
  */
 
-package de.pangaea.metadataportal.harvester;
+package de.pangaea.metadataportal.processor;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -36,6 +36,7 @@ import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 
 import de.pangaea.metadataportal.config.IndexConfig;
+import de.pangaea.metadataportal.harvester.HarvesterCommitEvent;
 import de.pangaea.metadataportal.utils.IndexConstants;
 
 /**

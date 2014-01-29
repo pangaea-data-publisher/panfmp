@@ -16,9 +16,11 @@
 
 package de.pangaea.metadataportal.config;
 
-import de.pangaea.metadataportal.utils.*;
-import javax.xml.transform.*;
 import java.util.Locale;
+
+import javax.xml.transform.Templates;
+
+import de.pangaea.metadataportal.utils.PublicForDigesterUse;
 
 /**
  * A filter config element that filters harvested documents by a XPath

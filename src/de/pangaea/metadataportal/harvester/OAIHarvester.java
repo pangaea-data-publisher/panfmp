@@ -16,13 +16,20 @@
 
 package de.pangaea.metadataportal.harvester;
 
-import de.pangaea.metadataportal.utils.*;
-import de.pangaea.metadataportal.config.*;
-
-import java.util.*;
 import java.net.URLEncoder;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
-import org.apache.commons.digester.*;
+import org.apache.commons.digester.ExtendedBaseRules;
+
+import de.pangaea.metadataportal.config.IndexConfig;
+import de.pangaea.metadataportal.processor.ElasticSearchConnection;
+import de.pangaea.metadataportal.utils.ExtendedDigester;
+import de.pangaea.metadataportal.utils.ISODateFormatter;
+import de.pangaea.metadataportal.utils.PublicForDigesterUse;
+import de.pangaea.metadataportal.utils.SaxRule;
 
 /**
  * Harvester for OAI-PMH repositories.

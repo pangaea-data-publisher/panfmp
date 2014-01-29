@@ -16,8 +16,11 @@
 
 package de.pangaea.metadataportal.config;
 
-import de.pangaea.metadataportal.utils.*;
 import javax.xml.namespace.QName;
+
+import de.pangaea.metadataportal.utils.ExtendedDigester;
+import de.pangaea.metadataportal.utils.PublicForDigesterUse;
+import de.pangaea.metadataportal.utils.QNameParser;
 
 /**
  * A config element that supplies a variable like variables in XPath. Variables

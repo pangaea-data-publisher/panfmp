@@ -16,8 +16,9 @@
 
 package de.pangaea.metadataportal;
 
-import de.pangaea.metadataportal.utils.BooleanParser;
 import java.util.Locale;
+
+import de.pangaea.metadataportal.utils.BooleanParser;
 
 /**
  * Class to get version information about panFMP.

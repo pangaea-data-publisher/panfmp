@@ -16,9 +16,16 @@
 
 package de.pangaea.metadataportal.utils;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.Set;
+
+import org.xml.sax.Attributes;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.DTDHandler;
+import org.xml.sax.EntityResolver;
+import org.xml.sax.ErrorHandler;
+import org.xml.sax.SAXException;
 import org.xml.sax.helpers.XMLFilterImpl;
-import org.xml.sax.*;
 
 /**
  * This class is used as a rule for included documents during

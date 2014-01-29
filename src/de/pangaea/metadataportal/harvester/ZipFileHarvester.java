@@ -16,18 +16,30 @@
 
 package de.pangaea.metadataportal.harvester;
 
-import de.pangaea.metadataportal.config.*;
-import de.pangaea.metadataportal.utils.BooleanParser;
-
-import java.io.*;
-import java.net.*;
-import java.util.*;
-import java.util.regex.Pattern;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FilterInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.Set;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipException;
+import java.util.zip.ZipInputStream;
 
 import javax.xml.transform.stream.StreamSource;
 
-import java.util.zip.*;
+import de.pangaea.metadataportal.config.IndexConfig;
+import de.pangaea.metadataportal.processor.ElasticSearchConnection;
+import de.pangaea.metadataportal.utils.BooleanParser;
 
 /**
  * Harvester for unzipping ZIP files and reading their contents. Identifiers

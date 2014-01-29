@@ -16,9 +16,12 @@
 
 package de.pangaea.metadataportal.utils;
 
-import javax.xml.transform.sax.*;
-import javax.xml.parsers.*;
-import javax.xml.xpath.*;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParserFactory;
+import javax.xml.transform.sax.SAXTransformerFactory;
+import javax.xml.xpath.XPathFactory;
 
 import org.apache.xalan.xsltc.trax.TransformerFactoryImpl;
 import org.apache.xerces.jaxp.DocumentBuilderFactoryImpl;

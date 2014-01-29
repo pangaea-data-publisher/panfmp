@@ -16,9 +16,14 @@
 
 package de.pangaea.metadataportal.config;
 
-import de.pangaea.metadataportal.utils.*;
-import javax.xml.xpath.*;
-import javax.xml.transform.*;
+import javax.xml.transform.Templates;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathExpression;
+import javax.xml.xpath.XPathExpressionException;
+
+import de.pangaea.metadataportal.utils.ExtendedDigester;
+import de.pangaea.metadataportal.utils.PublicForDigesterUse;
+import de.pangaea.metadataportal.utils.StaticFactories;
 
 /**
  * Generic XPath/XSLT config element. This class contains a XPath expression
@@ -35,9 +40,9 @@ public class ExpressionConfig {
     if ("".equals(xpath)) return; // Exception throws the Config.addField()
                                   // method
     XPath x = StaticFactories.xpathFactory.newXPath();
-    x.setXPathFunctionResolver(de.pangaea.metadataportal.harvester.XPathResolverImpl
+    x.setXPathFunctionResolver(de.pangaea.metadataportal.processor.XPathResolverImpl
         .getInstance());
-    x.setXPathVariableResolver(de.pangaea.metadataportal.harvester.XPathResolverImpl
+    x.setXPathVariableResolver(de.pangaea.metadataportal.processor.XPathResolverImpl
         .getInstance());
     // current namespace context with strict=true (display errors when namespace
     // declaration is missing [non-standard!])

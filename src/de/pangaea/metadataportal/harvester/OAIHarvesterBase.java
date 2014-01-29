@@ -16,19 +16,33 @@
 
 package de.pangaea.metadataportal.harvester;
 
-import de.pangaea.metadataportal.utils.*;
-import de.pangaea.metadataportal.config.*;
-
-import java.util.*;
-import java.net.*;
-import java.io.*;
-import java.util.zip.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Locale;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.InflaterInputStream;
 
-import org.xml.sax.InputSource;
+import org.apache.commons.digester.AbstractObjectCreationFactory;
+import org.apache.commons.digester.ObjectCreationFactory;
 import org.xml.sax.EntityResolver;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
-import org.apache.commons.digester.*;
+
+import de.pangaea.metadataportal.config.IndexConfig;
+import de.pangaea.metadataportal.processor.ElasticSearchConnection;
+import de.pangaea.metadataportal.processor.IndexBuilderBackgroundFailure;
+import de.pangaea.metadataportal.processor.MetadataDocument;
+import de.pangaea.metadataportal.utils.ExtendedDigester;
+import de.pangaea.metadataportal.utils.SimpleCookieHandler;
 
 /**
  * Abstract base class for OAI harvesting support in panFMP. Use one of the
