@@ -55,7 +55,6 @@ import de.pangaea.metadataportal.config.VariableConfig;
 import de.pangaea.metadataportal.harvester.Rebuilder;
 import de.pangaea.metadataportal.utils.BooleanParser;
 import de.pangaea.metadataportal.utils.ISODateFormatter;
-import de.pangaea.metadataportal.utils.IndexConstants;
 import de.pangaea.metadataportal.utils.LenientDateParser;
 import de.pangaea.metadataportal.utils.LoggingErrorListener;
 import de.pangaea.metadataportal.utils.StaticFactories;

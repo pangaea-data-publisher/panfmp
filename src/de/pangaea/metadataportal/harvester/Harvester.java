@@ -226,7 +226,7 @@ public abstract class Harvester {
         .getProperty("harvestMessageStep", "100"));
     if (harvestMessageStep <= 0) throw new IllegalArgumentException(
         "Invalid value for harvestMessageStep: " + harvestMessageStep);
-    index = es.getIndexBuilder(iconfig);
+    index = es.getDocumentProcessor(iconfig);
     
     fromDateReference = index.getLastHarvestedFromDisk();
   }

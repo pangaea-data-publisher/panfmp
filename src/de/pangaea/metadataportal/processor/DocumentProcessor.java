@@ -36,7 +36,6 @@ import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 
 import de.pangaea.metadataportal.config.IndexConfig;
-import de.pangaea.metadataportal.utils.IndexConstants;
 
 /**
  * Component of <b>panFMP</b> that analyzes and indexes harvested documents in
