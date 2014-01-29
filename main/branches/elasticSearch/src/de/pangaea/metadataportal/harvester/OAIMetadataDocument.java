@@ -22,9 +22,9 @@ import java.util.Set;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 
 import de.pangaea.metadataportal.config.IndexConfig;
+import de.pangaea.metadataportal.processor.IndexConstants;
 import de.pangaea.metadataportal.processor.MetadataDocument;
 import de.pangaea.metadataportal.utils.ISODateFormatter;
-import de.pangaea.metadataportal.utils.IndexConstants;
 import de.pangaea.metadataportal.utils.PublicForDigesterUse;
 
 /**

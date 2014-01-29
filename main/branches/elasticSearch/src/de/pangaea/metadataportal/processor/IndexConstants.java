@@ -14,7 +14,7 @@
  *   limitations under the License.
  */
 
-package de.pangaea.metadataportal.utils;
+package de.pangaea.metadataportal.processor;
 
 /**
  * Some constants used by <b>panFMP</b>.
@@ -34,6 +34,4 @@ public final class IndexConstants {
   public static final String FIELDNAME_SET = FIELD_INTERNAL_PREFIX + "set";
   public static final String FIELDNAME_DATESTAMP = FIELD_INTERNAL_PREFIX + "datestamp";
   public static final String FIELDNAME_MDOC_IMPL = FIELD_INTERNAL_PREFIX + "mdoc-impl";
-  
-  public static final String FILENAME_LASTHARVESTED = "lastharvested";
 }

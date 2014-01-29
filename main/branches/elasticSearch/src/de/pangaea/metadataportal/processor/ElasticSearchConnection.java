@@ -60,7 +60,7 @@ public class ElasticSearchConnection implements Closeable {
     return client;
   }
   
-  public DocumentProcessor getIndexBuilder(IndexConfig iconfig) {
+  public DocumentProcessor getDocumentProcessor(IndexConfig iconfig) {
     return new DocumentProcessor(client(), iconfig);
   }
   

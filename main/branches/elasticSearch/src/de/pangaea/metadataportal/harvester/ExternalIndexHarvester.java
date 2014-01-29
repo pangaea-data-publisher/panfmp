@@ -49,7 +49,6 @@ import org.apache.lucene.util.Version;
 
 import de.pangaea.metadataportal.config.IndexConfig;
 import de.pangaea.metadataportal.processor.ElasticSearchConnection;
-import de.pangaea.metadataportal.utils.LegacyIndexConstants;
 
 /**
  * This harvester supports replication XML contents from an foreign
@@ -81,6 +80,17 @@ public class ExternalIndexHarvester extends SingleFileEntitiesHarvester {
   private DirectoryReader reader = null;
   private Directory indexDir = null;
   private Query query = null;
+  
+  // legacy constants from panFMP 1.x
+  private static final String FIELD_PREFIX = "internal-";
+  public static final String FIELDNAME_CONTENT = "textcontent".intern();
+  public static final String FIELDNAME_IDENTIFIER = (FIELD_PREFIX + "identifier").intern();
+  public static final String FIELDNAME_SET = (FIELD_PREFIX + "set").intern();
+  public static final String FIELDNAME_DATESTAMP = (FIELD_PREFIX + "datestamp").intern();
+  public static final String FIELDNAME_XML = (FIELD_PREFIX + "xml").intern();
+  public static final String FIELDNAME_MDOC_IMPL = (FIELD_PREFIX + "mdoc-impl")
+  .intern();
+  public static final String FILENAME_LASTHARVESTED = "lastharvested";
   
   @Override
   public void open(ElasticSearchConnection es, IndexConfig iconfig) throws Exception {
@@ -136,8 +146,7 @@ public class ExternalIndexHarvester extends SingleFileEntitiesHarvester {
       */
       // create QP
       QueryParser qp = queryParserConstructor.newInstance(
-          Version.LUCENE_46,
-          LegacyIndexConstants.FIELDNAME_CONTENT, new StandardAnalyzer(Version.LUCENE_46));
+          Version.LUCENE_46, FIELDNAME_CONTENT, new StandardAnalyzer(Version.LUCENE_46));
       qp.setDefaultOperator(defaultQueryParserOperator);
       query = qp.parse(qstr);
     }
@@ -177,9 +186,8 @@ public class ExternalIndexHarvester extends SingleFileEntitiesHarvester {
         
         @Override
         public void collect(final int doc) throws IOException {
-          DocumentStoredFieldVisitor vis = new DocumentStoredFieldVisitor(
-              LegacyIndexConstants.FIELDNAME_IDENTIFIER,
-              LegacyIndexConstants.FIELDNAME_DATESTAMP, LegacyIndexConstants.FIELDNAME_XML);
+          DocumentStoredFieldVisitor vis = new DocumentStoredFieldVisitor(FIELDNAME_IDENTIFIER,
+              FIELDNAME_DATESTAMP, FIELDNAME_XML);
           currReader.document(doc, vis);
           Document ldoc = vis.getDocument();
           try {
@@ -215,7 +223,7 @@ public class ExternalIndexHarvester extends SingleFileEntitiesHarvester {
   
   private void addLuceneDocument(Document ldoc) throws Exception {
     // read identifier
-    String identifier = ldoc.get(LegacyIndexConstants.FIELDNAME_IDENTIFIER);
+    String identifier = ldoc.get(FIELDNAME_IDENTIFIER);
     if (identifier == null) {
       log.warn("Document without identifier, ignoring.");
       return;
@@ -227,7 +235,7 @@ public class ExternalIndexHarvester extends SingleFileEntitiesHarvester {
     // try to read date stamp
     try {
       final IndexableField fld = ldoc
-          .getField(LegacyIndexConstants.FIELDNAME_DATESTAMP);
+          .getField(FIELDNAME_DATESTAMP);
       datestamp = fld.numericValue().longValue();
     } catch (NullPointerException npe) {
       log.warn("Datestamp of document '" + identifier
@@ -241,7 +249,7 @@ public class ExternalIndexHarvester extends SingleFileEntitiesHarvester {
     // read XML
     if (isDocumentOutdated(datestamp)) {
       try {
-        final IndexableField fld = ldoc.getField(LegacyIndexConstants.FIELDNAME_XML);
+        final IndexableField fld = ldoc.getField(FIELDNAME_XML);
         BytesRef bytes = fld.binaryValue();
         String xml = (bytes != null) ? CompressionTools.decompressString(bytes)
             : fld.stringValue();
