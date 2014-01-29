@@ -3,7 +3,7 @@
 REM INFO: All paths are relative to the screipts/ directory
 
 REM config file to use
-SET PANFMP_CONFIG="../repository/config.xml"
+SET PANFMP_CONFIG="../conf/config.xml"
 
 REM java options for harvesting and management tools
 SET PANFMP_TOOLS_JAVA_OPTIONS=-Xms64M -Xmx512M
