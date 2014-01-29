@@ -17,35 +17,58 @@
 package de.pangaea.metadataportal.utils;
 
 import java.net.InetSocketAddress;
-import java.net.URI;
-import java.net.URISyntaxException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.elasticsearch.common.transport.InetSocketTransportAddress;
 
 /**
- * Simple static class to parse {@code host:port} combinations
- * 
- * @author Uwe Schindler
+ * Simple static class to parse {@code host:port} combinations.
+ * <p>Original code borrowed from Google Guava libraries.
  */
 public final class HostAndPort {
   
   private HostAndPort() {}
   
+  private static final Pattern BRACKET_PATTERN = Pattern.compile("^\\[(.*:.*)\\](?::(\\d*))?$");
+
   /**
    * Parses the given string to a {@link InetSocketTransportAddress}. IPv6
    * addresses have to be put in {@code []} brackets.
    */
-  public static InetSocketAddress parse(String v) {
-    // TODO: Better way to parse host:port, with working IPv6
-    try {
-      URI uri = new URI("dummy://" + v + "/");
-      String host = uri.getHost();
-      if (host == null)
-        throw new IllegalArgumentException("Missing hostname: " + v);
-      int port = uri.getPort();
-      if (port == -1) port = 9300;
-      return new InetSocketAddress(host, port);
-    } catch (URISyntaxException use) {
-      throw new IllegalArgumentException("Invalid address: " + v);
+  public static InetSocketAddress parse(String hostPortString, int defaultPort) {
+    final String host, portString;
+
+    if (hostPortString.startsWith("[")) {
+      // Parse a bracketed host, typically an IPv6 literal.
+      final Matcher matcher = BRACKET_PATTERN.matcher(hostPortString);
+      if (!matcher.matches())
+        throw new IllegalArgumentException("Invalid bracketed host/port: " + hostPortString);
+      host = matcher.group(1);
+      portString = matcher.group(2);  // could be null
+    } else {
+      int colonPos = hostPortString.lastIndexOf(':');
+      if (colonPos >= 0) {
+        host = hostPortString.substring(0, colonPos);
+        if (host.indexOf(':') >= 0)
+          throw new IllegalArgumentException("Multiple colons in host name: " + hostPortString);
+        portString = hostPortString.substring(colonPos + 1);
+      } else {
+        host = hostPortString;
+        portString = null;
+      }
     }
+
+    int port = defaultPort;
+    if (portString != null) {
+      try {
+        port = Integer.parseInt(portString);
+      } catch (NumberFormatException e) {
+        throw new IllegalArgumentException("Unparseable port number: " + hostPortString);
+      }
+    }
+
+    return new InetSocketAddress(host, port);
   }
   
 }
