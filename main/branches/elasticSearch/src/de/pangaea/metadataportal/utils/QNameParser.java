@@ -17,7 +17,8 @@
 package de.pangaea.metadataportal.utils;
 
 import javax.xml.XMLConstants;
-import javax.xml.namespace.*;
+import javax.xml.namespace.NamespaceContext;
+import javax.xml.namespace.QName;
 
 /**
  * Simple static class to parse XPath-like string QNames ("prefix:tagname").

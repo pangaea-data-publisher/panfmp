@@ -16,14 +16,18 @@
 
 package de.pangaea.metadataportal.harvester;
 
-import de.pangaea.metadataportal.utils.*;
-import de.pangaea.metadataportal.config.*;
-
-import java.io.*;
-import java.util.*;
-import java.util.regex.Pattern;
+import java.io.File;
+import java.io.FilenameFilter;
+import java.util.Arrays;
+import java.util.Set;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import javax.xml.transform.stream.StreamSource;
+
+import de.pangaea.metadataportal.config.IndexConfig;
+import de.pangaea.metadataportal.processor.ElasticSearchConnection;
+import de.pangaea.metadataportal.utils.BooleanParser;
 
 /**
  * Harvester for traversing file system directories. Identifiers are build from

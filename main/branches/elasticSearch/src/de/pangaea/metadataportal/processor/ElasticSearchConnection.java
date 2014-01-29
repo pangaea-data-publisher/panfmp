@@ -14,9 +14,10 @@
  *   limitations under the License.
  */
 
-package de.pangaea.metadataportal.harvester;
+package de.pangaea.metadataportal.processor;
 
 import java.io.Closeable;
+
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.ImmutableSettings;

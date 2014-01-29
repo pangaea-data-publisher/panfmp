@@ -16,10 +16,15 @@
 
 package de.pangaea.metadataportal.harvester;
 
-import de.pangaea.metadataportal.utils.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+
 import org.xml.sax.ContentHandler;
 import org.xml.sax.helpers.DefaultHandler;
-import java.util.*;
+
+import de.pangaea.metadataportal.utils.SaxRule;
 
 /**
  * This class is used as a rule for the "metadata" element of the OAI response.

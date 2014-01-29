@@ -16,11 +16,27 @@
 
 package de.pangaea.metadataportal.utils;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import javax.xml.XMLConstants;
-import java.util.*;
-import org.apache.commons.digester.*;
-import org.xml.sax.*;
 import javax.xml.namespace.NamespaceContext;
+
+import org.apache.commons.digester.Digester;
+import org.apache.commons.digester.Rule;
+import org.apache.commons.digester.Rules;
+import org.apache.commons.digester.WithDefaultsRulesWrapper;
+import org.xml.sax.Attributes;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.ErrorHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 
 /**
  * Extension of the Commons Digester Class, that works around some

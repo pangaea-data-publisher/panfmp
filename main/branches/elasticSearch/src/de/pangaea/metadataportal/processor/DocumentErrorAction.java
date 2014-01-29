@@ -14,20 +14,13 @@
  *   limitations under the License.
  */
 
-package de.pangaea.metadataportal.harvester;
+package de.pangaea.metadataportal.processor;
 
 /**
- * {@link IndexBuilder} throws this exception, if an error occurs in the
- * indexer/converter threads.
+ * Enumeration that specifies what action should be taken on a document error.
  * 
  * @author Uwe Schindler
  */
-@SuppressWarnings("serial")
-public class IndexBuilderBackgroundFailure extends java.lang.Exception {
-  
-  public IndexBuilderBackgroundFailure(Exception e) {
-    super();
-    initCause(e);
-  }
-  
-}
+public enum DocumentErrorAction {
+  STOP, IGNOREDOCUMENT, DELETEDOCUMENT
+};

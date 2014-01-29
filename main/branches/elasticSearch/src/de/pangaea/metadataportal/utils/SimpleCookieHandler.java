@@ -18,10 +18,17 @@ package de.pangaea.metadataportal.utils;
 
 import java.net.CookieHandler;
 import java.net.URI;
-import java.util.*;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Collections;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+
 import de.pangaea.metadataportal.harvester.Harvester;
 
 /**

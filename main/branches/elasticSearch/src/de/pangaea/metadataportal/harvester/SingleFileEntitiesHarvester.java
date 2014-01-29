@@ -16,11 +16,19 @@
 
 package de.pangaea.metadataportal.harvester;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Locale;
+import java.util.Set;
+
+import javax.xml.transform.Source;
 
 import de.pangaea.metadataportal.config.IndexConfig;
-import de.pangaea.metadataportal.utils.*;
-import javax.xml.transform.Source;
+import de.pangaea.metadataportal.processor.DocumentErrorAction;
+import de.pangaea.metadataportal.processor.ElasticSearchConnection;
+import de.pangaea.metadataportal.processor.MetadataDocument;
+import de.pangaea.metadataportal.utils.BooleanParser;
 
 /**
  * Abstract harvester class for single file entities (like files from web page
@@ -147,7 +155,7 @@ public abstract class SingleFileEntitiesHarvester extends Harvester {
       case DELETEDOCUMENT:
         log.error(errstr + " (object marked deleted):", e);
         mdoc.setFinalDOM(null);
-        mdoc.deleted = true;
+        mdoc.setDeleted(true);
         break; // continue normal
       default:
         throw e;

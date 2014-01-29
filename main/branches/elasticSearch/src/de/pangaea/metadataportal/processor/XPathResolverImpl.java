@@ -14,7 +14,7 @@
  *   limitations under the License.
  */
 
-package de.pangaea.metadataportal.harvester;
+package de.pangaea.metadataportal.processor;
 
 import java.util.Arrays;
 import java.util.Collections;

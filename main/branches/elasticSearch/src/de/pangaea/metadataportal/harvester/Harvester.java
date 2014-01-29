@@ -16,11 +16,23 @@
 
 package de.pangaea.metadataportal.harvester;
 
-import java.util.*;
-import de.pangaea.metadataportal.config.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.Set;
+import java.util.TreeSet;
 
 import javax.xml.transform.TransformerException;
+
 import org.xml.sax.SAXParseException;
+
+import de.pangaea.metadataportal.config.Config;
+import de.pangaea.metadataportal.config.IndexConfig;
+import de.pangaea.metadataportal.processor.ElasticSearchConnection;
+import de.pangaea.metadataportal.processor.IndexBuilder;
+import de.pangaea.metadataportal.processor.IndexBuilderBackgroundFailure;
+import de.pangaea.metadataportal.processor.MetadataDocument;
 
 /**
  * Harvester interface to panFMP. This class is the abstract superclass of all

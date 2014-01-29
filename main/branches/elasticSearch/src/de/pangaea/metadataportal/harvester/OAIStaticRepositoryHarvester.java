@@ -16,15 +16,22 @@
 
 package de.pangaea.metadataportal.harvester;
 
-import de.pangaea.metadataportal.utils.*;
-import de.pangaea.metadataportal.config.*;
-
-import java.util.*;
-
-import org.apache.commons.digester.*;
-import org.xml.sax.*;
-
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+
+import org.apache.commons.digester.ExtendedBaseRules;
+import org.apache.commons.digester.Rule;
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
+
+import de.pangaea.metadataportal.config.IndexConfig;
+import de.pangaea.metadataportal.processor.ElasticSearchConnection;
+import de.pangaea.metadataportal.processor.IndexBuilderBackgroundFailure;
+import de.pangaea.metadataportal.processor.MetadataDocument;
+import de.pangaea.metadataportal.utils.ExtendedDigester;
+import de.pangaea.metadataportal.utils.SaxRule;
 
 /**
  * Harvester for OAI static repositories.
@@ -129,7 +136,7 @@ public class OAIStaticRepositoryHarvester extends OAIHarvesterBase {
   public void addDocument(MetadataDocument mdoc)
       throws IndexBuilderBackgroundFailure, InterruptedException {
     if (metadataPrefix.equals(currMetadataPrefix)) {
-      validIdentifiers.add(mdoc.identifier);
+      validIdentifiers.add(mdoc.getIdentifier());
       super.addDocument(mdoc);
     }
   }

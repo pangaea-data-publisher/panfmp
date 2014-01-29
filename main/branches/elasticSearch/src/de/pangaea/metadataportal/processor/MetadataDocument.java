@@ -14,7 +14,7 @@
  *   limitations under the License.
  */
 
-package de.pangaea.metadataportal.harvester;
+package de.pangaea.metadataportal.processor;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -52,6 +52,7 @@ import de.pangaea.metadataportal.config.FieldConfig;
 import de.pangaea.metadataportal.config.FilterConfig;
 import de.pangaea.metadataportal.config.IndexConfig;
 import de.pangaea.metadataportal.config.VariableConfig;
+import de.pangaea.metadataportal.harvester.Rebuilder;
 import de.pangaea.metadataportal.utils.BooleanParser;
 import de.pangaea.metadataportal.utils.ISODateFormatter;
 import de.pangaea.metadataportal.utils.IndexConstants;

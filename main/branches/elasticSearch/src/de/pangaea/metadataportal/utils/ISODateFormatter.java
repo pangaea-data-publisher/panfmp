@@ -16,10 +16,12 @@
 
 package de.pangaea.metadataportal.utils;
 
+import java.text.ParseException;
+import java.text.ParsePosition;
+import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.TimeZone;
 import java.util.Locale;
-import java.text.*;
+import java.util.TimeZone;
 
 /**
  * Simple static class to create and parse ISO-8601 date stamps (used by OAI
