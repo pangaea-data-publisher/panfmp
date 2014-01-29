@@ -58,8 +58,6 @@ import de.pangaea.metadataportal.processor.MetadataDocument;
  * (default 250 metadata documents)</li>
  * <li><code>maxIndexerQueue</code>: size of queue for indexer thread. (default
  * 250 metadata documents)</li>
- * <li><code>autoOptimize</code>: should the index be optimzed after harvesting
- * is finished? (default: false)</li>
  * <li><code>validate</code>: validate harvested documents against schema given
  * in configuration? (default: true, if schema given)</li>
  * <li><code>compressXML</code>: compress the harvested XML blob when storing in
