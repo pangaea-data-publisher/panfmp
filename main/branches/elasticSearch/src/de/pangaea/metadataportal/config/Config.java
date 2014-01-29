@@ -19,8 +19,6 @@ package de.pangaea.metadataportal.config;
 import java.io.File;
 import java.net.CookieHandler;
 import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -47,6 +45,7 @@ import org.xml.sax.SAXException;
 
 import de.pangaea.metadataportal.utils.BooleanParser;
 import de.pangaea.metadataportal.utils.ExtendedDigester;
+import de.pangaea.metadataportal.utils.HostAndPort;
 import de.pangaea.metadataportal.utils.PublicForDigesterUse;
 import de.pangaea.metadataportal.utils.SimpleCookieHandler;
 import de.pangaea.metadataportal.utils.StaticFactories;
@@ -389,18 +388,7 @@ public class Config {
   @PublicForDigesterUse
   @Deprecated
   public void addEsAddress(String v) {
-    // TODO: Better way to parse host:port, with working IPv6
-    try {
-      URI uri = new URI("dummy://" + v.trim() + "/");
-      String host = uri.getHost();
-      if (host == null)
-        throw new IllegalArgumentException("Missing hostname: " + v);
-      int port = uri.getPort();
-      if (port == -1) port = 9300;
-      esTransports.add(new InetSocketTransportAddress(host, port));
-    } catch (URISyntaxException use) {
-      throw new IllegalArgumentException("Invalid address: " + v);
-    }
+    esTransports.add(new InetSocketTransportAddress(HostAndPort.parse(v.trim())));
   }
   
   @PublicForDigesterUse
@@ -408,8 +396,8 @@ public class Config {
   public void setEsSettings(Settings.Builder bld) {
     if (esSettings != null)
       throw new IllegalArgumentException("Duplicate elasticSearchCluster/settings element");
-    // strip the XML matcher path -- TODO: more elegant way than Digester.addCallParamPath()?
-    esSettings = bld.build().getByPrefix("config/elasticSearchCluster/settings/");
+    // strip the XML matcher path:
+    esSettings = bld.build().getByPrefix(dig.getMatch() + "/");
   }
   
   // get configuration infos
@@ -421,8 +409,8 @@ public class Config {
       log.info("Loading XSL transformation from '" + file + "'...");
       templatesCache.put(
           file,
-          templ = StaticFactories.transFactory.newTemplates(new StreamSource(
-              file)));
+          templ = StaticFactories.transFactory.newTemplates(new StreamSource(file))
+      );
     }
     return templ;
   }
