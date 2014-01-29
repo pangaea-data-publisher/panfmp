@@ -164,7 +164,7 @@ public final class XPathResolverImpl implements XPathFunctionResolver,
     xPathVariableData.remove();
   }
   
-  public synchronized void setIndexBuilder(IndexBuilder index) {
+  public synchronized void setIndexBuilder(DocumentProcessor index) {
     currentIndexBuilder.set(index);
     cachedIndexes.set(new HashMap<Set<String>,IndexReader>());
   }
@@ -182,7 +182,7 @@ public final class XPathResolverImpl implements XPathFunctionResolver,
   
   // class members
   public static final String INDEX_BUILDER_NAMESPACE = "urn:java:"
-      + IndexBuilder.class.getName();
+      + DocumentProcessor.class.getName();
   
   public static final QName FUNCTION_DOC_UNIQUE = new QName(
       INDEX_BUILDER_NAMESPACE, "isDocIdentifierUnique");
@@ -202,7 +202,7 @@ public final class XPathResolverImpl implements XPathFunctionResolver,
   
   // object members
   private ThreadLocal<Map<QName,Object>> xPathVariableData = new ThreadLocal<Map<QName,Object>>();
-  private ThreadLocal<IndexBuilder> currentIndexBuilder = new ThreadLocal<IndexBuilder>();
+  private ThreadLocal<DocumentProcessor> currentIndexBuilder = new ThreadLocal<DocumentProcessor>();
   private ThreadLocal<Map<Set<String>,IndexReader>> cachedIndexes = new ThreadLocal<Map<Set<String>,IndexReader>>();
   
   private final XPathFunctionResolver parent;

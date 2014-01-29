@@ -44,9 +44,9 @@ import de.pangaea.metadataportal.utils.IndexConstants;
  * 
  * @author Uwe Schindler
  */
-public final class IndexBuilder {
+public final class DocumentProcessor {
   private static final org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory
-      .getLog(IndexBuilder.class);
+      .getLog(DocumentProcessor.class);
   
   protected final IndexConfig iconfig;
   protected final Client client;
@@ -77,7 +77,7 @@ public final class IndexBuilder {
   private Thread[] converterThreadList;
   private boolean threadsStarted = false;
   
-  IndexBuilder(Client client, IndexConfig iconfig) {
+  DocumentProcessor(Client client, IndexConfig iconfig) {
     this.client = client;
     this.iconfig = iconfig;
     
@@ -191,7 +191,7 @@ public final class IndexBuilder {
   }
   
   public void addDocument(MetadataDocument mdoc)
-      throws IndexBuilderBackgroundFailure, InterruptedException {
+      throws BackgroundFailure, InterruptedException {
     if (isClosed()) throw new IllegalStateException(
         "IndexBuilder already closed");
     throwFailure();
@@ -202,7 +202,7 @@ public final class IndexBuilder {
   
   // call this between harvest resumptions to wait if buffer 2/3 full, this
   // helps to not block while running HTTP transfers (if buffer is big enough)
-  public void checkIndexerBuffer() throws IndexBuilderBackgroundFailure,
+  public void checkIndexerBuffer() throws BackgroundFailure,
       InterruptedException {
     if (isClosed()) throw new IllegalStateException(
         "IndexBuilder already closed");
@@ -424,12 +424,12 @@ public final class IndexBuilder {
     }
   }
   
-  private void throwFailure() throws IndexBuilderBackgroundFailure {
+  private void throwFailure() throws BackgroundFailure {
     Exception f = failure.get();
     if (f != null) {
       if (converterThreads != null) converterThreads.interrupt();
       if (indexerThread != null) indexerThread.interrupt();
-      throw new IndexBuilderBackgroundFailure(f);
+      throw new BackgroundFailure(f);
     }
   }
   

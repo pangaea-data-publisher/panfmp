@@ -31,8 +31,8 @@ import de.pangaea.metadataportal.config.Config;
 import de.pangaea.metadataportal.config.IndexConfig;
 import de.pangaea.metadataportal.processor.ElasticSearchConnection;
 import de.pangaea.metadataportal.processor.CommitEvent;
-import de.pangaea.metadataportal.processor.IndexBuilder;
-import de.pangaea.metadataportal.processor.IndexBuilderBackgroundFailure;
+import de.pangaea.metadataportal.processor.DocumentProcessor;
+import de.pangaea.metadataportal.processor.BackgroundFailure;
 import de.pangaea.metadataportal.processor.MetadataDocument;
 
 /**
@@ -140,7 +140,7 @@ public abstract class Harvester {
           h.harvest();
           // everything OK => clean shutdown with storing all infos
           cleanShutdown = true;
-        } catch (IndexBuilderBackgroundFailure ibf) {
+        } catch (BackgroundFailure ibf) {
           // do nothing, this exception is only to break out, real exception is
           // thrown on close
         } catch (SAXParseException saxe) {
@@ -179,10 +179,10 @@ public abstract class Harvester {
       .getLog(this.getClass());
   
   /**
-   * Instance of {@link IndexBuilder} that converts and updates the Lucene index
+   * Instance of {@link DocumentProcessor} that converts and updates the Lucene index
    * in other threads.
    */
-  protected IndexBuilder index = null;
+  protected DocumentProcessor index = null;
   
   /**
    * Index configuration
@@ -281,7 +281,7 @@ public abstract class Harvester {
   /**
    * Adds a document to the {@link #index} working in the background.
    * 
-   * @throws IndexBuilderBackgroundFailure
+   * @throws BackgroundFailure
    *           if an error occurred in background thread. Exceptions can be
    *           thrown asynchronous and may not affect the currect document. The
    *           real exception is thrown again in {@link #close}.
@@ -289,7 +289,7 @@ public abstract class Harvester {
    *           if wait operation was interrupted.
    */
   protected void addDocument(MetadataDocument mdoc)
-      throws IndexBuilderBackgroundFailure, InterruptedException {
+      throws BackgroundFailure, InterruptedException {
     if (index == null) throw new IllegalStateException(
         "Harvester must be opened before using");
     index.addDocument(mdoc);
