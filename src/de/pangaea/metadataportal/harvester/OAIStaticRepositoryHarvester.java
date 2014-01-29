@@ -28,7 +28,7 @@ import org.xml.sax.SAXException;
 
 import de.pangaea.metadataportal.config.IndexConfig;
 import de.pangaea.metadataportal.processor.ElasticSearchConnection;
-import de.pangaea.metadataportal.processor.IndexBuilderBackgroundFailure;
+import de.pangaea.metadataportal.processor.BackgroundFailure;
 import de.pangaea.metadataportal.processor.MetadataDocument;
 import de.pangaea.metadataportal.utils.ExtendedDigester;
 import de.pangaea.metadataportal.utils.SaxRule;
@@ -134,7 +134,7 @@ public class OAIStaticRepositoryHarvester extends OAIHarvesterBase {
   // harvester code
   @Override
   public void addDocument(MetadataDocument mdoc)
-      throws IndexBuilderBackgroundFailure, InterruptedException {
+      throws BackgroundFailure, InterruptedException {
     if (metadataPrefix.equals(currMetadataPrefix)) {
       validIdentifiers.add(mdoc.getIdentifier());
       super.addDocument(mdoc);

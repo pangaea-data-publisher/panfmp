@@ -17,15 +17,15 @@
 package de.pangaea.metadataportal.processor;
 
 /**
- * {@link IndexBuilder} throws this exception, if an error occurs in the
+ * {@link DocumentProcessor} throws this exception, if an error occurs in the
  * indexer/converter threads.
  * 
  * @author Uwe Schindler
  */
 @SuppressWarnings("serial")
-public class IndexBuilderBackgroundFailure extends java.lang.Exception {
+public class BackgroundFailure extends java.lang.Exception {
   
-  public IndexBuilderBackgroundFailure(Exception e) {
+  public BackgroundFailure(Exception e) {
     super();
     initCause(e);
   }

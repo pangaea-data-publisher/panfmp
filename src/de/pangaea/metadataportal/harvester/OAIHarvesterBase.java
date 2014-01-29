@@ -39,7 +39,7 @@ import org.xml.sax.SAXException;
 
 import de.pangaea.metadataportal.config.IndexConfig;
 import de.pangaea.metadataportal.processor.ElasticSearchConnection;
-import de.pangaea.metadataportal.processor.IndexBuilderBackgroundFailure;
+import de.pangaea.metadataportal.processor.BackgroundFailure;
 import de.pangaea.metadataportal.processor.MetadataDocument;
 import de.pangaea.metadataportal.utils.ExtendedDigester;
 import de.pangaea.metadataportal.utils.SimpleCookieHandler;
@@ -117,7 +117,7 @@ public abstract class OAIHarvesterBase extends Harvester {
   
   @Override
   public void addDocument(MetadataDocument mdoc)
-      throws IndexBuilderBackgroundFailure, InterruptedException {
+      throws BackgroundFailure, InterruptedException {
     if (filterIncomingSets && sets != null) {
       if (Collections.disjoint(((OAIMetadataDocument) mdoc).getSets(), sets)) mdoc
           .setDeleted(true);

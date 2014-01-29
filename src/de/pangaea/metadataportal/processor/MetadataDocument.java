@@ -62,7 +62,7 @@ import de.pangaea.metadataportal.utils.StaticFactories;
 
 /**
  * This class holds all information harvested and provides methods for
- * {@link IndexBuilder} to create a {@link XContentBuilder} instance from it.
+ * {@link DocumentProcessor} to create a {@link XContentBuilder} instance from it.
  * 
  * @author Uwe Schindler
  */

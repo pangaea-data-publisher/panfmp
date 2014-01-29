@@ -20,12 +20,12 @@ import de.pangaea.metadataportal.harvester.Harvester;
 
 /**
  * This interface must be implemented to receive harvester commit events. Each
- * time after the {@link IndexBuilder} commits changes to the Lucene index it
+ * time after the {@link DocumentProcessor} commits changes to the Lucene index it
  * calls this interface's {@link #harvesterCommitted} method.
  * <P>
  * To use commit events, the {@link Harvester} class must implement this
  * interface (which is not the default) and call
- * {@link IndexBuilder#registerHarvesterCommitEvent} on startup.
+ * {@link DocumentProcessor#registerHarvesterCommitEvent} on startup.
  * 
  * @author Uwe Schindler
  */
