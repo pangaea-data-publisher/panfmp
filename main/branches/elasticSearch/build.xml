@@ -118,7 +118,7 @@
 	<target name="run-harvester" depends="compile">
 		<java fork="true" dir="." classname="de.pangaea.metadataportal.harvester.Harvester" classpathref="path.run">
 			 <sysproperty key="log4j.configuration" value="${log4j-conf}"/>
-			 <arg file="repository/config.xml"/>
+			 <arg file="conf/config.xml"/>
 			 <arg value="${harvester.index}"/>
 		</java>
 	</target>
@@ -200,7 +200,7 @@
         </chainedmapper>
       </mappedresources>
       <zipfileset dir="${dist}" prefix="${pkgname}/lib"/>
-      <zipfileset dir="${basedir}/repository" prefix="${pkgname}/repository"/>
+      <zipfileset dir="${basedir}/conf" prefix="${pkgname}/conf"/>
       <zipfileset dir="${basedir}/scripts" prefix="${pkgname}/scripts"/>
       <zipfileset dir="${docs}" prefix="${pkgname}/javadocs"/>
       <zipfileset dir="${basedir}" prefix="${pkgname}">
@@ -229,15 +229,12 @@
     <delete dir="${build}"/>
     <delete dir="${dist}"/>
     <delete dir="${docs}"/>
-    <delete includeEmptyDirs="true">
-      <fileset dir="${basedir}/repository/lucene-store" includes="**/*"/>
-    </delete>
     <delete>
       <fileset dir="${basedir}" includes="*.zip"/>
       <fileset dir="${basedir}" includes="*.md5"/>
       <fileset dir="${basedir}" includes="*.sha1"/>
       <fileset dir="${basedir}" includes="*.asc"/>
-      <fileset dir="${basedir}/repository" includes="**/*.log"/>
+      <fileset dir="${basedir}/conf" includes="**/*.log"/>
     </delete>
   </target>
 
