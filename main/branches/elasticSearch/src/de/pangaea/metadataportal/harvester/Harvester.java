@@ -30,6 +30,7 @@ import org.xml.sax.SAXParseException;
 import de.pangaea.metadataportal.config.Config;
 import de.pangaea.metadataportal.config.IndexConfig;
 import de.pangaea.metadataportal.processor.ElasticSearchConnection;
+import de.pangaea.metadataportal.processor.CommitEvent;
 import de.pangaea.metadataportal.processor.IndexBuilder;
 import de.pangaea.metadataportal.processor.IndexBuilderBackgroundFailure;
 import de.pangaea.metadataportal.processor.MetadataDocument;
@@ -44,7 +45,7 @@ import de.pangaea.metadataportal.processor.MetadataDocument;
  * message be printed out by the method {@link #addDocument}? (default: 100)</li>
  * <li><code>maxBufferedIndexChanges</code>: how many documents should be
  * harvested before the index changes are written to disk? If
- * {@link HarvesterCommitEvent}s are used, the changes are also committed (seen
+ * {@link CommitEvent}s are used, the changes are also committed (seen
  * by search service) after this number of changes (default: 1000)</li>
  * <li><code>numConverterThreads</code>: how many threads should convert
  * documents (XPath queries and XSL templates)? (default: 1) Raise this value,

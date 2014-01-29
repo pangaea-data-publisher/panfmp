@@ -14,9 +14,9 @@
  *   limitations under the License.
  */
 
-package de.pangaea.metadataportal.harvester;
+package de.pangaea.metadataportal.processor;
 
-import de.pangaea.metadataportal.processor.IndexBuilder;
+import de.pangaea.metadataportal.harvester.Harvester;
 
 /**
  * This interface must be implemented to receive harvester commit events. Each
@@ -29,7 +29,7 @@ import de.pangaea.metadataportal.processor.IndexBuilder;
  * 
  * @author Uwe Schindler
  */
-public interface HarvesterCommitEvent {
+public interface CommitEvent {
   
   /**
    * Called with a {@link java.util.Set} of {@link String}s that are the
