@@ -166,7 +166,7 @@ public class MetadataDocument {
     if (xml == null) {
       setFinalDOM(null);
     } else {
-      org.w3c.dom.Document dom = StaticFactories.dombuilder.newDocument();
+      Document dom = StaticFactories.dombuilder.newDocument();
       StreamSource s = new StreamSource(new StringReader(xml), identifier);
       DOMResult r = new DOMResult(dom, identifier);
       Transformer trans = StaticFactories.transFactory.newTransformer();
@@ -711,7 +711,7 @@ public class MetadataDocument {
    */
   public class XMLConverter {
     
-    private boolean validate = true;
+    private final boolean validate;
     
     private XMLConverter() {
       String v = iconfig.harvesterProperties.getProperty("validate");
@@ -811,7 +811,7 @@ public class MetadataDocument {
         dr = emptyDOMResult(identifier);
         trans.transform(s, dr);
       }
-      org.w3c.dom.Document dom = (org.w3c.dom.Document) (validate(
+      Document dom = (Document) (validate(
           DOMResult2Source(dr), iconfig.xslt != null).getNode());
       dom.normalize();
       setFinalDOM(dom);
@@ -843,7 +843,7 @@ public class MetadataDocument {
       if (dr == null) throw new IllegalStateException(
           "XMLConverter is not convertig a SAX document, you cannot get a result DOM tree!");
       
-      org.w3c.dom.Document dom = (org.w3c.dom.Document) (validate(
+      Document dom = (Document) (validate(
           DOMResult2Source(dr), iconfig.xslt != null).getNode());
       dom.normalize();
       dr = null;
