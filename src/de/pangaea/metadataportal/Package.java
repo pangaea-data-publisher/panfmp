@@ -25,19 +25,36 @@ public final class Package {
   
   private Package() {}
   
+  /** Gets package object from classloader. */
+  public static java.lang.Package get() {
+    return Package.class.getPackage();
+  }
+  
+  /** Gets version of panFMP. */
+  public static String getVersion() {
+    java.lang.Package pkg = get();
+    return (pkg == null) ? "undefined" : pkg.getImplementationVersion();
+  }
+  
   /** Gets product name ("panFMP"). */
   public static String getProductName() {
-    return "panFMP";
+    java.lang.Package pkg = get();
+    return (pkg == null) ? "panFMP" : pkg.getImplementationTitle();
   }
-
-  /** Gets product version. */
-  public static String getVersion() {
-    return "2.0-dev";
+  
+  /** Gets product vendor (the developer team). */
+  public static String getProductVendor() {
+    java.lang.Package pkg = get();
+    return (pkg == null) ? null : pkg.getImplementationVendor();
   }
-
-  /** Gets full product description. */
+  
+  /** Gets a version string to print out. */
   public static String getFullPackageDescription() {
-    return getProductName() + " v" + getVersion();
+    java.lang.Package pkg = get();
+    if (pkg == null) return null;
+    return new StringBuilder().append(pkg.getImplementationTitle()).append(" version ")
+        .append(pkg.getImplementationVersion()).append(" (")
+        .append(pkg.getImplementationVendor()).append(")").toString();
   }
   
 }

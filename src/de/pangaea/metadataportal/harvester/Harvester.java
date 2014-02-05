@@ -114,7 +114,7 @@ public abstract class Harvester {
   protected static void runHarvester(Config conf, String index,
       Class<? extends Harvester> harvesterClass) {
     Collection<IndexConfig> indexList = null;
-    if (index == null || "*".equals(index)) {
+    if (index == null || "*".equals(index) || "all".equals(index)) {
       indexList = conf.indexes.values();
     } else {
       IndexConfig iconf = conf.indexes.get(index);

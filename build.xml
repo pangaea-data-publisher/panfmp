@@ -47,7 +47,7 @@
   <property name="ivy.jar.file" location="${ivy.jar.dir}/ivy-${ivy.install.version}.jar" />
 	
 	<makeurl property="log4j-conf" file="scripts/console.log.properties"/>
-	<property name="harvester.index" value="*"/>
+	<property name="harvester.index" value="all"/>
 
   <condition property="ivy.available">
     <typefound uri="antlib:org.apache.ivy.ant" name="configure" />
