@@ -92,7 +92,7 @@
 				<cfg:validate>false</cfg:validate>
 			</cfg:harvesterProperties>
 		</cfg:index>
-		<cfg:index id="badc-solas">
+		<cfg:index id="badc">
 			<cfg:harvesterClass>de.pangaea.metadataportal.harvester.OAIHarvester</cfg:harvesterClass>
 			<cfg:harvesterProperties>
 				<cfg:baseUrl>http://badc.nerc.ac.uk/badc_oai/provider</cfg:baseUrl>
