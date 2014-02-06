@@ -92,12 +92,11 @@
 				<cfg:validate>false</cfg:validate>
 			</cfg:harvesterProperties>
 		</cfg:index>
-		<cfg:index id="ifremer">
+		<cfg:index id="badc-solas">
 			<cfg:harvesterClass>de.pangaea.metadataportal.harvester.OAIHarvester</cfg:harvesterClass>
 			<cfg:harvesterProperties>
-				<cfg:baseUrl>http://www.ifremer.fr/oai/provider</cfg:baseUrl>
+				<cfg:baseUrl>http://badc.nerc.ac.uk/badc_oai/provider</cfg:baseUrl>
 				<cfg:metadataPrefix>dif</cfg:metadataPrefix>
-				<cfg:validate>true</cfg:validate>
 			</cfg:harvesterProperties>
 			<!--
 			Here are two possibilities to do a inline transformation of harvested metadata (just as example):

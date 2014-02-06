@@ -33,13 +33,13 @@ public final class Package {
   /** Gets version of panFMP. */
   public static String getVersion() {
     java.lang.Package pkg = get();
-    return (pkg == null) ? "undefined" : pkg.getImplementationVersion();
+    return (pkg == null || pkg.getImplementationVersion() == null) ? "undefined" : pkg.getImplementationVersion();
   }
   
   /** Gets product name ("panFMP"). */
   public static String getProductName() {
     java.lang.Package pkg = get();
-    return (pkg == null) ? "panFMP" : pkg.getImplementationTitle();
+    return (pkg == null || pkg.getImplementationTitle() == null) ? "panFMP" : pkg.getImplementationTitle();
   }
   
   /** Gets product vendor (the developer team). */
@@ -50,11 +50,9 @@ public final class Package {
   
   /** Gets a version string to print out. */
   public static String getFullPackageDescription() {
-    java.lang.Package pkg = get();
-    if (pkg == null) return null;
-    return new StringBuilder().append(pkg.getImplementationTitle()).append(" version ")
-        .append(pkg.getImplementationVersion()).append(" (")
-        .append(pkg.getImplementationVendor()).append(")").toString();
+    return new StringBuilder().append(getProductName()).append(" version ")
+        .append(getVersion()).append(" (")
+        .append(getProductVendor()).append(")").toString();
   }
   
 }
