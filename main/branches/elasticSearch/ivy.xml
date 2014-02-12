@@ -9,7 +9,7 @@
   <dependencies>
     <dependency org="commons-logging" name="commons-logging" rev="1.1.3" conf="build,bundle->default"/>
     <dependency org="commons-digester" name="commons-digester" rev="2.1" conf="build,bundle->default"/>
-    <dependency org="org.elasticsearch" name="elasticsearch" rev="0.90.11" conf="build,bundle->default"/>
+    <dependency org="org.elasticsearch" name="elasticsearch" rev="1.0.0" conf="build,bundle->default"/>
     <dependency org="xerces" name="xercesImpl" rev="2.11.0" conf="build,bundle->default"/>
     <dependency org="xalan" name="xalan" rev="2.7.1" conf="build,bundle->default"/>
     
