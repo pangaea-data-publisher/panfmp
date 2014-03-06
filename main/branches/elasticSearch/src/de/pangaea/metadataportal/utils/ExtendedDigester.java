@@ -345,9 +345,9 @@ public class ExtendedDigester extends Digester {
   
   /**
    * This rule does nothing. It is needed for giving a rule for uninteresting
-   * tags to not throw an exception.
+   * elements to not throw an exception.
    */
-  public static class DoNothingRule extends Rule {
+  public static final class DoNothingRule extends Rule {
     // empty, this only makes the class non-abstract
   }
   
