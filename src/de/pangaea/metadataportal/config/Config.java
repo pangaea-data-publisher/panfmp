@@ -43,6 +43,7 @@ import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
+import de.pangaea.metadataportal.Package;
 import de.pangaea.metadataportal.utils.BooleanParser;
 import de.pangaea.metadataportal.utils.ExtendedDigester;
 import de.pangaea.metadataportal.utils.HostAndPort;
@@ -65,7 +66,7 @@ public class Config {
   public Config(String file) throws Exception {
     this.file = file;
     
-    log.info(de.pangaea.metadataportal.Package.getFullPackageDescription());
+    log.info(Package.getFullPackageDescription());
     
     final CookieHandler defCookieH = CookieHandler.getDefault();
     if (defCookieH != null && defCookieH != SimpleCookieHandler.INSTANCE) {

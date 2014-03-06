@@ -57,7 +57,7 @@ public class SaxRule extends org.apache.commons.digester.Rule {
   
   /**
    * Creates an empty "useless" SaxRule. The pupose is to not throw an exception
-   * on known but ignored tags (optional with contents).
+   * on known but ignored elements (optional with contents).
    * 
    * @return an instance that does nothing by feeding all SAX events to an SAX
    *         {@link org.xml.sax.helpers.DefaultHandler}
@@ -110,8 +110,8 @@ public class SaxRule extends org.apache.commons.digester.Rule {
   }
   
   /**
-   * Add some tags when document started. The default implementation does
-   * nothing. This method should be overwritten to feed some additional tags
+   * Add some elements when document started. The default implementation does
+   * nothing. This method should be overwritten to feed some additional elements
    * after the <code>startDocument</code> SAX event.
    * 
    * @throws SAXException
@@ -119,16 +119,16 @@ public class SaxRule extends org.apache.commons.digester.Rule {
   protected void initDocument() throws SAXException {}
   
   /**
-   * Closes the tags created in <code>initDocument()</code>. The default
+   * Closes the elements created in <code>initDocument()</code>. The default
    * implementation does nothing. This method should be overwritten to feed some
-   * ending tags before the <code>endDocument</code> SAX event.
+   * ending elements before the <code>endDocument</code> SAX event.
    * 
    * @throws SAXException
    */
   protected void finishDocument() throws SAXException {}
   
   @Override
-  public void begin(java.lang.String namespace, java.lang.String name,
+  public void begin(String namespace, String name,
       Attributes attributes) throws Exception {
     if (destContentHandler == null) throw new IllegalStateException(
         "You must set a target ContentHandler instance before processing this rule!");
@@ -151,7 +151,7 @@ public class SaxRule extends org.apache.commons.digester.Rule {
   }
   
   @Override
-  public void end(java.lang.String namespace, java.lang.String name)
+  public void end(String namespace, String name)
       throws java.lang.Exception {
     finishDocument();
     
