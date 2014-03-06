@@ -43,6 +43,7 @@
 			  The field template should not declare the XHTML namespace.
 		-->
 		<cfg:fields>
+			<cfg:field name="_all" datatype="string">/</cfg:field>
 			<cfg:field name="citation" datatype="string">/dif:DIF/dif:Data_Set_Citation|/dif:DIF/dif:Entry_Title|/dif:DIF/dif:Entry_ID</cfg:field>
 			<cfg:field name="investigator" datatype="string">/dif:DIF/dif:Personnel[contains(dif:Role,'nvestigat')]</cfg:field>
 			<cfg:field name="parameter" datatype="string">/dif:DIF/dif:Parameters</cfg:field>
@@ -65,7 +66,6 @@
 					<xsl:otherwise>5.0</xsl:otherwise>
 				</xsl:choose>
 			</cfg:field-template>
-			<cfg:default>.</cfg:default>
 		</cfg:fields>
 		<cfg:schema>
 			<cfg:url>http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/dif_v9.4.xsd</cfg:url>

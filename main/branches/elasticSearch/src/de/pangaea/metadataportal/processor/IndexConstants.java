@@ -27,7 +27,6 @@ public final class IndexConstants {
   
   public static final String FIELD_INTERNAL_PREFIX = "internal-";
   
-  public static final String FIELDNAME_CONTENT = "_all";
   public static final String FIELDNAME_XML = "xml";
   
   public static final String FIELDNAME_SOURCE = FIELD_INTERNAL_PREFIX + "source";

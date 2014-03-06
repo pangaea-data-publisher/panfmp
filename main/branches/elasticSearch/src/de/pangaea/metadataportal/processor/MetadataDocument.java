@@ -300,7 +300,6 @@ public class MetadataDocument {
           log.debug("Document filtered: " + identifier);
           return null;
         }
-        addDefaultField(builder);
         addFields(builder);
         closeJSON(builder);
       } finally {
@@ -345,30 +344,6 @@ public class MetadataDocument {
   }
   
   /**
-   * Helper method that adds the default field to the given {@link XContentBuilder}
-   * instance. This method executes the XPath for the default field.
-   * 
-   * @throws Exception
-   *           if an exception occurs during transformation (various types of
-   *           exceptions can be thrown).
-   */
-  protected void addDefaultField(XContentBuilder builder) throws Exception {
-    StringBuilder sb = new StringBuilder();
-    if (iconfig.parent.defaultField == null) {
-      walkNodeTexts(sb, dom.getDocumentElement(), true);
-    } else {
-      NodeList nodes = (NodeList) iconfig.parent.defaultField.xPathExpr
-          .evaluate(dom, javax.xml.xpath.XPathConstants.NODESET);
-      for (int i = 0, c = nodes.getLength(); i < c; i++) {
-        walkNodeTexts(sb, nodes.item(i), true);
-        sb.append('\n');
-      }
-    }
-    if (log.isTraceEnabled()) log.trace("DefaultField: " + sb.toString());
-    builder.field(IndexConstants.FIELDNAME_CONTENT, sb.toString());
-  }
-  
-  /**
    * Helper method that adds all fields to the given {@link XContentBuilder}
    * instance. This method executes all XPath/Templates and converts the
    * results.
@@ -405,48 +380,57 @@ public class MetadataDocument {
         
         // interpret result
         if (value instanceof NodeList) {
-          Transformer trans = null;
-          if (f.datatype == FieldConfig.DataType.XML) {
-            trans = StaticFactories.transFactory.newTransformer();
-            trans.setErrorListener(new LoggingErrorListener(log));
-            trans.setOutputProperty(OutputKeys.INDENT, "no");
-            trans.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
-          }
           final NodeList nodes = (NodeList) value;
           final int c = nodes.getLength();
           final List<String> vals = new ArrayList<String>(c / 2);
           for (int i = 0; i < c; i++) {
-            if (f.datatype == FieldConfig.DataType.XML) {
-              DOMSource in = new DOMSource(nodes.item(i));
-              if (in.getNode().getNodeType() != Node.ELEMENT_NODE)
-                continue;
-              StringWriter xmlWriter = new StringWriter();
-              StreamResult out = new StreamResult(xmlWriter);
-              trans.transform(in, out);
-              xmlWriter.close();
-              vals.add(xmlWriter.toString());
-              needDefault = false;
-            } else {
-              StringBuilder sb = new StringBuilder();
-              walkNodeTexts(sb, nodes.item(i), true);
-              String val = sb.toString().trim();
-              if (!val.isEmpty()) {
-                vals.add(val);
+            switch (f.datatype) { 
+              case XML:
+                final DOMSource in = new DOMSource(nodes.item(i));
+                if (in.getNode().getNodeType() != Node.ELEMENT_NODE)
+                  continue;
+                final StringWriter xmlWriter = new StringWriter();
+                final StreamResult out = new StreamResult(xmlWriter);
+                final Transformer trans = StaticFactories.transFactory.newTransformer();
+                trans.setErrorListener(new LoggingErrorListener(log));
+                trans.setOutputProperty(OutputKeys.INDENT, "no");
+                trans.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
+                trans.transform(in, out);
+                xmlWriter.close();
+                vals.add(xmlWriter.toString());
                 needDefault = false;
-              }
+                break;
+              case JSON:
+                // we don't use "vals" here, we add the JSON content directly
+                convertNodeToJSON(builder, nodes.item(i), true);
+                needDefault = false;
+                break;
+              default:
+                final StringBuilder sb = new StringBuilder();
+                walkNodeTexts(sb, nodes.item(i), true);
+                final String val = sb.toString().trim();
+                if (!val.isEmpty()) {
+                  vals.add(val);
+                  needDefault = false;
+                }
             }
           }
           if (!vals.isEmpty()) {
             addField(builder, f, vals.toArray(new String[vals.size()]));
           }
         } else if (value instanceof String) {
-          if (f.datatype == FieldConfig.DataType.XML) throw new UnsupportedOperationException(
+          switch (f.datatype) { 
+            case XML: throw new UnsupportedOperationException(
               "Fields with datatype XML may only return NODESETs on evaluation!");
-          String s = (String) value;
-          s = s.trim();
-          if (!s.isEmpty()) {
-            addField(builder, f, s);
-            needDefault = false;
+            case JSON: throw new UnsupportedOperationException(
+              "Fields with datatype JSON may only return NODESETs on evaluation!");
+            default:
+            String s = (String) value;
+            s = s.trim();
+            if (!s.isEmpty()) {
+              addField(builder, f, s);
+              needDefault = false;
+            }
           }
         } else throw new UnsupportedOperationException(
             "Invalid Java data type of expression result: "
@@ -611,6 +595,37 @@ public class MetadataDocument {
     trans.transform(new DOMSource(dom, identifier), out);
     xmlWriter.close();
     return xmlWriter.toString();
+  }
+  
+  /**
+   * Helper method to walk through a DOM tree node (n) and convert it to JSON (append to the given XContentBuilder).
+   * Every
+   * <P>
+   * For internal use only!
+   */
+  protected void convertNodeToJSON(XContentBuilder builder, Node n, boolean topLevel) throws IOException {
+    if (n == null) return;
+    switch (n.getNodeType()) {
+      case Node.ELEMENT_NODE:
+        builder.field(n.getLocalName());
+        // fall-through
+      case Node.DOCUMENT_NODE:
+      case Node.DOCUMENT_FRAGMENT_NODE:
+        for (Node nod = n.getFirstChild(); nod != null; nod = nod
+            .getNextSibling()) {
+          convertNodeToJSON(builder, nod, false);
+        }
+        break;
+      case Node.ATTRIBUTE_NODE:
+        // This is special: Attributes are normally not converted to String,
+        // only if the XPath goes directly to the attribute
+        // If this is the case the Attribute is topLevel in the recursion!
+        if (!topLevel) break;
+      case Node.TEXT_NODE:
+      case Node.CDATA_SECTION_NODE:
+        builder.value(n.getNodeValue());
+        break;
+    }
   }
   
   /**
