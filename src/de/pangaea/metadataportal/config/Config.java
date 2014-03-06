@@ -148,9 +148,6 @@ public class Config {
       dig.addRule("config/metadata/fields/field-template", r);
       dig.addRule("config/metadata/fields/field-template", new TemplateSaxRule(this));
       
-      // default field
-      dig.addCallMethod("config/metadata/fields/default", "setDefaultField", 0);
-      
       // transform
       /*
        * dig.addRule("config/metadata/transformBeforeXPath",
@@ -330,24 +327,6 @@ public class Config {
   
   @PublicForDigesterUse
   @Deprecated
-  public void setDefaultField(String xpath)
-      throws Exception {
-    // XPath
-    if (xpath == null) {
-      defaultField = null;
-      return;
-    }
-    xpath = xpath.trim();
-    if (".".equals(xpath) || "/".equals(xpath) || "/*".equals(xpath)) {
-      defaultField = null; // all fields from SAX parser
-    } else {
-      defaultField = new ExpressionConfig();
-      defaultField.setXPath(dig, xpath);
-    }
-  }
-  
-  @PublicForDigesterUse
-  @Deprecated
   public void addGlobalHarvesterProperty(String value) {
     globalHarvesterProperties.setProperty(dig.getCurrentElementName(), value);
   }
@@ -420,7 +399,6 @@ public class Config {
 
   // fields
   public final Map<String,FieldConfig> fields = new LinkedHashMap<String,FieldConfig>();
-  public ExpressionConfig defaultField = null;
   
   // filters
   public FilterConfig.FilterType filterDefault = FilterConfig.FilterType.ACCEPT;

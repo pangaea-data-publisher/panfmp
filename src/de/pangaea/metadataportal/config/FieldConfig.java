@@ -73,6 +73,6 @@ public class FieldConfig extends ExpressionConfig {
   public DataType datatype = DataType.STRING;
   
   public static enum DataType {
-    STRING, NUMBER, DATETIME, XML, XHTML
+    STRING, NUMBER, DATETIME, XML, XHTML, JSON
   };
 }
