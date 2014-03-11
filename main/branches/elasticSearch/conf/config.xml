@@ -16,21 +16,12 @@
 		<!--
 			Each harvested document goes through filter steps:
 			The default is to accept all documents. You can give boolean XPath queries, that filter out documents.
-			Interesting it the special function ib:isDocIdentifierUnique([index name,...]) to filter out duplicate identifiers!
 		-->
 		<cfg:filters default="accept">
 			<!-- we want to remove all documents harvested into index 'pangaea-carboocean' that are from project 'JGOFS' -->
 			<cfg:deny>$ib:index='pangaea-carboocean' and /dif:DIF/dif:Project/dif:Short_Name[contains(.,'JGOFS')]</cfg:deny>
 			<!-- we want to remove all documents with wrong namespace -->
 			<cfg:deny>namespace-uri(/*)!='http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/'</cfg:deny>
-			<!--
-				We want to remove all duplicates; this is the simple approach: it checks if every harvested
-				identifier is in no other currently existing index.
-				Because of this every NEW document will stay in the index that was harvested first.
-				You can create more complicated dependencies by using the $ib:index variable and also IDs
-				as string parameters given to the ib:isDocIdentifierUnique() function.
-			-->
-			<cfg:deny>not(ib:isDocIdentifierUnique())</cfg:deny>
 		</cfg:filters>
 		<!--
 			Field definitions:
