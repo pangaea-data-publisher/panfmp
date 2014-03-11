@@ -35,6 +35,8 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.validation.Validator;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpressionException;
 
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
@@ -365,13 +367,11 @@ public class MetadataDocument {
             // result is #STRING): fallback
             // TODO: Looking for a better system to detect return type of XPath
             // :-( [slowdown by this?]
-            value = f.xPathExpr.evaluate(dom,
-                javax.xml.xpath.XPathConstants.NODESET);
-          } catch (javax.xml.xpath.XPathExpressionException ex) {
+            value = f.xPathExpr.evaluate(dom, XPathConstants.NODESET);
+          } catch (XPathExpressionException ex) {
             // Fallback: if return type of XPath is a #STRING (for example from
             // a substring() routine)
-            value = f.xPathExpr.evaluate(dom,
-                javax.xml.xpath.XPathConstants.STRING);
+            value = f.xPathExpr.evaluate(dom, XPathConstants.STRING);
           }
         } else if (f.xslt != null) {
           value = evaluateTemplate(f);
@@ -419,21 +419,23 @@ public class MetadataDocument {
             addField(builder, f, vals.toArray(new String[vals.size()]));
           }
         } else if (value instanceof String) {
-          switch (f.datatype) { 
-            case XML: throw new UnsupportedOperationException(
-              "Fields with datatype XML may only return NODESETs on evaluation!");
-            case JSON: throw new UnsupportedOperationException(
-              "Fields with datatype JSON may only return NODESETs on evaluation!");
+          switch (f.datatype) {
+            case XML:
+              throw new UnsupportedOperationException(
+                  "Fields with datatype XML may only return NODESETs on evaluation!");
+            case JSON:
+              throw new UnsupportedOperationException(
+                  "Fields with datatype JSON may only return NODESETs on evaluation!");
             default:
-            String s = (String) value;
-            s = s.trim();
-            if (!s.isEmpty()) {
-              addField(builder, f, s);
-              needDefault = false;
-            }
+              String s = (String) value;
+              s = s.trim();
+              if (!s.isEmpty()) {
+                addField(builder, f, s);
+                needDefault = false;
+              }
           }
         } else throw new UnsupportedOperationException(
-            "Invalid Java data type of expression result: "
+          "Invalid Java data type of expression result: "
                 + value.getClass().getName());
         
         if (needDefault && f.defaultValue != null) addField(builder, f,
@@ -456,9 +458,8 @@ public class MetadataDocument {
     for (FilterConfig f : iconfig.parent.filters) {
       if (f.xPathExpr == null) throw new NullPointerException(
           "Filters need to contain a XPath expression, which is NULL!");
-      Boolean b = (Boolean) f.xPathExpr.evaluate(dom,
-          javax.xml.xpath.XPathConstants.BOOLEAN);
-      if (b == null) throw new javax.xml.xpath.XPathExpressionException(
+      Boolean b = (Boolean) f.xPathExpr.evaluate(dom, XPathConstants.BOOLEAN);
+      if (b == null) throw new XPathExpressionException(
           "The filter XPath did not return a valid BOOLEAN value!");
       if (b && log.isTraceEnabled()) log.trace("FilterMatch: " + f);
       switch (f.type) {
@@ -514,13 +515,11 @@ public class MetadataDocument {
             // result is #STRING): fallback
             // TODO: Looking for a better system to detect return type of XPath
             // :-( [slowdown by this?]
-            value = f.xPathExpr.evaluate(dom,
-                javax.xml.xpath.XPathConstants.NODESET);
-          } catch (javax.xml.xpath.XPathExpressionException ex) {
+            value = f.xPathExpr.evaluate(dom, XPathConstants.NODESET);
+          } catch (XPathExpressionException ex) {
             // Fallback: if return type of XPath is a #STRING (for example from
             // a substring() routine)
-            value = f.xPathExpr.evaluate(dom,
-                javax.xml.xpath.XPathConstants.STRING);
+            value = f.xPathExpr.evaluate(dom, XPathConstants.STRING);
           }
         } else if (f.xslt != null) {
           value = evaluateTemplate(f);

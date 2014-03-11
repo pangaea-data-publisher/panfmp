@@ -242,7 +242,6 @@ public final class DocumentProcessor {
     org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory
         .getLog(Thread.currentThread().getName());
     log.info("Converter thread started.");
-    XPathResolverImpl.getInstance().setIndexBuilder(this);
     try {
       while (failure.get() == null) {
         final MetadataDocument mdoc;
@@ -297,7 +296,6 @@ public final class DocumentProcessor {
       } catch (InterruptedException e) {
         log.error(e);
       }
-      XPathResolverImpl.getInstance().unsetIndexBuilder();
       log.info("Converter thread stopped.");
     }
   }

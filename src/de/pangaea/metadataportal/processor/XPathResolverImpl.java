@@ -20,17 +20,14 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import javax.xml.namespace.QName;
 import javax.xml.xpath.XPathFunction;
-import javax.xml.xpath.XPathFunctionException;
 import javax.xml.xpath.XPathFunctionResolver;
 import javax.xml.xpath.XPathVariableResolver;
 
-import org.apache.lucene.index.IndexReader;
 import org.apache.xalan.extensions.XPathFunctionResolverImpl;
 
 /**
@@ -39,11 +36,7 @@ import org.apache.xalan.extensions.XPathFunctionResolverImpl;
  * 
  * @author Uwe Schindler
  */
-public final class XPathResolverImpl implements XPathFunctionResolver,
-    XPathVariableResolver {
-  
-  private static final org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory
-      .getLog(XPathResolverImpl.class);
+public final class XPathResolverImpl implements XPathFunctionResolver, XPathVariableResolver {
   
   public static XPathResolverImpl getInstance() {
     return instance;
@@ -54,8 +47,9 @@ public final class XPathResolverImpl implements XPathFunctionResolver,
   }
   
   // XPathFunctionResolver
+  @Override
   public XPathFunction resolveFunction(QName functionName, int arity) {
-    if (FUNCTION_DOC_UNIQUE.equals(functionName)) {
+    /*if (FUNCTION_DOC_UNIQUE.equals(functionName)) {
       // FUNCTION: isDocIdentifierUnique() -- test if identifier of current
       // document is unique
       return new XPathFunction() {
@@ -64,91 +58,19 @@ public final class XPathResolverImpl implements XPathFunctionResolver,
           return isDocIdentifierUnique(args);
         }
       };
-    }
+    }*/
     return parent.resolveFunction(functionName, arity);
   }
   
   // XPathVariableResolver
+  @Override
   public Object resolveVariable(QName variableName) {
     Map<QName,Object> map = xPathVariableData.get();
     if (map == null) throw new IllegalStateException(
         "There is no variables map in thread local storage!");
     return map.get(variableName);
   }
-  
-  /*
-  private IndexReader openIndexReader(Config conf, Set<String> ids)
-      throws java.io.IOException {
-    Map<Set<String>,IndexReader> ci = cachedIndexes.get();
-    if (ci == null) throw new IllegalStateException(
-        "There is no correct data in thread local storage!");
-    IndexReader reader = ci.get(ids);
-    if (reader == null) {
-      log.info("Opening virtual index reader containing " + ids
-          + " for duplicates checking...");
-      IndexReader[] l = new IndexReader[ids.size()];
-      Iterator<String> it = ids.iterator();
-      for (int i = 0; it.hasNext(); i++)
-        l[i] = conf.indexes.get(it.next()).newIndexReader();
-      ci.put(ids, reader = new org.apache.lucene.index.MultiReader(l, true));
-    }
-    return reader;
-  }
-  */
-  
-  @SuppressWarnings("rawtypes")
-  private Boolean isDocIdentifierUnique(List args)
-      throws XPathFunctionException {
-    return true; // TODO: Implement this!
-    /*
-    IndexBuilder index = currentIndexBuilder.get();
-    if (index == null) throw new IllegalStateException(
-        "There is no IndexBuilder instance in thread local storage!");
-    String identifier = (String) resolveVariable(VARIABLE_DOC_IDENTIFIER);
-    if (identifier == null) throw new IllegalStateException("Missing variable "
-        + VARIABLE_DOC_IDENTIFIER + " in thread local storage!");
-    Set<String> indexIds = new LinkedHashSet<String>();
-    try {
-      if (args.size() == 0) {
-        // collect all indexes, excluding the current one
-        for (IndexConfig iconfig : index.iconfig.parent.indexes.values()) {
-          if (iconfig == index.iconfig) continue;
-          if (!iconfig.isIndexAvailable()) continue;
-          indexIds.add(iconfig.id);
-        }
-      } else {
-        // collect indexes by id, excluding the current one
-        for (Object o : args) {
-          if (!(o instanceof String)) throw new XPathFunctionException(
-              FUNCTION_DOC_UNIQUE.toString()
-                  + " only allows type STRING as parameters (which are index ids, or empty for all indexes)!");
-          String s = (String) o;
-          if (s.equals(index.iconfig.id)) continue;
-          IndexConfig iconfig = index.iconfig.parent.indexes.get(s);
-          if (!(iconfig instanceof IndexConfig)) throw new XPathFunctionException(
-              FUNCTION_DOC_UNIQUE.toString() + " does not support index '" + s
-                  + "' (not defined or wrong type)!");
-          if (!((IndexConfig) iconfig).isIndexAvailable()) continue;
-          indexIds.add(s);
-        }
-      }
-      // if no other indexes present, identifier is unique!
-      if (indexIds.isEmpty()) return Boolean.TRUE;
-      // fetch a MultiReader from cache to search for identifiers
-      IndexReader reader = openIndexReader(index.iconfig.parent, indexIds);
-      Term t = new Term(IndexConstants.FIELDNAME_IDENTIFIER, identifier);
-      TermDocs td = reader.termDocs(t);
-      try {
-        return Boolean.valueOf(!td.next());
-      } finally {
-        td.close();
-      }
-    } catch (java.io.IOException ioe) {
-      throw new XPathFunctionException("Error accessing index: " + ioe);
-    }
-    */
-  }
-  
+    
   // API
   public synchronized Map<QName,Object> initVariables() {
     HashMap<QName,Object> data = new HashMap<QName,Object>();
@@ -164,34 +86,16 @@ public final class XPathResolverImpl implements XPathFunctionResolver,
     xPathVariableData.remove();
   }
   
-  public synchronized void setIndexBuilder(DocumentProcessor index) {
-    currentIndexBuilder.set(index);
-    cachedIndexes.set(new HashMap<Set<String>,IndexReader>());
-  }
-  
-  public synchronized void unsetIndexBuilder() {
-    currentIndexBuilder.remove();
-    for (IndexReader v : cachedIndexes.get().values())
-      try {
-        v.close();
-      } catch (java.io.IOException ioe) {
-        log.warn("Could not close one of the opened foreign indexes: " + ioe);
-      }
-    cachedIndexes.remove();
-  }
-  
   // class members
-  public static final String INDEX_BUILDER_NAMESPACE = "urn:java:"
+  public static final String DOCUMENT_PROCESSOR_NAMESPACE = "urn:java:"
       + DocumentProcessor.class.getName();
   
-  public static final QName FUNCTION_DOC_UNIQUE = new QName(
-      INDEX_BUILDER_NAMESPACE, "isDocIdentifierUnique");
   public static final QName VARIABLE_DOC_IDENTIFIER = new QName(
-      INDEX_BUILDER_NAMESPACE, "docIdentifier");
+      DOCUMENT_PROCESSOR_NAMESPACE, "docIdentifier");
   public static final QName VARIABLE_DOC_DATESTAMP = new QName(
-      INDEX_BUILDER_NAMESPACE, "docDatestamp");
+      DOCUMENT_PROCESSOR_NAMESPACE, "docDatestamp");
   public static final QName VARIABLE_INDEX_ID = new QName(
-      INDEX_BUILDER_NAMESPACE, "index");
+      DOCUMENT_PROCESSOR_NAMESPACE, "index");
   
   public static final Set<QName> BASE_VARIABLES = Collections
       .unmodifiableSet(new HashSet<QName>(Arrays.asList(
@@ -202,8 +106,6 @@ public final class XPathResolverImpl implements XPathFunctionResolver,
   
   // object members
   private ThreadLocal<Map<QName,Object>> xPathVariableData = new ThreadLocal<Map<QName,Object>>();
-  private ThreadLocal<DocumentProcessor> currentIndexBuilder = new ThreadLocal<DocumentProcessor>();
-  private ThreadLocal<Map<Set<String>,IndexReader>> cachedIndexes = new ThreadLocal<Map<Set<String>,IndexReader>>();
   
   private final XPathFunctionResolver parent;
   
