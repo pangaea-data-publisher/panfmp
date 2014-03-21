@@ -34,6 +34,18 @@
 			  The field template should not declare the XHTML namespace.
 		-->
 		<cfg:fields>
+			<!--
+				special purpose fields. Those are mainly mappings of predefined.
+				Those fields are required to reprocess stuff (e.g. reindex).
+				In Elasticsearch these fields should be simple stored fields without any analysis.
+				The source field should be indexed. The datestamp may be indexed.
+				mdoc-impl is for internal purposes only, needs only be stored.
+			-->
+			<cfg:xml-field name="xml"/>
+			<cfg:source-field name="internal-source"/>
+			<cfg:datestamp-field name="internal-datestamp"/>
+			<cfg:mdoc-impl-field name="internal-mdoc-impl"/>
+			<!-- custom fields defined by XPath or XSL Templates -->
 			<cfg:field name="_all" datatype="string">/</cfg:field>
 			<cfg:field name="citation" datatype="string">/dif:DIF/dif:Data_Set_Citation|/dif:DIF/dif:Entry_Title|/dif:DIF/dif:Entry_ID</cfg:field>
 			<cfg:field name="investigator" datatype="string">/dif:DIF/dif:Personnel[contains(dif:Role,'nvestigat')]</cfg:field>
@@ -56,6 +68,12 @@
 					<xsl:when test="/dif:DIF/dif:Parent_DIF">1.0</xsl:when>
 					<xsl:otherwise>5.0</xsl:otherwise>
 				</xsl:choose>
+			</cfg:field-template>
+			<cfg:field-template name="coordinates" datatype="json" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+				<coord>
+					<lat><xsl:value-of select="/dif:DIF/dif:Spatial_Coverage/dif:Southernmost_Latitude"/></lat>
+					<long><xsl:value-of select="/dif:DIF/dif:Spatial_Coverage/dif:Westernmost_Longitude"/></long>
+				</coord>
 			</cfg:field-template>
 		</cfg:fields>
 		<cfg:schema>

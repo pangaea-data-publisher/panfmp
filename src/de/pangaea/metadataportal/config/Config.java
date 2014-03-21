@@ -21,6 +21,7 @@ import java.net.CookieHandler;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -130,6 +131,16 @@ public class Config {
       // fields
       dig.addDoNothing("config/metadata/fields");
       
+      // special purpose fields
+      for (final String type : Arrays.asList(
+          "xml-field", "source-field", "datestamp-field", "mdoc-impl-field"
+      )) {
+        dig.addCallMethod("config/metadata/fields/" + type, "setSpecialField", 2);
+        dig.addObjectParam("config/metadata/fields/" + type, 0, type);
+        dig.addCallParam("config/metadata/fields/" + type, 1, "name");
+      }
+      
+      // XPath / template fields
       dig.addObjectCreate("config/metadata/fields/field", FieldConfig.class);
       dig.addSetNext("config/metadata/fields/field", "addField");
       String[] propAttr = new String[] { "datatype"}, propMapping = new String[] {"dataType"};
@@ -318,6 +329,26 @@ public class Config {
   
   @PublicForDigesterUse
   @Deprecated
+  public void setSpecialField(String type, String name) {
+    switch (type) {
+      case "xml-field":
+        fieldnameXML = name;
+        break;
+      case "source-field":
+        fieldnameSource = name;
+        break;
+      case "datestamp-field":
+        fieldnameDatestamp = name;
+      case "mdoc-impl-field":
+        fieldnameMdocImpl = name;
+        break;
+      default:
+        throw new IllegalArgumentException("Invalid special field type: " + type);
+    }
+  }
+  
+  @PublicForDigesterUse
+  @Deprecated
   public void setFilterDefault(String v) {
     if (v == null) return; // no change
     // a bit of hack, we use an empty filter to find out type :)
@@ -397,6 +428,13 @@ public class Config {
   
   // metadata mapping name
   public String typeName = "doc"; // TODO
+  
+  // special fields
+  public String fieldnameXML = "xml";  
+  public String fieldnameSource = "internal-source";
+  public String fieldnameDatestamp = "internal-datestamp";
+  public String fieldnameMdocImpl = "internal-mdoc-impl";
+
 
   // fields
   public final Map<String,FieldConfig> fields = new LinkedHashMap<String,FieldConfig>();
