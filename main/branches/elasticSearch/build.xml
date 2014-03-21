@@ -17,10 +17,7 @@
   <condition property="build.java.runtime" value="1.7">
     <hasmethod classname="java.lang.Throwable" method="getSuppressed"/>
   </condition>
-  <condition property="build.java.runtime" value="1.6">
-    <hasmethod classname="java.lang.String" method="isEmpty"/>
-  </condition>
-  <fail message="Minimum supported Java version is 1.6." unless="build.java.runtime"/>
+  <fail message="Minimum supported Java version is 1.7." unless="build.java.runtime"/>
 
   <!-- PROPERTIES -->
   <property name="src" location="src"/>
@@ -38,8 +35,7 @@
   <property name="year" value="2007-2013"/>
 
   <property name="javadoc.projectWebSite" value="http://www.panFMP.org/" />
-  <property name="javadoc.link.sun" value="http://docs.oracle.com/javase/1.6.0/docs/api/" />
-  <property name="javadoc.link.lucene" value="http://lucene.apache.org/core/3_6_2/api/core/" />
+  <property name="javadoc.link.sun" value="http://docs.oracle.com/javase/7/docs/api/" />
 
   <!-- IVY -->
   <property name="ivy.install.version" value="2.3.0" />
@@ -92,7 +88,7 @@
 
   <target name="compile" depends="-init">
     <mkdir dir="${build}"/>
-    <javac srcdir="${src}" destdir="${build}" source="1.6" target="1.6" classpathref="path.build"
+    <javac srcdir="${src}" destdir="${build}" source="1.7" target="1.7" classpathref="path.build"
       deprecation="on" debug="${debug}" encoding="UTF-8" includeantruntime="false">
       <compilerarg line="-Xlint:unchecked"/>
     </javac>
@@ -127,9 +123,8 @@
   <target name="javadocs" depends="-init">
     <delete dir="${docs}"/>
     <mkdir dir="${docs}"/>
-    <javadoc sourcepath="${src}" destdir="${docs}" source="1.6" packagenames="*" classpathref="path.build" windowtitle="${ant.project.name} ${version} Documentation" overview="${src}/overview.html" charset="UTF-8" docencoding="UTF-8">
+    <javadoc sourcepath="${src}" destdir="${docs}" source="1.7" packagenames="*" classpathref="path.build" windowtitle="${ant.project.name} ${version} Documentation" overview="${src}/overview.html" charset="UTF-8" docencoding="UTF-8">
       <link href="${javadoc.link.sun}"/>
-      <link href="${javadoc.link.lucene}"/>
       <doctitle><![CDATA[<H1>${ant.project.name} ${version}</H1>]]></doctitle>
       <bottom><![CDATA[<ADDRESS>Copyright &copy;${year} <A HREF='${javadoc.projectWebSite}' TARGET='_blank'>${ant.project.name}</A> Developers c/o Uwe Schindler</ADDRESS>]]></bottom>
     </javadoc>

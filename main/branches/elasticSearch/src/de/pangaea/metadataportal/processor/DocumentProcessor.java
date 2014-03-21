@@ -347,8 +347,7 @@ public final class DocumentProcessor {
           assert committedIdentifiers.size() == bulkRequest.numberOfActions();
           BulkResponse bulkResponse = bulkRequest.execute().actionGet();
           if (bulkResponse.hasFailures()) {
-            // TODO
-            throw new IOException("TODO: Add correct error handling");
+            throw new IOException("Error while executing bulk request: " + bulkResponse.buildFailureMessage());
           }
           
           log.info(deleted + " docs presumably deleted (if existent) and "
@@ -376,8 +375,7 @@ public final class DocumentProcessor {
         BulkResponse bulkResponse = bulkRequest.execute().actionGet();
         bulkRequest = null;
         if (bulkResponse.hasFailures()) {
-          // TODO
-          throw new IOException("TODO: Add correct error handling");
+          throw new IOException("Error while executing bulk request: " + bulkResponse.buildFailureMessage());
         }
       } else {
         bulkRequest = null;
@@ -395,7 +393,7 @@ public final class DocumentProcessor {
       if (validIdentifiers != null) {
         log.info("Removing documents not seen while harvesting (this may take a while)...");
         final QueryBuilder query = QueryBuilders.boolQuery()
-            .must(QueryBuilders.termQuery(IndexConstants.FIELDNAME_SOURCE, iconfig.id))
+            .must(QueryBuilders.termQuery(iconfig.parent.fieldnameSource, iconfig.id))
             .mustNot(QueryBuilders.idsQuery(iconfig.parent.typeName).ids(validIdentifiers.toArray(new String[validIdentifiers.size()])));
         client.prepareDeleteByQuery(iconfig.id).setTypes(iconfig.parent.typeName).setQuery(query).execute().actionGet();
       }

@@ -60,6 +60,7 @@ import de.pangaea.metadataportal.utils.ISODateFormatter;
 import de.pangaea.metadataportal.utils.LenientDateParser;
 import de.pangaea.metadataportal.utils.LoggingErrorListener;
 import de.pangaea.metadataportal.utils.StaticFactories;
+import de.pangaea.metadataportal.utils.XMLToJSON;
 
 /**
  * This class holds all information harvested and provides methods for
@@ -290,7 +291,7 @@ public class MetadataDocument {
    *           if index configuration is unknown
    */
   public XContentBuilder getElasticSearchJSON() throws Exception {
-    XContentBuilder builder = createEmptyJSON();
+    final XContentBuilder builder = createEmptyJSON();
     if (!deleted) {
       assert builder != null;
       if (dom == null) throw new NullPointerException(
@@ -328,10 +329,10 @@ public class MetadataDocument {
       return null; // to delete
     } else {
       XContentBuilder builder = XContentFactory.jsonBuilder().startObject()
-        .field(IndexConstants.FIELDNAME_MDOC_IMPL, getClass().getName())
-        .field(IndexConstants.FIELDNAME_SOURCE, iconfig.id);
+        .field(iconfig.parent.fieldnameMdocImpl, getClass().getName())
+        .field(iconfig.parent.fieldnameSource, iconfig.id);
       if (datestamp != null) {
-        builder.field(IndexConstants.FIELDNAME_DATESTAMP, datestamp);
+        builder.field(iconfig.parent.fieldnameDatestamp, datestamp);
       }
       return builder;
     }
@@ -341,7 +342,7 @@ public class MetadataDocument {
    * Helper method that finalizes the JSON document
    */
   protected void closeJSON(XContentBuilder builder) throws Exception {
-    builder.field(IndexConstants.FIELDNAME_XML, this.getXML())
+    builder.field(iconfig.parent.fieldnameXML, this.getXML())
       .endObject();
   }
   
@@ -382,10 +383,20 @@ public class MetadataDocument {
         if (value instanceof NodeList) {
           final NodeList nodes = (NodeList) value;
           final int c = nodes.getLength();
-          final List<String> vals = new ArrayList<String>(c / 2);
-          for (int i = 0; i < c; i++) {
-            switch (f.datatype) { 
-              case XML:
+          if (f.datatype == FieldConfig.DataType.JSON) {
+            builder.startArray(f.name);
+            final XMLToJSON serializer = new XMLToJSON(builder, true, true);
+            for (int i = 0; i < c; i++) {
+              final Node n = nodes.item(i);
+              // we need to do this, otherwise may get adjacent text nodes (e.g. for XSL docfrags):
+              n.normalize();
+              serializer.serializeChilds(n);
+            }
+            builder.endArray();
+          } else {
+            final List<String> vals = new ArrayList<String>(c / 2);
+            for (int i = 0; i < c; i++) {
+              if (f.datatype == FieldConfig.DataType.XML) { 
                 final DOMSource in = new DOMSource(nodes.item(i));
                 if (in.getNode().getNodeType() != Node.ELEMENT_NODE)
                   continue;
@@ -398,14 +409,7 @@ public class MetadataDocument {
                 trans.transform(in, out);
                 xmlWriter.close();
                 vals.add(xmlWriter.toString());
-                needDefault = false;
-                break;
-              case JSON:
-                // we don't use "vals" here, we add the JSON content directly
-                convertNodeToJSON(builder, nodes.item(i), true);
-                needDefault = false;
-                break;
-              default:
+              } else {
                 final StringBuilder sb = new StringBuilder();
                 walkNodeTexts(sb, nodes.item(i), true);
                 final String val = sb.toString().trim();
@@ -413,10 +417,11 @@ public class MetadataDocument {
                   vals.add(val);
                   needDefault = false;
                 }
+              }
             }
-          }
-          if (!vals.isEmpty()) {
-            addField(builder, f, vals.toArray(new String[vals.size()]));
+            if (!vals.isEmpty()) {
+              addField(builder, f, vals.toArray(new String[vals.size()]));
+            }
           }
         } else if (value instanceof String) {
           switch (f.datatype) {
@@ -597,37 +602,6 @@ public class MetadataDocument {
   }
   
   /**
-   * Helper method to walk through a DOM tree node (n) and convert it to JSON (append to the given XContentBuilder).
-   * Every
-   * <P>
-   * For internal use only!
-   */
-  protected void convertNodeToJSON(XContentBuilder builder, Node n, boolean topLevel) throws IOException {
-    if (n == null) return;
-    switch (n.getNodeType()) {
-      case Node.ELEMENT_NODE:
-        builder.field(n.getLocalName());
-        // fall-through
-      case Node.DOCUMENT_NODE:
-      case Node.DOCUMENT_FRAGMENT_NODE:
-        for (Node nod = n.getFirstChild(); nod != null; nod = nod
-            .getNextSibling()) {
-          convertNodeToJSON(builder, nod, false);
-        }
-        break;
-      case Node.ATTRIBUTE_NODE:
-        // This is special: Attributes are normally not converted to String,
-        // only if the XPath goes directly to the attribute
-        // If this is the case the Attribute is topLevel in the recursion!
-        if (!topLevel) break;
-      case Node.TEXT_NODE:
-      case Node.CDATA_SECTION_NODE:
-        builder.value(n.getNodeValue());
-        break;
-    }
-  }
-  
-  /**
    * Helper method to walk through a DOM tree node (n) and collect strings.
    * <P>
    * For internal use only!
@@ -638,8 +612,7 @@ public class MetadataDocument {
       case Node.ELEMENT_NODE:
       case Node.DOCUMENT_NODE:
       case Node.DOCUMENT_FRAGMENT_NODE:
-        for (Node nod = n.getFirstChild(); nod != null; nod = nod
-            .getNextSibling()) {
+        for (Node nod = n.getFirstChild(); nod != null; nod = nod.getNextSibling()) {
           walkNodeTexts(sb, nod, false);
           sb.append('\n');
         }
@@ -649,6 +622,7 @@ public class MetadataDocument {
         // only if the XPath goes directly to the attribute
         // If this is the case the Attribute is topLevel in the recursion!
         if (!topLevel) break;
+        // fall-through
       case Node.TEXT_NODE:
       case Node.CDATA_SECTION_NODE:
         sb.append(n.getNodeValue());
