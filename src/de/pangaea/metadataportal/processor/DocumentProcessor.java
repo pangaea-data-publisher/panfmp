@@ -51,26 +51,27 @@ public final class DocumentProcessor {
   
   protected final HarvesterConfig iconfig;
   protected final Client client;
+  protected final String targetIndex;
   
   private Date lastHarvested = null;
   
-  private static MetadataDocument MDOC_EOF = new MetadataDocument(null);
-  private static IndexerQueueEntry LDOC_EOF = new IndexerQueueEntry(null, null);
+  private static final MetadataDocument MDOC_EOF = new MetadataDocument(null);
+  private static final IndexerQueueEntry LDOC_EOF = new IndexerQueueEntry(null, null);
   
-  private AtomicInteger runningConverters = new AtomicInteger(0);
-  private AtomicReference<Exception> failure = new AtomicReference<Exception>(
+  private final AtomicInteger runningConverters = new AtomicInteger(0);
+  private final AtomicReference<Exception> failure = new AtomicReference<Exception>(
       null);
-  private AtomicReference<CommitEvent> commitEvent = new AtomicReference<CommitEvent>(
+  private final AtomicReference<CommitEvent> commitEvent = new AtomicReference<CommitEvent>(
       null);
-  private AtomicReference<Set<String>> validIdentifiers = new AtomicReference<Set<String>>(
+  private final AtomicReference<Set<String>> validIdentifiers = new AtomicReference<Set<String>>(
       null);
   
-  private BlockingQueue<MetadataDocument> mdocBuffer;
-  private BlockingQueue<IndexerQueueEntry> ldocBuffer;
+  private final BlockingQueue<MetadataDocument> mdocBuffer;
+  private final BlockingQueue<IndexerQueueEntry> ldocBuffer;
   
   private final Object indexerLock = new Object();
   
-  private int maxBufferedChanges;
+  private final int maxBufferedChanges;
   private DocumentErrorAction conversionErrorAction = DocumentErrorAction.STOP;
   
   private Thread indexerThread;
@@ -82,6 +83,7 @@ public final class DocumentProcessor {
     this.client = client;
     this.iconfig = iconfig;
     
+    targetIndex = iconfig.harvesterProperties.getProperty("targetIndex", "panfmp");
     maxBufferedChanges = Integer.parseInt(iconfig.harvesterProperties
         .getProperty("maxBufferedIndexChanges", "100"));
     
@@ -219,7 +221,7 @@ public final class DocumentProcessor {
   public Date getLastHarvestedFromDisk() {
     Date d = null;
     try {
-      final GetResponse resp = client.prepareGet(iconfig.id, "panfmp_meta", iconfig.id)
+      final GetResponse resp = client.prepareGet(targetIndex, "panfmp_meta", iconfig.id)
           .setFields("lastHarvested").setFetchSource(false).execute().actionGet();
       final Object v;
       if (resp.isExists() && (v = resp.getField("lastHarvested").getValue()) != null) {
@@ -235,7 +237,7 @@ public final class DocumentProcessor {
   
   private void saveLastHarvestedOnDisk() {
     if (lastHarvested != null) {
-      client.prepareIndex(iconfig.id, "panfmp_meta", iconfig.id)
+      client.prepareIndex(targetIndex, "panfmp_meta", iconfig.id)
         .setSource("lastHarvested", lastHarvested)
         .execute().actionGet();
       lastHarvested = null;
@@ -333,7 +335,7 @@ public final class DocumentProcessor {
           if (log.isDebugEnabled()) log.debug("Deleting document: "
               + entry.identifier);
           bulkRequest.add(
-            client.prepareDelete(iconfig.id, iconfig.parent.typeName, entry.identifier)
+            client.prepareDelete(targetIndex, iconfig.parent.typeName, entry.identifier)
           );
           deleted++;
         } else {
@@ -341,7 +343,7 @@ public final class DocumentProcessor {
               + entry.identifier);
           if (log.isTraceEnabled()) log.trace("Data: " + entry.builder.string());
           bulkRequest.add(
-            client.prepareIndex(iconfig.id, iconfig.parent.typeName, entry.identifier).setSource(entry.builder)
+            client.prepareIndex(targetIndex, iconfig.parent.typeName, entry.identifier).setSource(entry.builder)
           );
           updated++;
         }
@@ -399,7 +401,7 @@ public final class DocumentProcessor {
         final QueryBuilder query = QueryBuilders.boolQuery()
             .must(QueryBuilders.termQuery(iconfig.parent.fieldnameSource, iconfig.id))
             .mustNot(QueryBuilders.idsQuery(iconfig.parent.typeName).ids(validIdentifiers.toArray(new String[validIdentifiers.size()])));
-        client.prepareDeleteByQuery(iconfig.id).setTypes(iconfig.parent.typeName).setQuery(query).execute().actionGet();
+        client.prepareDeleteByQuery(targetIndex).setTypes(iconfig.parent.typeName).setQuery(query).execute().actionGet();
       }
       
       finished = true;
