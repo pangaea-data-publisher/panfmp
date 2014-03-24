@@ -228,63 +228,13 @@ public final class DocumentProcessor {
         }
         if (mdoc == MDOC_EOF) break;
         
-        if (log.isDebugEnabled()) log.debug("Converting document: "
-            + mdoc.toString());
-        if (log.isTraceEnabled()) log.trace("XML: " + mdoc.getXML());
-        XContentBuilder json = null;
-        try {
-          json = mdoc.getElasticSearchJSON();
-        } catch (InterruptedException ie) {
-          throw ie; // no handling here
-        } catch (Exception e) {
-          // handle exception
-          boolean ignore = false;
-          switch (conversionErrorAction) {
-            case IGNOREDOCUMENT:
-              log.error(
-                  "Conversion XML to Elasticsearch document failed for '"
-                      + mdoc.getIdentifier() + "' (object ignored):", e);
-              json = null;
-              ignore = true;
-              break;
-            case DELETEDOCUMENT:
-              log.error(
-                  "Conversion XML to Elasticsearch document failed for '"
-                      + mdoc.getIdentifier() + "' (object marked deleted):", e);
-              json = null;
-              break;
-            default:
-              log.fatal("Conversion XML to Lucene document failed for '"
-                  + mdoc.getIdentifier() + "' (fatal, stopping conversions).");
-              throw e;
+        if (processDocument(bulkRequest, mdoc)) {
+          committedIdentifiers.add(mdoc.getIdentifier());
+          if (bulkRequest.numberOfActions() >= bulkSize) {
+            pushBulk(bulkRequest, committedIdentifiers);
+            // create new bulk:
+            bulkRequest = client.prepareBulk();
           }
-          if (ignore) {
-            assert json == null;
-            continue; // next entry in buffer
-          }
-        }
-
-        if (json == null) {
-          if (log.isDebugEnabled()) log.debug("Deleting document: " + mdoc.getIdentifier());
-          bulkRequest.add(
-            client.prepareDelete(targetIndex, iconfig.parent.typeName, mdoc.getIdentifier())
-          );
-          deleted.incrementAndGet();
-        } else {
-          if (log.isDebugEnabled()) log.debug("Updating document: " + mdoc.getIdentifier());
-          if (log.isTraceEnabled()) log.trace("Data: " + json.string());
-          bulkRequest.add(
-            client.prepareIndex(targetIndex, iconfig.parent.typeName, mdoc.getIdentifier()).setSource(json)
-          );
-          updated.incrementAndGet();
-        }
-        committedIdentifiers.add(mdoc.getIdentifier());
-        
-        if (bulkRequest.numberOfActions() >= bulkSize) {
-          pushBulk(bulkRequest, committedIdentifiers);
-          
-          // create new bulk
-          bulkRequest = client.prepareBulk();
         }
       }
 
@@ -313,7 +263,7 @@ public final class DocumentProcessor {
     
     assert committedIdentifiers.size() <= bulkRequest.numberOfActions();
     
-    BulkResponse bulkResponse = bulkRequest.execute().actionGet();
+    final BulkResponse bulkResponse = bulkRequest.execute().actionGet();
     if (bulkResponse.hasFailures()) {
       throw new IOException("Error while executing bulk request: " + bulkResponse.buildFailureMessage());
     }
@@ -323,9 +273,59 @@ public final class DocumentProcessor {
     
     // notify Harvester of index commit
     final CommitEvent ce = commitEvent.get();
-    if (ce != null) ce.harvesterCommitted(Collections
-        .unmodifiableSet(committedIdentifiers));
+    if (ce != null) ce.harvesterCommitted(Collections.unmodifiableSet(committedIdentifiers));
     committedIdentifiers.clear();    
+  }
+  
+  private boolean processDocument(BulkRequestBuilder bulkRequest, MetadataDocument mdoc) throws Exception {
+    final Log log = LogFactory.getLog(Thread.currentThread().getName());
+    
+    if (log.isDebugEnabled()) log.debug("Converting document: "
+        + mdoc.toString());
+    if (log.isTraceEnabled()) log.trace("XML: " + mdoc.getXML());
+    XContentBuilder json = null;
+    try {
+      json = mdoc.getElasticSearchJSON();
+    } catch (InterruptedException ie) {
+      throw ie; // no handling here
+    } catch (Exception e) {
+      // handle exception
+      switch (conversionErrorAction) {
+        case IGNOREDOCUMENT:
+          log.error(
+              "Conversion XML to Elasticsearch document failed for '"
+                  + mdoc.getIdentifier() + "' (object ignored):", e);
+          // exit method
+          return false;
+        case DELETEDOCUMENT:
+          log.error(
+              "Conversion XML to Elasticsearch document failed for '"
+                  + mdoc.getIdentifier() + "' (object marked deleted):", e);
+          json = null;
+          break;
+        default:
+          log.fatal("Conversion XML to Lucene document failed for '"
+              + mdoc.getIdentifier() + "' (fatal, stopping conversions).");
+          throw e;
+      }
+    }
+
+    if (json == null) {
+      if (log.isDebugEnabled()) log.debug("Deleting document: " + mdoc.getIdentifier());
+      bulkRequest.add(
+        client.prepareDelete(targetIndex, iconfig.parent.typeName, mdoc.getIdentifier())
+      );
+      deleted.incrementAndGet();
+    } else {
+      if (log.isDebugEnabled()) log.debug("Updating document: " + mdoc.getIdentifier());
+      if (log.isTraceEnabled()) log.trace("Data: " + json.string());
+      bulkRequest.add(
+        client.prepareIndex(targetIndex, iconfig.parent.typeName, mdoc.getIdentifier()).setSource(json)
+      );
+      updated.incrementAndGet();
+    }
+    
+    return true;
   }
   
   private void throwFailure() throws BackgroundFailure {
