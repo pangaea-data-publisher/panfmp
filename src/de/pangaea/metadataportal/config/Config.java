@@ -178,29 +178,29 @@ public class Config {
           "setAugmentation", 0);
       
       // *** INDEX CONFIG ***
-      dig.addDoNothing("config/indexes");
+      dig.addDoNothing("config/sources");
       
       // SingleIndex
-      dig.addFactoryCreate("config/indexes/index",
+      dig.addFactoryCreate("config/sources/harvester",
           new AbstractObjectCreationFactory() {
             @Override
             public Object createObject(Attributes attributes) {
               return new IndexConfig(Config.this);
             }
           });
-      dig.addSetNext("config/indexes/index", "addIndex");
-      dig.addCallMethod("config/indexes/index", "setId", 1);
-      dig.addCallParam("config/indexes/index", 0, "id");
+      dig.addSetNext("config/sources/harvester", "addIndex");
+      dig.addCallMethod("config/sources/harvester", "setId", 1);
+      dig.addCallParam("config/sources/harvester", 0, "id");
       
-      dig.addCallMethod("config/indexes/index/harvesterClass",
+      dig.addCallMethod("config/sources/harvester/class",
           "setHarvesterClass", 0);
       
       dig.addRule(
-          "config/indexes/index/transform",
+          "config/sources/harvester/transform",
           new IndexConfigTransformerSaxRule(this));
       
-      dig.addDoNothing("config/indexes/index/harvesterProperties");
-      dig.addCallMethod("config/indexes/index/harvesterProperties/*",
+      dig.addDoNothing("config/sources/harvester/properties");
+      dig.addCallMethod("config/sources/harvester/properties/*",
           "addHarvesterProperty", 0);
             
       // *** GLOBAL HARVESTER PROPERTIES ***

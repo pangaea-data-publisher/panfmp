@@ -91,22 +91,22 @@
 		<cfg:maxBufferedIndexChanges>1000</cfg:maxBufferedIndexChanges>
 	</cfg:globalHarvesterProperties>
 	<!-- Definition of Indexes to harvester and their properties -->
-	<cfg:indexes>
-		<cfg:index id="pangaea-carboocean">
-			<cfg:harvesterClass>de.pangaea.metadataportal.harvester.OAIHarvester</cfg:harvesterClass>
-			<cfg:harvesterProperties>
+	<cfg:sources>
+		<cfg:harvester id="pangaea-carboocean">
+			<cfg:class>de.pangaea.metadataportal.harvester.OAIHarvester</cfg:class>
+			<cfg:properties>
 				<cfg:baseUrl>http://ws.pangaea.de/oai/</cfg:baseUrl>
 				<cfg:metadataPrefix>dif</cfg:metadataPrefix>
 				<cfg:setSpec>CARBOOCEAN</cfg:setSpec>
 				<cfg:validate>false</cfg:validate>
-			</cfg:harvesterProperties>
-		</cfg:index>
-		<cfg:index id="badc">
-			<cfg:harvesterClass>de.pangaea.metadataportal.harvester.OAIHarvester</cfg:harvesterClass>
-			<cfg:harvesterProperties>
+			</cfg:properties>
+		</cfg:harvester>
+		<cfg:harvester id="badc">
+			<cfg:class>de.pangaea.metadataportal.harvester.OAIHarvester</cfg:class>
+			<cfg:properties>
 				<cfg:baseUrl>http://badc.nerc.ac.uk/badc_oai/provider</cfg:baseUrl>
 				<cfg:metadataPrefix>dif</cfg:metadataPrefix>
-			</cfg:harvesterProperties>
+			</cfg:properties>
 			<!--
 			Here are two possibilities to do a inline transformation of harvested metadata (just as example):
 			a) reference to external stylesheet (relative to this config file):
@@ -132,16 +132,16 @@
 			declare them as XSL parameters for the stylesheet (possible in both inline and external stylesheets). They are automatically set as
 			input parameters to the transformation. Additional declared XSL parameters can simply be passed to the XSL as string attributes of the <cfg:transform/> element.
 			-->
-		</cfg:index>
-		<cfg:index id="copepod">
-			<cfg:harvesterClass>de.pangaea.metadataportal.harvester.WebCrawlingHarvester</cfg:harvesterClass>
-			<cfg:harvesterProperties>
+		</cfg:harvester>
+		<cfg:harvester id="copepod">
+			<cfg:class>de.pangaea.metadataportal.harvester.WebCrawlingHarvester</cfg:class>
+			<cfg:properties>
 				<cfg:baseUrl>http://www.st.nmfs.noaa.gov/plankton/content/xml_src/</cfg:baseUrl>
 				<cfg:filenameFilter>.*\.xml</cfg:filenameFilter>
 				<cfg:validate>true</cfg:validate>
-			</cfg:harvesterProperties>
-		</cfg:index>
-	</cfg:indexes>
+			</cfg:properties>
+		</cfg:harvester>
+	</cfg:sources>
 	<cfg:elasticSearchCluster>
 		<!-- multiple addresses allowed, just repeat. Uses default port of 9300 if omitted, otherwise give the port number separated by colon: -->
 		<cfg:address>localhost</cfg:address>
