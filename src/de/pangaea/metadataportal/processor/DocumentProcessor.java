@@ -72,7 +72,7 @@ public final class DocumentProcessor {
   private final Object indexerLock = new Object();
   
   private final int maxBufferedChanges;
-  private DocumentErrorAction conversionErrorAction = DocumentErrorAction.STOP;
+  private final DocumentErrorAction conversionErrorAction;
   
   private Thread indexerThread;
   private ThreadGroup converterThreads;
@@ -87,10 +87,9 @@ public final class DocumentProcessor {
     maxBufferedChanges = Integer.parseInt(iconfig.harvesterProperties
         .getProperty("maxBufferedIndexChanges", "100"));
     
-    String s = iconfig.harvesterProperties.getProperty("conversionErrorAction");
-    if (s != null) try {
-      conversionErrorAction = DocumentErrorAction.valueOf(s
-          .toUpperCase(Locale.ROOT));
+    final String s = iconfig.harvesterProperties.getProperty("conversionErrorAction", "STOP");
+    try {
+      conversionErrorAction = DocumentErrorAction.valueOf(s.toUpperCase(Locale.ROOT));
     } catch (IllegalArgumentException e) {
       throw new IllegalArgumentException(
           "Invalid value '"
