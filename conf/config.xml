@@ -83,15 +83,16 @@
 			<cfg:augmentation>false</cfg:augmentation>
 		</cfg:schema>
 	</cfg:metadata>
-	<!-- global harvester properties are inherited to each index, so only give properties available to all harvester types -->
-	<cfg:globalHarvesterProperties>
-		<cfg:numConverterThreads>1</cfg:numConverterThreads>
-		<cfg:maxConverterQueue>250</cfg:maxConverterQueue>
-		<cfg:maxIndexerQueue>250</cfg:maxIndexerQueue>
-		<cfg:maxBufferedIndexChanges>1000</cfg:maxBufferedIndexChanges>
-	</cfg:globalHarvesterProperties>
 	<!-- Definition of Indexes to harvester and their properties -->
 	<cfg:sources>
+		<!-- global harvester properties are inherited to each harvester, so only give properties available to all harvester types -->
+		<cfg:globalProperties>
+			<cfg:numConverterThreads>1</cfg:numConverterThreads>
+			<cfg:maxConverterQueue>250</cfg:maxConverterQueue>
+			<cfg:maxIndexerQueue>250</cfg:maxIndexerQueue>
+			<cfg:maxBufferedIndexChanges>1000</cfg:maxBufferedIndexChanges>
+		</cfg:globalProperties>
+		<!--  each harvester is listed here -->
 		<cfg:harvester id="pangaea-carboocean">
 			<cfg:class>de.pangaea.metadataportal.harvester.OAIHarvester</cfg:class>
 			<cfg:properties>
