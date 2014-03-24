@@ -233,7 +233,7 @@ public final class DocumentProcessor {
     return d;
   }
   
-  void saveLastHarvestedOnDisk() {
+  private void saveLastHarvestedOnDisk() {
     if (lastHarvested != null) {
       client.prepareIndex(iconfig.id, "panfmp_meta", iconfig.id)
         .setSource("lastHarvested", lastHarvested)
