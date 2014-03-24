@@ -341,13 +341,12 @@ public abstract class Harvester {
     props.addAll(Arrays.<String> asList(
         // own
         "harvestMessageStep",
-        // IndexBuilder
+        // DocumentProcessor
+        "targetIndex",
         "maxBufferedIndexChanges", "numConverterThreads", "maxConverterQueue",
         "maxIndexerQueue", "conversionErrorAction",
         // IndexBuilder.XMLConverter
-        "validate",
-        // MetadataDocument
-        "compressXML"));
+        "validate"));
   }
   
   /**

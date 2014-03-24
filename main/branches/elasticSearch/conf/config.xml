@@ -82,15 +82,15 @@
 			<!-- if the validator augments the source document (e.g., adds default attributes), use this as basis for indexing? -->
 			<cfg:augmentation>false</cfg:augmentation>
 		</cfg:schema>
+		<!-- This is the type used by Elasticsearch to index the documents. Elastisearch must have a mapping for that type,
+			otherwise it may not work correctly -->
+		<cfg:typeName>doc</cfg:typeName>
 	</cfg:metadata>
 	<!-- Definition of metadata sources and their harvesters and properties -->
 	<cfg:sources>
 		<!-- global harvester properties are inherited to each harvester, so only give properties available to all harvester types -->
 		<cfg:globalProperties>
-			<cfg:numConverterThreads>1</cfg:numConverterThreads>
-			<cfg:maxConverterQueue>250</cfg:maxConverterQueue>
-			<cfg:maxIndexerQueue>250</cfg:maxIndexerQueue>
-			<cfg:maxBufferedIndexChanges>1000</cfg:maxBufferedIndexChanges>
+			<cfg:targetIndex>panfmp</cfg:targetIndex>
 		</cfg:globalProperties>
 		<!--  each harvester is listed here -->
 		<cfg:harvester id="pangaea-carboocean">

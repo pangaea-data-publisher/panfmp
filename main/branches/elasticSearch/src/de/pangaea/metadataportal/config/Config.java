@@ -177,6 +177,9 @@ public class Config {
       dig.addCallMethod("config/metadata/schema/augmentation",
           "setAugmentation", 0);
       
+      // typeName
+      dig.addCallMethod("config/metadata/typeName", "setTypeName", 0);
+      
       // *** HARVESTER CONFIG ***
       dig.addDoNothing("config/sources");
       
@@ -383,6 +386,12 @@ public class Config {
   
   @PublicForDigesterUse
   @Deprecated
+  public void setTypeName(String v) {
+    typeName = v;
+  }
+  
+  @PublicForDigesterUse
+  @Deprecated
   public void setHaltOnSchemaError(String v) {
     haltOnSchemaError = BooleanParser.parseBoolean(v.trim());
   }
@@ -427,7 +436,7 @@ public class Config {
   public final Map<String,HarvesterConfig> indexes = new LinkedHashMap<String,HarvesterConfig>();
   
   // metadata mapping name
-  public String typeName = "doc"; // TODO
+  public String typeName = "doc";
   
   // special fields
   public String fieldnameXML = "xml";  
