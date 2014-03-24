@@ -489,7 +489,7 @@ public class MetadataDocument {
    */
   protected void addSystemVariables(Map<QName,Object> vars) {
     if (identifier == null || iconfig == null || iconfig.id == null) throw new NullPointerException();
-    vars.put(XPathResolverImpl.VARIABLE_INDEX_ID, iconfig.id);
+    vars.put(XPathResolverImpl.VARIABLE_HARVESTER_ID, iconfig.id);
     vars.put(XPathResolverImpl.VARIABLE_DOC_IDENTIFIER, identifier);
     vars.put(XPathResolverImpl.VARIABLE_DOC_DATESTAMP, (datestamp == null) ? ""
         : ISODateFormatter.formatLong(datestamp));
