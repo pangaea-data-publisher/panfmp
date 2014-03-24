@@ -28,6 +28,8 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.get.GetResponse;
@@ -46,8 +48,7 @@ import de.pangaea.metadataportal.config.HarvesterConfig;
  * @author Uwe Schindler
  */
 public final class DocumentProcessor {
-  private static final org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory
-      .getLog(DocumentProcessor.class);
+  private static final Log log = LogFactory.getLog(DocumentProcessor.class);
   
   protected final HarvesterConfig iconfig;
   protected final Client client;
@@ -56,27 +57,20 @@ public final class DocumentProcessor {
   private Date lastHarvested = null;
   
   private static final MetadataDocument MDOC_EOF = new MetadataDocument(null);
-  private static final IndexerQueueEntry LDOC_EOF = new IndexerQueueEntry(null, null);
-  
-  private final AtomicInteger runningConverters = new AtomicInteger(0);
-  private final AtomicReference<Exception> failure = new AtomicReference<Exception>(
-      null);
-  private final AtomicReference<CommitEvent> commitEvent = new AtomicReference<CommitEvent>(
-      null);
-  private final AtomicReference<Set<String>> validIdentifiers = new AtomicReference<Set<String>>(
-      null);
-  
   private final BlockingQueue<MetadataDocument> mdocBuffer;
-  private final BlockingQueue<IndexerQueueEntry> ldocBuffer;
+    
+  private final AtomicReference<Exception> failure = new AtomicReference<Exception>(null);
+  private final AtomicReference<CommitEvent> commitEvent = new AtomicReference<CommitEvent>(null);
+  private Set<String> validIdentifiers = null;
   
-  private final Object indexerLock = new Object();
+  private final AtomicInteger updated = new AtomicInteger(0), deleted = new AtomicInteger(0);
   
-  private final int maxBufferedChanges;
+  private final int bulkSize;
   private final DocumentErrorAction conversionErrorAction;
   
-  private Thread indexerThread;
-  private ThreadGroup converterThreads;
-  private Thread[] converterThreadList;
+  private final AtomicInteger runningThreads = new AtomicInteger(0);
+  private ThreadGroup threadGroup;
+  private Thread[] threadList;
   private boolean threadsStarted = false;
   
   DocumentProcessor(Client client, HarvesterConfig iconfig) {
@@ -84,8 +78,8 @@ public final class DocumentProcessor {
     this.iconfig = iconfig;
     
     targetIndex = iconfig.harvesterProperties.getProperty("targetIndex", "panfmp");
-    maxBufferedChanges = Integer.parseInt(iconfig.harvesterProperties
-        .getProperty("maxBufferedIndexChanges", "100"));
+    bulkSize = Integer.parseInt(iconfig.harvesterProperties
+        .getProperty("bulkSize", "100"));
     
     final String s = iconfig.harvesterProperties.getProperty("conversionErrorAction", "STOP");
     try {
@@ -99,40 +93,28 @@ public final class DocumentProcessor {
     }
     
     int threadCount = Integer.parseInt(iconfig.harvesterProperties.getProperty(
-        "numConverterThreads", "1"));
+        "numThreads", "1"));
     if (threadCount < 1) throw new IllegalArgumentException(
-        "numConverterThreads harvester-property must be >=1!");
+        "numThreads harvester-property must be >=1!");
     
     int size = Integer.parseInt(iconfig.harvesterProperties.getProperty(
-        "maxConverterQueue", "250"));
+        "maxQueue", "100"));
     if (size < threadCount) throw new IllegalArgumentException(
-        "maxConverterQueue must be >=numConverterThreads!");
+        "maxQueue must be >=numThreads!");
     mdocBuffer = new ArrayBlockingQueue<MetadataDocument>(size, true);
     
-    size = Integer.parseInt(iconfig.harvesterProperties.getProperty(
-        "maxIndexerQueue", "250"));
-    if (size < 1) throw new IllegalArgumentException(
-        "maxIndexerQueue must be >=1!");
-    ldocBuffer = new ArrayBlockingQueue<IndexerQueueEntry>(size, false);
-    
-    // converter threads
-    converterThreads = new ThreadGroup(getClass().getName()
-        + "#Converter#ThreadGroup");
-    converterThreadList = new Thread[threadCount];
+    // threads
+    threadGroup = new ThreadGroup(getClass().getName()
+        + "#ThreadGroup");
+    threadList = new Thread[threadCount];
     for (int i = 0; i < threadCount; i++) {
-      converterThreadList[i] = new Thread(converterThreads, new Runnable() {
+      threadList[i] = new Thread(threadGroup, new Runnable() {
+        @Override
         public void run() {
-          converterThreadRun();
+          threadRun();
         }
-      }, getClass().getName() + "#Converter#" + (i + 1));
+      }, getClass().getName() + "#" + (i + 1));
     }
-    
-    // indexer
-    indexerThread = new Thread(new Runnable() {
-      public void run() {
-        indexerThreadRun();
-      }
-    }, getClass().getName() + "#Indexer");
   }
   
   public boolean isFailed() {
@@ -144,72 +126,58 @@ public final class DocumentProcessor {
   }
   
   public void setValidIdentifiers(Set<String> validIdentifiers) {
-    this.validIdentifiers.set(validIdentifiers);
+    this.validIdentifiers = validIdentifiers;
   }
   
   public boolean isClosed() {
-    return (indexerThread == null || converterThreads == null || converterThreadList == null);
+    return (threadGroup == null || threadList == null);
   }
   
   public void close() throws Exception {
-    if (isClosed()) throw new IllegalStateException(
-        "IndexBuilder already closed");
+    if (isClosed()) throw new IllegalStateException("DocumentProcessor already closed");
     
-    startThreads(true);
-    
-    try {
-      for (int i = 0; i < converterThreadList.length; i++)
-        mdocBuffer.put(MDOC_EOF);
-      for (Thread t : converterThreadList) {
-        if (t.isAlive()) t.join();
+    if (threadsStarted) {
+      try {
+        for (int i = 0; i < threadList.length; i++)
+          mdocBuffer.put(MDOC_EOF);
+        for (Thread t : threadList) {
+          if (t.isAlive()) t.join();
+        }
+      } catch (InterruptedException e) {
+        log.error(e);
       }
+    }
       
-      // if ldocBuffer not empty there were already some threads filling the
-      // queue
-      // => LDOC_EOF is queued by the threads
-      // explicitely putting a LDOC_EOF is only needed when converterThreads
-      // were never running!
-      if (ldocBuffer.size() == 0) ldocBuffer.put(LDOC_EOF);
-      if (indexerThread.isAlive()) indexerThread.join();
-    } catch (InterruptedException e) {
-      log.error(e);
+    threadGroup = null;
+    threadList = null;
+    
+    // check for validIdentifiers Set and remove all unknown identifiers from
+    // index, if available
+    if (validIdentifiers != null) {
+      log.info("Removing documents not seen while harvesting (this may take a while)...");
+      final QueryBuilder query = QueryBuilders.boolQuery()
+          .must(QueryBuilders.termQuery(iconfig.parent.fieldnameSource, iconfig.id))
+          .mustNot(QueryBuilders.idsQuery(iconfig.parent.typeName).ids(validIdentifiers.toArray(new String[validIdentifiers.size()])));
+      client.prepareDeleteByQuery(targetIndex).setTypes(iconfig.parent.typeName).setQuery(query).execute().actionGet();
     }
     
-    saveLastHarvestedOnDisk();
-    
-    converterThreads = null;
-    converterThreadList = null;
-    indexerThread = null;
-    
+    // exit here before we write status info to disk!
     Exception f = failure.get();
     if (f != null) throw f;
+    
+    // save datestamp
+    saveLastHarvestedOnDisk();
+    
+    log.info(deleted + " docs presumably deleted (only if existent) and "
+        + updated + " docs (re-)indexed - finished.");
   }
   
-  public void addDocument(MetadataDocument mdoc)
-      throws BackgroundFailure, InterruptedException {
-    if (isClosed()) throw new IllegalStateException(
-        "IndexBuilder already closed");
+  public void addDocument(MetadataDocument mdoc) throws BackgroundFailure, InterruptedException {
+    if (isClosed()) throw new IllegalStateException("DocumentProcessor already closed");
     throwFailure();
-    startThreads(false);
+    startThreads();
     
     mdocBuffer.put(mdoc);
-  }
-  
-  // call this between harvest resumptions to wait if buffer 2/3 full, this
-  // helps to not block while running HTTP transfers (if buffer is big enough)
-  public void checkIndexerBuffer() throws BackgroundFailure,
-      InterruptedException {
-    if (isClosed()) throw new IllegalStateException(
-        "IndexBuilder already closed");
-    throwFailure();
-    startThreads(false);
-    
-    if (ldocBuffer.remainingCapacity() * 2 < ldocBuffer.size()) {
-      log.warn("Harvester is too fast for indexer thread, that is blocked. Waiting...");
-      synchronized (indexerLock) {
-        if (ldocBuffer.size() > 0 && failure.get() == null) indexerLock.wait();
-      }
-    }
   }
   
   // sets the date of last harvesting (written to disk after closing!!!)
@@ -243,11 +211,14 @@ public final class DocumentProcessor {
     }
   }
   
-  void converterThreadRun() {
-    org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory
-        .getLog(Thread.currentThread().getName());
-    log.info("Converter thread started.");
+  void threadRun() {
+    final Log log = LogFactory.getLog(Thread.currentThread().getName());
+    log.info("Processor thread started.");
+    boolean finished = false;
     try {
+      final HashSet<String> committedIdentifiers = new HashSet<String>(bulkSize);
+      BulkRequestBuilder bulkRequest = client.prepareBulk();
+      
       while (failure.get() == null) {
         final MetadataDocument mdoc;
         try {
@@ -260,152 +231,67 @@ public final class DocumentProcessor {
         if (log.isDebugEnabled()) log.debug("Converting document: "
             + mdoc.toString());
         if (log.isTraceEnabled()) log.trace("XML: " + mdoc.getXML());
+        XContentBuilder json = null;
         try {
-          final IndexerQueueEntry en = new IndexerQueueEntry(mdoc.getIdentifier(),
-              mdoc.getElasticSearchJSON());
-          ldocBuffer.put(en);
+          json = mdoc.getElasticSearchJSON();
         } catch (InterruptedException ie) {
           throw ie; // no handling here
         } catch (Exception e) {
           // handle exception
+          boolean ignore = false;
           switch (conversionErrorAction) {
             case IGNOREDOCUMENT:
               log.error(
-                  "Conversion XML to Lucene document failed for '"
+                  "Conversion XML to Elasticsearch document failed for '"
                       + mdoc.getIdentifier() + "' (object ignored):", e);
+              json = null;
+              ignore = true;
               break;
             case DELETEDOCUMENT:
               log.error(
-                  "Conversion XML to Lucene document failed for '"
+                  "Conversion XML to Elasticsearch document failed for '"
                       + mdoc.getIdentifier() + "' (object marked deleted):", e);
-              ldocBuffer.put(new IndexerQueueEntry(mdoc.getIdentifier(), null));
+              json = null;
               break;
             default:
               log.fatal("Conversion XML to Lucene document failed for '"
                   + mdoc.getIdentifier() + "' (fatal, stopping conversions).");
               throw e;
           }
-        }
-      }
-    } catch (InterruptedException ie) {
-      log.debug(ie);
-    } catch (Exception e) {
-      // only store the first error in failure variable, other errors are logged
-      // only
-      if (failure.compareAndSet(null, e)) log.debug(e);
-      else log.error(e);
-    } finally {
-      if (runningConverters.decrementAndGet() == 0) try {
-        mdocBuffer.clear();
-        ldocBuffer.put(LDOC_EOF);
-      } catch (InterruptedException e) {
-        log.error(e);
-      }
-      log.info("Converter thread stopped.");
-    }
-  }
-  
-  void indexerThreadRun() {
-    org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory
-        .getLog(Thread.currentThread().getName());
-    log.info("Indexer thread started.");
-    int updated = 0, deleted = 0;
-    boolean finished = false;
-    try {
-      final HashSet<String> committedIdentifiers = new HashSet<String>(maxBufferedChanges);
-      BulkRequestBuilder bulkRequest = client.prepareBulk();
-      
-      while (failure.get() == null) {
-        // notify eventually waiting checkIndexerBuffer() calls
-        synchronized (indexerLock) {
-          if (ldocBuffer.isEmpty()) indexerLock.notifyAll();
-        }
-        
-        // take entry from buffer
-        IndexerQueueEntry entry;
-        try {
-          entry = ldocBuffer.take();
-        } catch (InterruptedException ie) {
-          continue;
-        }
-        if (entry == LDOC_EOF) break;
-        
-        if (entry.builder == null) {
-          if (log.isDebugEnabled()) log.debug("Deleting document: "
-              + entry.identifier);
-          bulkRequest.add(
-            client.prepareDelete(targetIndex, iconfig.parent.typeName, entry.identifier)
-          );
-          deleted++;
-        } else {
-          if (log.isDebugEnabled()) log.debug("Updating document: "
-              + entry.identifier);
-          if (log.isTraceEnabled()) log.trace("Data: " + entry.builder.string());
-          bulkRequest.add(
-            client.prepareIndex(targetIndex, iconfig.parent.typeName, entry.identifier).setSource(entry.builder)
-          );
-          updated++;
-        }
-        committedIdentifiers.add(entry.identifier);
-        
-        if (committedIdentifiers.size() >= maxBufferedChanges) {
-          assert committedIdentifiers.size() == bulkRequest.numberOfActions();
-          BulkResponse bulkResponse = bulkRequest.execute().actionGet();
-          if (bulkResponse.hasFailures()) {
-            throw new IOException("Error while executing bulk request: " + bulkResponse.buildFailureMessage());
+          if (ignore) {
+            continue; // next entry in buffer
           }
-          
-          log.info(deleted + " docs presumably deleted (if existent) and "
-              + updated + " docs (re-)indexed so far.");
-          
-          // notify Harvester of index commit
-          final CommitEvent ce = commitEvent.get();
-          if (ce != null) ce.harvesterCommitted(Collections
-              .unmodifiableSet(committedIdentifiers));
-          committedIdentifiers.clear();
+        }
+
+        if (json == null) {
+          if (log.isDebugEnabled()) log.debug("Deleting document: " + mdoc.getIdentifier());
+          bulkRequest.add(
+            client.prepareDelete(targetIndex, iconfig.parent.typeName, mdoc.getIdentifier())
+          );
+          deleted.incrementAndGet();
+        } else {
+          if (log.isDebugEnabled()) log.debug("Updating document: " + mdoc.getIdentifier());
+          if (log.isTraceEnabled()) log.trace("Data: " + json.string());
+          bulkRequest.add(
+            client.prepareIndex(targetIndex, iconfig.parent.typeName, mdoc.getIdentifier()).setSource(json)
+          );
+          updated.incrementAndGet();
+        }
+        committedIdentifiers.add(mdoc.getIdentifier());
+        
+        if (bulkRequest.numberOfActions() >= bulkSize) {
+          pushBulk(bulkRequest, committedIdentifiers);
           
           // create new bulk
           bulkRequest = client.prepareBulk();
         }
       }
-      
-      // notify eventually waiting checkIndexerBuffer() calls, as we are
-      // finished
-      synchronized (indexerLock) {
-        indexerLock.notifyAll();
-      }
-      
-      assert committedIdentifiers.size() == bulkRequest.numberOfActions();
-      if (bulkRequest.numberOfActions() > 0) {
-        BulkResponse bulkResponse = bulkRequest.execute().actionGet();
-        bulkRequest = null;
-        if (bulkResponse.hasFailures()) {
-          throw new IOException("Error while executing bulk request: " + bulkResponse.buildFailureMessage());
-        }
-      } else {
-        bulkRequest = null;
-      }
 
-      // notify Harvester of index commit
-      CommitEvent ce = commitEvent.get();
-      if (ce != null && committedIdentifiers.size() > 0) ce
-          .harvesterCommitted(Collections.unmodifiableSet(committedIdentifiers));
-      committedIdentifiers.clear();
-      
-      // check for validIdentifiers Set and remove all unknown identifiers from
-      // index, if available
-      Set<String> validIdentifiers = this.validIdentifiers.get();
-      if (validIdentifiers != null) {
-        log.info("Removing documents not seen while harvesting (this may take a while)...");
-        final QueryBuilder query = QueryBuilders.boolQuery()
-            .must(QueryBuilders.termQuery(iconfig.parent.fieldnameSource, iconfig.id))
-            .mustNot(QueryBuilders.idsQuery(iconfig.parent.typeName).ids(validIdentifiers.toArray(new String[validIdentifiers.size()])));
-        client.prepareDeleteByQuery(targetIndex).setTypes(iconfig.parent.typeName).setQuery(query).execute().actionGet();
+      if (bulkRequest.numberOfActions() > 0) {
+        pushBulk(bulkRequest, committedIdentifiers);
       }
       
       finished = true;
-      log.info(deleted + " docs presumably deleted (only if existent) and "
-          + updated + " docs (re-)indexed - finished.");
     } catch (Exception e) {
       if (!finished) log.warn("Only " + deleted
           + " docs presumably deleted (only if existent) and " + updated
@@ -414,47 +300,50 @@ public final class DocumentProcessor {
       // only
       if (!failure.compareAndSet(null, e)) log.error(e);
     } finally {
-      ldocBuffer.clear();
-      // notify eventually waiting checkIndexerBuffer() calls, as we are
-      // finished
-      synchronized (indexerLock) {
-        indexerLock.notifyAll();
+      if (runningThreads.decrementAndGet() == 0) {
+        mdocBuffer.clear();
       }
-      log.info("Indexer thread stopped.");
+      log.info("Processor thread stopped.");
     }
+  }
+  
+  private void pushBulk(BulkRequestBuilder bulkRequest, Set<String> committedIdentifiers) throws IOException {
+    final Log log = LogFactory.getLog(Thread.currentThread().getName());
+    
+    assert committedIdentifiers.size() <= bulkRequest.numberOfActions();
+    
+    BulkResponse bulkResponse = bulkRequest.execute().actionGet();
+    if (bulkResponse.hasFailures()) {
+      throw new IOException("Error while executing bulk request: " + bulkResponse.buildFailureMessage());
+    }
+    
+    log.info(deleted + " docs presumably deleted (if existent) and "
+        + updated + " docs (re-)indexed so far.");
+    
+    // notify Harvester of index commit
+    final CommitEvent ce = commitEvent.get();
+    if (ce != null) ce.harvesterCommitted(Collections
+        .unmodifiableSet(committedIdentifiers));
+    committedIdentifiers.clear();    
   }
   
   private void throwFailure() throws BackgroundFailure {
     Exception f = failure.get();
     if (f != null) {
-      if (converterThreads != null) converterThreads.interrupt();
-      if (indexerThread != null) indexerThread.interrupt();
+      if (threadGroup != null) threadGroup.interrupt();
       throw new BackgroundFailure(f);
     }
   }
   
-  private void startThreads(boolean onlyIndexer) {
+  private void startThreads() {
     if (!threadsStarted) try {
-      if (!onlyIndexer) for (Thread t : converterThreadList) {
-        runningConverters.incrementAndGet();
+      for (Thread t : threadList) {
+        runningThreads.incrementAndGet();
         t.start();
       }
-      indexerThread.start();
     } finally {
       threadsStarted = true;
     }
-  }
-  
-  private static final class IndexerQueueEntry {
-    
-    protected IndexerQueueEntry(String identifier, XContentBuilder builder) {
-      this.identifier = identifier;
-      this.builder = builder;
-    }
-    
-    protected final String identifier;
-    protected final XContentBuilder builder;
-    
   }
   
 }
