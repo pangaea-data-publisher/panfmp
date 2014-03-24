@@ -28,7 +28,7 @@ import javax.xml.transform.TransformerException;
 import org.xml.sax.SAXParseException;
 
 import de.pangaea.metadataportal.config.Config;
-import de.pangaea.metadataportal.config.IndexConfig;
+import de.pangaea.metadataportal.config.HarvesterConfig;
 import de.pangaea.metadataportal.processor.ElasticSearchConnection;
 import de.pangaea.metadataportal.processor.CommitEvent;
 import de.pangaea.metadataportal.processor.DocumentProcessor;
@@ -113,19 +113,19 @@ public abstract class Harvester {
    */
   protected static void runHarvester(Config conf, String index,
       Class<? extends Harvester> harvesterClass) {
-    Collection<IndexConfig> indexList = null;
+    Collection<HarvesterConfig> indexList = null;
     if (index == null || "*".equals(index) || "all".equals(index)) {
       indexList = conf.indexes.values();
     } else {
-      IndexConfig iconf = conf.indexes.get(index);
-      if (iconf == null || !(iconf instanceof IndexConfig)) throw new IllegalArgumentException(
+      HarvesterConfig iconf = conf.indexes.get(index);
+      if (iconf == null || !(iconf instanceof HarvesterConfig)) throw new IllegalArgumentException(
           "There is no index defined with id=\"" + index + "\"!");
       indexList = Collections.singletonList(iconf);
     }
     
     final ElasticSearchConnection es = new ElasticSearchConnection(conf);
     try {
-      for (IndexConfig siconf : indexList) {
+      for (HarvesterConfig siconf : indexList) {
         Class<? extends Harvester> hc = (harvesterClass == null) ? siconf.harvesterClass
             : harvesterClass;
         staticLog.info("Harvesting documents into index \"" + siconf.id
@@ -185,7 +185,7 @@ public abstract class Harvester {
   /**
    * Index configuration
    */
-  protected IndexConfig iconfig = null;
+  protected HarvesterConfig iconfig = null;
   
   /**
    * Count of harvested documents. Incremented by {@link #addDocument}.
@@ -218,7 +218,7 @@ public abstract class Harvester {
    *           if an exception occurs during opening (various types of
    *           exceptions can be thrown).
    */
-  public void open(ElasticSearchConnection es, IndexConfig iconfig) throws Exception {
+  public void open(ElasticSearchConnection es, HarvesterConfig iconfig) throws Exception {
     if (iconfig == null) throw new IllegalArgumentException(
         "Missing index configuration");
     this.iconfig = iconfig;

@@ -34,10 +34,10 @@ import de.pangaea.metadataportal.utils.PublicForDigesterUse;
  * 
  * @author Uwe Schindler
  */
-public class IndexConfig {
+public class HarvesterConfig {
   
   /** Default constructor **/
-  public IndexConfig(Config parent) {
+  public HarvesterConfig(Config parent) {
     this.parent = parent;
     harvesterProperties = new Properties(parent.globalHarvesterProperties);
   }

@@ -22,7 +22,7 @@ import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.util.Bits;
 
 import de.pangaea.metadataportal.config.Config;
-import de.pangaea.metadataportal.config.IndexConfig;
+import de.pangaea.metadataportal.config.HarvesterConfig;
 import de.pangaea.metadataportal.processor.ElasticSearchConnection;
 import de.pangaea.metadataportal.processor.MetadataDocument;
 
@@ -62,7 +62,7 @@ public class Rebuilder extends Harvester {
   private IndexReader reader = null;
   
   @Override
-  public void open(ElasticSearchConnection es, IndexConfig iconfig) throws Exception {
+  public void open(ElasticSearchConnection es, HarvesterConfig iconfig) throws Exception {
     log.info("Opening index \"" + iconfig.id
         + "\" for harvesting all documents...");
     super.open(es, iconfig);

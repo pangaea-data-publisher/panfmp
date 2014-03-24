@@ -52,7 +52,7 @@ import org.xml.sax.SAXParseException;
 import de.pangaea.metadataportal.config.ExpressionConfig;
 import de.pangaea.metadataportal.config.FieldConfig;
 import de.pangaea.metadataportal.config.FilterConfig;
-import de.pangaea.metadataportal.config.IndexConfig;
+import de.pangaea.metadataportal.config.HarvesterConfig;
 import de.pangaea.metadataportal.config.VariableConfig;
 import de.pangaea.metadataportal.harvester.Rebuilder;
 import de.pangaea.metadataportal.utils.BooleanParser;
@@ -77,7 +77,7 @@ public class MetadataDocument {
    * configuration. Sub classes must always supply this exact constructor for
    * working with {@link Rebuilder} and {@link #createInstanceFromLucene}.
    */
-  public MetadataDocument(IndexConfig iconfig) {
+  public MetadataDocument(HarvesterConfig iconfig) {
     this.iconfig = iconfig;
   }
   
@@ -685,7 +685,7 @@ public class MetadataDocument {
   /**
    * The index configuration.
    */
-  protected IndexConfig iconfig = null;
+  protected HarvesterConfig iconfig = null;
   
   private Document dom = null;
   private String xmlCache = null;

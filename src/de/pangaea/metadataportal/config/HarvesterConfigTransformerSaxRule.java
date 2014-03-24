@@ -9,12 +9,12 @@ import javax.xml.transform.Templates;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
-final class IndexConfigTransformerSaxRule extends TransformerSaxRule {
+final class HarvesterConfigTransformerSaxRule extends TransformerSaxRule {
   
   /**
    * @param config
    */
-  IndexConfigTransformerSaxRule(Config config) {
+  HarvesterConfigTransformerSaxRule(Config config) {
     super(config);
   }
 
@@ -22,9 +22,9 @@ final class IndexConfigTransformerSaxRule extends TransformerSaxRule {
   public void begin(String namespace, String name, Attributes attributes)
       throws Exception {
     final Object o = digester.peek();
-    if (!(o instanceof IndexConfig)) throw new RuntimeException(
+    if (!(o instanceof HarvesterConfig)) throw new RuntimeException(
         "An XSLT tree is not allowed here!");
-    final IndexConfig iconf = (IndexConfig) o;
+    final HarvesterConfig iconf = (HarvesterConfig) o;
     
     final String file = attributes.getValue(XMLConstants.NULL_NS_URI, "src");
     if (file != null) {
@@ -63,9 +63,9 @@ final class IndexConfigTransformerSaxRule extends TransformerSaxRule {
   @Override
   protected void setResult(Templates t) {
     final Object o = digester.peek();
-    if (!(o instanceof IndexConfig)) throw new RuntimeException(
+    if (!(o instanceof HarvesterConfig)) throw new RuntimeException(
         "An XSLT tree is not allowed here!");
-    final IndexConfig iconf = (IndexConfig) o;
+    final HarvesterConfig iconf = (HarvesterConfig) o;
     
     iconf.xslt = t;
   }

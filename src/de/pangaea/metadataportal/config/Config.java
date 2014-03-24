@@ -177,15 +177,14 @@ public class Config {
       dig.addCallMethod("config/metadata/schema/augmentation",
           "setAugmentation", 0);
       
-      // *** INDEX CONFIG ***
+      // *** HARVESTER CONFIG ***
       dig.addDoNothing("config/sources");
       
-      // SingleIndex
       dig.addFactoryCreate("config/sources/harvester",
           new AbstractObjectCreationFactory() {
             @Override
             public Object createObject(Attributes attributes) {
-              return new IndexConfig(Config.this);
+              return new HarvesterConfig(Config.this);
             }
           });
       dig.addSetNext("config/sources/harvester", "addIndex");
@@ -197,7 +196,7 @@ public class Config {
       
       dig.addRule(
           "config/sources/harvester/transform",
-          new IndexConfigTransformerSaxRule(this));
+          new HarvesterConfigTransformerSaxRule(this));
       
       dig.addDoNothing("config/sources/harvester/properties");
       dig.addCallMethod("config/sources/harvester/properties/*",
@@ -238,7 +237,7 @@ public class Config {
     
     // *** After loading do final checks ***
     // consistency in indexes:
-    for (IndexConfig iconf : indexes.values())
+    for (HarvesterConfig iconf : indexes.values())
       iconf.check();
     
     // cleanup
@@ -320,7 +319,7 @@ public class Config {
     filters.add(f);
   }
   
-  public void addIndex(IndexConfig i) {
+  public void addIndex(HarvesterConfig i) {
     if (indexes.containsKey(i.id)) throw new IllegalArgumentException(
         "There is already an index with id=\"" + i.id
             + "\" added to configuration!");
@@ -424,7 +423,7 @@ public class Config {
   }
   
   // indexes
-  public final Map<String,IndexConfig> indexes = new LinkedHashMap<String,IndexConfig>();
+  public final Map<String,HarvesterConfig> indexes = new LinkedHashMap<String,HarvesterConfig>();
   
   // metadata mapping name
   public String typeName = "doc"; // TODO

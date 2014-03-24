@@ -25,7 +25,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.TransportAddress;
 
 import de.pangaea.metadataportal.config.Config;
-import de.pangaea.metadataportal.config.IndexConfig;
+import de.pangaea.metadataportal.config.HarvesterConfig;
 
 /**
  * TODO
@@ -60,7 +60,7 @@ public class ElasticSearchConnection implements Closeable {
     return client;
   }
   
-  public DocumentProcessor getDocumentProcessor(IndexConfig iconfig) {
+  public DocumentProcessor getDocumentProcessor(HarvesterConfig iconfig) {
     return new DocumentProcessor(client(), iconfig);
   }
   

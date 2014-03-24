@@ -24,7 +24,7 @@ import java.util.Set;
 
 import javax.xml.transform.Source;
 
-import de.pangaea.metadataportal.config.IndexConfig;
+import de.pangaea.metadataportal.config.HarvesterConfig;
 import de.pangaea.metadataportal.processor.DocumentErrorAction;
 import de.pangaea.metadataportal.processor.ElasticSearchConnection;
 import de.pangaea.metadataportal.processor.MetadataDocument;
@@ -57,7 +57,7 @@ public abstract class SingleFileEntitiesHarvester extends Harvester {
   private long newestDatestamp = -1;
   
   @Override
-  public void open(ElasticSearchConnection es, IndexConfig iconfig) throws Exception {
+  public void open(ElasticSearchConnection es, HarvesterConfig iconfig) throws Exception {
     super.open(es, iconfig);
     
     String s = iconfig.harvesterProperties.getProperty("parseErrorAction");

@@ -21,7 +21,7 @@ import java.util.Set;
 
 import org.elasticsearch.common.xcontent.XContentBuilder;
 
-import de.pangaea.metadataportal.config.IndexConfig;
+import de.pangaea.metadataportal.config.HarvesterConfig;
 import de.pangaea.metadataportal.processor.MetadataDocument;
 import de.pangaea.metadataportal.utils.ISODateFormatter;
 import de.pangaea.metadataportal.utils.PublicForDigesterUse;
@@ -38,7 +38,7 @@ public class OAIMetadataDocument extends MetadataDocument {
    * Constructor, that creates an empty instance for the supplied index
    * configuration.
    */
-  public OAIMetadataDocument(IndexConfig iconfig) {
+  public OAIMetadataDocument(HarvesterConfig iconfig) {
     super(iconfig);
   }
   

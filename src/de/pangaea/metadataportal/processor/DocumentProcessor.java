@@ -37,7 +37,7 @@ import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.indices.IndexMissingException;
 
-import de.pangaea.metadataportal.config.IndexConfig;
+import de.pangaea.metadataportal.config.HarvesterConfig;
 
 /**
  * Component of <b>panFMP</b> that analyzes and indexes harvested documents in
@@ -49,7 +49,7 @@ public final class DocumentProcessor {
   private static final org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory
       .getLog(DocumentProcessor.class);
   
-  protected final IndexConfig iconfig;
+  protected final HarvesterConfig iconfig;
   protected final Client client;
   
   private Date lastHarvested = null;
@@ -78,7 +78,7 @@ public final class DocumentProcessor {
   private Thread[] converterThreadList;
   private boolean threadsStarted = false;
   
-  DocumentProcessor(Client client, IndexConfig iconfig) {
+  DocumentProcessor(Client client, HarvesterConfig iconfig) {
     this.client = client;
     this.iconfig = iconfig;
     
