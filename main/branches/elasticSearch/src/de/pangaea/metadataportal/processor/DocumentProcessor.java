@@ -71,7 +71,7 @@ public final class DocumentProcessor {
   private final AtomicInteger runningThreads = new AtomicInteger(0);
   private ThreadGroup threadGroup;
   private Thread[] threadList;
-  private boolean threadsStarted = false;
+  private volatile boolean threadsStarted = false;
   
   DocumentProcessor(Client client, HarvesterConfig iconfig) {
     this.client = client;
@@ -168,8 +168,28 @@ public final class DocumentProcessor {
     if (isClosed()) throw new IllegalStateException("DocumentProcessor already closed");
     throwFailure();
     startThreads();
-    
     mdocBuffer.put(mdoc);
+  }
+  
+  /** This does not use bulk indexing, it starts converting and posts the document to Elasticsearch.
+   * It can be used without harvester to index documents directly.
+   * This does not start a new thread. */
+  public void processDocument(MetadataDocument mdoc) throws Exception {
+    if (isClosed()) throw new IllegalStateException("DocumentProcessor already closed");
+    
+    // TODO: Rewrite without 1-doc bulk!
+    final BulkRequestBuilder bulkRequest = client.prepareBulk();
+    internalProcessDocument(log, bulkRequest, mdoc);
+    final BulkResponse bulkResponse = bulkRequest.get();
+    if (bulkResponse.hasFailures()) {
+      throw new IOException("Error while executing request: " + bulkResponse.buildFailureMessage());
+    }
+    
+    // notify Harvester of index commit
+    final CommitEvent ce = commitEvent.get();
+    if (ce != null) ce.harvesterCommitted(Collections.singleton(mdoc.getIdentifier()));
+ 
+    log.info("Document update '" + mdoc.getIdentifier() + "' processed and submitted to Elasticsearch.");
   }
   
   // sets the date of last harvesting (written to disk after closing!!!)
@@ -231,10 +251,10 @@ public final class DocumentProcessor {
         }
         if (mdoc == MDOC_EOF) break;
         
-        if (processDocument(bulkRequest, mdoc)) {
+        if (internalProcessDocument(log, bulkRequest, mdoc)) {
           committedIdentifiers.add(mdoc.getIdentifier());
           if (bulkRequest.numberOfActions() >= bulkSize) {
-            pushBulk(bulkRequest, committedIdentifiers);
+            pushBulk(log, bulkRequest, committedIdentifiers);
             // create new bulk:
             bulkRequest = client.prepareBulk();
           }
@@ -242,7 +262,7 @@ public final class DocumentProcessor {
       }
 
       if (bulkRequest.numberOfActions() > 0) {
-        pushBulk(bulkRequest, committedIdentifiers);
+        pushBulk(log, bulkRequest, committedIdentifiers);
       }
       
       finished = true;
@@ -261,9 +281,7 @@ public final class DocumentProcessor {
     }
   }
   
-  private void pushBulk(BulkRequestBuilder bulkRequest, final Set<String> committedIdentifiers) throws IOException {
-    final Log log = LogFactory.getLog(Thread.currentThread().getName());
-    
+  private void pushBulk(Log log, BulkRequestBuilder bulkRequest, final Set<String> committedIdentifiers) throws IOException {
     assert committedIdentifiers.size() <= bulkRequest.numberOfActions();
     
     final BulkResponse bulkResponse = bulkRequest.get();
@@ -271,18 +289,17 @@ public final class DocumentProcessor {
       throw new IOException("Error while executing bulk request: " + bulkResponse.buildFailureMessage());
     }
     
-    log.info(deleted + " docs presumably deleted (if existent) and "
-        + updated + " docs (re-)indexed so far.");
-    
     // notify Harvester of index commit
     final CommitEvent ce = commitEvent.get();
     if (ce != null) ce.harvesterCommitted(Collections.unmodifiableSet(committedIdentifiers));
     committedIdentifiers.clear();
+
+    log.info(deleted + " docs presumably deleted (if existent) and "
+        + updated + " docs (re-)indexed so far.");
   }
   
-  private boolean processDocument(BulkRequestBuilder bulkRequest, MetadataDocument mdoc) throws Exception {
-    final Log log = LogFactory.getLog(Thread.currentThread().getName());
-    
+  private boolean internalProcessDocument(Log log, BulkRequestBuilder bulkRequest, MetadataDocument mdoc) throws Exception {
+    final String identifier = mdoc.getIdentifier();
     if (log.isDebugEnabled()) log.debug("Converting document: "
         + mdoc.toString());
     if (log.isTraceEnabled()) log.trace("XML: " + mdoc.getXML());
@@ -297,33 +314,33 @@ public final class DocumentProcessor {
         case IGNOREDOCUMENT:
           log.error(
               "Conversion XML to Elasticsearch document failed for '"
-                  + mdoc.getIdentifier() + "' (object ignored):", e);
+                  + identifier + "' (object ignored):", e);
           // exit method
           return false;
         case DELETEDOCUMENT:
           log.error(
               "Conversion XML to Elasticsearch document failed for '"
-                  + mdoc.getIdentifier() + "' (object marked deleted):", e);
+                  + identifier + "' (object marked deleted):", e);
           json = null;
           break;
         default:
           log.fatal("Conversion XML to Lucene document failed for '"
-              + mdoc.getIdentifier() + "' (fatal, stopping conversions).");
+              + identifier + "' (fatal, stopping conversions).");
           throw e;
       }
     }
 
     if (json == null) {
-      if (log.isDebugEnabled()) log.debug("Deleting document: " + mdoc.getIdentifier());
+      if (log.isDebugEnabled()) log.debug("Deleting document: " + identifier);
       bulkRequest.add(
-        client.prepareDelete(targetIndex, iconfig.parent.typeName, mdoc.getIdentifier())
+        client.prepareDelete(targetIndex, iconfig.parent.typeName, identifier)
       );
       deleted.incrementAndGet();
     } else {
-      if (log.isDebugEnabled()) log.debug("Updating document: " + mdoc.getIdentifier());
+      if (log.isDebugEnabled()) log.debug("Updating document: " + identifier);
       if (log.isTraceEnabled()) log.trace("Data: " + json.string());
       bulkRequest.add(
-        client.prepareIndex(targetIndex, iconfig.parent.typeName, mdoc.getIdentifier()).setSource(json)
+        client.prepareIndex(targetIndex, iconfig.parent.typeName, identifier).setSource(json)
       );
       updated.incrementAndGet();
     }
