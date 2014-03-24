@@ -30,10 +30,12 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.indices.IndexMissingException;
 
 import de.pangaea.metadataportal.config.IndexConfig;
 
@@ -172,14 +174,7 @@ public final class DocumentProcessor {
       log.error(e);
     }
     
-    if (lastHarvested != null) {
-      /* TODO:
-      IndexConstants.FILENAME_LASTHARVESTED, IOContext.DEFAULT);
-      out.writeLong(lastHarvested.getTime());
-      out.close();
-      */
-      lastHarvested = null;
-    }
+    saveLastHarvestedOnDisk();
     
     converterThreads = null;
     converterThreadList = null;
@@ -223,19 +218,28 @@ public final class DocumentProcessor {
   
   public Date getLastHarvestedFromDisk() {
     Date d = null;
-    /*IndexInput in = null;
     try {
-      in = iconfig.getIndexDirectory().openInput(
-          IndexConstants.FILENAME_LASTHARVESTED, IOContext.DEFAULT);
-      d = new Date(in.readLong());
-      in.close();
-    } catch (IOException e) {
-      if (in != null) try {
-        in.close();
-      } catch (IOException ie) {}
+      final GetResponse resp = client.prepareGet(iconfig.id, "panfmp_meta", iconfig.id)
+          .setFields("lastHarvested").setFetchSource(false).execute().actionGet();
+      final Object v;
+      if (resp.isExists() && (v = resp.getField("lastHarvested").getValue()) != null) {
+        d = XContentBuilder.defaultDatePrinter
+            .parseDateTime(v.toString())
+            .toDate();
+      }
+    } catch (IndexMissingException e) {
       d = null;
-    }*/
+    }
     return d;
+  }
+  
+  void saveLastHarvestedOnDisk() {
+    if (lastHarvested != null) {
+      client.prepareIndex(iconfig.id, "panfmp_meta", iconfig.id)
+        .setSource("lastHarvested", lastHarvested)
+        .execute().actionGet();
+      lastHarvested = null;
+    }
   }
   
   void converterThreadRun() {
