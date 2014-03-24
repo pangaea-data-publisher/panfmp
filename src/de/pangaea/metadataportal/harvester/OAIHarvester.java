@@ -253,7 +253,6 @@ public class OAIHarvester extends OAIHarvesterBase {
       // Token expiration!!!
       log.debug("Resumption token expires in " + currResumptionExpiration
           + " ms");
-      index.checkIndexerBuffer();
       url = new StringBuilder(baseUrl);
       url.append("?verb=ListRecords&resumptionToken=").append(
           URLEncoder.encode(currResumptionToken, "UTF-8"));

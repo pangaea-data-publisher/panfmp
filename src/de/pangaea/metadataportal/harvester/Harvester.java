@@ -343,8 +343,8 @@ public abstract class Harvester {
         "harvestMessageStep",
         // DocumentProcessor
         "targetIndex",
-        "maxBufferedIndexChanges", "numConverterThreads", "maxConverterQueue",
-        "maxIndexerQueue", "conversionErrorAction",
+        "bulkSize", "numThreads", "maxQueue",
+        "conversionErrorAction",
         // IndexBuilder.XMLConverter
         "validate"));
   }
