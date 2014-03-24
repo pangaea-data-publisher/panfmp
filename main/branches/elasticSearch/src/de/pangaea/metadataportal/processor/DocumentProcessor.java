@@ -259,6 +259,7 @@ public final class DocumentProcessor {
               throw e;
           }
           if (ignore) {
+            assert json == null;
             continue; // next entry in buffer
           }
         }
