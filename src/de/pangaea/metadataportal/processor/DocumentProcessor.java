@@ -151,15 +151,7 @@ public final class DocumentProcessor {
     threadGroup = null;
     threadList = null;
     
-    // check for validIdentifiers Set and remove all unknown identifiers from
-    // index, if available
-    if (validIdentifiers != null) {
-      log.info("Removing documents not seen while harvesting (this may take a while)...");
-      final QueryBuilder query = QueryBuilders.boolQuery()
-          .must(QueryBuilders.termQuery(iconfig.parent.fieldnameSource, iconfig.id))
-          .mustNot(QueryBuilders.idsQuery(iconfig.parent.typeName).ids(validIdentifiers.toArray(new String[validIdentifiers.size()])));
-      client.prepareDeleteByQuery(targetIndex).setTypes(iconfig.parent.typeName).setQuery(query).execute().actionGet();
-    }
+    deleteUnseenDocuments();
     
     // exit here before we write status info to disk!
     Exception f = failure.get();
@@ -208,6 +200,18 @@ public final class DocumentProcessor {
         .setSource("lastHarvested", lastHarvested)
         .execute().actionGet();
       lastHarvested = null;
+    }
+  }
+  
+  private void deleteUnseenDocuments() {
+    // check for validIdentifiers Set and remove all unknown identifiers from
+    // index, if available
+    if (validIdentifiers != null) {
+      log.info("Removing documents not seen while harvesting (this may take a while)...");
+      final QueryBuilder query = QueryBuilders.boolQuery()
+          .must(QueryBuilders.termQuery(iconfig.parent.fieldnameSource, iconfig.id))
+          .mustNot(QueryBuilders.idsQuery(iconfig.parent.typeName).ids(validIdentifiers.toArray(new String[validIdentifiers.size()])));
+      client.prepareDeleteByQuery(targetIndex).setTypes(iconfig.parent.typeName).setQuery(query).execute().actionGet();
     }
   }
   
