@@ -76,14 +76,12 @@ public final class DocumentProcessor {
   DocumentProcessor(Client client, HarvesterConfig iconfig) {
     this.client = client;
     this.iconfig = iconfig;
-    
-    targetIndex = iconfig.harvesterProperties.getProperty("targetIndex", "panfmp");
-    bulkSize = Integer.parseInt(iconfig.harvesterProperties
-        .getProperty("bulkSize", "100"));
+    this.targetIndex = iconfig.harvesterProperties.getProperty("targetIndex", "panfmp");
+    this.bulkSize = Integer.parseInt(iconfig.harvesterProperties.getProperty("bulkSize", "100"));
     
     final String s = iconfig.harvesterProperties.getProperty("conversionErrorAction", "STOP");
     try {
-      conversionErrorAction = DocumentErrorAction.valueOf(s.toUpperCase(Locale.ROOT));
+      this.conversionErrorAction = DocumentErrorAction.valueOf(s.toUpperCase(Locale.ROOT));
     } catch (IllegalArgumentException e) {
       throw new IllegalArgumentException(
           "Invalid value '"
@@ -92,23 +90,21 @@ public final class DocumentProcessor {
               + Arrays.toString(DocumentErrorAction.values()));
     }
     
-    int threadCount = Integer.parseInt(iconfig.harvesterProperties.getProperty(
-        "numThreads", "1"));
-    if (threadCount < 1) throw new IllegalArgumentException(
-        "numThreads harvester-property must be >=1!");
-    
-    int size = Integer.parseInt(iconfig.harvesterProperties.getProperty(
-        "maxQueue", "100"));
-    if (size < threadCount) throw new IllegalArgumentException(
-        "maxQueue must be >=numThreads!");
-    mdocBuffer = new ArrayBlockingQueue<MetadataDocument>(size, true);
+    final int threadCount = Integer.parseInt(iconfig.harvesterProperties.getProperty("numThreads", "1"));
+    if (threadCount < 1) {
+      throw new IllegalArgumentException("numThreads harvester-property must be >=1!");
+    }
+    final int maxQueue = Integer.parseInt(iconfig.harvesterProperties.getProperty("maxQueue", "100"));
+    if (maxQueue < threadCount) {
+      throw new IllegalArgumentException("maxQueue must be >=numThreads!");
+    }
+    this.mdocBuffer = new ArrayBlockingQueue<MetadataDocument>(maxQueue, true);
     
     // threads
-    threadGroup = new ThreadGroup(getClass().getName()
-        + "#ThreadGroup");
-    threadList = new Thread[threadCount];
+    this.threadGroup = new ThreadGroup(getClass().getName() + "#ThreadGroup");
+    this.threadList = new Thread[threadCount];
     for (int i = 0; i < threadCount; i++) {
-      threadList[i] = new Thread(threadGroup, new Runnable() {
+      this.threadList[i] = new Thread(threadGroup, new Runnable() {
         @Override
         public void run() {
           threadRun();
