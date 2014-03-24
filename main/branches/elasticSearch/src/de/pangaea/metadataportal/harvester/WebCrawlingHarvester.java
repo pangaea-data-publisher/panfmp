@@ -42,7 +42,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.DefaultHandler;
 
-import de.pangaea.metadataportal.config.IndexConfig;
+import de.pangaea.metadataportal.config.HarvesterConfig;
 import de.pangaea.metadataportal.processor.ElasticSearchConnection;
 import de.pangaea.metadataportal.utils.SimpleCookieHandler;
 import de.pangaea.metadataportal.utils.StaticFactories;
@@ -110,7 +110,7 @@ public class WebCrawlingHarvester extends SingleFileEntitiesHarvester {
   private Class<? extends XMLReader> htmlReaderClass = null;
   
   @Override
-  public void open(ElasticSearchConnection es, IndexConfig iconfig) throws Exception {
+  public void open(ElasticSearchConnection es, HarvesterConfig iconfig) throws Exception {
     super.open(es, iconfig);
     
     String s = iconfig.harvesterProperties.getProperty("baseUrl");

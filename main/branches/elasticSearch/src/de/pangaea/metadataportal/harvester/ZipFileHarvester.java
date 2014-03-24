@@ -37,7 +37,7 @@ import java.util.zip.ZipInputStream;
 
 import javax.xml.transform.stream.StreamSource;
 
-import de.pangaea.metadataportal.config.IndexConfig;
+import de.pangaea.metadataportal.config.HarvesterConfig;
 import de.pangaea.metadataportal.processor.ElasticSearchConnection;
 import de.pangaea.metadataportal.utils.BooleanParser;
 
@@ -86,7 +86,7 @@ public class ZipFileHarvester extends SingleFileEntitiesHarvester {
   protected int timeout = DEFAULT_TIMEOUT;
   
   @Override
-  public void open(ElasticSearchConnection es, IndexConfig iconfig) throws Exception {
+  public void open(ElasticSearchConnection es, HarvesterConfig iconfig) throws Exception {
     super.open(es, iconfig);
     
     zipFile = iconfig.harvesterProperties.getProperty("zipFile");

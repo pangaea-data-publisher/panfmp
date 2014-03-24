@@ -47,7 +47,7 @@ import org.apache.lucene.store.SimpleFSDirectory;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.Version;
 
-import de.pangaea.metadataportal.config.IndexConfig;
+import de.pangaea.metadataportal.config.HarvesterConfig;
 import de.pangaea.metadataportal.processor.ElasticSearchConnection;
 
 /**
@@ -93,7 +93,7 @@ public class ExternalIndexHarvester extends SingleFileEntitiesHarvester {
   public static final String FILENAME_LASTHARVESTED = "lastharvested";
   
   @Override
-  public void open(ElasticSearchConnection es, IndexConfig iconfig) throws Exception {
+  public void open(ElasticSearchConnection es, HarvesterConfig iconfig) throws Exception {
     super.open(es, iconfig);
     
     identifierPrefix = iconfig.harvesterProperties.getProperty(

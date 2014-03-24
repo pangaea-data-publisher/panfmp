@@ -25,7 +25,7 @@ import java.util.regex.Pattern;
 
 import javax.xml.transform.stream.StreamSource;
 
-import de.pangaea.metadataportal.config.IndexConfig;
+import de.pangaea.metadataportal.config.HarvesterConfig;
 import de.pangaea.metadataportal.processor.ElasticSearchConnection;
 import de.pangaea.metadataportal.utils.BooleanParser;
 
@@ -55,7 +55,7 @@ public class DirectoryHarvester extends SingleFileEntitiesHarvester implements
   private String identifierPrefix = "";
   
   @Override
-  public void open(ElasticSearchConnection es, IndexConfig iconfig) throws Exception {
+  public void open(ElasticSearchConnection es, HarvesterConfig iconfig) throws Exception {
     super.open(es, iconfig);
     
     String s = iconfig.harvesterProperties.getProperty("directory");
