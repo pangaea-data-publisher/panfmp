@@ -180,6 +180,12 @@ public class Config {
       // *** HARVESTER CONFIG ***
       dig.addDoNothing("config/sources");
       
+      // *** GLOBAL HARVESTER PROPERTIES ***
+      dig.addDoNothing("config/sources/globalProperties");
+      dig.addCallMethod("config/sources/globalProperties/*",
+          "addGlobalHarvesterProperty", 0);
+      
+      // *** CONFIG FOR EACH HARVESTER ***
       dig.addFactoryCreate("config/sources/harvester",
           new AbstractObjectCreationFactory() {
             @Override
@@ -202,11 +208,6 @@ public class Config {
       dig.addCallMethod("config/sources/harvester/properties/*",
           "addHarvesterProperty", 0);
             
-      // *** GLOBAL HARVESTER PROPERTIES ***
-      dig.addDoNothing("config/globalHarvesterProperties");
-      dig.addCallMethod("config/globalHarvesterProperties/*",
-          "addGlobalHarvesterProperty", 0);
-      
       // *** ELASTICSEARCH TransportClient settings ***
       dig.addDoNothing("config/elasticSearchCluster");
       dig.addCallMethod("config/elasticSearchCluster/address", "addEsAddress", 0);
