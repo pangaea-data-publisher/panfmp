@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
-<cfg:config xmlns:cfg="urn:java:de.pangaea.metadataportal.config.Config" xmlns:ib="urn:java:de.pangaea.metadataportal.processor.DocumentProcessor">
-	<!-- Definition of the metadata schema and fileds for indexing: -->
+<cfg:config xmlns:cfg="urn:java:de.pangaea.metadataportal.config.Config" xmlns:dp="urn:java:de.pangaea.metadataportal.processor.DocumentProcessor">
+	<!-- Definition of the metadata schema and fields for harvesting: -->
 	<cfg:metadata xmlns:dif="http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/">
 		<!--
 			Variables are evaluated at beginning of indexing process and can be used in all filters, fields, field-templates.
 			The index builder also has some internal variables and functions in its namespace, that can be used:
-			- $ib:index: the ID of the current index
-			- $ib:docIdentifier: the identifier of the harvested document
-			- $ib:docDatestamp: the datestamp of the harvested document (if available), else ""
+			- $dp:harvesterIdentifier: the ID of the current harvester
+			- $dp:docIdentifier: the identifier of the harvested document
+			- $dp:docDatestamp: the datestamp of the harvested document (if available), else ""
 		-->
 		<cfg:variables>
 			<cfg:variable name="startdate">/dif:DIF/dif:Temporal_Coverage/dif:Start_Date</cfg:variable>
@@ -18,8 +18,8 @@
 			The default is to accept all documents. You can give boolean XPath queries, that filter out documents.
 		-->
 		<cfg:filters default="accept">
-			<!-- we want to remove all documents harvested into index 'pangaea-carboocean' that are from project 'JGOFS' -->
-			<cfg:deny>$ib:index='pangaea-carboocean' and /dif:DIF/dif:Project/dif:Short_Name[contains(.,'JGOFS')]</cfg:deny>
+			<!-- we want to remove all documents harvested with harvester 'pangaea-carboocean' that are from project 'JGOFS' -->
+			<cfg:deny>$dp:harvesterIdentifier='pangaea-carboocean' and /dif:DIF/dif:Project/dif:Short_Name[contains(.,'JGOFS')]</cfg:deny>
 			<!-- we want to remove all documents with wrong namespace -->
 			<cfg:deny>namespace-uri(/*)!='http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/'</cfg:deny>
 		</cfg:filters>
@@ -83,7 +83,7 @@
 			<cfg:augmentation>false</cfg:augmentation>
 		</cfg:schema>
 	</cfg:metadata>
-	<!-- Definition of Indexes to harvester and their properties -->
+	<!-- Definition of metadata sources and their harvesters and properties -->
 	<cfg:sources>
 		<!-- global harvester properties are inherited to each harvester, so only give properties available to all harvester types -->
 		<cfg:globalProperties>
@@ -129,7 +129,7 @@
 						</xsl:template>
 					</xsl:stylesheet>
 				</cfg:transform>
-			If you want to use one of the internal variables of IndexBuilder (the "$ib:XXXX"-ones),
+			If you want to use one of the internal variables of DocumentProcessor (the "$dp:XXXX"-ones),
 			declare them as XSL parameters for the stylesheet (possible in both inline and external stylesheets). They are automatically set as
 			input parameters to the transformation. Additional declared XSL parameters can simply be passed to the XSL as string attributes of the <cfg:transform/> element.
 			-->
