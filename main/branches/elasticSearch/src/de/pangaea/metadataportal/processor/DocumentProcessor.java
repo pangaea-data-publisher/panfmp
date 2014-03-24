@@ -181,7 +181,7 @@ public final class DocumentProcessor {
     Date d = null;
     try {
       final GetResponse resp = client.prepareGet(targetIndex, "panfmp_meta", iconfig.id)
-          .setFields("lastHarvested").setFetchSource(false).execute().actionGet();
+          .setFields("lastHarvested").setFetchSource(false).get();
       final Object v;
       if (resp.isExists() && (v = resp.getField("lastHarvested").getValue()) != null) {
         d = XContentBuilder.defaultDatePrinter
@@ -197,8 +197,7 @@ public final class DocumentProcessor {
   private void saveLastHarvestedOnDisk() {
     if (lastHarvested != null) {
       client.prepareIndex(targetIndex, "panfmp_meta", iconfig.id)
-        .setSource("lastHarvested", lastHarvested)
-        .execute().actionGet();
+        .setSource("lastHarvested", lastHarvested).get();
       lastHarvested = null;
     }
   }
@@ -211,7 +210,7 @@ public final class DocumentProcessor {
       final QueryBuilder query = QueryBuilders.boolQuery()
           .must(QueryBuilders.termQuery(iconfig.parent.fieldnameSource, iconfig.id))
           .mustNot(QueryBuilders.idsQuery(iconfig.parent.typeName).ids(validIdentifiers.toArray(new String[validIdentifiers.size()])));
-      client.prepareDeleteByQuery(targetIndex).setTypes(iconfig.parent.typeName).setQuery(query).execute().actionGet();
+      client.prepareDeleteByQuery(targetIndex).setTypes(iconfig.parent.typeName).setQuery(query).get();
     }
   }
   
@@ -262,12 +261,12 @@ public final class DocumentProcessor {
     }
   }
   
-  private void pushBulk(BulkRequestBuilder bulkRequest, Set<String> committedIdentifiers) throws IOException {
+  private void pushBulk(BulkRequestBuilder bulkRequest, final Set<String> committedIdentifiers) throws IOException {
     final Log log = LogFactory.getLog(Thread.currentThread().getName());
     
     assert committedIdentifiers.size() <= bulkRequest.numberOfActions();
     
-    final BulkResponse bulkResponse = bulkRequest.execute().actionGet();
+    final BulkResponse bulkResponse = bulkRequest.get();
     if (bulkResponse.hasFailures()) {
       throw new IOException("Error while executing bulk request: " + bulkResponse.buildFailureMessage());
     }
@@ -278,7 +277,7 @@ public final class DocumentProcessor {
     // notify Harvester of index commit
     final CommitEvent ce = commitEvent.get();
     if (ce != null) ce.harvesterCommitted(Collections.unmodifiableSet(committedIdentifiers));
-    committedIdentifiers.clear();    
+    committedIdentifiers.clear();
   }
   
   private boolean processDocument(BulkRequestBuilder bulkRequest, MetadataDocument mdoc) throws Exception {
