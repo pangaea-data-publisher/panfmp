@@ -146,7 +146,7 @@ public class ExternalIndexHarvester extends SingleFileEntitiesHarvester {
       */
       // create QP
       QueryParser qp = queryParserConstructor.newInstance(
-          Version.LUCENE_46, FIELDNAME_CONTENT, new StandardAnalyzer(Version.LUCENE_46));
+          Version.LUCENE_47, FIELDNAME_CONTENT, new StandardAnalyzer(Version.LUCENE_47));
       qp.setDefaultOperator(defaultQueryParserOperator);
       query = qp.parse(qstr);
     }

@@ -71,7 +71,6 @@ public final class DocumentProcessor {
   private final AtomicInteger runningThreads = new AtomicInteger(0);
   private ThreadGroup threadGroup;
   private Thread[] threadList;
-  private volatile boolean threadsStarted = false;
   
   DocumentProcessor(Client client, HarvesterConfig iconfig) {
     this.client = client;
@@ -132,7 +131,7 @@ public final class DocumentProcessor {
   public void close() throws Exception {
     if (isClosed()) throw new IllegalStateException("DocumentProcessor already closed");
     
-    if (threadsStarted) {
+    while (runningThreads.get() > 0) {
       try {
         for (int i = 0; i < threadList.length; i++)
           mdocBuffer.put(MDOC_EOF);
@@ -147,11 +146,11 @@ public final class DocumentProcessor {
     threadGroup = null;
     threadList = null;
     
-    deleteUnseenDocuments();
-    
     // exit here before we write status info to disk!
     Exception f = failure.get();
     if (f != null) throw f;
+    
+    deleteUnseenDocuments();
     
     // save datestamp
     saveLastHarvestedOnDisk();
@@ -353,13 +352,11 @@ public final class DocumentProcessor {
   }
   
   private void startThreads() {
-    if (!threadsStarted) try {
+    if (threadList != null && runningThreads.get() == 0) {
       for (Thread t : threadList) {
         runningThreads.incrementAndGet();
         t.start();
       }
-    } finally {
-      threadsStarted = true;
     }
   }
   
