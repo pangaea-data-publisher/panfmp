@@ -16,7 +16,6 @@
 
 package de.pangaea.metadataportal.processor;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -30,6 +29,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.get.GetResponse;
@@ -63,7 +63,7 @@ public final class DocumentProcessor {
   private final AtomicReference<CommitEvent> commitEvent = new AtomicReference<CommitEvent>(null);
   private Set<String> validIdentifiers = null;
   
-  private final AtomicInteger updated = new AtomicInteger(0), deleted = new AtomicInteger(0);
+  private final AtomicInteger processed = new AtomicInteger(0);
   
   private final int bulkSize;
   private final DocumentErrorAction conversionErrorAction;
@@ -72,6 +72,9 @@ public final class DocumentProcessor {
   private ThreadGroup threadGroup;
   private Thread[] threadList;
   
+  public static final String HARVESTER_METADATA_TYPE = "panfmp_meta";
+  public static final String HARVESTER_METADATA_FIELD_LAST_HARVESTED = "lastHarvested";
+
   DocumentProcessor(Client client, HarvesterConfig iconfig) {
     this.client = client;
     this.iconfig = iconfig;
@@ -146,17 +149,16 @@ public final class DocumentProcessor {
     threadGroup = null;
     threadList = null;
     
-    // exit here before we write status info to disk!
-    Exception f = failure.get();
-    if (f != null) throw f;
+    // exit here before we write any status info to disk:
+    throwFailure();
     
+    // delet all unseen documents, if validIdentifiers is given:
     deleteUnseenDocuments();
     
-    // save datestamp
+    // save datestamp:
     saveLastHarvestedOnDisk();
     
-    log.info(deleted + " docs presumably deleted (only if existent) and "
-        + updated + " docs (re-)indexed - finished.");
+    log.info(processed + " metadata items processed - finished.");
   }
   
   public void addDocument(MetadataDocument mdoc) throws BackgroundFailure, InterruptedException {
@@ -177,7 +179,7 @@ public final class DocumentProcessor {
     internalProcessDocument(log, bulkRequest, mdoc);
     final BulkResponse bulkResponse = bulkRequest.get();
     if (bulkResponse.hasFailures()) {
-      throw new IOException("Error while executing request: " + bulkResponse.buildFailureMessage());
+      throw new ElasticsearchException("Error while executing request: " + bulkResponse.buildFailureMessage());
     }
     
     // notify Harvester of index commit
@@ -195,10 +197,10 @@ public final class DocumentProcessor {
   public Date getLastHarvestedFromDisk() {
     Date d = null;
     try {
-      final GetResponse resp = client.prepareGet(targetIndex, "panfmp_meta", iconfig.id)
-          .setFields("lastHarvested").setFetchSource(false).get();
+      final GetResponse resp = client.prepareGet(targetIndex, HARVESTER_METADATA_TYPE, iconfig.id)
+          .setFields(HARVESTER_METADATA_FIELD_LAST_HARVESTED).setFetchSource(false).get();
       final Object v;
-      if (resp.isExists() && (v = resp.getField("lastHarvested").getValue()) != null) {
+      if (resp.isExists() && (v = resp.getField(HARVESTER_METADATA_FIELD_LAST_HARVESTED).getValue()) != null) {
         d = XContentBuilder.defaultDatePrinter
             .parseDateTime(v.toString())
             .toDate();
@@ -211,17 +213,19 @@ public final class DocumentProcessor {
   
   private void saveLastHarvestedOnDisk() {
     if (lastHarvested != null) {
-      client.prepareIndex(targetIndex, "panfmp_meta", iconfig.id)
-        .setSource("lastHarvested", lastHarvested).get();
+      client.prepareIndex(targetIndex, HARVESTER_METADATA_TYPE, iconfig.id)
+        .setSource(HARVESTER_METADATA_FIELD_LAST_HARVESTED, lastHarvested).get();
       lastHarvested = null;
     }
   }
   
+  /**
+   * check for validIdentifiers Set and remove all unknown
+   * identifiers from ES.
+   */
   private void deleteUnseenDocuments() {
-    // check for validIdentifiers Set and remove all unknown identifiers from
-    // index, if available
     if (validIdentifiers != null) {
-      log.info("Removing documents not seen while harvesting (this may take a while)...");
+      log.info("Removing metadata items not seen while harvesting (this may take a while)...");
       final QueryBuilder query = QueryBuilders.boolQuery()
           .must(QueryBuilders.termQuery(iconfig.parent.fieldnameSource, iconfig.id))
           .mustNot(QueryBuilders.idsQuery(iconfig.parent.typeName).ids(validIdentifiers.toArray(new String[validIdentifiers.size()])));
@@ -262,9 +266,8 @@ public final class DocumentProcessor {
       
       finished = true;
     } catch (Exception e) {
-      if (!finished) log.warn("Only " + deleted
-          + " docs presumably deleted (only if existent) and " + updated
-          + " docs (re-)indexed before the following error occurred: " + e);
+      if (!finished) log.warn("Only " + processed +
+          " metadata items processed before the following error occurred: " + e);
       // only store the first error in failure variable, other errors are logged
       // only
       if (!failure.compareAndSet(null, e)) log.error(e);
@@ -276,21 +279,22 @@ public final class DocumentProcessor {
     }
   }
   
-  private void pushBulk(Log log, BulkRequestBuilder bulkRequest, final Set<String> committedIdentifiers) throws IOException {
+  private void pushBulk(Log log, BulkRequestBuilder bulkRequest, final Set<String> committedIdentifiers) {
     assert committedIdentifiers.size() <= bulkRequest.numberOfActions();
     
+    final int items = bulkRequest.numberOfActions();
     final BulkResponse bulkResponse = bulkRequest.get();
     if (bulkResponse.hasFailures()) {
-      throw new IOException("Error while executing bulk request: " + bulkResponse.buildFailureMessage());
+      throw new ElasticsearchException("Error while executing bulk request: " + bulkResponse.buildFailureMessage());
     }
+    final int totalItems = processed.addAndGet(items);
     
     // notify Harvester of index commit
     final CommitEvent ce = commitEvent.get();
     if (ce != null) ce.harvesterCommitted(Collections.unmodifiableSet(committedIdentifiers));
     committedIdentifiers.clear();
 
-    log.info(deleted + " docs presumably deleted (if existent) and "
-        + updated + " docs (re-)indexed so far.");
+    log.info(totalItems + " metadata items processed so far.");
   }
   
   private boolean internalProcessDocument(Log log, BulkRequestBuilder bulkRequest, MetadataDocument mdoc) throws Exception {
@@ -330,21 +334,19 @@ public final class DocumentProcessor {
       bulkRequest.add(
         client.prepareDelete(targetIndex, iconfig.parent.typeName, identifier)
       );
-      deleted.incrementAndGet();
     } else {
       if (log.isDebugEnabled()) log.debug("Updating document: " + identifier);
       if (log.isTraceEnabled()) log.trace("Data: " + json.string());
       bulkRequest.add(
         client.prepareIndex(targetIndex, iconfig.parent.typeName, identifier).setSource(json)
       );
-      updated.incrementAndGet();
     }
     
     return true;
   }
   
   private void throwFailure() throws BackgroundFailure {
-    Exception f = failure.get();
+    Exception f = failure.getAndSet(null);
     if (f != null) {
       if (threadGroup != null) threadGroup.interrupt();
       throw new BackgroundFailure(f);
