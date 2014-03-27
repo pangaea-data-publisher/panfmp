@@ -182,7 +182,7 @@ public final class DocumentProcessor {
       throw new ElasticsearchException("Error while executing request: " + bulkResponse.buildFailureMessage());
     }
     
-    // notify Harvester of index commit
+    // notify Harvester of commit
     final CommitEvent ce = commitEvent.get();
     if (ce != null) ce.harvesterCommitted(Collections.singleton(mdoc.getIdentifier()));
  
