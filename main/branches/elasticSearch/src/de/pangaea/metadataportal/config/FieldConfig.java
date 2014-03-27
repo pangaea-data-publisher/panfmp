@@ -23,7 +23,7 @@ import de.pangaea.metadataportal.utils.PublicForDigesterUse;
 
 /**
  * Config element that contains the definition of a field. It contains its name
- * and some properties like name, datatype and Lucene indexing flags.
+ * and some properties like name or datatype.
  * 
  * @author Uwe Schindler
  */

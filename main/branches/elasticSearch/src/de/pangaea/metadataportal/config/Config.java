@@ -62,8 +62,6 @@ public class Config {
   private static final org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory
       .getLog(Config.class);
   
-  // in configMode!=HARVESTER we leave out Schemas and XSLT to load config
-  // faster!
   public Config(String file) throws Exception {
     this.file = file;
     
@@ -162,9 +160,7 @@ public class Config {
       
       // transform
       /*
-       * dig.addRule("config/metadata/transformBeforeXPath",
-       * (configMode==ConfigMode.HARVESTING) ? new
-       * IndexConfigTransformerSaxRule() : SaxRule.emptyRule());
+       * dig.addRule("config/metadata/transformBeforeXPath", HarvesterConfigTransformerSaxRule());
        */
       
       // schema
@@ -196,7 +192,7 @@ public class Config {
               return new HarvesterConfig(Config.this);
             }
           });
-      dig.addSetNext("config/sources/harvester", "addIndex");
+      dig.addSetNext("config/sources/harvester", "addHarvester");
       dig.addCallMethod("config/sources/harvester", "setId", 1);
       dig.addCallParam("config/sources/harvester", 0, "id");
       
@@ -240,8 +236,8 @@ public class Config {
     }
     
     // *** After loading do final checks ***
-    // consistency in indexes:
-    for (HarvesterConfig iconf : indexes.values())
+    // consistency in harvesters:
+    for (HarvesterConfig iconf : harvesteres.values())
       iconf.check();
     
     // cleanup
@@ -323,11 +319,11 @@ public class Config {
     filters.add(f);
   }
   
-  public void addIndex(HarvesterConfig i) {
-    if (indexes.containsKey(i.id)) throw new IllegalArgumentException(
-        "There is already an index with id=\"" + i.id
+  public void addHarvester(HarvesterConfig i) {
+    if (harvesteres.containsKey(i.id)) throw new IllegalArgumentException(
+        "There is already a harvester with id=\"" + i.id
             + "\" added to configuration!");
-    indexes.put(i.id, i);
+    harvesteres.put(i.id, i);
   }
   
   @PublicForDigesterUse
@@ -432,8 +428,8 @@ public class Config {
     return templ;
   }
   
-  // indexes
-  public final Map<String,HarvesterConfig> indexes = new LinkedHashMap<String,HarvesterConfig>();
+  // harvesters
+  public final Map<String,HarvesterConfig> harvesteres = new LinkedHashMap<String,HarvesterConfig>();
   
   // metadata mapping name
   public String typeName = "doc";

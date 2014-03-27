@@ -3,8 +3,8 @@
 	<!-- Definition of the metadata schema and fields for harvesting: -->
 	<cfg:metadata xmlns:dif="http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/">
 		<!--
-			Variables are evaluated at beginning of indexing process and can be used in all filters, fields, field-templates.
-			The index builder also has some internal variables and functions in its namespace, that can be used:
+			Variables are evaluated at beginning of harvesting process and can be used in all filters, fields, field-templates.
+			The processor also has some internal variables and functions in its namespace, that can be used:
 			- $dp:harvesterIdentifier: the ID of the current harvester
 			- $dp:docIdentifier: the identifier of the harvested document
 			- $dp:docDatestamp: the datestamp of the harvested document (if available), else ""
@@ -27,10 +27,10 @@
 			Field definitions:
 			You can declare fields using <cfg:field> or <cfg:field-template> (for the latter see the example in variables-section).
 			Each field has a name and some properties for Lucene:
-			- datatype: tokenizedText (standard fulltext indexing field, you can use it in query strings), string (the whole field content is indexed as string, but not tokenized),
-			  number (numerical values, works with the TrieRangeQuery), dateTime (date/time values, works with the TrieRangeQuery),
-			  xml (field is stored as XML in index, ideal for field templates), xhtml (only works with field-templates because it needs a XSL-template
-			  that outputs XHTML. Can be used to generate thumbnail information for search results in HTML form).
+			- datatype: string, number, dateTime, xml (field is stored as XML in index, ideal for field templates),
+			  xhtml (only works with field-templates because it needs a XSL-template
+			  that outputs XHTML. Can be used to generate thumbnail information for search results in HTML form),
+			  json (JSON from an XSL template).
 			  The field template should not declare the XHTML namespace.
 		-->
 		<cfg:fields>

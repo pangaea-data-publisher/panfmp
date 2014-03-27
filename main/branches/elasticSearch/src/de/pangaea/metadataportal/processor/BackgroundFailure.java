@@ -18,12 +18,12 @@ package de.pangaea.metadataportal.processor;
 
 /**
  * {@link DocumentProcessor} throws this exception, if an error occurs in the
- * indexer/converter threads.
+ * processing threads.
  * 
  * @author Uwe Schindler
  */
 @SuppressWarnings("serial")
-public class BackgroundFailure extends java.lang.Exception {
+public class BackgroundFailure extends Exception {
   
   public BackgroundFailure(Exception e) {
     super();
