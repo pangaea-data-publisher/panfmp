@@ -91,6 +91,10 @@
 		<!-- global harvester properties are inherited to each harvester, so only give properties available to all harvester types -->
 		<cfg:globalProperties>
 			<cfg:targetIndex>panfmp</cfg:targetIndex>
+			<cfg:numThreads>1</cfg:numThreads>
+			<cfg:maxQueue>100</cfg:maxQueue>
+			<cfg:bulkSize>100</cfg:bulkSize>
+			<cfg:conversionErrorAction>STOP</cfg:conversionErrorAction>
 		</cfg:globalProperties>
 		<!--  each harvester is listed here -->
 		<cfg:harvester id="pangaea-carboocean">
