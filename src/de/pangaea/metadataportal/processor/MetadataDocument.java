@@ -505,7 +505,7 @@ public class MetadataDocument {
    *           exceptions can be thrown).
    */
   protected final void processXPathVariables() throws Exception {
-    // put map of variables in thread local storage of index config
+    // put map of variables in thread local storage
     boolean needCleanup = true;
     Map<QName,Object> data = XPathResolverImpl.getInstance().initVariables();
     try {
@@ -683,7 +683,7 @@ public class MetadataDocument {
   protected String identifier = null;
   
   /**
-   * The index configuration.
+   * The harvester configuration.
    */
   protected HarvesterConfig iconfig = null;
   

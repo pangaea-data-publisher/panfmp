@@ -43,25 +43,23 @@ import de.pangaea.metadataportal.processor.MetadataDocument;
  * <ul>
  * <li><code>harvestMessageStep</code>: After how many documents should a status
  * message be printed out by the method {@link #addDocument}? (default: 100)</li>
- * <li><code>maxBufferedIndexChanges</code>: how many documents should be
- * harvested before the index changes are written to disk? If
+ * <li><code>bulkSize</code>: how many documents should be
+ * harvested before the changes are written to disk? If
  * {@link CommitEvent}s are used, the changes are also committed (seen
- * by search service) after this number of changes (default: 1000)</li>
- * <li><code>numConverterThreads</code>: how many threads should convert
+ * by search service) after this number of changes (default: 100)</li>
+ * <li><code>numThreads</code>: how many threads should process
  * documents (XPath queries and XSL templates)? (default: 1) Raise this value,
  * if the indexer waits to often for more documents and you have more than one
  * processor. The optimal value is one lower than the number of processors. If
  * you have very simple metadata documents (simple XML schmema) and few fields,
  * lower values may be enough. The optimal value could only be found by testing.
  * </li>
- * <li><code>maxConverterQueue</code>: size of queue for converter threads.
- * (default 250 metadata documents)</li>
- * <li><code>maxIndexerQueue</code>: size of queue for indexer thread. (default
- * 250 metadata documents)</li>
+ * <li><code>maxQueue</code>: size of queue for threads.
+ * (default 100 metadata documents)</li>
+ * <li><code>bulkSize</code>: size of bulk requests sent to Elasticsearch. (default
+ * 100 metadata documents)</li>
  * <li><code>validate</code>: validate harvested documents against schema given
  * in configuration? (default: true, if schema given)</li>
- * <li><code>compressXML</code>: compress the harvested XML blob when storing in
- * index? (default: true)</li>
  * <li><code>conversionErrorAction</code>: What to do if a conversion error
  * occurs (e.g. number format error)? Can be <code>STOP</code>,
  * <code>IGNOREDOCUMENT</code>, <code>DELETEDOCUMENT</code> (default is to stop
@@ -77,12 +75,12 @@ public abstract class Harvester {
   
   /**
    * External entry point to the harvester interface. Called from the Java
-   * command line with two parameters (config file, index name)
+   * command line with two parameters (config file, harvester name)
    */
   public static void main(String[] args) {
     if (args.length < 1 || args.length > 2) {
       System.err.println("Command line: java " + Harvester.class.getName()
-          + " config.xml [index-name|*]");
+          + " config.xml [harvester-name|*]");
       return;
     }
     
@@ -95,41 +93,41 @@ public abstract class Harvester {
   }
   
   /**
-   * Harvests one (<code>index='indexname'</code> or more <code>index='*'</code>
-   * ) indexes. The harvester implementation is defined by the given
+   * Harvests one (<code>harvesterId='name'</code>) or more (<code>harvesterId='*'</code>
+   * ) sources. The harvester implementation is defined by the given
    * configuration.
    */
-  public static void runHarvester(Config conf, String index) {
-    runHarvester(conf, index, null);
+  public static void runHarvester(Config conf, String harvesterId) {
+    runHarvester(conf, harvesterId, null);
   }
   
   /**
-   * Harvests one (<code>index="indexname"</code>) or more (
-   * <code>index="*"</code>) indexes. The harvester implementation is defined by
+   * Harvests one (<code>harvesterId="name"</code>) or more (
+   * <code>harvesterId="*"</code>) sources. The harvester implementation is defined by
    * the given configuration or if <code>harvesterClass</code> is not
    * <code>null</code>, the specified harvester will be used. This is used by
    * {@link Rebuilder}. Public code should use
    * {@link #runHarvester(Config,String)}.
    */
-  protected static void runHarvester(Config conf, String index,
+  protected static void runHarvester(Config conf, String harvesterId,
       Class<? extends Harvester> harvesterClass) {
-    Collection<HarvesterConfig> indexList = null;
-    if (index == null || "*".equals(index) || "all".equals(index)) {
-      indexList = conf.indexes.values();
+    Collection<HarvesterConfig> harvesterList = null;
+    if (harvesterId == null || "*".equals(harvesterId) || "all".equals(harvesterId)) {
+      harvesterList = conf.harvesteres.values();
     } else {
-      HarvesterConfig iconf = conf.indexes.get(index);
+      HarvesterConfig iconf = conf.harvesteres.get(harvesterId);
       if (iconf == null || !(iconf instanceof HarvesterConfig)) throw new IllegalArgumentException(
-          "There is no index defined with id=\"" + index + "\"!");
-      indexList = Collections.singletonList(iconf);
+          "There is no harvester defined with id=\"" + harvesterId + "\"!");
+      harvesterList = Collections.singletonList(iconf);
     }
     
     final ElasticSearchConnection es = new ElasticSearchConnection(conf);
     try {
-      for (HarvesterConfig siconf : indexList) {
+      for (HarvesterConfig siconf : harvesterList) {
         Class<? extends Harvester> hc = (harvesterClass == null) ? siconf.harvesterClass
             : harvesterClass;
-        staticLog.info("Harvesting documents into index \"" + siconf.id
-            + "\" using harvester \"" + hc.getName() + "\"...");
+        staticLog.info("Harvesting documents from \"" + siconf.id
+            + "\" using harvester class \"" + hc.getName() + "\"...");
         Harvester h = null;
         boolean cleanShutdown = false;
         try {
@@ -143,25 +141,25 @@ public abstract class Harvester {
           // thrown on close
         } catch (SAXParseException saxe) {
           staticLog.fatal(
-              "Harvesting documents into index \"" + siconf.id
+              "Harvesting documents from \"" + siconf.id
                   + "\" failed due to SAX parse error in \""
                   + saxe.getSystemId() + "\", line " + saxe.getLineNumber()
                   + ", column " + saxe.getColumnNumber() + ":", saxe);
         } catch (TransformerException transfe) {
           String loc = transfe.getLocationAsString();
-          staticLog.fatal("Harvesting documents into index \"" + siconf.id
+          staticLog.fatal("Harvesting documents from \"" + siconf.id
               + "\" failed due to transformer/parse error"
               + ((loc != null) ? (" at " + loc) : "") + ":", transfe);
         } catch (Exception e) {
-          staticLog.fatal("Harvesting documents into index \"" + siconf.id
+          staticLog.fatal("Harvesting documents from \"" + siconf.id
               + "\" failed!", e);
         }
         // cleanup
         if (h != null && !h.isClosed()) try {
           h.close(cleanShutdown);
-          staticLog.info("Harvester for index \"" + siconf.id + "\" closed.");
+          staticLog.info("Harvester \"" + siconf.id + "\" closed.");
         } catch (Exception e) {
-          staticLog.fatal("Error during harvesting into index \"" + siconf.id
+          staticLog.fatal("Error during harvesting from \"" + siconf.id
               + "\" occurred:", e);
         }
       }
@@ -177,13 +175,13 @@ public abstract class Harvester {
       .getLog(this.getClass());
   
   /**
-   * Instance of {@link DocumentProcessor} that converts and updates the Lucene index
+   * Instance of {@link DocumentProcessor} that converts and updates the Elasticsearch instance
    * in other threads.
    */
-  protected DocumentProcessor index = null;
+  protected DocumentProcessor processor = null;
   
   /**
-   * Index configuration
+   * Harvester configuration
    */
   protected HarvesterConfig iconfig = null;
   
@@ -210,8 +208,8 @@ public abstract class Harvester {
   public Harvester() {}
   
   /**
-   * Opens harvester for harvesting documents into the index described by the
-   * given {@link SingleIndexConfig}. Opens {@link #index} for usage in
+   * Opens harvester for harvesting documents described by the
+   * given {@link HarvesterConfig}. Opens {@link #processor} for usage in
    * {@link #harvest} method.
    * 
    * @throws Exception
@@ -220,30 +218,30 @@ public abstract class Harvester {
    */
   public void open(ElasticSearchConnection es, HarvesterConfig iconfig) throws Exception {
     if (iconfig == null) throw new IllegalArgumentException(
-        "Missing index configuration");
+        "Missing harvester configuration");
     this.iconfig = iconfig;
     harvestMessageStep = Integer.parseInt(iconfig.harvesterProperties
         .getProperty("harvestMessageStep", "100"));
     if (harvestMessageStep <= 0) throw new IllegalArgumentException(
         "Invalid value for harvestMessageStep: " + harvestMessageStep);
-    index = es.getDocumentProcessor(iconfig);
+    processor = es.getDocumentProcessor(iconfig);
     
-    fromDateReference = index.getLastHarvestedFromDisk();
+    fromDateReference = processor.getLastHarvestedFromDisk();
   }
   
   /**
    * Checks if harvester is closed.
    */
   public boolean isClosed() {
-    return (index == null);
+    return (processor == null);
   }
   
   /**
-   * Closes harvester. All ressources are freed and the {@link #index} is
+   * Closes harvester. All ressources are freed and the {@link #processor} is
    * closed.
    * 
    * @param cleanShutdown
-   *          enables writing of status information to the index for the next
+   *          enables writing of status information to the Elasticsearch instance for the next
    *          harvesting. If an error occured during harvesting this should not
    *          be done.
    * @throws Exception
@@ -252,14 +250,14 @@ public abstract class Harvester {
    *           and may not affect the currect document.
    */
   public void close(boolean cleanShutdown) throws Exception {
-    if (index == null) throw new IllegalStateException(
+    if (processor == null) throw new IllegalStateException(
         "Harvester must be opened before closing");
     
-    if (cleanShutdown && harvestingDateReference != null) index
+    if (cleanShutdown && harvestingDateReference != null) processor
         .setLastHarvested(harvestingDateReference);
     
-    if (!index.isClosed()) index.close();
-    index = null;
+    if (!processor.isClosed()) processor.close();
+    processor = null;
     
     if (cleanShutdown) log.info("Harvested " + harvestCount
         + " objects - finished.");
@@ -268,7 +266,7 @@ public abstract class Harvester {
   }
   
   /**
-   * Creates an instance of MetadataDocument and initializes it with the index
+   * Creates an instance of MetadataDocument and initializes it with the harvester
    * config. This method should be overwritten, if a harvester uses another
    * class.
    */
@@ -277,7 +275,7 @@ public abstract class Harvester {
   }
   
   /**
-   * Adds a document to the {@link #index} working in the background.
+   * Adds a document to the {@link #processor} working in the background.
    * 
    * @throws BackgroundFailure
    *           if an error occurred in background thread. Exceptions can be
@@ -288,9 +286,9 @@ public abstract class Harvester {
    */
   protected void addDocument(MetadataDocument mdoc)
       throws BackgroundFailure, InterruptedException {
-    if (index == null) throw new IllegalStateException(
+    if (processor == null) throw new IllegalStateException(
         "Harvester must be opened before using");
-    index.addDocument(mdoc);
+    processor.addDocument(mdoc);
     harvestCount++;
     if (harvestCount % harvestMessageStep == 0) log.info("Harvested "
         + harvestCount + " objects so far.");
@@ -322,7 +320,7 @@ public abstract class Harvester {
    * Reference date of this harvesting event (in time reference of the original
    * server). This date is used on the next harvesting in variable
    * {@link #fromDateReference}. As long as this is null, the harvester will not
-   * write or update the value in the index directory.
+   * write or update the value in Elasticsearch.
    */
   protected void setHarvestingDateReference(Date harvestingDateReference) {
     this.harvestingDateReference = harvestingDateReference;
@@ -345,7 +343,7 @@ public abstract class Harvester {
         "targetIndex",
         "bulkSize", "numThreads", "maxQueue",
         "conversionErrorAction",
-        // IndexBuilder.XMLConverter
+        // XMLConverter
         "validate"));
   }
   

@@ -237,7 +237,7 @@ public class OAIHarvester extends OAIHarvesterBase {
         url.append("&set=").append(
             URLEncoder.encode(sets.iterator().next(), "UTF-8"));
       } else log
-          .warn("More than one set to be harvested - this is not supported by OAI-PMH. Filtering documents during indexing!");
+          .warn("More than one set to be harvested - this is not supported by OAI-PMH. Filtering documents during harvesting!");
     }
     if (fromDateReference != null) {
       url.append("&from=").append(
@@ -249,8 +249,6 @@ public class OAIHarvester extends OAIHarvesterBase {
     setHarvestingDateReference(currResponseDate);
     
     while (currResumptionToken != null) {
-      // checkIndexerBuffer or harvester should max. wait for 1/2 resumption
-      // Token expiration!!!
       log.debug("Resumption token expires in " + currResumptionExpiration
           + " ms");
       url = new StringBuilder(baseUrl);

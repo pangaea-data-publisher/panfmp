@@ -78,13 +78,13 @@ public abstract class SingleFileEntitiesHarvester extends Harvester {
   @Override
   public void close(boolean cleanShutdown) throws Exception {
     if (cleanShutdown) {
-      index.setValidIdentifiers(validIdentifiers);
+      processor.setValidIdentifiers(validIdentifiers);
     }
     super.close(cleanShutdown);
   }
   
   /**
-   * Adds a document to the {@link #index} working in the background. If a
+   * Adds a document to the {@link #processor} working in the background. If a
    * parsing error occurs the document is handled according to
    * {@link #parseErrorAction}. It is also added to the valid identifiers (if
    * unseen documents should be deleted).
@@ -108,7 +108,7 @@ public abstract class SingleFileEntitiesHarvester extends Harvester {
   }
   
   /**
-   * Adds a document to the {@link #index} working in the background.
+   * Adds a document to the {@link #processor} working in the background.
    * 
    * @see #addDocument(String,Date,Source)
    */

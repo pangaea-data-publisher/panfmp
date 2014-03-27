@@ -28,9 +28,7 @@ import de.pangaea.metadataportal.harvester.Harvester;
 import de.pangaea.metadataportal.utils.PublicForDigesterUse;
 
 /**
- * Abstract configuration of an panFMP index. It not only configures its
- * properties like name/id, it also contains methods to get some index access
- * objects (IndexReader, Searcher) and status information.
+ * Configuration of an panFMP harvester.
  * 
  * @author Uwe Schindler
  */
@@ -42,10 +40,10 @@ public class HarvesterConfig {
     harvesterProperties = new Properties(parent.globalHarvesterProperties);
   }
   
-  /** Sets the ID of this index configuration. **/
+  /** Sets the ID of this harvester configuration. **/
   public void setId(String v) {
     if (checked) throw new IllegalStateException(
-        "Virtual index configuration cannot be changed anymore!");
+        "Harvester configuration cannot be changed anymore!");
     id = v;
   }
   
@@ -54,7 +52,7 @@ public class HarvesterConfig {
   @Deprecated
   public void setHarvesterClass(String v) throws ClassNotFoundException {
     if (checked) throw new IllegalStateException(
-        "Index configuration cannot be changed anymore!");
+        "Harvester configuration cannot be changed anymore!");
     harvesterClass = Class.forName(v).asSubclass(Harvester.class);
   }
 
@@ -63,7 +61,7 @@ public class HarvesterConfig {
   @Deprecated
   public void addHarvesterProperty(String value) {
     if (checked) throw new IllegalStateException(
-        "Index configuration cannot be changed anymore!");
+        "Harvester configuration cannot be changed anymore!");
     if (value != null) harvesterProperties.setProperty(
         parent.dig.getCurrentElementName(), value.trim());
   }
@@ -74,7 +72,7 @@ public class HarvesterConfig {
    **/
   public void check() throws Exception {
     if (id == null) throw new IllegalStateException(
-        "Every index needs a unique id!");
+        "Every harvester needs a unique id!");
     Harvester h = harvesterClass.newInstance();
     Set<String> validProperties = h.getValidHarvesterPropertyNames();
     @SuppressWarnings("unchecked")
@@ -83,7 +81,7 @@ public class HarvesterConfig {
     while (en.hasMoreElements()) {
       String prop = en.nextElement();
       if (!validProperties.contains(prop)) throw new IllegalArgumentException(
-          "Harvester '" + harvesterClass.getName() + "' for index '" + id
+          "Harvester class '" + harvesterClass.getName() + "' for harvester '" + id
               + "' does not support property '" + prop
               + "'! Supported properties are: " + validProperties);
     }

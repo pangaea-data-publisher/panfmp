@@ -144,7 +144,7 @@ public class OAIStaticRepositoryHarvester extends OAIHarvesterBase {
   @Override
   public void close(boolean cleanShutdown) throws Exception {
     if (cleanShutdown) {
-      index.setValidIdentifiers(validIdentifiers);
+      processor.setValidIdentifiers(validIdentifiers);
     }
     dig = null;
     super.close(cleanShutdown);
