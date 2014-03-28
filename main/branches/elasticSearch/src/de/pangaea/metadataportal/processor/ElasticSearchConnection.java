@@ -17,6 +17,7 @@
 package de.pangaea.metadataportal.processor;
 
 import java.io.Closeable;
+import java.io.IOException;
 
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
@@ -60,7 +61,7 @@ public class ElasticSearchConnection implements Closeable {
     return client;
   }
   
-  public DocumentProcessor getDocumentProcessor(HarvesterConfig iconfig) {
+  public DocumentProcessor getDocumentProcessor(HarvesterConfig iconfig) throws IOException {
     return new DocumentProcessor(client(), iconfig);
   }
   

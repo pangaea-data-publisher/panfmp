@@ -16,6 +16,7 @@
 
 package de.pangaea.metadataportal.processor;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -30,13 +31,17 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
+import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.indices.IndexAlreadyExistsException;
 import org.elasticsearch.indices.IndexMissingException;
 
 import de.pangaea.metadataportal.config.HarvesterConfig;
@@ -75,7 +80,7 @@ public final class DocumentProcessor {
   public static final String HARVESTER_METADATA_TYPE = "panfmp_meta";
   public static final String HARVESTER_METADATA_FIELD_LAST_HARVESTED = "lastHarvested";
 
-  DocumentProcessor(Client client, HarvesterConfig iconfig) {
+  DocumentProcessor(Client client, HarvesterConfig iconfig) throws IOException {
     this.client = client;
     this.iconfig = iconfig;
     this.targetIndex = iconfig.harvesterProperties.getProperty("targetIndex", "panfmp");
@@ -113,6 +118,9 @@ public final class DocumentProcessor {
         }
       }, getClass().getName() + "#" + (i + 1));
     }
+    
+    // setup ES index
+    initIndexSettings();
   }
   
   public boolean isFailed() {
@@ -217,6 +225,40 @@ public final class DocumentProcessor {
         .setSource(HARVESTER_METADATA_FIELD_LAST_HARVESTED, lastHarvested).get();
       lastHarvested = null;
     }
+  }
+  
+  private static XContentBuilder addUnanalyzedMetadataField(XContentBuilder builder, String name) throws IOException {
+    return builder.startObject(name)
+        .field("type", "string").field("index", "not_analyzed").field("include_in_all", false)
+      .endObject();
+  }
+  
+  private void initIndexSettings() throws IOException {
+    log.info("Creating index='" + targetIndex + "'...");
+    try {
+      final CreateIndexResponse resp = client.admin().indices().prepareCreate(targetIndex).get();
+      log.info("Index created: " + resp.isAcknowledged());
+    } catch (IndexAlreadyExistsException e) {
+      log.info("Index already exists.");
+    }
+    log.info("Updating mappings for index='" + targetIndex + "'...");
+    final XContentBuilder builder = XContentFactory.jsonBuilder().startObject()
+      .startObject("properties")
+        .startObject(iconfig.parent.fieldnameDatestamp)
+          .field("type", "date").field("format", "dateOptionalTime").field("include_in_all", false)
+        .endObject();
+        addUnanalyzedMetadataField(builder, iconfig.parent.fieldnameSource);
+        addUnanalyzedMetadataField(builder, iconfig.parent.fieldnameMdocImpl);
+        builder.startObject(iconfig.parent.fieldnameXML)
+          .field("type", "string").field("index", "no").field("include_in_all", false)
+        .endObject()
+      .endObject()
+    .endObject();
+    final PutMappingResponse resp = client.admin().indices().preparePutMapping(targetIndex)
+        .setType(iconfig.parent.typeName)
+        .setSource(builder)
+        .get();
+    log.info("Mappings updated: " + resp.isAcknowledged());
   }
   
   /**
