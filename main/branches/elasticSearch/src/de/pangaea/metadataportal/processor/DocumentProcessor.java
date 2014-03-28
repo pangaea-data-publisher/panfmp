@@ -287,6 +287,13 @@ public final class DocumentProcessor {
           .get();
       log.info("Internal field mappings updated: " + resp.isAcknowledged());
     }
+    if (iconfig.parent.esMapping != null) {
+      final PutMappingResponse resp = client.admin().indices().preparePutMapping(targetIndex)
+          .setType(iconfig.parent.typeName)
+          .setSource(iconfig.parent.esMapping)
+          .get();
+      log.info("Provided mapping file pushed: " + resp.isAcknowledged());
+    }
   }
   
   /**

@@ -37,9 +37,8 @@
 			<!--
 				special purpose fields. Those are mainly mappings of predefined.
 				Those fields are required to reprocess stuff (e.g. reindex).
-				In Elasticsearch these fields should be simple stored fields without any analysis.
-				The source field should be indexed. The datestamp may be indexed.
-				mdoc-impl is for internal purposes only, needs only be stored.
+				panFMP will update the mappings of those fields automatically,
+				no need to specify them in the mapping.
 			-->
 			<cfg:xml-field name="xml"/>
 			<cfg:source-field name="internal-source"/>
@@ -82,9 +81,12 @@
 			<!-- if the validator augments the source document (e.g., adds default attributes), use this as basis for indexing? -->
 			<cfg:augmentation>false</cfg:augmentation>
 		</cfg:schema>
-		<!-- This is the type used by Elasticsearch to index the documents. Elastisearch must have a mapping for that type,
-			otherwise it may not work correctly -->
-		<cfg:typeName>doc</cfg:typeName>
+		<cfg:elasticsearchMapping>
+			<!-- This is the type used by Elasticsearch to index the documents: -->
+			<cfg:typeName>doc</cfg:typeName>
+			<!-- Points to the Elasticsearch mapping file for the above type (can be URL, too): -->
+			<!-- <cfg:file>mapping.json</cfg:file> -->
+		</cfg:elasticsearchMapping>
 	</cfg:metadata>
 	<!-- Definition of metadata sources and their harvesters and properties -->
 	<cfg:sources>
@@ -147,12 +149,12 @@
 			</cfg:properties>
 		</cfg:harvester>
 	</cfg:sources>
-	<cfg:elasticSearchCluster>
+	<cfg:elasticsearchCluster>
 		<!-- multiple addresses allowed, just repeat. Uses default port of 9300 if omitted, otherwise give the port number separated by colon: -->
 		<cfg:address>localhost</cfg:address>
 		<cfg:settings>
 			<cfg:client.transport.ignore_cluster_name>true</cfg:client.transport.ignore_cluster_name>
 			<cfg:client.transport.sniff>true</cfg:client.transport.sniff>
 		</cfg:settings>
-	</cfg:elasticSearchCluster>
+	</cfg:elasticsearchCluster>
 </cfg:config>
