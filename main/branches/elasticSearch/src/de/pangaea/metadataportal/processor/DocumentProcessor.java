@@ -221,6 +221,7 @@ public final class DocumentProcessor {
   
   private void saveLastHarvestedOnDisk() {
     if (lastHarvested != null) {
+      log.info("Saving timestamp for incremental harvesting...");
       client.prepareIndex(targetIndex, HARVESTER_METADATA_TYPE, iconfig.id)
         .setSource(HARVESTER_METADATA_FIELD_LAST_HARVESTED, lastHarvested).get();
       lastHarvested = null;
