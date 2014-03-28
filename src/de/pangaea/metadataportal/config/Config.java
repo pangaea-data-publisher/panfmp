@@ -17,9 +17,15 @@
 package de.pangaea.metadataportal.config;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.net.CookieHandler;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -174,7 +180,9 @@ public class Config {
           "setAugmentation", 0);
       
       // typeName
-      dig.addCallMethod("config/metadata/typeName", "setTypeName", 0);
+      dig.addDoNothing("config/metadata/elasticsearchMapping");
+      dig.addCallMethod("config/metadata/elasticsearchMapping/typeName", "setTypeName", 0);
+      dig.addCallMethod("config/metadata/elasticsearchMapping/file", "setEsMappingFile", 0);
       
       // *** HARVESTER CONFIG ***
       dig.addDoNothing("config/sources");
@@ -208,19 +216,19 @@ public class Config {
           "addHarvesterProperty", 0);
             
       // *** ELASTICSEARCH TransportClient settings ***
-      dig.addDoNothing("config/elasticSearchCluster");
-      dig.addCallMethod("config/elasticSearchCluster/address", "addEsAddress", 0);
-      dig.addFactoryCreate("config/elasticSearchCluster/settings",
+      dig.addDoNothing("config/elasticsearchCluster");
+      dig.addCallMethod("config/elasticsearchCluster/address", "addEsAddress", 0);
+      dig.addFactoryCreate("config/elasticsearchCluster/settings",
           new AbstractObjectCreationFactory() {
             @Override
             public Object createObject(Attributes attributes) {
               return ImmutableSettings.settingsBuilder();
             }
           });
-      dig.addSetNext("config/elasticSearchCluster/settings", "setEsSettings");
-      dig.addCallMethod("config/elasticSearchCluster/settings/*", "put", 2);
-      dig.addCallParamPath("config/elasticSearchCluster/settings/*", 0);
-      dig.addCallParam("config/elasticSearchCluster/settings/*", 1);
+      dig.addSetNext("config/elasticsearchCluster/settings", "setEsSettings");
+      dig.addCallMethod("config/elasticsearchCluster/settings/*", "put", 2);
+      dig.addCallParamPath("config/elasticsearchCluster/settings/*", 0);
+      dig.addCallParam("config/elasticsearchCluster/settings/*", 1);
       
       // parse config
       try {
@@ -248,7 +256,7 @@ public class Config {
    * makes the given local filesystem path absolute and resolve it relative to
    * config directory
    **/
-  public final String makePathAbsolute(String file) throws java.io.IOException {
+  public final String makePathAbsolute(String file) throws IOException {
     return makePathAbsolute(file, false);
   }
   
@@ -256,8 +264,7 @@ public class Config {
    * makes the given local filesystem path or URL absolute and resolve it
    * relative to config directory (if local)
    **/
-  public String makePathAbsolute(String file, boolean allowURL)
-      throws java.io.IOException {
+  public String makePathAbsolute(String file, boolean allowURL) throws IOException {
     try {
       if (allowURL) {
         return new URL(file).toString();
@@ -388,6 +395,27 @@ public class Config {
   
   @PublicForDigesterUse
   @Deprecated
+  public void setEsMappingFile(String v) throws IOException {
+    if (esMappingFile != null)
+      throw new IllegalArgumentException("Duplicate Elasticsearch mapping file");
+    esMappingFile = new File(makePathAbsolute(v, true));
+    try (
+        final InputStream in = new FileInputStream(esMappingFile);
+        final Reader reader = new InputStreamReader(in, StandardCharsets.UTF_8)
+    ) {
+      final StringBuilder sb = new StringBuilder();
+      final char[] buf = new char[8192];
+      for(;;) {
+        final int read = reader.read(buf);
+        if (read <= 0) break;
+        sb.append(buf, 0, read);
+      }
+      esMapping = sb.toString();
+    }
+  }
+  
+  @PublicForDigesterUse
+  @Deprecated
   public void setHaltOnSchemaError(String v) {
     haltOnSchemaError = BooleanParser.parseBoolean(v.trim());
   }
@@ -408,7 +436,7 @@ public class Config {
   @Deprecated
   public void setEsSettings(Settings.Builder bld) {
     if (esSettings != null)
-      throw new IllegalArgumentException("Duplicate elasticSearchCluster/settings element");
+      throw new IllegalArgumentException("Duplicate elasticsearchCluster/settings element");
     // strip the XML matcher path:
     esSettings = bld.build().getByPrefix(dig.getMatch() + "/");
   }
@@ -433,6 +461,8 @@ public class Config {
   
   // metadata mapping name
   public String typeName = "doc";
+  public File esMappingFile = null;
+  public String esMapping = null;
   
   // special fields
   public String fieldnameXML = "xml";  
