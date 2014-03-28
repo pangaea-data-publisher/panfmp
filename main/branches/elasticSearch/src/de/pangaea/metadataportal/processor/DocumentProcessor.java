@@ -37,6 +37,7 @@ import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.client.IndicesAdminClient;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.query.QueryBuilder;
@@ -228,21 +229,25 @@ public final class DocumentProcessor {
     }
   }
   
-  private static XContentBuilder addUnanalyzedMetadataField(XContentBuilder builder, String name) throws IOException {
+  private static XContentBuilder addNotAnalyzedFieldMapping(XContentBuilder builder, String name) throws IOException {
     return builder.startObject(name)
         .field("type", "string").field("index", "not_analyzed").field("include_in_all", false)
       .endObject();
   }
   
   private void initIndexSettings() throws IOException {
+    final IndicesAdminClient indicesAdmin = client.admin().indices();
+    
     log.info("Creating index='" + targetIndex + "'...");
     try {
-      final CreateIndexResponse resp = client.admin().indices().prepareCreate(targetIndex).get();
+      final CreateIndexResponse resp = indicesAdmin.prepareCreate(targetIndex).get();
       log.info("Index created: " + resp.isAcknowledged());
     } catch (IndexAlreadyExistsException e) {
       log.info("Index already exists.");
     }
+    
     log.info("Updating mappings for index='" + targetIndex + "'...");
+    
     {
       final XContentBuilder builder = XContentFactory.jsonBuilder().startObject()
         .startObject("_source")
@@ -262,37 +267,39 @@ public final class DocumentProcessor {
           .endObject()
         .endArray()
       .endObject();
-      final PutMappingResponse resp = client.admin().indices().preparePutMapping(targetIndex)
+      final PutMappingResponse resp = indicesAdmin.preparePutMapping(targetIndex)
           .setType(HARVESTER_METADATA_TYPE)
           .setSource(builder)
           .get();
       log.info("Harvester metadata mapping updated: " + resp.isAcknowledged());
     }    
+    
     {
       final XContentBuilder builder = XContentFactory.jsonBuilder().startObject()
         .startObject("properties")
           .startObject(iconfig.parent.fieldnameDatestamp)
             .field("type", "date").field("format", "dateOptionalTime").field("include_in_all", false)
           .endObject();
-          addUnanalyzedMetadataField(builder, iconfig.parent.fieldnameSource);
-          addUnanalyzedMetadataField(builder, iconfig.parent.fieldnameMdocImpl);
+          addNotAnalyzedFieldMapping(builder, iconfig.parent.fieldnameSource);
+          addNotAnalyzedFieldMapping(builder, iconfig.parent.fieldnameMdocImpl);
           builder.startObject(iconfig.parent.fieldnameXML)
             .field("type", "string").field("index", "no")
           .endObject()
         .endObject()
       .endObject();
-      final PutMappingResponse resp = client.admin().indices().preparePutMapping(targetIndex)
+      final PutMappingResponse resp = indicesAdmin.preparePutMapping(targetIndex)
           .setType(iconfig.parent.typeName)
           .setSource(builder)
           .get();
       log.info("Internal field mappings updated: " + resp.isAcknowledged());
     }
+    
     if (iconfig.parent.esMapping != null) {
-      final PutMappingResponse resp = client.admin().indices().preparePutMapping(targetIndex)
+      final PutMappingResponse resp = indicesAdmin.preparePutMapping(targetIndex)
           .setType(iconfig.parent.typeName)
           .setSource(iconfig.parent.esMapping)
           .get();
-      log.info("Provided mapping file pushed: " + resp.isAcknowledged());
+      log.info("Field mappings updated with provided file: " + resp.isAcknowledged());
     }
   }
   
@@ -306,6 +313,8 @@ public final class DocumentProcessor {
       final QueryBuilder query = QueryBuilders.boolQuery()
           .must(QueryBuilders.termQuery(iconfig.parent.fieldnameSource, iconfig.id))
           .mustNot(QueryBuilders.idsQuery(iconfig.parent.typeName).ids(validIdentifiers.toArray(new String[validIdentifiers.size()])));
+      final long count = client.prepareCount(targetIndex).setTypes(iconfig.parent.typeName).setQuery(query).get().getCount();
+      log.info("Deleting approx. " + count + " metadata items...");
       client.prepareDeleteByQuery(targetIndex).setTypes(iconfig.parent.typeName).setQuery(query).get();
     }
   }
