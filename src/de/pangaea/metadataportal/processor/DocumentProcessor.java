@@ -242,23 +242,50 @@ public final class DocumentProcessor {
       log.info("Index already exists.");
     }
     log.info("Updating mappings for index='" + targetIndex + "'...");
-    final XContentBuilder builder = XContentFactory.jsonBuilder().startObject()
-      .startObject("properties")
-        .startObject(iconfig.parent.fieldnameDatestamp)
-          .field("type", "date").field("format", "dateOptionalTime").field("include_in_all", false)
-        .endObject();
-        addUnanalyzedMetadataField(builder, iconfig.parent.fieldnameSource);
-        addUnanalyzedMetadataField(builder, iconfig.parent.fieldnameMdocImpl);
-        builder.startObject(iconfig.parent.fieldnameXML)
-          .field("type", "string").field("index", "no").field("include_in_all", false)
+    {
+      final XContentBuilder builder = XContentFactory.jsonBuilder().startObject()
+        .startObject("_source")
+          .field("enabled", false)
         .endObject()
-      .endObject()
-    .endObject();
-    final PutMappingResponse resp = client.admin().indices().preparePutMapping(targetIndex)
-        .setType(iconfig.parent.typeName)
-        .setSource(builder)
-        .get();
-    log.info("Mappings updated: " + resp.isAcknowledged());
+        .startObject("_all")
+          .field("enabled", false)
+        .endObject()
+        .startArray("dynamic_templates")
+          .startObject()
+            .startObject("kv_pairs")
+              .field("match", "*")
+              .startObject("mapping")
+                .field("type", "string").field("index", "no").field("store", true)
+              .endObject()
+            .endObject()
+          .endObject()
+        .endArray()
+      .endObject();
+      final PutMappingResponse resp = client.admin().indices().preparePutMapping(targetIndex)
+          .setType(HARVESTER_METADATA_TYPE)
+          .setSource(builder)
+          .get();
+      log.info("Harvester metadata mapping updated: " + resp.isAcknowledged());
+    }    
+    {
+      final XContentBuilder builder = XContentFactory.jsonBuilder().startObject()
+        .startObject("properties")
+          .startObject(iconfig.parent.fieldnameDatestamp)
+            .field("type", "date").field("format", "dateOptionalTime").field("include_in_all", false)
+          .endObject();
+          addUnanalyzedMetadataField(builder, iconfig.parent.fieldnameSource);
+          addUnanalyzedMetadataField(builder, iconfig.parent.fieldnameMdocImpl);
+          builder.startObject(iconfig.parent.fieldnameXML)
+            .field("type", "string").field("index", "no")
+          .endObject()
+        .endObject()
+      .endObject();
+      final PutMappingResponse resp = client.admin().indices().preparePutMapping(targetIndex)
+          .setType(iconfig.parent.typeName)
+          .setSource(builder)
+          .get();
+      log.info("Internal field mappings updated: " + resp.isAcknowledged());
+    }
   }
   
   /**
