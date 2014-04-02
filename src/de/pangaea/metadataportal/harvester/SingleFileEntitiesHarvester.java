@@ -56,9 +56,13 @@ public abstract class SingleFileEntitiesHarvester extends Harvester {
   private Set<String> validIdentifiers = null;
   private long newestDatestamp = -1;
   
+  public SingleFileEntitiesHarvester(HarvesterConfig iconfig) {
+    super(iconfig);
+  }
+
   @Override
-  public void open(ElasticSearchConnection es, HarvesterConfig iconfig) throws Exception {
-    super.open(es, iconfig);
+  public void open(ElasticSearchConnection es) throws Exception {
+    super.open(es);
     
     String s = iconfig.harvesterProperties.getProperty("parseErrorAction");
     if (s != null) try {

@@ -90,10 +90,15 @@ public abstract class OAIHarvesterBase extends Harvester {
    */
   protected boolean filterIncomingSets = true;
   
-  // construtor
+  // constructor
+  public OAIHarvesterBase(HarvesterConfig iconfig) {
+    super(iconfig);
+  }
+
+
   @Override
-  public void open(ElasticSearchConnection es, HarvesterConfig iconfig) throws Exception {
-    super.open(es, iconfig);
+  public void open(ElasticSearchConnection es) throws Exception {
+    super.open(es);
     
     String s = iconfig.harvesterProperties.getProperty("setSpec");
     if (s != null) {
@@ -126,7 +131,7 @@ public abstract class OAIHarvesterBase extends Harvester {
   }
   
   @Override
-  protected MetadataDocument createMetadataDocumentInstance() {
+  public MetadataDocument createMetadataDocumentInstance() {
     return new OAIMetadataDocument(iconfig);
   }
   

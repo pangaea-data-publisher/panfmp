@@ -81,11 +81,14 @@ public final class DocumentProcessor {
   public static final String HARVESTER_METADATA_TYPE = "panfmp_meta";
   public static final String HARVESTER_METADATA_FIELD_LAST_HARVESTED = "lastHarvested";
 
+  public static final String DEFAULT_INDEX = "panfmp";
+  public static final int DEFAULT_BULK_SIZE = 100;
+
   DocumentProcessor(Client client, HarvesterConfig iconfig) throws IOException {
     this.client = client;
     this.iconfig = iconfig;
-    this.targetIndex = iconfig.harvesterProperties.getProperty("targetIndex", "panfmp");
-    this.bulkSize = Integer.parseInt(iconfig.harvesterProperties.getProperty("bulkSize", "100"));
+    this.targetIndex = iconfig.harvesterProperties.getProperty("targetIndex", DEFAULT_INDEX);
+    this.bulkSize = Integer.parseInt(iconfig.harvesterProperties.getProperty("bulkSize", Integer.toString(DEFAULT_BULK_SIZE)));
     
     final String s = iconfig.harvesterProperties.getProperty("conversionErrorAction", "STOP");
     try {
@@ -281,7 +284,6 @@ public final class DocumentProcessor {
             .field("type", "date").field("format", "dateOptionalTime").field("include_in_all", false)
           .endObject();
           addNotAnalyzedFieldMapping(builder, iconfig.parent.fieldnameSource);
-          addNotAnalyzedFieldMapping(builder, iconfig.parent.fieldnameMdocImpl);
           builder.startObject(iconfig.parent.fieldnameXML)
             .field("type", "string").field("index", "no")
           .endObject()

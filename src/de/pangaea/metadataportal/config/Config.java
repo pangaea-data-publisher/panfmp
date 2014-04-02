@@ -345,8 +345,6 @@ public class Config {
         break;
       case "datestamp-field":
         fieldnameDatestamp = name;
-      case "mdoc-impl-field":
-        fieldnameMdocImpl = name;
         break;
       default:
         throw new IllegalArgumentException("Invalid special field type: " + type);
@@ -468,8 +466,6 @@ public class Config {
   public String fieldnameXML = "xml";  
   public String fieldnameSource = "internal-source";
   public String fieldnameDatestamp = "internal-datestamp";
-  public String fieldnameMdocImpl = "internal-mdoc-impl";
-
 
   // fields
   public final Map<String,FieldConfig> fields = new LinkedHashMap<String,FieldConfig>();

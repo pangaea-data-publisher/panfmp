@@ -55,10 +55,14 @@ public class OAIHarvester extends OAIHarvesterBase {
   private Date currResponseDate = null;
   private boolean fineGranularity = false; // default for OAI 2.0
   
+  public OAIHarvester(HarvesterConfig iconfig) {
+    super(iconfig);
+  }
+
   // construtor
   @Override
-  public void open(ElasticSearchConnection es, HarvesterConfig iconfig) throws Exception {
-    super.open(es, iconfig);
+  public void open(ElasticSearchConnection es) throws Exception {
+    super.open(es);
     filterIncomingSets = sets != null && sets.size() > 1;
     
     // *** ListRecords ***

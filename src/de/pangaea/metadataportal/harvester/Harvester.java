@@ -131,8 +131,8 @@ public abstract class Harvester {
         Harvester h = null;
         boolean cleanShutdown = false;
         try {
-          h = hc.newInstance();
-          h.open(es, siconf);
+          h = hc.getConstructor(HarvesterConfig.class).newInstance(siconf);
+          h.open(es);
           h.harvest();
           // everything OK => clean shutdown with storing all infos
           cleanShutdown = true;
@@ -183,7 +183,7 @@ public abstract class Harvester {
   /**
    * Harvester configuration
    */
-  protected HarvesterConfig iconfig = null;
+  protected final HarvesterConfig iconfig;
   
   /**
    * Count of harvested documents. Incremented by {@link #addDocument}.
@@ -205,7 +205,10 @@ public abstract class Harvester {
   /**
    * Default constructor.
    */
-  public Harvester() {}
+  public Harvester(HarvesterConfig iconfig) {
+    if (iconfig == null) throw new IllegalArgumentException("Missing harvester configuration");
+    this.iconfig = iconfig;
+  }
   
   /**
    * Opens harvester for harvesting documents described by the
@@ -216,10 +219,7 @@ public abstract class Harvester {
    *           if an exception occurs during opening (various types of
    *           exceptions can be thrown).
    */
-  public void open(ElasticSearchConnection es, HarvesterConfig iconfig) throws Exception {
-    if (iconfig == null) throw new IllegalArgumentException(
-        "Missing harvester configuration");
-    this.iconfig = iconfig;
+  public void open(ElasticSearchConnection es) throws Exception {
     harvestMessageStep = Integer.parseInt(iconfig.harvesterProperties
         .getProperty("harvestMessageStep", "100"));
     if (harvestMessageStep <= 0) throw new IllegalArgumentException(
@@ -270,7 +270,7 @@ public abstract class Harvester {
    * config. This method should be overwritten, if a harvester uses another
    * class.
    */
-  protected MetadataDocument createMetadataDocumentInstance() {
+  public MetadataDocument createMetadataDocumentInstance() {
     return new MetadataDocument(iconfig);
   }
   
