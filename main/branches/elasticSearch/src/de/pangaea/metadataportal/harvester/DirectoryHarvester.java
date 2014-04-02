@@ -45,8 +45,7 @@ import de.pangaea.metadataportal.utils.BooleanParser;
  * 
  * @author Uwe Schindler
  */
-public class DirectoryHarvester extends SingleFileEntitiesHarvester implements
-    FilenameFilter {
+public class DirectoryHarvester extends SingleFileEntitiesHarvester implements FilenameFilter {
   
   // Class members
   private File directory = null;
@@ -54,9 +53,13 @@ public class DirectoryHarvester extends SingleFileEntitiesHarvester implements
   private Pattern filenameFilter = null;
   private String identifierPrefix = "";
   
+  public DirectoryHarvester(HarvesterConfig iconfig) {
+    super(iconfig);
+  }
+
   @Override
-  public void open(ElasticSearchConnection es, HarvesterConfig iconfig) throws Exception {
-    super.open(es, iconfig);
+  public void open(ElasticSearchConnection es) throws Exception {
+    super.open(es);
     
     String s = iconfig.harvesterProperties.getProperty("directory");
     if (s == null) throw new IllegalArgumentException(

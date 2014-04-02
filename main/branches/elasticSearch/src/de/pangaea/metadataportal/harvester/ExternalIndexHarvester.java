@@ -92,9 +92,13 @@ public class ExternalIndexHarvester extends SingleFileEntitiesHarvester {
   .intern();
   public static final String FILENAME_LASTHARVESTED = "lastharvested";
   
+  public ExternalIndexHarvester(HarvesterConfig iconfig) {
+    super(iconfig);
+  }
+
   @Override
-  public void open(ElasticSearchConnection es, HarvesterConfig iconfig) throws Exception {
-    super.open(es, iconfig);
+  public void open(ElasticSearchConnection es) throws Exception {
+    super.open(es);
     
     identifierPrefix = iconfig.harvesterProperties.getProperty(
         "identifierPrefix", "");

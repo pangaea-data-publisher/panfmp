@@ -53,9 +53,13 @@ public class OAIStaticRepositoryHarvester extends OAIHarvesterBase {
   private OAIMetadataSaxRule metadataSaxRule = null;
   
   // construtor
+  public OAIStaticRepositoryHarvester(HarvesterConfig iconfig) {
+    super(iconfig);
+  }
+
   @Override
-  public void open(ElasticSearchConnection es, HarvesterConfig iconfig) throws Exception {
-    super.open(es, iconfig);
+  public void open(ElasticSearchConnection es) throws Exception {
+    super.open(es);
     filterIncomingSets = true; // always filter set names
     
     if (sets != null) {

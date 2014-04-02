@@ -73,7 +73,7 @@ public class HarvesterConfig {
   public void check() throws Exception {
     if (id == null) throw new IllegalStateException(
         "Every harvester needs a unique id!");
-    Harvester h = harvesterClass.newInstance();
+    Harvester h = harvesterClass.getConstructor(HarvesterConfig.class).newInstance(this);
     Set<String> validProperties = h.getValidHarvesterPropertyNames();
     @SuppressWarnings("unchecked")
     Enumeration<String> en = (Enumeration<String>) harvesterProperties

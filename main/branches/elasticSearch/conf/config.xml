@@ -43,7 +43,6 @@
 			<cfg:xml-field name="xml"/>
 			<cfg:source-field name="internal-source"/>
 			<cfg:datestamp-field name="internal-datestamp"/>
-			<cfg:mdoc-impl-field name="internal-mdoc-impl"/>
 			<!-- custom fields defined by XPath or XSL Templates -->
 			<cfg:field name="_all" datatype="string">/</cfg:field>
 			<cfg:field name="citation" datatype="string">/dif:DIF/dif:Data_Set_Citation|/dif:DIF/dif:Entry_Title|/dif:DIF/dif:Entry_ID</cfg:field>

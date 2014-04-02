@@ -85,9 +85,13 @@ public class ZipFileHarvester extends SingleFileEntitiesHarvester {
   /** the timeout from configuration */
   protected int timeout = DEFAULT_TIMEOUT;
   
+  public ZipFileHarvester(HarvesterConfig iconfig) {
+    super(iconfig);
+  }
+
   @Override
-  public void open(ElasticSearchConnection es, HarvesterConfig iconfig) throws Exception {
-    super.open(es, iconfig);
+  public void open(ElasticSearchConnection es) throws Exception {
+    super.open(es);
     
     zipFile = iconfig.harvesterProperties.getProperty("zipFile");
     if (zipFile == null) throw new IllegalArgumentException(
