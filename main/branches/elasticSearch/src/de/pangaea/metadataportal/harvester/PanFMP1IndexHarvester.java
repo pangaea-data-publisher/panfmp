@@ -51,8 +51,8 @@ import de.pangaea.metadataportal.config.HarvesterConfig;
 import de.pangaea.metadataportal.processor.ElasticSearchConnection;
 
 /**
- * This harvester supports replication XML contents from an foreign
- * <b>panFMP</b> installation. It is possible to replicate indexes with a
+ * This harvester supports replication XML contents from a legacy
+ * <b>panFMP</b> 1.x installation. It is possible to replicate indexes with a
  * different XML schema (by applying a transformation on the harvested XML
  * content) or replicate only sub-sets of other indexes, based on a query
  * string.
@@ -64,7 +64,7 @@ import de.pangaea.metadataportal.processor.ElasticSearchConnection;
  * all documents)</li>
  * <li><code>queryParserClass</code>: class name of {@link QueryParser} to use
  * for the above query string (default:
- * "org.apache.lucene.queryParser.QueryParser")</li>
+ * "org.apache.lucene.queryparser.classic.QueryParser")</li>
  * <li><code>defaultQueryParserOperator</code>: default operator when parsing
  * above query string (AND/OR) (default: "AND")</li>
  * <li><code>identifierPrefix</code>: This prefix is added in front of all
@@ -73,7 +73,7 @@ import de.pangaea.metadataportal.processor.ElasticSearchConnection;
  * 
  * @author Uwe Schindler
  */
-public class ExternalIndexHarvester extends SingleFileEntitiesHarvester {
+public class PanFMP1IndexHarvester extends SingleFileEntitiesHarvester {
   
   // Class members
   private String identifierPrefix = "";
@@ -92,7 +92,7 @@ public class ExternalIndexHarvester extends SingleFileEntitiesHarvester {
   .intern();
   public static final String FILENAME_LASTHARVESTED = "lastharvested";
   
-  public ExternalIndexHarvester(HarvesterConfig iconfig) {
+  public PanFMP1IndexHarvester(HarvesterConfig iconfig) {
     super(iconfig);
   }
 
