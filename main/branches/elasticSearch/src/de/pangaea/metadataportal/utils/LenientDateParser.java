@@ -87,26 +87,26 @@ public final class LenientDateParser {
   private static Pattern tzpat = Pattern
       .compile("([\\+\\-]\\d\\d)\\:(\\d\\d)\\z");
   private static DateFormat[] dateFormats = {
-      new SimpleDateFormat("yyyy-MM-dd'T'", Locale.US),
-      new SimpleDateFormat("yyyy-MM-dd", Locale.US),
+      new SimpleDateFormat("yyyy-MM-dd'T'", Locale.ROOT),
+      new SimpleDateFormat("yyyy-MM-dd", Locale.ROOT),
       DateFormat.getDateInstance(DateFormat.FULL, Locale.US),
       DateFormat.getDateInstance(DateFormat.MEDIUM, Locale.US),
       DateFormat.getDateInstance(DateFormat.SHORT, Locale.US),
-      new SimpleDateFormat("yyyy-MM", Locale.US),
-      new SimpleDateFormat("yyyy", Locale.US),};
+      new SimpleDateFormat("yyyy-MM", Locale.ROOT),
+      new SimpleDateFormat("yyyy", Locale.ROOT),};
   private static DateFormat[] timeFormats = {
-      new SimpleDateFormat("HH:mm:ss.SSS'Z'", Locale.US),
-      new SimpleDateFormat("HH:mm:ss'Z'", Locale.US),
-      new SimpleDateFormat("HH:mm'Z'", Locale.US),
-      new SimpleDateFormat("HH:mm:ss.SSSZ", Locale.US),
-      new SimpleDateFormat("HH:mm:ssZ", Locale.US),
-      new SimpleDateFormat("HH:mmZ", Locale.US),
-      new SimpleDateFormat("HH:mm:ss.SSS z", Locale.US),
-      new SimpleDateFormat("HH:mm:ss z", Locale.US),
-      new SimpleDateFormat("HH:mm z", Locale.US),
-      new SimpleDateFormat("HH:mm:ss.SSS", Locale.US),
-      new SimpleDateFormat("HH:mm:ss", Locale.US),
-      new SimpleDateFormat("HH:mm", Locale.US),
+      new SimpleDateFormat("HH:mm:ss.SSS'Z'", Locale.ROOT),
+      new SimpleDateFormat("HH:mm:ss'Z'", Locale.ROOT),
+      new SimpleDateFormat("HH:mm'Z'", Locale.ROOT),
+      new SimpleDateFormat("HH:mm:ss.SSSZ", Locale.ROOT),
+      new SimpleDateFormat("HH:mm:ssZ", Locale.ROOT),
+      new SimpleDateFormat("HH:mmZ", Locale.ROOT),
+      new SimpleDateFormat("HH:mm:ss.SSS z", Locale.ROOT),
+      new SimpleDateFormat("HH:mm:ss z", Locale.ROOT),
+      new SimpleDateFormat("HH:mm z", Locale.ROOT),
+      new SimpleDateFormat("HH:mm:ss.SSS", Locale.ROOT),
+      new SimpleDateFormat("HH:mm:ss", Locale.ROOT),
+      new SimpleDateFormat("HH:mm", Locale.ROOT),
       DateFormat.getTimeInstance(DateFormat.FULL, Locale.US),
       DateFormat.getTimeInstance(DateFormat.MEDIUM, Locale.US),
       DateFormat.getTimeInstance(DateFormat.SHORT, Locale.US),};
