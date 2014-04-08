@@ -211,9 +211,9 @@ public final class SimpleCookieHandler extends CookieHandler {
     }
     
     private static final DateFormat EXPIRES_FORMAT_1 = new SimpleDateFormat(
-        "E, dd MMM yyyy H:m:s z", Locale.US);
+        "E, dd MMM yyyy H:m:s z", Locale.ROOT);
     private static final DateFormat EXPIRES_FORMAT_2 = new SimpleDateFormat(
-        "E, dd-MMM-yyyy H:m:s z", Locale.US);
+        "E, dd-MMM-yyyy H:m:s z", Locale.ROOT);
   }
   
 }
