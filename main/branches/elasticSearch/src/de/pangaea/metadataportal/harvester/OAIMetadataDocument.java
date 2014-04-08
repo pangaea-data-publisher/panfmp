@@ -20,6 +20,7 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.search.SearchHit;
 
 import de.pangaea.metadataportal.config.HarvesterConfig;
 import de.pangaea.metadataportal.processor.MetadataDocument;
@@ -65,14 +66,17 @@ public class OAIMetadataDocument extends MetadataDocument {
     return sets;
   }
   
-  /*@Override
-  public void loadFromLucene(Document ldoc) throws Exception {
+  @Override
+  public void loadFromElasticSearchHit(SearchHit hit) throws Exception {
     sets.clear();
-    super.loadFromLucene(ldoc);
+    super.loadFromElasticSearchHit(hit);
+    /* Currently Sets get lost...
     String[] sets = ldoc.getValues(IndexConstants.FIELDNAME_SET);
-    if (sets != null) for (String set : sets)
+    if (sets != null) for (String set : sets) {
       if (set != null) addSet(set);
-  }*/
+    }
+    */
+  }
   
   @Override
   protected XContentBuilder createEmptyJSON() throws Exception {
