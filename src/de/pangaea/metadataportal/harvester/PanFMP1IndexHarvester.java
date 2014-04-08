@@ -83,14 +83,10 @@ public class PanFMP1IndexHarvester extends SingleFileEntitiesHarvester {
   
   // legacy constants from panFMP 1.x
   private static final String FIELD_PREFIX = "internal-";
-  public static final String FIELDNAME_CONTENT = "textcontent".intern();
+  public static final String FIELDNAME_CONTENT = "textcontent"; // default field for query parser
   public static final String FIELDNAME_IDENTIFIER = (FIELD_PREFIX + "identifier").intern();
-  public static final String FIELDNAME_SET = (FIELD_PREFIX + "set").intern();
   public static final String FIELDNAME_DATESTAMP = (FIELD_PREFIX + "datestamp").intern();
   public static final String FIELDNAME_XML = (FIELD_PREFIX + "xml").intern();
-  public static final String FIELDNAME_MDOC_IMPL = (FIELD_PREFIX + "mdoc-impl")
-  .intern();
-  public static final String FILENAME_LASTHARVESTED = "lastharvested";
   
   public PanFMP1IndexHarvester(HarvesterConfig iconfig) {
     super(iconfig);
