@@ -59,7 +59,6 @@ import de.pangaea.metadataportal.config.FieldConfig;
 import de.pangaea.metadataportal.config.FilterConfig;
 import de.pangaea.metadataportal.config.HarvesterConfig;
 import de.pangaea.metadataportal.config.VariableConfig;
-import de.pangaea.metadataportal.harvester.Rebuilder;
 import de.pangaea.metadataportal.utils.BooleanParser;
 import de.pangaea.metadataportal.utils.ISODateFormatter;
 import de.pangaea.metadataportal.utils.LenientDateParser;
@@ -79,8 +78,7 @@ public class MetadataDocument {
   
   /**
    * Constructor, that creates an empty instance for the supplied index
-   * configuration. Sub classes must always supply this exact constructor for
-   * working with {@link Rebuilder} and {@link #createInstanceFromLucene}.
+   * configuration.
    */
   public MetadataDocument(HarvesterConfig iconfig) {
     this.iconfig = iconfig;
