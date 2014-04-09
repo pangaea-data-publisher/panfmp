@@ -225,7 +225,7 @@ public class MetadataDocument {
   }
   
   /**
-   * Converts this instance to a ElasticSearch JSON node
+   * Converts this instance to a Elasticsearch JSON node
    * 
    * @return {@link XContentBuilder} or <code>null</code>, if doc was deleted.
    * @throws Exception

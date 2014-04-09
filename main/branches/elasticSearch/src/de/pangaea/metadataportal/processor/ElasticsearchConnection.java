@@ -33,14 +33,14 @@ import de.pangaea.metadataportal.config.HarvesterConfig;
  * 
  * @author Uwe Schindler
  */
-public class ElasticSearchConnection implements Closeable {
-  private static final org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(ElasticSearchConnection.class);
+public class ElasticsearchConnection implements Closeable {
+  private static final org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(ElasticsearchConnection.class);
   
   private Client client;
 
-  public ElasticSearchConnection(Config config) {
+  public ElasticsearchConnection(Config config) {
     final Settings settings = config.esSettings == null ? ImmutableSettings.Builder.EMPTY_SETTINGS : config.esSettings;
-    log.info("Connecting to ElasticSearch nodes: " + config.esTransports);
+    log.info("Connecting to Elasticsearch nodes: " + config.esTransports);
     if (log.isDebugEnabled()) {
       log.debug("ES connection settings: " + settings.getAsMap());
     }
@@ -52,12 +52,12 @@ public class ElasticSearchConnection implements Closeable {
   public void close() {
     client.close();
     client = null;
-    log.info("Closed connection to ElasticSearch.");
+    log.info("Closed connection to Elasticsearch.");
   }
   
   public Client client() {
     if (client == null)
-      throw new IllegalStateException("ElasticSearch TransportClient is already closed.");
+      throw new IllegalStateException("Elasticsearch TransportClient is already closed.");
     return client;
   }
   

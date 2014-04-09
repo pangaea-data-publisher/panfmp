@@ -48,7 +48,7 @@ import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.Version;
 
 import de.pangaea.metadataportal.config.HarvesterConfig;
-import de.pangaea.metadataportal.processor.ElasticSearchConnection;
+import de.pangaea.metadataportal.processor.ElasticsearchConnection;
 
 /**
  * This harvester supports replication XML contents from a legacy
@@ -93,7 +93,7 @@ public class PanFMP1IndexHarvester extends SingleFileEntitiesHarvester {
   }
 
   @Override
-  public void open(ElasticSearchConnection es) throws Exception {
+  public void open(ElasticsearchConnection es) throws Exception {
     super.open(es);
     
     identifierPrefix = iconfig.harvesterProperties.getProperty(

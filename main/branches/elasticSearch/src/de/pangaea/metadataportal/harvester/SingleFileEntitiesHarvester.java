@@ -26,7 +26,7 @@ import javax.xml.transform.Source;
 
 import de.pangaea.metadataportal.config.HarvesterConfig;
 import de.pangaea.metadataportal.processor.DocumentErrorAction;
-import de.pangaea.metadataportal.processor.ElasticSearchConnection;
+import de.pangaea.metadataportal.processor.ElasticsearchConnection;
 import de.pangaea.metadataportal.processor.MetadataDocument;
 import de.pangaea.metadataportal.utils.BooleanParser;
 
@@ -61,7 +61,7 @@ public abstract class SingleFileEntitiesHarvester extends Harvester {
   }
 
   @Override
-  public void open(ElasticSearchConnection es) throws Exception {
+  public void open(ElasticsearchConnection es) throws Exception {
     super.open(es);
     
     String s = iconfig.harvesterProperties.getProperty("parseErrorAction");
