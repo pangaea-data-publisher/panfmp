@@ -156,7 +156,7 @@ public class OAIStaticRepositoryHarvester extends OAIHarvesterBase {
   
   @Override
   public void harvest() throws Exception {
-    String url = iconfig.harvesterProperties.getProperty("url");
+    String url = iconfig.properties.getProperty("url");
     if (url == null) throw new NullPointerException(
         "No URL of the OAI static repository was given!");
     

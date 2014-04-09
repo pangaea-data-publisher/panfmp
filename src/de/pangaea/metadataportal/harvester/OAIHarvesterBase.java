@@ -100,20 +100,20 @@ public abstract class OAIHarvesterBase extends Harvester {
   public void open(ElasticsearchConnection es) throws Exception {
     super.open(es);
     
-    String s = iconfig.harvesterProperties.getProperty("setSpec");
+    String s = iconfig.properties.getProperty("setSpec");
     if (s != null) {
       sets = new HashSet<String>();
       Collections.addAll(sets, s.split("[\\,\\;\\s]+"));
       if (sets.isEmpty()) sets = null;
     }
     
-    if ((s = iconfig.harvesterProperties.getProperty("retryCount")) != null) retryCount = Integer
+    if ((s = iconfig.properties.getProperty("retryCount")) != null) retryCount = Integer
         .parseInt(s);
-    if ((s = iconfig.harvesterProperties.getProperty("retryAfterSeconds")) != null) retryTime = Integer
+    if ((s = iconfig.properties.getProperty("retryAfterSeconds")) != null) retryTime = Integer
         .parseInt(s);
-    if ((s = iconfig.harvesterProperties.getProperty("timeoutAfterSeconds")) != null) timeout = Integer
+    if ((s = iconfig.properties.getProperty("timeoutAfterSeconds")) != null) timeout = Integer
         .parseInt(s);
-    metadataPrefix = iconfig.harvesterProperties.getProperty("metadataPrefix");
+    metadataPrefix = iconfig.properties.getProperty("metadataPrefix");
     if (metadataPrefix == null) throw new NullPointerException(
         "No metadataPrefix for the OAI repository was given!");
     

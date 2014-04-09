@@ -117,7 +117,7 @@ public class WebCrawlingHarvester extends SingleFileEntitiesHarvester {
   public void open(ElasticsearchConnection es) throws Exception {
     super.open(es);
     
-    String s = iconfig.harvesterProperties.getProperty("baseUrl");
+    String s = iconfig.properties.getProperty("baseUrl");
     if (s == null) throw new IllegalArgumentException(
         "Missing base URL to start harvesting (property \"baseUrl\")");
     URL u = new URL(s);
@@ -126,26 +126,26 @@ public class WebCrawlingHarvester extends SingleFileEntitiesHarvester {
         "WebCrawlingHarvester only allows HTTP(S) as network protocol!");
     baseURL = u.toString();
     
-    s = iconfig.harvesterProperties.getProperty("contentTypes",
+    s = iconfig.properties.getProperty("contentTypes",
         "text/xml,application/xml");
     for (String c : s.split("[\\,\\;\\s]+")) {
       c = c.trim().toLowerCase(Locale.ROOT);
       if (!"".equals(c)) contentTypes.add(c);
     }
     
-    if ((s = iconfig.harvesterProperties.getProperty("retryCount")) != null) retryCount = Integer
+    if ((s = iconfig.properties.getProperty("retryCount")) != null) retryCount = Integer
         .parseInt(s);
-    if ((s = iconfig.harvesterProperties.getProperty("retryAfterSeconds")) != null) retryTime = Integer
+    if ((s = iconfig.properties.getProperty("retryAfterSeconds")) != null) retryTime = Integer
         .parseInt(s);
-    if ((s = iconfig.harvesterProperties.getProperty("timeoutAfterSeconds")) != null) timeout = Integer
+    if ((s = iconfig.properties.getProperty("timeoutAfterSeconds")) != null) timeout = Integer
         .parseInt(s);
-    if ((s = iconfig.harvesterProperties.getProperty("pauseBetweenRequests")) != null) pauseBetweenRequests = Long
+    if ((s = iconfig.properties.getProperty("pauseBetweenRequests")) != null) pauseBetweenRequests = Long
         .parseLong(s);
     
-    s = iconfig.harvesterProperties.getProperty("filenameFilter");
+    s = iconfig.properties.getProperty("filenameFilter");
     filenameFilter = (s == null) ? null : Pattern.compile(s);
     
-    s = iconfig.harvesterProperties.getProperty("excludeUrlPattern");
+    s = iconfig.properties.getProperty("excludeUrlPattern");
     excludeUrlPattern = (s == null) ? null : Pattern.compile(s);
     
     // initialize and test for HTML SAX Parser

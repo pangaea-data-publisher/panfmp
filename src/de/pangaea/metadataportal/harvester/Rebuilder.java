@@ -76,8 +76,8 @@ public class Rebuilder extends Harvester {
 
   @Override
   public void open(ElasticsearchConnection es) throws Exception {
-    this.sourceIndex = iconfig.harvesterProperties.getProperty("targetIndex", DocumentProcessor.DEFAULT_INDEX);
-    this.bulkSize = Integer.parseInt(iconfig.harvesterProperties.getProperty("bulkSize", Integer.toString(DocumentProcessor.DEFAULT_BULK_SIZE)));
+    this.sourceIndex = iconfig.properties.getProperty("targetIndex", DocumentProcessor.DEFAULT_INDEX);
+    this.bulkSize = Integer.parseInt(iconfig.properties.getProperty("bulkSize", Integer.toString(DocumentProcessor.DEFAULT_BULK_SIZE)));
     log.info("Opening Elasticsearch index '" + sourceIndex + "' for harvesting all documents of harvester '" + iconfig.id + "'...");
 
     this.wrappedHarvester = iconfig.harvesterClass.getConstructor(HarvesterConfig.class).newInstance(iconfig);

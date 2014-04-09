@@ -72,19 +72,19 @@ public class ElasticsearchHarvester extends SingleFileEntitiesHarvester {
   public void open(ElasticsearchConnection es) throws Exception {
     super.open(es);
 
-    bulkSize = Integer.parseInt(iconfig.harvesterProperties.getProperty("bulkSize", Integer.toString(DocumentProcessor.DEFAULT_BULK_SIZE)));
-    identifierPrefix = iconfig.harvesterProperties.getProperty("identifierPrefix", "");
-    datestampField = iconfig.harvesterProperties.getProperty("datestampField", iconfig.parent.fieldnameDatestamp);
-    xmlField = iconfig.harvesterProperties.getProperty("xmlField", iconfig.parent.fieldnameXML);
-    final String v = iconfig.harvesterProperties.getProperty("indexes");
+    bulkSize = Integer.parseInt(iconfig.properties.getProperty("bulkSize", Integer.toString(DocumentProcessor.DEFAULT_BULK_SIZE)));
+    identifierPrefix = iconfig.properties.getProperty("identifierPrefix", "");
+    datestampField = iconfig.properties.getProperty("datestampField", iconfig.parent.fieldnameDatestamp);
+    xmlField = iconfig.properties.getProperty("xmlField", iconfig.parent.fieldnameXML);
+    final String v = iconfig.properties.getProperty("indexes");
     if (v == null || v.isEmpty()) {
       throw new IllegalArgumentException("Missing harvester property 'indexes'.");
     }
     sourceIndexes = v.split("\\s*,\\s*");
-    types = iconfig.harvesterProperties.getProperty("types", iconfig.parent.typeName).split("\\s*,\\s*");
+    types = iconfig.properties.getProperty("types", iconfig.parent.typeName).split("\\s*,\\s*");
 
-    final String info, qstr = iconfig.harvesterProperties.getProperty("queryString"),
-        jsonQuery = iconfig.harvesterProperties.getProperty("jsonQuery");
+    final String info, qstr = iconfig.properties.getProperty("queryString"),
+        jsonQuery = iconfig.properties.getProperty("jsonQuery");
     final boolean hasQstr = (qstr != null && !qstr.isEmpty()),
         hasJsonQuery = (jsonQuery != null && !jsonQuery.isEmpty());
     if (hasQstr && hasJsonQuery) {
@@ -101,7 +101,7 @@ public class ElasticsearchHarvester extends SingleFileEntitiesHarvester {
       query = QueryBuilders.matchAllQuery();
     }
         
-    final String esAddress = iconfig.harvesterProperties.getProperty("elasticsearchAddress");
+    final String esAddress = iconfig.properties.getProperty("elasticsearchAddress");
     if (esAddress != null && !esAddress.isEmpty()) {
       // TODO: Really use ES settings from config!? => make configurable somehow
       final Settings settings = iconfig.parent.esSettings == null ? ImmutableSettings.Builder.EMPTY_SETTINGS : iconfig.parent.esSettings;

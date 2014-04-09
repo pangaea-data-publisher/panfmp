@@ -37,7 +37,7 @@ public class HarvesterConfig {
   /** Default constructor **/
   public HarvesterConfig(Config parent) {
     this.parent = parent;
-    harvesterProperties = new Properties(parent.globalHarvesterProperties);
+    properties = new Properties(parent.globalHarvesterProperties);
   }
   
   /** Sets the ID of this harvester configuration. **/
@@ -62,7 +62,7 @@ public class HarvesterConfig {
   public void addHarvesterProperty(String value) {
     if (checked) throw new IllegalStateException(
         "Harvester configuration cannot be changed anymore!");
-    if (value != null) harvesterProperties.setProperty(
+    if (value != null) properties.setProperty(
         parent.dig.getCurrentElementName(), value.trim());
   }
 
@@ -76,7 +76,7 @@ public class HarvesterConfig {
     Harvester h = harvesterClass.getConstructor(HarvesterConfig.class).newInstance(this);
     Set<String> validProperties = h.getValidHarvesterPropertyNames();
     @SuppressWarnings("unchecked")
-    Enumeration<String> en = (Enumeration<String>) harvesterProperties
+    Enumeration<String> en = (Enumeration<String>) properties
         .propertyNames();
     while (en.hasMoreElements()) {
       String prop = en.nextElement();
@@ -97,7 +97,7 @@ public class HarvesterConfig {
 
   public Class<? extends Harvester> harvesterClass = null;
 
-  public final Properties harvesterProperties;
+  public final Properties properties;
 
   public Templates xslt = null;
 

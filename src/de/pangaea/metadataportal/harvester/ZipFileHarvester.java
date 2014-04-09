@@ -93,24 +93,24 @@ public class ZipFileHarvester extends SingleFileEntitiesHarvester {
   public void open(ElasticsearchConnection es) throws Exception {
     super.open(es);
     
-    zipFile = iconfig.harvesterProperties.getProperty("zipFile");
+    zipFile = iconfig.properties.getProperty("zipFile");
     if (zipFile == null) throw new IllegalArgumentException(
         "Missing name / URL of ZIP file to harvest (property \"zipFile\")");
     zipFile = iconfig.parent.makePathAbsolute(zipFile, true);
     
-    identifierPrefix = iconfig.harvesterProperties.getProperty(
+    identifierPrefix = iconfig.properties.getProperty(
         "identifierPrefix", "");
     
-    String s = iconfig.harvesterProperties.getProperty("filenameFilter");
+    String s = iconfig.properties.getProperty("filenameFilter");
     filenameFilter = (s == null) ? null : Pattern.compile(s);
     
-    if ((s = iconfig.harvesterProperties.getProperty("retryCount")) != null) retryCount = Integer
+    if ((s = iconfig.properties.getProperty("retryCount")) != null) retryCount = Integer
         .parseInt(s);
-    if ((s = iconfig.harvesterProperties.getProperty("retryAfterSeconds")) != null) retryTime = Integer
+    if ((s = iconfig.properties.getProperty("retryAfterSeconds")) != null) retryTime = Integer
         .parseInt(s);
-    if ((s = iconfig.harvesterProperties.getProperty("timeoutAfterSeconds")) != null) timeout = Integer
+    if ((s = iconfig.properties.getProperty("timeoutAfterSeconds")) != null) timeout = Integer
         .parseInt(s);
-    if ((s = iconfig.harvesterProperties.getProperty("useZipFileDate")) != null) useZipFileDate = BooleanParser
+    if ((s = iconfig.properties.getProperty("useZipFileDate")) != null) useZipFileDate = BooleanParser
         .parseBoolean(s);
   }
   
