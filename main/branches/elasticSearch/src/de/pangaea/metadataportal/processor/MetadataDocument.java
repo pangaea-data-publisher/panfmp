@@ -647,7 +647,7 @@ public class MetadataDocument {
     private final boolean validate;
     
     private XMLConverter() {
-      String v = iconfig.harvesterProperties.getProperty("validate");
+      String v = iconfig.properties.getProperty("validate");
       if (iconfig.parent.schema == null) {
         if (v != null) throw new IllegalStateException(
             "The <validate> harvester property is only allowed if a XML schema is set in the metadata properties!");

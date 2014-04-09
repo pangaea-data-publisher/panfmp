@@ -64,7 +64,7 @@ public abstract class SingleFileEntitiesHarvester extends Harvester {
   public void open(ElasticsearchConnection es) throws Exception {
     super.open(es);
     
-    String s = iconfig.harvesterProperties.getProperty("parseErrorAction");
+    String s = iconfig.properties.getProperty("parseErrorAction");
     if (s != null) try {
       parseErrorAction = DocumentErrorAction.valueOf(s
           .toUpperCase(Locale.ROOT));
@@ -75,7 +75,7 @@ public abstract class SingleFileEntitiesHarvester extends Harvester {
     }
     
     validIdentifiers = null;
-    if (BooleanParser.parseBoolean(iconfig.harvesterProperties.getProperty(
+    if (BooleanParser.parseBoolean(iconfig.properties.getProperty(
         "deleteMissingDocuments", "true"))) validIdentifiers = new HashSet<String>();
   }
   

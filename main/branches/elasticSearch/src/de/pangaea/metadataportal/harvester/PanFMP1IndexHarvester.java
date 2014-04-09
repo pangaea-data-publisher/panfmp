@@ -102,15 +102,15 @@ public class PanFMP1IndexHarvester extends SingleFileEntitiesHarvester {
   public void open(ElasticsearchConnection es) throws Exception {
     super.open(es);
     
-    identifierPrefix = iconfig.harvesterProperties.getProperty("identifierPrefix", "");
+    identifierPrefix = iconfig.properties.getProperty("identifierPrefix", "");
     
-    String s = iconfig.harvesterProperties.getProperty("indexDir");
+    String s = iconfig.properties.getProperty("indexDir");
     if (s == null) {
       throw new IllegalArgumentException("Missing index directory path (property \"indexDir\")");
     }
     final File dir = new File(iconfig.parent.makePathAbsolute(s, false));
     
-    String info, qstr = iconfig.harvesterProperties.getProperty("query");
+    String info, qstr = iconfig.properties.getProperty("query");
     if (qstr == null || qstr.length() == 0) {
       info = "all documents";
       query = new MatchAllDocsQuery();
@@ -118,7 +118,7 @@ public class PanFMP1IndexHarvester extends SingleFileEntitiesHarvester {
       info = "documents matching query [" + qstr + "]";
 
       // analyzer
-      final String anaCls = iconfig.harvesterProperties.getProperty("analyzerClass", StandardAnalyzer.class.getName());
+      final String anaCls = iconfig.properties.getProperty("analyzerClass", StandardAnalyzer.class.getName());
       final Class<? extends Analyzer> anaClass = Class.forName(anaCls).asSubclass(Analyzer.class);
       Analyzer ana;
       try {
@@ -132,7 +132,7 @@ public class PanFMP1IndexHarvester extends SingleFileEntitiesHarvester {
       }
       
       // load query parser
-      final Class<?> c = Class.forName(iconfig.harvesterProperties
+      final Class<?> c = Class.forName(iconfig.properties
           .getProperty("queryParserClass", QueryParser.class.getName()));
       Class<? extends QueryParser> queryParserClass = c
           .asSubclass(QueryParser.class);
@@ -140,7 +140,7 @@ public class PanFMP1IndexHarvester extends SingleFileEntitiesHarvester {
           .getConstructor(Version.class, String.class, Analyzer.class);
       
       // default operator for query parser
-      final String operator = iconfig.harvesterProperties.getProperty(
+      final String operator = iconfig.properties.getProperty(
           "defaultQueryParserOperator", "AND").toUpperCase(Locale.ROOT);
       
       final QueryParser.Operator defaultQueryParserOperator;
@@ -152,7 +152,7 @@ public class PanFMP1IndexHarvester extends SingleFileEntitiesHarvester {
         throw new IllegalArgumentException("Search property 'defaultQueryParserOperator' is not 'AND'/'OR'");
       }
       
-      luceneMatchVersion = Version.parseLeniently(iconfig.harvesterProperties.getProperty("luceneMatchVersion",
+      luceneMatchVersion = Version.parseLeniently(iconfig.properties.getProperty("luceneMatchVersion",
           Version.LUCENE_CURRENT.name()));
       
       // create QP

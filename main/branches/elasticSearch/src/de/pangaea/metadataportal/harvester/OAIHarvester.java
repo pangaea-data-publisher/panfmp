@@ -227,7 +227,7 @@ public class OAIHarvester extends OAIHarvesterBase {
   
   @Override
   public void harvest() throws Exception {
-    String baseUrl = iconfig.harvesterProperties.getProperty("baseUrl");
+    String baseUrl = iconfig.properties.getProperty("baseUrl");
     if (baseUrl == null) throw new NullPointerException(
         "No baseUrl of the OAI repository was given!");
     checkIdentify(baseUrl);

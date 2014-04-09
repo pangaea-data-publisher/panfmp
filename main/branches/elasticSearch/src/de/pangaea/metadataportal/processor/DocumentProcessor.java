@@ -87,10 +87,10 @@ public final class DocumentProcessor {
   DocumentProcessor(Client client, HarvesterConfig iconfig) throws IOException {
     this.client = client;
     this.iconfig = iconfig;
-    this.targetIndex = iconfig.harvesterProperties.getProperty("targetIndex", DEFAULT_INDEX);
-    this.bulkSize = Integer.parseInt(iconfig.harvesterProperties.getProperty("bulkSize", Integer.toString(DEFAULT_BULK_SIZE)));
+    this.targetIndex = iconfig.properties.getProperty("targetIndex", DEFAULT_INDEX);
+    this.bulkSize = Integer.parseInt(iconfig.properties.getProperty("bulkSize", Integer.toString(DEFAULT_BULK_SIZE)));
     
-    final String s = iconfig.harvesterProperties.getProperty("conversionErrorAction", "STOP");
+    final String s = iconfig.properties.getProperty("conversionErrorAction", "STOP");
     try {
       this.conversionErrorAction = DocumentErrorAction.valueOf(s.toUpperCase(Locale.ROOT));
     } catch (IllegalArgumentException e) {
@@ -101,11 +101,11 @@ public final class DocumentProcessor {
               + Arrays.toString(DocumentErrorAction.values()));
     }
     
-    final int threadCount = Integer.parseInt(iconfig.harvesterProperties.getProperty("numThreads", "1"));
+    final int threadCount = Integer.parseInt(iconfig.properties.getProperty("numThreads", "1"));
     if (threadCount < 1) {
       throw new IllegalArgumentException("numThreads harvester-property must be >=1!");
     }
-    final int maxQueue = Integer.parseInt(iconfig.harvesterProperties.getProperty("maxQueue", "100"));
+    final int maxQueue = Integer.parseInt(iconfig.properties.getProperty("maxQueue", "100"));
     if (maxQueue < threadCount) {
       throw new IllegalArgumentException("maxQueue must be >=numThreads!");
     }

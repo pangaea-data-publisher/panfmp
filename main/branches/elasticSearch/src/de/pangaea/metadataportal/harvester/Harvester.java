@@ -220,7 +220,7 @@ public abstract class Harvester {
    *           exceptions can be thrown).
    */
   public void open(ElasticsearchConnection es) throws Exception {
-    harvestMessageStep = Integer.parseInt(iconfig.harvesterProperties
+    harvestMessageStep = Integer.parseInt(iconfig.properties
         .getProperty("harvestMessageStep", "100"));
     if (harvestMessageStep <= 0) throw new IllegalArgumentException(
         "Invalid value for harvestMessageStep: " + harvestMessageStep);
