@@ -38,7 +38,7 @@ import java.util.zip.ZipInputStream;
 import javax.xml.transform.stream.StreamSource;
 
 import de.pangaea.metadataportal.config.HarvesterConfig;
-import de.pangaea.metadataportal.processor.ElasticSearchConnection;
+import de.pangaea.metadataportal.processor.ElasticsearchConnection;
 import de.pangaea.metadataportal.utils.BooleanParser;
 
 /**
@@ -90,7 +90,7 @@ public class ZipFileHarvester extends SingleFileEntitiesHarvester {
   }
 
   @Override
-  public void open(ElasticSearchConnection es) throws Exception {
+  public void open(ElasticsearchConnection es) throws Exception {
     super.open(es);
     
     zipFile = iconfig.harvesterProperties.getProperty("zipFile");

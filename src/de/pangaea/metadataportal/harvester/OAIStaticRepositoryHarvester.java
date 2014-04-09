@@ -27,7 +27,7 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
 import de.pangaea.metadataportal.config.HarvesterConfig;
-import de.pangaea.metadataportal.processor.ElasticSearchConnection;
+import de.pangaea.metadataportal.processor.ElasticsearchConnection;
 import de.pangaea.metadataportal.processor.BackgroundFailure;
 import de.pangaea.metadataportal.processor.MetadataDocument;
 import de.pangaea.metadataportal.utils.ExtendedDigester;
@@ -58,7 +58,7 @@ public class OAIStaticRepositoryHarvester extends OAIHarvesterBase {
   }
 
   @Override
-  public void open(ElasticSearchConnection es) throws Exception {
+  public void open(ElasticsearchConnection es) throws Exception {
     super.open(es);
     filterIncomingSets = true; // always filter set names
     

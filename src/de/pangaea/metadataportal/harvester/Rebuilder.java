@@ -28,7 +28,7 @@ import org.elasticsearch.search.SearchHit;
 import de.pangaea.metadataportal.config.Config;
 import de.pangaea.metadataportal.config.HarvesterConfig;
 import de.pangaea.metadataportal.processor.DocumentProcessor;
-import de.pangaea.metadataportal.processor.ElasticSearchConnection;
+import de.pangaea.metadataportal.processor.ElasticsearchConnection;
 import de.pangaea.metadataportal.processor.MetadataDocument;
 
 /**
@@ -74,7 +74,7 @@ public class Rebuilder extends Harvester {
   }
 
   @Override
-  public void open(ElasticSearchConnection es) throws Exception {
+  public void open(ElasticsearchConnection es) throws Exception {
     this.sourceIndex = iconfig.harvesterProperties.getProperty("targetIndex", DocumentProcessor.DEFAULT_INDEX);
     this.bulkSize = Integer.parseInt(iconfig.harvesterProperties.getProperty("bulkSize", Integer.toString(DocumentProcessor.DEFAULT_BULK_SIZE)));
     log.info("Opening Elasticsearch index '" + sourceIndex + "' for harvesting all documents of harvester '" + iconfig.id + "'...");
@@ -83,11 +83,6 @@ public class Rebuilder extends Harvester {
     
     this.client = es.client();
     super.open(es);
-  }
-  
-  @Override
-  public void close(boolean cleanShutdown) throws Exception {
-    super.close(cleanShutdown);
   }
   
   @Override
@@ -105,16 +100,17 @@ public class Rebuilder extends Harvester {
     if (client == null) throw new IllegalStateException("Rebuilder was not opened!");
     final TimeValue time = TimeValue.timeValueMinutes(10);
     SearchResponse scrollResp = client.prepareSearch(sourceIndex)
+      .setTypes(iconfig.parent.typeName)
       .addFields(iconfig.parent.fieldnameDatestamp, iconfig.parent.fieldnameXML, iconfig.parent.fieldnameSource)
       .setQuery(QueryBuilders.termQuery(iconfig.parent.fieldnameSource, iconfig.id))
-      .setFetchSource(true)
+      .setFetchSource(false)
       .setSize(bulkSize)
       .setSearchType(SearchType.SCAN).setScroll(time)
       .get();
     do {
       scrollResp = client.prepareSearchScroll(scrollResp.getScrollId())
-          .setScroll(time)
-          .get();
+        .setScroll(time)
+        .get();
       for (final SearchHit hit : scrollResp.getHits()) {
         if (!iconfig.id.equals(hit.field(iconfig.parent.fieldnameSource).getValue())) {
           log.warn("Document '" + hit.getId() + "' is from an invalid source, the harvester ID does not match! This may be caused by an invalid Elasticsearch mapping.");

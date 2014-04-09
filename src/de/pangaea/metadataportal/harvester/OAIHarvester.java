@@ -25,7 +25,7 @@ import java.util.Set;
 import org.apache.commons.digester.ExtendedBaseRules;
 
 import de.pangaea.metadataportal.config.HarvesterConfig;
-import de.pangaea.metadataportal.processor.ElasticSearchConnection;
+import de.pangaea.metadataportal.processor.ElasticsearchConnection;
 import de.pangaea.metadataportal.utils.ExtendedDigester;
 import de.pangaea.metadataportal.utils.ISODateFormatter;
 import de.pangaea.metadataportal.utils.PublicForDigesterUse;
@@ -61,7 +61,7 @@ public class OAIHarvester extends OAIHarvesterBase {
 
   // construtor
   @Override
-  public void open(ElasticSearchConnection es) throws Exception {
+  public void open(ElasticsearchConnection es) throws Exception {
     super.open(es);
     filterIncomingSets = sets != null && sets.size() > 1;
     

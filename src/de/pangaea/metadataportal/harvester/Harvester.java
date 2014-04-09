@@ -29,7 +29,7 @@ import org.xml.sax.SAXParseException;
 
 import de.pangaea.metadataportal.config.Config;
 import de.pangaea.metadataportal.config.HarvesterConfig;
-import de.pangaea.metadataportal.processor.ElasticSearchConnection;
+import de.pangaea.metadataportal.processor.ElasticsearchConnection;
 import de.pangaea.metadataportal.processor.CommitEvent;
 import de.pangaea.metadataportal.processor.DocumentProcessor;
 import de.pangaea.metadataportal.processor.BackgroundFailure;
@@ -121,7 +121,7 @@ public abstract class Harvester {
       harvesterList = Collections.singletonList(iconf);
     }
     
-    final ElasticSearchConnection es = new ElasticSearchConnection(conf);
+    final ElasticsearchConnection es = new ElasticsearchConnection(conf);
     try {
       for (HarvesterConfig siconf : harvesterList) {
         Class<? extends Harvester> hc = (harvesterClass == null) ? siconf.harvesterClass
@@ -219,7 +219,7 @@ public abstract class Harvester {
    *           if an exception occurs during opening (various types of
    *           exceptions can be thrown).
    */
-  public void open(ElasticSearchConnection es) throws Exception {
+  public void open(ElasticsearchConnection es) throws Exception {
     harvestMessageStep = Integer.parseInt(iconfig.harvesterProperties
         .getProperty("harvestMessageStep", "100"));
     if (harvestMessageStep <= 0) throw new IllegalArgumentException(
