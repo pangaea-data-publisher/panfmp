@@ -108,6 +108,8 @@ public class ElasticsearchHarvester extends SingleFileEntitiesHarvester {
         client.close();
       }
     } finally {
+      client = null;
+      es = null;
       super.close(cleanShutdown);
     }
   }
