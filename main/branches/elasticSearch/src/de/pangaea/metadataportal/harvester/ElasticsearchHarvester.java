@@ -101,9 +101,9 @@ public class ElasticsearchHarvester extends SingleFileEntitiesHarvester {
       query = QueryBuilders.matchAllQuery();
     }
         
-    final String esAddress = iconfig.harvesterProperties.getProperty("elasticsearchCluster");
+    final String esAddress = iconfig.harvesterProperties.getProperty("elasticsearchAddress");
     if (esAddress != null && !esAddress.isEmpty()) {
-      // TODO: really use ES settings from config?
+      // TODO: Really use ES settings from config!? => make configurable somehow
       final Settings settings = iconfig.parent.esSettings == null ? ImmutableSettings.Builder.EMPTY_SETTINGS : iconfig.parent.esSettings;
       final InetSocketTransportAddress addr = new InetSocketTransportAddress(HostAndPort.parse(esAddress, ElasticsearchConnection.ELASTICSEARCH_DEFAULT_PORT));
       

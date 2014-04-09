@@ -87,6 +87,12 @@ public class Rebuilder extends Harvester {
   }
   
   @Override
+  public void close(boolean cleanShutdown) throws Exception {
+    client = null;
+    super.close(cleanShutdown);
+  }
+
+  @Override
   public MetadataDocument createMetadataDocumentInstance() {
     return wrappedHarvester.createMetadataDocumentInstance();
   }
