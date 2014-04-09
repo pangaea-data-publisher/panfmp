@@ -24,6 +24,7 @@ import org.elasticsearch.client.Client;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHitField;
 
 import de.pangaea.metadataportal.config.Config;
 import de.pangaea.metadataportal.config.HarvesterConfig;
@@ -112,7 +113,8 @@ public class Rebuilder extends Harvester {
         .setScroll(time)
         .get();
       for (final SearchHit hit : scrollResp.getHits()) {
-        if (!iconfig.id.equals(hit.field(iconfig.parent.fieldnameSource).getValue())) {
+        SearchHitField fld = hit.field(iconfig.parent.fieldnameSource);
+        if (fld == null || !iconfig.id.equals(fld.getValue())) {
           log.warn("Document '" + hit.getId() + "' is from an invalid source, the harvester ID does not match! This may be caused by an invalid Elasticsearch mapping.");
           continue;
         }

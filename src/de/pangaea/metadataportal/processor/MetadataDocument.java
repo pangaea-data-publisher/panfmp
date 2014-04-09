@@ -44,7 +44,7 @@ import javax.xml.xpath.XPathExpressionException;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.search.SearchHit;
-
+import org.elasticsearch.search.SearchHitField;
 import org.w3c.dom.Document;
 import org.w3c.dom.DocumentFragment;
 import org.w3c.dom.Node;
@@ -99,17 +99,19 @@ public class MetadataDocument {
     // read identifier
     identifier = hit.getId();
     // try to read date stamp
-    final String v = hit.field(iconfig.parent.fieldnameDatestamp).getValue();
-    if (v != null) {
+    final SearchHitField dateFld = hit.field(iconfig.parent.fieldnameDatestamp);
+    final String datestampStr = (dateFld == null) ? null : dateFld.<String>getValue();
+    if (datestampStr != null) {
       try {
-        datestamp = XContentBuilder.defaultDatePrinter.parseDateTime(v).toDate();
+        datestamp = XContentBuilder.defaultDatePrinter.parseDateTime(datestampStr).toDate();
       } catch (IllegalArgumentException iae) {
         log.warn("Datestamp of document '" + identifier + "' is invalid: " + iae.getMessage() + " - Deleting datestamp.");
         datestamp = null;
       }
     }
     // read XML
-    final String xml = hit.field(iconfig.parent.fieldnameXML).getValue();
+    final SearchHitField xmlFld = hit.field(iconfig.parent.fieldnameXML);
+    final String xml = (xmlFld == null) ? null : xmlFld.<String>getValue();
     if (xml == null) {
       setFinalDOM(null);
     } else {
