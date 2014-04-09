@@ -72,28 +72,16 @@ public class ElasticsearchHarvester extends SingleFileEntitiesHarvester {
   public void open(ElasticsearchConnection es) throws Exception {
     super.open(es);
 
-    final String esAddress = iconfig.harvesterProperties.getProperty("elasticsearchCluster");
-    if (esAddress != null && !esAddress.isEmpty()) {
-      // TODO: really use ES settings from config?
-      final Settings settings = iconfig.parent.esSettings == null ? ImmutableSettings.Builder.EMPTY_SETTINGS : iconfig.parent.esSettings;
-      final InetSocketTransportAddress addr = new InetSocketTransportAddress(HostAndPort.parse(esAddress, ElasticsearchConnection.ELASTICSEARCH_DEFAULT_PORT));
-      log.info("Connecting to Elasticsearch nodes: " + addr);
-      if (log.isDebugEnabled()) {
-        log.debug("ES connection settings: " + settings.getAsMap());
-      }
-      this.client = new TransportClient(settings, false).addTransportAddress(addr);
-      this.closeClient = true;
-    } else {
-      this.closeClient = false;
-      this.client = es.client();
-    }
-        
     bulkSize = Integer.parseInt(iconfig.harvesterProperties.getProperty("bulkSize", Integer.toString(DocumentProcessor.DEFAULT_BULK_SIZE)));
     identifierPrefix = iconfig.harvesterProperties.getProperty("identifierPrefix", "");
     datestampField = iconfig.harvesterProperties.getProperty("datestampField", iconfig.parent.fieldnameDatestamp);
     xmlField = iconfig.harvesterProperties.getProperty("xmlField", iconfig.parent.fieldnameXML);
-    sourceIndexes = iconfig.harvesterProperties.getProperty("indexes", "").split("\\\\s*,\\s*");
-    types = iconfig.harvesterProperties.getProperty("types", iconfig.parent.typeName).split("\\\\s*,\\s*");
+    final String v = iconfig.harvesterProperties.getProperty("indexes");
+    if (v == null || v.isEmpty()) {
+      throw new IllegalArgumentException("Missing harvester property 'indexes'.");
+    }
+    sourceIndexes = v.split("\\s*,\\s*");
+    types = iconfig.harvesterProperties.getProperty("types", iconfig.parent.typeName).split("\\s*,\\s*");
 
     final String info, qstr = iconfig.harvesterProperties.getProperty("queryString"),
         jsonQuery = iconfig.harvesterProperties.getProperty("jsonQuery");
@@ -113,7 +101,23 @@ public class ElasticsearchHarvester extends SingleFileEntitiesHarvester {
       query = QueryBuilders.matchAllQuery();
     }
         
-    log.info("Connecting to Elasticsearch '" + client + "' for harvesting " + info + "...");
+    final String esAddress = iconfig.harvesterProperties.getProperty("elasticsearchCluster");
+    if (esAddress != null && !esAddress.isEmpty()) {
+      // TODO: really use ES settings from config?
+      final Settings settings = iconfig.parent.esSettings == null ? ImmutableSettings.Builder.EMPTY_SETTINGS : iconfig.parent.esSettings;
+      final InetSocketTransportAddress addr = new InetSocketTransportAddress(HostAndPort.parse(esAddress, ElasticsearchConnection.ELASTICSEARCH_DEFAULT_PORT));
+      
+      log.info("Connecting to external Elasticsearch node " + addr + " for harvesting " + info + "...");
+      if (log.isDebugEnabled()) {
+        log.debug("ES connection settings: " + settings.getAsMap());
+      }
+      this.client = new TransportClient(settings, false).addTransportAddress(addr);
+      this.closeClient = true;
+    } else {
+      log.info("Connecting to global Elasticsearch node for harvesting " + info + "...");
+      this.closeClient = false;
+      this.client = es.client();
+    }
   }
   
   @Override
