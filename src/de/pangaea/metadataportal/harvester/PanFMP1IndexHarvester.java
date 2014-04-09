@@ -60,16 +60,13 @@ import de.pangaea.metadataportal.processor.ElasticsearchConnection;
  * <p>
  * This harvester supports the following additional <b>harvester properties</b>:
  * <ul>
- * <li><code>indexDir</code>: file system directory with foreign index</li>
- * <li><code>query</code>: query that matches all documents to harvest (default:
- * all documents)</li>
- * <li><code>queryParserClass</code>: class name of {@link QueryParser} to use
- * for the above query string (default:
- * "org.apache.lucene.queryparser.classic.QueryParser")</li>
- * <li><code>defaultQueryParserOperator</code>: default operator when parsing
- * above query string (AND/OR) (default: "AND")</li>
- * <li><code>identifierPrefix</code>: This prefix is added in front of all
- * identifiers from the foreign index (default: "")</li>
+ * <li><code>indexDir</code>: file system directory with the old panFMP v1 index</li>
+ * <li><code>query</code>: query that matches all documents to harvest (default: all documents)</li>
+ * <li><code>analyzerClass</code>: class name of {@link Analyzer} to use for the above query string (default: "org.apache.lucene.analysis.standard.StandardAnalyzer")</li>
+ * <li><code>queryParserClass</code>: class name of {@link QueryParser} to use for the above query string (default: "org.apache.lucene.queryparser.classic.QueryParser")</li>
+ * <li><code>defaultQueryParserOperator</code>: default operator when parsing above query string (AND/OR) (default: "AND")</li>
+ * <li><code>identifierPrefix</code>: This prefix is added in front of all identifiers from the foreign index (default: "")</li>
+ * <li><code>luceneMatchVersion</code>: The {@link Version} constant passed to the analyzer and query parser of the foreign index (default is {@link Version#LUCENE_CURRENT})</li>
  * </ul>
  * 
  * @author Uwe Schindler
