@@ -51,6 +51,7 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
 import de.pangaea.metadataportal.Package;
+import de.pangaea.metadataportal.processor.ElasticsearchConnection;
 import de.pangaea.metadataportal.utils.BooleanParser;
 import de.pangaea.metadataportal.utils.ExtendedDigester;
 import de.pangaea.metadataportal.utils.HostAndPort;
@@ -427,7 +428,7 @@ public class Config {
   @PublicForDigesterUse
   @Deprecated
   public void addEsAddress(String v) {
-    esTransports.add(new InetSocketTransportAddress(HostAndPort.parse(v.trim(), 9300)));
+    esTransports.add(new InetSocketTransportAddress(HostAndPort.parse(v.trim(), ElasticsearchConnection.ELASTICSEARCH_DEFAULT_PORT)));
   }
   
   @PublicForDigesterUse
