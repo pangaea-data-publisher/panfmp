@@ -38,6 +38,8 @@ public class ElasticsearchConnection implements Closeable {
   
   private Client client;
 
+  public static final int ELASTICSEARCH_DEFAULT_PORT = 9300;
+
   public ElasticsearchConnection(Config config) {
     final Settings settings = config.esSettings == null ? ImmutableSettings.Builder.EMPTY_SETTINGS : config.esSettings;
     log.info("Connecting to Elasticsearch nodes: " + config.esTransports);

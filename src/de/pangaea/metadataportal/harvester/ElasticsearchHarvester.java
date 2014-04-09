@@ -17,7 +17,6 @@
 package de.pangaea.metadataportal.harvester;
 
 import java.io.StringReader;
-import java.text.ParseException;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Set;
@@ -27,7 +26,12 @@ import javax.xml.transform.stream.StreamSource;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.common.settings.ImmutableSettings;
+import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
@@ -36,7 +40,7 @@ import org.elasticsearch.search.SearchHitField;
 import de.pangaea.metadataportal.config.HarvesterConfig;
 import de.pangaea.metadataportal.processor.DocumentProcessor;
 import de.pangaea.metadataportal.processor.ElasticsearchConnection;
-import de.pangaea.metadataportal.utils.LenientDateParser;
+import de.pangaea.metadataportal.utils.HostAndPort;
 
 /**
  * TODO
@@ -56,7 +60,7 @@ public class ElasticsearchHarvester extends SingleFileEntitiesHarvester {
   private String identifierPrefix = "", xmlField = null, datestampField = null;
   private String[] sourceIndexes = null, types = null;
   private QueryBuilder query = null;
-  private ElasticsearchConnection es = null;
+  private boolean closeClient = false;
   private Client client = null;
   private int bulkSize = DocumentProcessor.DEFAULT_BULK_SIZE;
   
@@ -67,11 +71,23 @@ public class ElasticsearchHarvester extends SingleFileEntitiesHarvester {
   @Override
   public void open(ElasticsearchConnection es) throws Exception {
     super.open(es);
-    this.es = es;
-    
-    // TODO: use our own ES instance, make configureable!!!
-    client = es.client();
-    
+
+    final String esAddress = iconfig.harvesterProperties.getProperty("elasticsearchCluster");
+    if (esAddress != null && !esAddress.isEmpty()) {
+      // TODO: really use ES settings from config?
+      final Settings settings = iconfig.parent.esSettings == null ? ImmutableSettings.Builder.EMPTY_SETTINGS : iconfig.parent.esSettings;
+      final InetSocketTransportAddress addr = new InetSocketTransportAddress(HostAndPort.parse(esAddress, ElasticsearchConnection.ELASTICSEARCH_DEFAULT_PORT));
+      log.info("Connecting to Elasticsearch nodes: " + addr);
+      if (log.isDebugEnabled()) {
+        log.debug("ES connection settings: " + settings.getAsMap());
+      }
+      this.client = new TransportClient(settings, false).addTransportAddress(addr);
+      this.closeClient = true;
+    } else {
+      this.closeClient = false;
+      this.client = es.client();
+    }
+        
     bulkSize = Integer.parseInt(iconfig.harvesterProperties.getProperty("bulkSize", Integer.toString(DocumentProcessor.DEFAULT_BULK_SIZE)));
     identifierPrefix = iconfig.harvesterProperties.getProperty("identifierPrefix", "");
     datestampField = iconfig.harvesterProperties.getProperty("datestampField", iconfig.parent.fieldnameDatestamp);
@@ -104,13 +120,13 @@ public class ElasticsearchHarvester extends SingleFileEntitiesHarvester {
   public void close(boolean cleanShutdown) throws Exception {
     query = null;
     try {
-      if (es == null) {
+      if (closeClient && client != null) {
         // separate client, not the shared one!
         client.close();
       }
     } finally {
       client = null;
-      es = null;
+      closeClient = false;
       super.close(cleanShutdown);
     }
   }
@@ -146,9 +162,9 @@ public class ElasticsearchHarvester extends SingleFileEntitiesHarvester {
     final String datestampStr = (dateFld == null) ? null : dateFld.<String>getValue();
     if (datestampStr != null) {
       try {
-        datestamp = LenientDateParser.parseDate(datestampStr);
-      } catch (ParseException e) {
-        log.warn("Datestamp of document '" + identifier + "' is invalid: " + e.getMessage() + " - Deleting datestamp.");
+        datestamp = XContentBuilder.defaultDatePrinter.parseDateTime(datestampStr).toDate();
+      } catch (IllegalArgumentException iae) {
+        log.warn("Datestamp of document '" + identifier + "' is invalid: " + iae.getMessage() + " - Deleting datestamp.");
         datestamp = null;
       }
     }
@@ -171,7 +187,8 @@ public class ElasticsearchHarvester extends SingleFileEntitiesHarvester {
   @Override
   protected void enumerateValidHarvesterPropertyNames(Set<String> props) {
     super.enumerateValidHarvesterPropertyNames(props);
-    props.addAll(Arrays.<String>asList("datestampField", "xmlField", "indexes", "types", "identifierPrefix", "queryString", "jsonQuery"));
+    props.addAll(Arrays.<String>asList("elasticsearchCluster", "datestampField", "xmlField", "indexes",
+        "types", "identifierPrefix", "queryString", "jsonQuery"));
   }
   
 }
