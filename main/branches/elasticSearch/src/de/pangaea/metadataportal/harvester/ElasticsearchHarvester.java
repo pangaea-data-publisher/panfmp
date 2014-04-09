@@ -31,6 +31,7 @@ import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHitField;
 
 import de.pangaea.metadataportal.config.HarvesterConfig;
 import de.pangaea.metadataportal.processor.DocumentProcessor;
@@ -141,10 +142,11 @@ public class ElasticsearchHarvester extends SingleFileEntitiesHarvester {
     
     // try to read date stamp
     Date datestamp = null;
-    final String v = hit.field(datestampField).getValue();
-    if (v != null) {
+    final SearchHitField dateFld = hit.field(datestampField);
+    final String datestampStr = (dateFld == null) ? null : dateFld.<String>getValue();
+    if (datestampStr != null) {
       try {
-        datestamp = LenientDateParser.parseDate(v);
+        datestamp = LenientDateParser.parseDate(datestampStr);
       } catch (ParseException e) {
         log.warn("Datestamp of document '" + identifier + "' is invalid: " + e.getMessage() + " - Deleting datestamp.");
         datestamp = null;
@@ -153,7 +155,8 @@ public class ElasticsearchHarvester extends SingleFileEntitiesHarvester {
 
     if (isDocumentOutdated(datestamp)) {
       // read XML
-      final String xml = hit.field(xmlField).getValue();
+      final SearchHitField xmlFld = hit.field(xmlField);
+      final String xml = (xmlFld == null) ? null : xmlFld.<String>getValue();
       if (xml != null) {
         addDocument(identifier, datestamp, new StreamSource(new StringReader(xml), identifier));
       } else {
