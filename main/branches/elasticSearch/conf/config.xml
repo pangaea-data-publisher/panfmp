@@ -68,10 +68,20 @@
 				</xsl:choose>
 			</cfg:field-template>
 			<cfg:field-template name="coordinates" datatype="json" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
-				<coord>
-					<lat><xsl:value-of select="/dif:DIF/dif:Spatial_Coverage/dif:Southernmost_Latitude"/></lat>
-					<long><xsl:value-of select="/dif:DIF/dif:Spatial_Coverage/dif:Westernmost_Longitude"/></long>
-				</coord>
+        <xsl:for-each select="/dif:DIF/dif:Spatial_Coverage">
+          <xsl:if test="dif:Southernmost_Latitude and dif:Westernmost_Longitude">
+            <coord>
+              <lat><xsl:value-of select="dif:Southernmost_Latitude"/></lat>
+              <lon><xsl:value-of select="dif:Westernmost_Longitude"/></lon>
+            </coord>
+          </xsl:if>
+          <xsl:if test="dif:Northernmost_Latitude and dif:Easternmost_Longitude">
+            <coord>
+              <lat><xsl:value-of select="dif:Northernmost_Latitude"/></lat>
+              <lon><xsl:value-of select="dif:Easternmost_Longitude"/></lon>
+            </coord>
+          </xsl:if>
+        </xsl:for-each>
 			</cfg:field-template>
 		</cfg:fields>
 		<cfg:schema>
@@ -84,7 +94,7 @@
 			<!-- This is the type used by Elasticsearch to index the documents: -->
 			<cfg:typeName>doc</cfg:typeName>
 			<!-- Points to the Elasticsearch mapping file for the above type (can be URL, too): -->
-			<!-- <cfg:file>mapping.json</cfg:file> -->
+			<cfg:file>mapping.json</cfg:file>
 		</cfg:elasticsearchMapping>
 	</cfg:metadata>
 	<!-- Definition of metadata sources and their harvesters and properties -->
