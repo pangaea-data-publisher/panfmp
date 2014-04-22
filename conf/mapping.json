@@ -17,14 +17,18 @@
       "dataCenter" : {
         "type" : "string"
       },
-      "dataCenterFull" : {
+      "dataCenterFacet" : {
         "type" : "string",
         "index": "not_analyzed",
         "include_in_all": false
       },
       "investigator" : {
+        "type" : "string"
+      },
+      "investigatorFacet" : {
         "type" : "string",
-        "index": "not_analyzed"
+        "index": "not_analyzed",
+        "include_in_all": false
       },
       "maxDateTime" : {
         "type" : "date",
@@ -46,6 +50,9 @@
         "include_in_all": false
       },
       "method" : {
+        "type" : "string"
+      },
+      "methodFacet" : {
         "type" : "string",
         "index": "not_analyzed",
         "include_in_all": false
@@ -70,13 +77,17 @@
         "include_in_all": false
       },
       "parameter" : {
+        "type" : "string"
+      },
+      "parameterFacet" : {
         "type" : "string",
-        "index": "not_analyzed"
+        "index": "not_analyzed",
+        "include_in_all": false
       },
       "project" : {
         "type" : "string"
       },
-      "projectFull" : {
+      "projectFacet" : {
         "type" : "string",
         "index": "not_analyzed",
         "include_in_all": false
