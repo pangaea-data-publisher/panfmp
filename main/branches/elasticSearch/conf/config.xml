@@ -47,10 +47,21 @@
 			<cfg:field name="_all" datatype="string">/</cfg:field>
 			<cfg:field name="citation" datatype="string">/dif:DIF/dif:Data_Set_Citation|/dif:DIF/dif:Entry_Title|/dif:DIF/dif:Entry_ID</cfg:field>
 			<cfg:field name="investigator" datatype="string">/dif:DIF/dif:Personnel[contains(dif:Role,'nvestigat')]</cfg:field>
+			<cfg:field-template name="investigatorFacet" datatype="string" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+        <xsl:for-each select="/dif:DIF/dif:Personnel[contains(dif:Role,'nvestigat')]"><tok>
+          <xsl:value-of select="dif:Last_Name"/>
+          <xsl:for-each select="dif:First_Name">
+            <xsl:text>, </xsl:text>
+            <xsl:value-of select="."/>
+          </xsl:for-each>
+        </tok></xsl:for-each>
+      </cfg:field-template>
 			<cfg:field name="parameter" datatype="string">/dif:DIF/dif:Parameters</cfg:field>
+			<cfg:field name="parameterFacet" datatype="string">/dif:DIF/dif:Parameters/dif:Detailed_Variable</cfg:field>
 			<cfg:field name="method" datatype="string">/dif:DIF/dif:Sensor_Name</cfg:field>
+			<cfg:field name="methodFacet" datatype="string">/dif:DIF/dif:Sensor_Name/dif:Long_Name</cfg:field>
 			<cfg:field name="project" datatype="string">/dif:DIF/dif:Project</cfg:field>
-			<cfg:field name="projectFull" datatype="string">/dif:DIF/dif:Project/dif:Short_Name</cfg:field>
+			<cfg:field name="projectFacet" datatype="string">/dif:DIF/dif:Project/dif:Short_Name</cfg:field>
 			<cfg:field name="minLatitude" datatype="number">/dif:DIF/dif:Spatial_Coverage/dif:Southernmost_Latitude</cfg:field>
 			<cfg:field name="maxLatitude" datatype="number">/dif:DIF/dif:Spatial_Coverage/dif:Northernmost_Latitude</cfg:field>
 			<cfg:field name="minLongitude" datatype="number">/dif:DIF/dif:Spatial_Coverage/dif:Westernmost_Longitude</cfg:field>
@@ -60,7 +71,7 @@
 			<cfg:field name="minMonth" datatype="number">substring-before(substring-after($startdate,'-'),'-')</cfg:field>
 			<cfg:field name="maxMonth" datatype="number">substring-before(substring-after($enddate,'-'),'-')</cfg:field>
 			<cfg:field name="dataCenter" datatype="string">/dif:DIF/dif:Data_Center/dif:Data_Center_Name</cfg:field>
-			<cfg:field name="dataCenterFull" datatype="string">/dif:DIF/dif:Data_Center/dif:Data_Center_Name/dif:Short_Name</cfg:field>
+			<cfg:field name="dataCenterFacet" datatype="string">/dif:DIF/dif:Data_Center/dif:Data_Center_Name/dif:Short_Name</cfg:field>
 			<cfg:field-template name="boost" datatype="number" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
 				<xsl:choose>
 					<xsl:when test="/dif:DIF/dif:Parent_DIF">1.0</xsl:when>
