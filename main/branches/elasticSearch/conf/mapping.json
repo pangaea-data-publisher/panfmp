@@ -3,7 +3,8 @@
     "properties" : {
       "boost" : {
         "type" : "float",
-        "precision_step": 0,
+        "index" : "no",
+        "doc_values" : true,
         "include_in_all": false
       },
       "citation" : {
