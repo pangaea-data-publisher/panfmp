@@ -1,0 +1,29 @@
+panFMP - PANGAEA Framework for Metadata Portals 
+Copyright 2007-2009 panFMP Developers Team c/o Uwe Schindler
+
+http://www.panFMP.org/
+http://sourceforge.net/projects/panfmp/
+
+This product includes software developed by
+The Apache Software Foundation (http://www.apache.org/).
+
+This product includes "CyberNeko HTML Parser" developed by
+Andy Clark (http://sourceforge.net/projects/nekohtml).
+It is also licensed under the Apache 2.0 license.
+
+This product includes "Jetty Web Container" which is
+Copyright Mort Bay Consulting Pty Ltd unless otherwise
+noted (http://jetty.mortbay.org/). It is also licensed
+under the Apache 2.0 license.
+
+For linking between Jetty's internal logging and panFMP's
+Jakarta Commons Logging, SLF4J (http://www.slf4j.org/)
+is bundled, which is Copyright 2004-2008 QOS.ch. It is licensed
+under the MIT License, you can obtain a copy of the license at:
+http://www.slf4j.org/license.html
+
+The javax.servlet package used by Jetty/panFMP is copyright 
+Sun Microsystems, Inc and Apache Software Foundation. It is 
+distributed under the Common Development and Distribution License.
+You can obtain a copy of the license at:
+https://glassfish.dev.java.net/public/CDDLv1.0.html.

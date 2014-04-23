@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<deployment name="de.pangaea.metadataportal.search" xmlns="http://xml.apache.org/axis/wsdd/" xmlns:java="http://xml.apache.org/axis/wsdd/providers/java" xmlns:handler="http://xml.apache.org/axis/wsdd/providers/handler">
+
+ <globalConfiguration>
+   <parameter name="enableNamespacePrefixOptimization" value="true"/>
+   <parameter name="disablePrettyXML" value="true"/>
+   <parameter name="sendXsiTypes" value="true"/>
+   <parameter name="sendMultiRefs" value="true"/>
+   <parameter name="sendXMLDeclaration" value="true"/>
+   <parameter name="dotNetSoapEncFix" value="true"/>
+   <parameter name="syncConfiguration" value="false"/>
+   <parameter name="axis.servicesPath" value="/axis/"/>
+   <!-- Configuration of Lucene Indices: -->
+   <parameter name="de.pangaea.metadataportal.search.axis.indexConfigFile" value="../../repository/config.xml"/>
+ </globalConfiguration>
+
+ <handler type="java:org.apache.axis.handlers.http.URLMapper" name="URLMapper"/>
+
+ <service xmlns:ns1="urn:java:de.pangaea.metadataportal.search.axis.SearchService" name="Search" provider="java:RPC">
+  <parameter name="className" value="de.pangaea.metadataportal.search.axis.SearchServiceAxisImpl"/>
+  <parameter name="scope" value="Application"/>  
+  <namespace>urn:java:de.pangaea.metadataportal.search.axis.SearchService</namespace>
+  <beanMapping qname="ns1:SearchRequest" languageSpecificType="java:de.pangaea.metadataportal.search.axis.SearchRequest"/>
+  <beanMapping qname="ns1:SearchRequestRange" languageSpecificType="java:de.pangaea.metadataportal.search.axis.SearchRequestRange"/>
+  <beanMapping qname="ns1:SearchRequestQuery" languageSpecificType="java:de.pangaea.metadataportal.search.axis.SearchRequestQuery"/>
+  <beanMapping qname="ns1:SearchResponse" languageSpecificType="java:de.pangaea.metadataportal.search.axis.SearchResponse"/>
+  <beanMapping qname="ns1:SearchResponseItem" languageSpecificType="java:de.pangaea.metadataportal.search.axis.SearchResponseItem"/>
+ </service>
+
+ <transport name="http">
+  <parameter name="qs:list" value="org.apache.axis.transport.http.QSListHandler"/>
+  <parameter name="qs:method" value="org.apache.axis.transport.http.QSMethodHandler"/>
+  <parameter name="qs:wsdl" value="org.apache.axis.transport.http.QSWSDLHandler"/>
+  <requestFlow>
+   <handler type="URLMapper"/>
+  </requestFlow>
+ </transport>
+
+</deployment>
