@@ -1,0 +1,39 @@
+<project name="panFMP Examples" default="compile" basedir=".">
+
+	<!-- PROPERTIES -->
+	<property name="src" location="src"/>
+	<property name="webapp" location="webapp"/>
+
+	<!-- this property is normally set by the main build.xml, but for compilation from this dir, we hardcode it -->
+	<property name="root" location="../.."/>
+	
+	<property name="build" location="${webapp}/WEB-INF/classes"/>
+	<property name="debug" value="on"/>
+	
+	<!-- GLOBALS -->
+	<target name="init">
+	</target>
+		
+	<!-- BUILD TARGETS -->
+  	<path id="classpath">
+		<fileset dir="${root}">
+			<!-- for compiling we need just the "core" directory and the servlet API (from jetty) -->
+			<include name="libs/core/*.jar"/>
+			<include name="libs/jetty/servlet-api-*.jar"/>
+			<!-- this is only needed in source distributions, becuase panFMP's JAR file is in folder "dist" after compiling -->
+			<include name="dist/*.jar"/>
+		</fileset>
+	</path>
+
+	<target name="compile" depends="init">
+		<mkdir dir="${build}"/>
+		<javac srcdir="${src}" destdir="${build}" source="1.5" target="1.5" classpathref="classpath" deprecation="on" debug="${debug}">
+			<compilerarg line="-Xlint:unchecked"/>
+		</javac>
+	</target>
+
+	<!-- CLEANUP TARGET -->
+	<target name="clean">
+		<delete dir="${build}"/>
+	</target>
+</project>
