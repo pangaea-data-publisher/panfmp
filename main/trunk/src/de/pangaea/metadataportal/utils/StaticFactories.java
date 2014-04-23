@@ -16,46 +16,54 @@
 
 package de.pangaea.metadataportal.utils;
 
-import javax.xml.transform.sax.*;
-import javax.xml.parsers.*;
-import javax.xml.xpath.*;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParserFactory;
+import javax.xml.transform.sax.SAXTransformerFactory;
+import javax.xml.xpath.XPathFactory;
+
+import org.apache.xalan.xsltc.trax.TransformerFactoryImpl;
+import org.apache.xerces.jaxp.DocumentBuilderFactoryImpl;
+import org.apache.xerces.jaxp.SAXParserFactoryImpl;
+import org.apache.xpath.jaxp.XPathFactoryImpl;
 
 /**
  * Some pre-allocated XML factories.
+ * 
  * @author Uwe Schindler
  */
 public final class StaticFactories {
-
-	private static org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(StaticFactories.class);
-
-	private StaticFactories() {} // no instance
-
-	public static final XPathFactory xpathFactory;
-	public static final SAXTransformerFactory transFactory;
-	public static final SAXParserFactory saxFactory;
-	public static final DocumentBuilderFactory dbf;
-	public static final DocumentBuilder dombuilder;
-	static {
-		try {
-			xpathFactory=XPathFactory.newInstance();
-
-			saxFactory=SAXParserFactory.newInstance();
-			saxFactory.setNamespaceAware(true);
-			saxFactory.setValidating(false);
-
-			transFactory=(SAXTransformerFactory)SAXTransformerFactory.newInstance();
-			transFactory.setErrorListener(new LoggingErrorListener(transFactory.getClass()));
-
-			dbf=DocumentBuilderFactory.newInstance();
-			dbf.setNamespaceAware(true);
-			dbf.setCoalescing(true);
-			dbf.setExpandEntityReferences(true);
-			dbf.setIgnoringComments(true);
-			dbf.setIgnoringElementContentWhitespace(true);
-			dombuilder = dbf.newDocumentBuilder();
-		} catch (Exception e) {
-			throw new RuntimeException("Failed to initialize XML components",e);
-		}
-	}
-
+  
+  private StaticFactories() {} // no instance
+  
+  public static final XPathFactory xpathFactory;
+  public static final SAXTransformerFactory transFactory;
+  public static final SAXParserFactory saxFactory;
+  public static final DocumentBuilderFactory dbf;
+  public static final DocumentBuilder dombuilder;
+  static {
+    xpathFactory = new XPathFactoryImpl();
+    
+    saxFactory = new SAXParserFactoryImpl();
+    saxFactory.setNamespaceAware(true);
+    saxFactory.setValidating(false);
+    
+    transFactory = new TransformerFactoryImpl();
+    transFactory.setErrorListener(new LoggingErrorListener(transFactory
+        .getClass()));
+    
+    dbf = new DocumentBuilderFactoryImpl();
+    dbf.setNamespaceAware(true);
+    dbf.setCoalescing(true);
+    dbf.setExpandEntityReferences(true);
+    dbf.setIgnoringComments(true);
+    dbf.setIgnoringElementContentWhitespace(true);
+    try {
+      dombuilder = dbf.newDocumentBuilder();
+    } catch (ParserConfigurationException e) {
+      throw new Error("Failed to initialize DOM document builder", e);
+    }
+  }
+  
 }

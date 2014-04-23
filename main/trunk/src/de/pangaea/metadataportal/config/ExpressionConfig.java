@@ -16,42 +16,54 @@
 
 package de.pangaea.metadataportal.config;
 
-import de.pangaea.metadataportal.utils.*;
-import javax.xml.XMLConstants;
-import javax.xml.xpath.*;
-import javax.xml.transform.*;
+import javax.xml.transform.Templates;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathExpression;
+import javax.xml.xpath.XPathExpressionException;
+
+import de.pangaea.metadataportal.utils.ExtendedDigester;
+import de.pangaea.metadataportal.utils.PublicForDigesterUse;
+import de.pangaea.metadataportal.utils.StaticFactories;
 
 /**
- * Generic XPath/XSLT config element. This class contains a XPath expression <b>OR</b> a XSLT Template.
+ * Generic XPath/XSLT config element. This class contains a XPath expression
+ * <b>OR</b> a XSLT Template.
+ * 
  * @author Uwe Schindler
  */
 public class ExpressionConfig {
-
-	@PublicForDigesterUse
-	@Deprecated
-	public void setXPath(ExtendedDigester dig, String xpath) throws XPathExpressionException {
-		if ("".equals(xpath)) return; // Exception throws the Config.addField() method
-		XPath x=StaticFactories.xpathFactory.newXPath();
-		x.setXPathFunctionResolver(de.pangaea.metadataportal.harvester.XPathResolverImpl.getInstance());
-		x.setXPathVariableResolver(de.pangaea.metadataportal.harvester.XPathResolverImpl.getInstance());
-		// current namespace context with strict=true (display errors when namespace declaration is missing [non-standard!])
-		// and with possibly declared default namespace is redefined/deleted to "" (according to XSLT specification,
-		// where this is also mandatory).
-		x.setNamespaceContext(dig.getCurrentNamespaceContext(true,true));
-		xPathExpr=x.compile(xpath);
-		cachedXPath=xpath;
-	}
-
-	public void setTemplate(Templates xslt) {
-		this.xslt=xslt;
-	}
-
-	@Override
-	public String toString() {
-		return (xPathExpr==null) ? "?template?" : cachedXPath;
-	}
-
-	public XPathExpression xPathExpr=null;
-	public Templates xslt=null;
-	private String cachedXPath=null;
+  
+  @PublicForDigesterUse
+  @Deprecated
+  public void setXPath(ExtendedDigester dig, String xpath)
+      throws XPathExpressionException {
+    if ("".equals(xpath)) return; // Exception throws the Config.addField()
+                                  // method
+    XPath x = StaticFactories.xpathFactory.newXPath();
+    x.setXPathFunctionResolver(de.pangaea.metadataportal.processor.XPathResolverImpl
+        .getInstance());
+    x.setXPathVariableResolver(de.pangaea.metadataportal.processor.XPathResolverImpl
+        .getInstance());
+    // current namespace context with strict=true (display errors when namespace
+    // declaration is missing [non-standard!])
+    // and with possibly declared default namespace is redefined/deleted to ""
+    // (according to XSLT specification,
+    // where this is also mandatory).
+    x.setNamespaceContext(dig.getCurrentNamespaceContext(true, true));
+    xPathExpr = x.compile(xpath);
+    cachedXPath = xpath;
+  }
+  
+  public void setTemplate(Templates xslt) {
+    this.xslt = xslt;
+  }
+  
+  @Override
+  public String toString() {
+    return (xPathExpr == null) ? "?template?" : cachedXPath;
+  }
+  
+  public XPathExpression xPathExpr = null;
+  public Templates xslt = null;
+  private String cachedXPath = null;
 }

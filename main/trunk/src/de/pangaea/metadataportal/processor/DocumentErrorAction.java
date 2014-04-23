@@ -14,26 +14,13 @@
  *   limitations under the License.
  */
 
-package de.pangaea.metadataportal.harvester;
+package de.pangaea.metadataportal.processor;
 
 /**
- * Thrown when HTTP server responds with
- * {@link java.net.HttpURLConnection#HTTP_UNAVAILABLE}.
+ * Enumeration that specifies what action should be taken on a document error.
  * 
  * @author Uwe Schindler
  */
-@SuppressWarnings("serial")
-public class RetryAfterIOException extends java.io.IOException {
-  
-  public RetryAfterIOException(int retryAfter, java.io.IOException ioe) {
-    super();
-    initCause(ioe);
-    this.retryAfter = retryAfter;
-  }
-  
-  public int getRetryAfter() {
-    return retryAfter;
-  }
-  
-  private int retryAfter;
-}
+public enum DocumentErrorAction {
+  STOP, IGNOREDOCUMENT, DELETEDOCUMENT
+};

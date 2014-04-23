@@ -16,89 +16,123 @@
 
 package de.pangaea.metadataportal.harvester;
 
-import de.pangaea.metadataportal.config.*;
-import de.pangaea.metadataportal.utils.*;
-import org.apache.lucene.document.*;
-import org.apache.lucene.index.*;
-import java.util.*;
+import java.util.Set;
+
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.search.SearchType;
+import org.elasticsearch.client.Client;
+import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHitField;
+
+import de.pangaea.metadataportal.config.Config;
+import de.pangaea.metadataportal.config.HarvesterConfig;
+import de.pangaea.metadataportal.processor.DocumentProcessor;
+import de.pangaea.metadataportal.processor.ElasticsearchConnection;
+import de.pangaea.metadataportal.processor.MetadataDocument;
 
 /**
- * Index rebuilder implemented as harvester that reads all documents from an index and pushes them back into the index.
- * Only the XML blobs and control fields are read, all other info is rebuild like in the normal harvester.
- * This helps during restructuring the index fields. This can be done without re-harvesting from the original metadata providers.
- * This class is called from command line or using {@link Harvester#runHarvester} with this class as harvester class parameter.
+ * Index rebuilder implemented as harvester that reads all documents from an
+ * index and pushes them back into the index. Only the XML blobs and control
+ * fields are read, all other info is rebuild like in the normal harvester. This
+ * helps during restructuring the index fields. This can be done without
+ * re-harvesting from the original metadata providers. This class is called from
+ * command line or using {@link Harvester#runHarvester} with this class as
+ * harvester class parameter.
+ * 
  * @author Uwe Schindler
  */
 public class Rebuilder extends Harvester {
+  
+  private static final org.apache.commons.logging.Log staticLog = org.apache.commons.logging.LogFactory
+      .getLog(Rebuilder.class);
+  
+  // main-Methode
+  public static void main(String[] args) {
+    if (args.length < 1 || args.length > 2) {
+      System.err.println("Command line: java " + Rebuilder.class.getName()
+          + " config.xml [index-name|*]");
+      return;
+    }
+    
+    try {
+      Config conf = new Config(args[0]);
+      runHarvester(conf, (args.length == 2) ? args[1] : "*", Rebuilder.class);
+    } catch (Exception e) {
+      staticLog.fatal("Rebuilder general error:", e);
+    }
+  }
+  
+  // harvester interface
+  private Harvester wrappedHarvester = null;
+  private Client client = null;
+  private String sourceIndex = null;
+  private int bulkSize = DocumentProcessor.DEFAULT_BULK_SIZE;
+  
+  public Rebuilder(HarvesterConfig iconfig) {
+    super(iconfig);
+  }
 
-	private static org.apache.commons.logging.Log staticLog = org.apache.commons.logging.LogFactory.getLog(Rebuilder.class);
+  @Override
+  public void open(ElasticsearchConnection es) throws Exception {
+    this.sourceIndex = iconfig.properties.getProperty("targetIndex", DocumentProcessor.DEFAULT_INDEX);
+    this.bulkSize = Integer.parseInt(iconfig.properties.getProperty("bulkSize", Integer.toString(DocumentProcessor.DEFAULT_BULK_SIZE)));
+    log.info("Opening Elasticsearch index '" + sourceIndex + "' for harvesting all documents of harvester '" + iconfig.id + "'...");
 
-	// main-Methode
-	public static void main(String[] args) {
-		if (args.length<1 || args.length>2) {
-			System.err.println("Command line: java "+Rebuilder.class.getName()+" config.xml [index-name|*]");
-			return;
-		}
+    this.wrappedHarvester = iconfig.harvesterClass.getConstructor(HarvesterConfig.class).newInstance(iconfig);
+    
+    this.client = es.client();
+    super.open(es);
+  }
+  
+  @Override
+  public void close(boolean cleanShutdown) throws Exception {
+    client = null;
+    super.close(cleanShutdown);
+  }
 
-		try {
-			Config conf=new Config(args[0],Config.ConfigMode.HARVESTING);
-			runHarvester(conf,(args.length==2)?args[1]:"*",Rebuilder.class);
-		} catch (Exception e) {
-			staticLog.fatal("Rebuilder general error:",e);
-		}
-	}
-
-	// harvester interface
-	private IndexReader reader=null;
-	private String savedAutoOptimize=null;
-
-	@Override
-	public void open(SingleIndexConfig iconfig) throws Exception {
-		log.info("Opening index \""+iconfig.id+"\" for harvesting all documents...");
-		reader = iconfig.newIndexReader();
-		// enable optimization
-		savedAutoOptimize=(String)iconfig.harvesterProperties.setProperty("autoOptimize","true");
-		super.open(iconfig);
-	}
-
-	@Override
-	public void close(boolean cleanShutdown) throws Exception {
-		if (reader!=null) reader.close();
-		reader=null;
-		super.close(cleanShutdown);
-		if (savedAutoOptimize==null) {
-			iconfig.harvesterProperties.remove("autoOptimize");
-		} else {
-			iconfig.harvesterProperties.setProperty("autoOptimize",savedAutoOptimize);
-		}
-	}
-
-	@Override
-	protected MetadataDocument createMetadataDocumentInstance() {
-		throw new UnsupportedOperationException("The rebuilder uses an internal mechanism to generate metadata documents.");
-	}
-
-	@Override
-	public void harvest() throws Exception {
-		if (reader==null) throw new IllegalStateException("Rebuilder was not opened!");
-		for (int i=0, c=reader.maxDoc(); i<c; i++) {
-			if (!reader.isDeleted(i)) {
-				MetadataDocument mdoc=MetadataDocument.createInstanceFromLucene(iconfig,reader.document(i));
-				if (mdoc.getIdentifier()==null) {
-					log.error(
-						"Cannot process or delete a document without an identifier! "+
-						"It will stay forever in index and pollute search results. "+
-						"You should drop index and re-harvest!"
-					);
-					continue;
-				}
-				if (mdoc.getXML()==null) {
-					mdoc.setDeleted(true);
-					log.warn("Document '"+mdoc.getIdentifier()+"' contains no XML code. It will be deleted!");
-				}
-				addDocument(mdoc);
-			}
-		}
-	}
-
+  @Override
+  public MetadataDocument createMetadataDocumentInstance() {
+    return wrappedHarvester.createMetadataDocumentInstance();
+  }
+  
+  @Override
+  protected void enumerateValidHarvesterPropertyNames(Set<String> props) {
+    props.addAll(wrappedHarvester.getValidHarvesterPropertyNames());
+  }
+  
+  @Override
+  public void harvest() throws Exception {
+    if (client == null) throw new IllegalStateException("Rebuilder was not opened!");
+    final TimeValue time = TimeValue.timeValueMinutes(10);
+    SearchResponse scrollResp = client.prepareSearch(sourceIndex)
+      .setTypes(iconfig.parent.typeName)
+      .addFields(iconfig.parent.fieldnameDatestamp, iconfig.parent.fieldnameXML, iconfig.parent.fieldnameSource)
+      .setQuery(QueryBuilders.termQuery(iconfig.parent.fieldnameSource, iconfig.id))
+      .setFetchSource(false)
+      .setSize(bulkSize)
+      .setSearchType(SearchType.SCAN).setScroll(time)
+      .get();
+    do {
+      scrollResp = client.prepareSearchScroll(scrollResp.getScrollId())
+        .setScroll(time)
+        .get();
+      for (final SearchHit hit : scrollResp.getHits()) {
+        SearchHitField fld = hit.field(iconfig.parent.fieldnameSource);
+        if (fld == null || !iconfig.id.equals(fld.getValue())) {
+          log.warn("Document '" + hit.getId() + "' is from an invalid source, the harvester ID does not match! This may be caused by an invalid Elasticsearch mapping.");
+          continue;
+        }
+        MetadataDocument mdoc = createMetadataDocumentInstance();
+        mdoc.loadFromElasticSearchHit(hit);
+        if (mdoc.getXML() == null) {
+          mdoc.setDeleted(true);
+          log.warn("Document '" + mdoc.getIdentifier() + "' contains no XML code. It will be deleted!");
+        }
+        addDocument(mdoc);
+      }
+    } while (scrollResp.getHits().getHits().length > 0);
+  }
+  
 }

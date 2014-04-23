@@ -14,26 +14,20 @@
  *   limitations under the License.
  */
 
-package de.pangaea.metadataportal.harvester;
+package de.pangaea.metadataportal.processor;
 
 /**
- * Thrown when HTTP server responds with
- * {@link java.net.HttpURLConnection#HTTP_UNAVAILABLE}.
+ * {@link DocumentProcessor} throws this exception, if an error occurs in the
+ * processing threads.
  * 
  * @author Uwe Schindler
  */
 @SuppressWarnings("serial")
-public class RetryAfterIOException extends java.io.IOException {
+public class BackgroundFailure extends Exception {
   
-  public RetryAfterIOException(int retryAfter, java.io.IOException ioe) {
+  public BackgroundFailure(Exception e) {
     super();
-    initCause(ioe);
-    this.retryAfter = retryAfter;
+    initCause(e);
   }
   
-  public int getRetryAfter() {
-    return retryAfter;
-  }
-  
-  private int retryAfter;
 }
