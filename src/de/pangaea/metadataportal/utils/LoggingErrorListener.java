@@ -16,41 +16,47 @@
 
 package de.pangaea.metadataportal.utils;
 
-import javax.xml.transform.*;
+import javax.xml.transform.ErrorListener;
+import javax.xml.transform.TransformerException;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 /**
- * Helper class to correctly log {@link TransformerException}s with Commons Logging.
+ * Helper class to correctly log {@link TransformerException}s with Commons
+ * Logging.
+ * 
  * @author Uwe Schindler
  */
 public final class LoggingErrorListener implements ErrorListener {
-
-	/** A error listener using the supplied Commons Logging instance as log target. */
-	public LoggingErrorListener(final Log log) {
-		this.log=log;
-	}
-
-	/** A error listener using the supplied class name as log target. */
-	public LoggingErrorListener(final Class c) {
-		this(LogFactory.getLog(c));
-	}
-
-	/** Just throws <code>e</code>. */
-	public void error(TransformerException e) throws TransformerException {
-		throw e;
-	}
-
-	/** Just throws <code>e</code>. */
-	public void fatalError(TransformerException e) throws TransformerException {
-		throw e;
-	}
-
-	/** Logs message and location with WARN method. */
-	public void warning(TransformerException e) throws TransformerException {
-		log.warn(e.getMessageAndLocation());
-	}
-
-	private Log log;
-
+  
+  /**
+   * A error listener using the supplied Commons Logging instance as log target.
+   */
+  public LoggingErrorListener(final Log log) {
+    this.log = log;
+  }
+  
+  /** A error listener using the supplied class name as log target. */
+  public LoggingErrorListener(final Class<?> c) {
+    this(LogFactory.getLog(c));
+  }
+  
+  /** Just throws <code>e</code>. */
+  public void error(TransformerException e) throws TransformerException {
+    throw e;
+  }
+  
+  /** Just throws <code>e</code>. */
+  public void fatalError(TransformerException e) throws TransformerException {
+    throw e;
+  }
+  
+  /** Logs message and location with WARN method. */
+  public void warning(TransformerException e) throws TransformerException {
+    log.warn(e.getMessageAndLocation());
+  }
+  
+  private Log log;
+  
 }

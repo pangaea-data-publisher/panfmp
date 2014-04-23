@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<cfg:config xmlns:cfg="urn:java:de.pangaea.metadataportal.config.Config" xmlns:dp="urn:java:de.pangaea.metadataportal.processor.DocumentProcessor">
+	<!-- Definition of the metadata schema and fields for harvesting: -->
+	<cfg:metadata xmlns:dif="http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/">
+		<!--
+			Variables are evaluated at beginning of harvesting process and can be used in all filters, fields, field-templates.
+			The processor also has some internal variables and functions in its namespace, that can be used:
+			- $dp:harvesterIdentifier: the ID of the current harvester
+			- $dp:docIdentifier: the identifier of the harvested document
+			- $dp:docDatestamp: the datestamp of the harvested document (if available), else ""
+		-->
+		<cfg:variables>
+			<cfg:variable name="startdate">/dif:DIF/dif:Temporal_Coverage/dif:Start_Date</cfg:variable>
+			<cfg:variable name="enddate">/dif:DIF/dif:Temporal_Coverage/dif:Stop_Date</cfg:variable>
+		</cfg:variables>
+		<!--
+			Each harvested document goes through filter steps:
+			The default is to accept all documents. You can give boolean XPath queries, that filter out documents.
+		-->
+		<cfg:filters default="accept">
+			<!-- we want to remove all documents harvested with harvester 'pangaea-carboocean' that are from project 'JGOFS' -->
+			<cfg:deny>$dp:harvesterIdentifier='pangaea-carboocean' and /dif:DIF/dif:Project/dif:Short_Name[contains(.,'JGOFS')]</cfg:deny>
+			<!-- we want to remove all documents with wrong namespace -->
+			<cfg:deny>namespace-uri(/*)!='http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/'</cfg:deny>
+		</cfg:filters>
+		<!--
+			Field definitions:
+			You can declare fields using <cfg:field> or <cfg:field-template> (for the latter see the example in variables-section).
+			Each field has a name and some properties for Lucene:
+			- datatype: string, number, dateTime, xml (field is stored as XML in index, ideal for field templates),
+			  xhtml (only works with field-templates because it needs a XSL-template
+			  that outputs XHTML. Can be used to generate thumbnail information for search results in HTML form),
+			  json (JSON from an XSL template).
+			  The field template should not declare the XHTML namespace.
+		-->
+		<cfg:fields>
+			<!--
+				special purpose fields. Those are mainly mappings of predefined.
+				Those fields are required to reprocess stuff (e.g. reindex).
+				panFMP will update the mappings of those fields automatically,
+				no need to specify them in the mapping.
+			-->
+			<cfg:xml-field name="xml"/>
+			<cfg:source-field name="internal-source"/>
+			<cfg:datestamp-field name="internal-datestamp"/>
+			<!-- custom fields defined by XPath or XSL Templates -->
+			<cfg:field name="_all" datatype="string">/</cfg:field>
+			<cfg:field name="citation" datatype="string">/dif:DIF/dif:Data_Set_Citation|/dif:DIF/dif:Entry_Title|/dif:DIF/dif:Entry_ID</cfg:field>
+			<cfg:field name="investigator" datatype="string">/dif:DIF/dif:Personnel[contains(dif:Role,'nvestigat')]</cfg:field>
+			<cfg:field-template name="investigatorFacet" datatype="string" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+        <xsl:for-each select="/dif:DIF/dif:Personnel[contains(dif:Role,'nvestigat')]"><tok>
+          <xsl:value-of select="dif:Last_Name"/>
+          <xsl:for-each select="dif:First_Name">
+            <xsl:text>, </xsl:text>
+            <xsl:value-of select="."/>
+          </xsl:for-each>
+        </tok></xsl:for-each>
+      </cfg:field-template>
+			<cfg:field name="parameter" datatype="string">/dif:DIF/dif:Parameters</cfg:field>
+			<cfg:field name="parameterFacet" datatype="string">/dif:DIF/dif:Parameters/dif:Detailed_Variable</cfg:field>
+			<cfg:field name="method" datatype="string">/dif:DIF/dif:Sensor_Name</cfg:field>
+			<cfg:field name="methodFacet" datatype="string">/dif:DIF/dif:Sensor_Name/dif:Long_Name</cfg:field>
+			<cfg:field name="project" datatype="string">/dif:DIF/dif:Project</cfg:field>
+			<cfg:field name="projectFacet" datatype="string">/dif:DIF/dif:Project/dif:Short_Name</cfg:field>
+			<cfg:field name="minLatitude" datatype="number">/dif:DIF/dif:Spatial_Coverage/dif:Southernmost_Latitude</cfg:field>
+			<cfg:field name="maxLatitude" datatype="number">/dif:DIF/dif:Spatial_Coverage/dif:Northernmost_Latitude</cfg:field>
+			<cfg:field name="minLongitude" datatype="number">/dif:DIF/dif:Spatial_Coverage/dif:Westernmost_Longitude</cfg:field>
+			<cfg:field name="maxLongitude" datatype="number">/dif:DIF/dif:Spatial_Coverage/dif:Easternmost_Longitude</cfg:field>
+			<cfg:field name="minDateTime" datatype="dateTime" default="1900-01-01T00:00:00">$startdate</cfg:field>
+			<cfg:field name="maxDateTime" datatype="dateTime" default="2038-12-31T23:59:59">$enddate</cfg:field>
+			<cfg:field name="minMonth" datatype="number">substring-before(substring-after($startdate,'-'),'-')</cfg:field>
+			<cfg:field name="maxMonth" datatype="number">substring-before(substring-after($enddate,'-'),'-')</cfg:field>
+			<cfg:field name="dataCenter" datatype="string">/dif:DIF/dif:Data_Center/dif:Data_Center_Name</cfg:field>
+			<cfg:field name="dataCenterFacet" datatype="string">/dif:DIF/dif:Data_Center/dif:Data_Center_Name/dif:Short_Name</cfg:field>
+			<cfg:field-template name="boost" datatype="number" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+				<xsl:choose>
+					<xsl:when test="/dif:DIF/dif:Parent_DIF">1.0</xsl:when>
+					<xsl:otherwise>5.0</xsl:otherwise>
+				</xsl:choose>
+			</cfg:field-template>
+			<cfg:field-template name="coordinates" datatype="json" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+        <xsl:for-each select="/dif:DIF/dif:Spatial_Coverage">
+          <xsl:if test="dif:Southernmost_Latitude and dif:Westernmost_Longitude">
+            <coord>
+              <lat><xsl:value-of select="dif:Southernmost_Latitude"/></lat>
+              <lon><xsl:value-of select="dif:Westernmost_Longitude"/></lon>
+            </coord>
+          </xsl:if>
+          <xsl:if test="dif:Northernmost_Latitude and dif:Easternmost_Longitude">
+            <coord>
+              <lat><xsl:value-of select="dif:Northernmost_Latitude"/></lat>
+              <lon><xsl:value-of select="dif:Easternmost_Longitude"/></lon>
+            </coord>
+          </xsl:if>
+        </xsl:for-each>
+			</cfg:field-template>
+		</cfg:fields>
+		<cfg:schema>
+			<cfg:url>http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/dif_v9.4.xsd</cfg:url>
+			<cfg:haltOnError>false</cfg:haltOnError>
+			<!-- if the validator augments the source document (e.g., adds default attributes), use this as basis for indexing? -->
+			<cfg:augmentation>false</cfg:augmentation>
+		</cfg:schema>
+		<cfg:elasticsearchMapping>
+			<!-- This is the type used by Elasticsearch to index the documents: -->
+			<cfg:typeName>doc</cfg:typeName>
+			<!-- Points to the Elasticsearch mapping file for the above type (can be URL, too): -->
+			<cfg:file>mapping.json</cfg:file>
+		</cfg:elasticsearchMapping>
+	</cfg:metadata>
+	<!-- Definition of metadata sources and their harvesters and properties -->
+	<cfg:sources>
+		<!-- global harvester properties are inherited to each harvester, so only give properties available to all harvester types -->
+		<cfg:globalProperties>
+			<cfg:targetIndex>panfmp</cfg:targetIndex>
+			<cfg:numThreads>1</cfg:numThreads>
+			<cfg:maxQueue>100</cfg:maxQueue>
+			<cfg:bulkSize>100</cfg:bulkSize>
+			<cfg:conversionErrorAction>STOP</cfg:conversionErrorAction>
+		</cfg:globalProperties>
+		<!--  each harvester is listed here -->
+		<cfg:harvester id="pangaea-carboocean">
+			<cfg:class>de.pangaea.metadataportal.harvester.OAIHarvester</cfg:class>
+			<cfg:properties>
+				<cfg:baseUrl>http://ws.pangaea.de/oai/</cfg:baseUrl>
+				<cfg:metadataPrefix>dif</cfg:metadataPrefix>
+				<cfg:setSpec>CARBOOCEAN</cfg:setSpec>
+				<cfg:validate>false</cfg:validate>
+			</cfg:properties>
+		</cfg:harvester>
+		<cfg:harvester id="badc">
+			<cfg:class>de.pangaea.metadataportal.harvester.OAIHarvester</cfg:class>
+			<cfg:properties>
+				<cfg:baseUrl>http://badc.nerc.ac.uk/badc_oai/provider</cfg:baseUrl>
+				<cfg:metadataPrefix>dif</cfg:metadataPrefix>
+			</cfg:properties>
+			<!--
+			Here are two possibilities to do a inline transformation of harvested metadata (just as example):
+			a) reference to external stylesheet (relative to this config file):
+				<cfg:transform src="./ns-convert.xslt"/>
+			b) inline stylesheet. Please note, previously declared namespace prefixes are reported to the stylesheet, so you may remove them with "exclude-result-prefixes"!
+			For example, this one converts the harvested documents namespace, which may be different or missing in case of old DIFs to the correct new namespace (you may also use xinclude to include it):
+				<cfg:transform>
+					<xsl:stylesheet version="1.0" xmlns:dif="http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" exclude-result-prefixes="xsl cfg ib" >
+						<xsl:template match="/*">
+							<dif:DIF xsi:schemaLocation="http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/ http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/dif_v9.4.xsd">
+								<xsl:apply-templates />
+							</dif:DIF>
+						</xsl:template>
+						<xsl:template match="*">
+							<xsl:element namespace="http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/" name="{concat('dif:',local-name())}">
+								<xsl:copy-of select="@*" />
+								<xsl:apply-templates />
+							</xsl:element>
+						</xsl:template>
+					</xsl:stylesheet>
+				</cfg:transform>
+			If you want to use one of the internal variables of DocumentProcessor (the "$dp:XXXX"-ones),
+			declare them as XSL parameters for the stylesheet (possible in both inline and external stylesheets). They are automatically set as
+			input parameters to the transformation. Additional declared XSL parameters can simply be passed to the XSL as string attributes of the <cfg:transform/> element.
+			-->
+		</cfg:harvester>
+		<cfg:harvester id="copepod">
+			<cfg:class>de.pangaea.metadataportal.harvester.WebCrawlingHarvester</cfg:class>
+			<cfg:properties>
+				<cfg:baseUrl>http://www.st.nmfs.noaa.gov/plankton/content/xml_src/</cfg:baseUrl>
+				<cfg:filenameFilter>.*\.xml</cfg:filenameFilter>
+				<cfg:validate>true</cfg:validate>
+			</cfg:properties>
+		</cfg:harvester>
+	</cfg:sources>
+	<cfg:elasticsearchCluster>
+		<!-- multiple addresses allowed, just repeat. Uses default port of 9300 if omitted, otherwise give the port number separated by colon: -->
+		<cfg:address>localhost</cfg:address>
+		<cfg:settings>
+			<cfg:client.transport.ignore_cluster_name>true</cfg:client.transport.ignore_cluster_name>
+			<cfg:client.transport.sniff>true</cfg:client.transport.sniff>
+		</cfg:settings>
+	</cfg:elasticsearchCluster>
+</cfg:config>

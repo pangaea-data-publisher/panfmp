@@ -16,34 +16,41 @@
 
 package de.pangaea.metadataportal.config;
 
-import de.pangaea.metadataportal.utils.*;
-import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
 
+import de.pangaea.metadataportal.utils.ExtendedDigester;
+import de.pangaea.metadataportal.utils.PublicForDigesterUse;
+import de.pangaea.metadataportal.utils.QNameParser;
+
 /**
- * A config element that supplies a variable like variables in XPath.
- * Variables can later be used in {@link FilterConfig}, {@link FieldConfig}, or document boosts
- * as XPath expression components.
+ * A config element that supplies a variable like variables in XPath. Variables
+ * can later be used in {@link FilterConfig}, {@link FieldConfig}, or document
+ * boosts as XPath expression components.
+ * 
  * @author Uwe Schindler
  */
 public class VariableConfig extends ExpressionConfig {
-
-	@PublicForDigesterUse
-	@Deprecated
-	public void setName(ExtendedDigester dig, String nameStr) {
-		if ("".equals(nameStr)) return; // Exception throws the Config.addVariable() method
-		// current namespace context with strict=true (display errors when namespace declaration is missing [non-standard!])
-		// and with possibly declared default namespace is redefined/deleted to "" (according to XSLT specification,
-		// where this is also mandatory).
-		this.name=QNameParser.parseLexicalQName(nameStr,dig.getCurrentNamespaceContext(true,true));
-	}
-
-	@Override
-	public String toString() {
-		return new StringBuilder().append(name).append(" (").append(super.toString()).append(')').toString();
-	}
-
-	// members "the configuration"
-	public QName name=null;
+  
+  @PublicForDigesterUse
+  @Deprecated
+  public void setName(ExtendedDigester dig, String nameStr) {
+    if ("".equals(nameStr)) return; // Exception throws the Config.addVariable()
+                                    // method
+    // current namespace context with strict=true (display errors when namespace
+    // declaration is missing [non-standard!])
+    // and with possibly declared default namespace is redefined/deleted to ""
+    // (according to XSLT specification,
+    // where this is also mandatory).
+    this.name = QNameParser.parseLexicalQName(nameStr,
+        dig.getCurrentNamespaceContext(true, true));
+  }
+  
+  @Override
+  public String toString() {
+    return new StringBuilder().append(name).append(" (")
+        .append(super.toString()).append(')').toString();
+  }
+  
+  // members "the configuration"
+  public QName name = null;
 }
-

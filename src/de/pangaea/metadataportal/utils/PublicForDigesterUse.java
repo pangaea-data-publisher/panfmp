@@ -16,16 +16,19 @@
 
 package de.pangaea.metadataportal.utils;
 
-import java.lang.annotation.*;
+import java.lang.annotation.Documented;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
 /**
- * This annotation is used to mark methods/classes that are only
- * declared <code>public</code> for use by <code>Digester</code> but are not
- * intended to be public. So <b>please do not use them in your Java code!</b>
- * The annotation should always be used together with <code>@Deprecated</code>
- * to warn the user if it is used in code outside of Digester.
+ * This annotation is used to mark methods/classes that are only declared
+ * <code>public</code> for use by <code>Digester</code> but are not intended to
+ * be public. So <b>please do not use them in your Java code!</b> The annotation
+ * should always be used together with <code>@Deprecated</code> to warn the user
+ * if it is used in code outside of Digester.
+ * 
  * @author Uwe Schindler
  */
 @Documented
-@Retention(value=RetentionPolicy.RUNTIME)
+@Retention(value = RetentionPolicy.RUNTIME)
 public @interface PublicForDigesterUse {}

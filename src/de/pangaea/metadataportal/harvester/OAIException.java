@@ -17,27 +17,31 @@
 package de.pangaea.metadataportal.harvester;
 
 /**
- * This exception is thrown on an OAI protocol error, which is triggered by an <code>&lt;error&gt;</code> response from the repository.
+ * This exception is thrown on an OAI protocol error, which is triggered by an
+ * <code>&lt;error&gt;</code> response from the repository.
+ * 
  * @author Uwe Schindler
  */
+@SuppressWarnings("serial")
 public class OAIException extends java.lang.Exception {
-
-	public OAIException(String code, String message) {
-		super("".equals(message)?null:message);
-		this.code=("".equals(code)?null:code);
-	}
-
-	@Override
-	public String getMessage() {
-		final StringBuilder sb=new StringBuilder((code==null)?"default":code);
-		final String s=super.getMessage();
-		if (s!=null) sb.append(": ").append(s);
-		return sb.toString();
-	}
-
-	public String getCode() {
-		return code;
-	}
-
-	private String code;
+  
+  public OAIException(String code, String message) {
+    super("".equals(message) ? null : message);
+    this.code = ("".equals(code) ? null : code);
+  }
+  
+  @Override
+  public String getMessage() {
+    final StringBuilder sb = new StringBuilder((code == null) ? "default"
+        : code);
+    final String s = super.getMessage();
+    if (s != null) sb.append(": ").append(s);
+    return sb.toString();
+  }
+  
+  public String getCode() {
+    return code;
+  }
+  
+  private String code;
 }
