@@ -45,6 +45,10 @@
 	<makeurl property="log4j-conf" file="scripts/console.log.properties"/>
 	<property name="harvester.index" value="all"/>
 
+  <!-- GPG settings -->
+  <property name="gpg.exe" value="gpg" />
+  <property name="gpg.key" value="E1EE085F" />
+
   <condition property="ivy.available">
     <typefound uri="antlib:org.apache.ivy.ant" name="configure" />
   </condition>
@@ -234,6 +238,7 @@
     <delete dir="${docs}"/>
     <delete>
       <fileset dir="${basedir}" includes="*.zip"/>
+      <fileset dir="${basedir}" includes="*.asc"/>
       <fileset dir="${basedir}" includes="*.md5"/>
       <fileset dir="${basedir}" includes="*.sha1"/>
       <fileset dir="${basedir}" includes="*.asc"/>
@@ -252,5 +257,29 @@
       <checksum file="@{file}" algorithm="sha1" format="MD5SUM" forceoverwrite="yes" readbuffersize="65536"/>
     </sequential>
   </macrodef>
+
+  <target name="sign-artifacts" depends="package">
+    <delete failonerror="false" dir="${basedir}" includes="*.asc"/>
+
+    <input message="Enter GPG keystore password: &gt;" addproperty="gpg.passphrase">
+      <handler classname="org.apache.tools.ant.input.SecureInputHandler" />
+    </input>
+
+    <apply executable="${gpg.exe}" inputstring="${gpg.passphrase}"
+           dest="${basedir}" type="file" maxparallel="1" verbose="yes">
+      <arg value="--passphrase-fd"/>
+      <arg value="0"/>
+      <arg value="--batch"/>
+      <arg value="--armor"/>
+      <arg value="--default-key"/>
+      <arg value="${gpg.key}"/>
+      <arg value="--output"/>
+      <targetfile/>
+      <arg value="--detach-sig"/>
+      <srcfile/>
+      <fileset dir="${basedir}" includes="*.zip"/>
+      <globmapper from="*" to="*.asc"/>
+    </apply>
+  </target>
 
 </project>
