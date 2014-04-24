@@ -113,9 +113,9 @@ public abstract class Harvester {
       Class<? extends Harvester> harvesterClass) {
     Collection<HarvesterConfig> harvesterList = null;
     if (harvesterId == null || "*".equals(harvesterId) || "all".equals(harvesterId)) {
-      harvesterList = conf.harvesteres.values();
+      harvesterList = conf.harvesters.values();
     } else {
-      HarvesterConfig iconf = conf.harvesteres.get(harvesterId);
+      HarvesterConfig iconf = conf.harvesters.get(harvesterId);
       if (iconf == null || !(iconf instanceof HarvesterConfig)) throw new IllegalArgumentException(
           "There is no harvester defined with id=\"" + harvesterId + "\"!");
       harvesterList = Collections.singletonList(iconf);

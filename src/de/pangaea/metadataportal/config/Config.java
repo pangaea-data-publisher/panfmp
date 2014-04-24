@@ -246,7 +246,7 @@ public class Config {
     
     // *** After loading do final checks ***
     // consistency in harvesters:
-    for (HarvesterConfig iconf : harvesteres.values())
+    for (HarvesterConfig iconf : harvesters.values())
       iconf.check();
     
     // cleanup
@@ -328,10 +328,10 @@ public class Config {
   }
   
   public void addHarvester(HarvesterConfig i) {
-    if (harvesteres.containsKey(i.id)) throw new IllegalArgumentException(
+    if (harvesters.containsKey(i.id)) throw new IllegalArgumentException(
         "There is already a harvester with id=\"" + i.id
             + "\" added to configuration!");
-    harvesteres.put(i.id, i);
+    harvesters.put(i.id, i);
   }
   
   @PublicForDigesterUse
@@ -456,7 +456,7 @@ public class Config {
   }
   
   // harvesters
-  public final Map<String,HarvesterConfig> harvesteres = new LinkedHashMap<String,HarvesterConfig>();
+  public final Map<String,HarvesterConfig> harvesters = new LinkedHashMap<String,HarvesterConfig>();
   
   // metadata mapping name
   public String typeName = "doc";
