@@ -1,6 +1,6 @@
 @echo off
 SET CLASSPATH=
-FOR %%i IN (..\dist\*.jar) DO CALL :addPart %%i
+FOR %%i IN (..\lib\*.jar ..\dist\*.jar) DO CALL :addPart %%i
 GOTO :eof
 
 :addPart
