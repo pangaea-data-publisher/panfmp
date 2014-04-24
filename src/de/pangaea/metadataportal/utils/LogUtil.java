@@ -20,6 +20,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -122,7 +123,7 @@ public class LogUtil {
           if (!hasNewline()) return;
           try {
             if (scan > 0) method.invoke(logger, new String(buf, 0, scan,
-                "US-ASCII"), null);
+                StandardCharsets.US_ASCII), null);
           } catch (Exception e) {
             log.fatal("Cannot log with method [" + method + "]", e);
           }
@@ -141,7 +142,7 @@ public class LogUtil {
           flush();
           super.close();
         }
-      }, true, "US-ASCII");
+      }, true, StandardCharsets.US_ASCII.name());
     } catch (java.io.UnsupportedEncodingException ue) {
       throw new RuntimeException(ue); // should never happen with US-ASCII
     }
