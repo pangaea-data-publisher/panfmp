@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -271,7 +272,7 @@ public abstract class OAIHarvesterBase extends Harvester {
     
     conn.setRequestProperty("Accept-Encoding",
         "gzip, deflate, identity;q=0.3, *;q=0");
-    conn.setRequestProperty("Accept-Charset", "utf-8, *;q=0.1");
+    conn.setRequestProperty("Accept-Charset", StandardCharsets.UTF_8.name() + ", *;q=0.1");
     conn.setRequestProperty("Accept", "text/xml, application/xml, *;q=0.1");
     
     if (checkModifiedDate != null && checkModifiedDate.get() != null) conn

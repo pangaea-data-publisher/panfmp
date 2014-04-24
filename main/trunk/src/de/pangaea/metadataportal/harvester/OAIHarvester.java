@@ -17,6 +17,7 @@
 package de.pangaea.metadataportal.harvester;
 
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -235,11 +236,11 @@ public class OAIHarvester extends OAIHarvesterBase {
     
     StringBuilder url = new StringBuilder(baseUrl).append(
         "?verb=ListRecords&metadataPrefix=").append(
-        URLEncoder.encode(metadataPrefix, "UTF-8"));
+        URLEncoder.encode(metadataPrefix, StandardCharsets.UTF_8.name()));
     if (sets != null) {
       if (sets.size() == 1) {
         url.append("&set=").append(
-            URLEncoder.encode(sets.iterator().next(), "UTF-8"));
+            URLEncoder.encode(sets.iterator().next(), StandardCharsets.UTF_8.name()));
       } else log
           .warn("More than one set to be harvested - this is not supported by OAI-PMH. Filtering documents during harvesting!");
     }
@@ -247,7 +248,7 @@ public class OAIHarvester extends OAIHarvesterBase {
       url.append("&from=").append(
           URLEncoder.encode(
               fineGranularity ? ISODateFormatter.formatLong(fromDateReference)
-                  : ISODateFormatter.formatShort(fromDateReference), "UTF-8"));
+                  : ISODateFormatter.formatShort(fromDateReference), StandardCharsets.UTF_8.name()));
     }
     readStream(url.toString());
     setHarvestingDateReference(currResponseDate);
@@ -257,7 +258,7 @@ public class OAIHarvester extends OAIHarvesterBase {
           + " ms");
       url = new StringBuilder(baseUrl);
       url.append("?verb=ListRecords&resumptionToken=").append(
-          URLEncoder.encode(currResumptionToken, "UTF-8"));
+          URLEncoder.encode(currResumptionToken, StandardCharsets.UTF_8.name()));
       reset();
       readStream(url.toString());
     }

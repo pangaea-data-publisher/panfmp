@@ -22,6 +22,7 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -247,7 +248,7 @@ public class WebCrawlingHarvester extends SingleFileEntitiesHarvester {
       
       conn.setRequestProperty("Accept-Encoding",
           "gzip, deflate, identity;q=0.3, *;q=0");
-      conn.setRequestProperty("Accept-Charset", "utf-8, *;q=0.5");
+      conn.setRequestProperty("Accept-Charset", StandardCharsets.UTF_8.name() + ", *;q=0.5");
       
       StringBuilder ac = new StringBuilder();
       for (String c : contentTypes)
