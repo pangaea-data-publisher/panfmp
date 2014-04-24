@@ -121,8 +121,7 @@ public abstract class Harvester {
       harvesterList = Collections.singletonList(iconf);
     }
     
-    final ElasticsearchConnection es = new ElasticsearchConnection(conf);
-    try {
+    try (final ElasticsearchConnection es = new ElasticsearchConnection(conf)) {
       for (HarvesterConfig siconf : harvesterList) {
         Class<? extends Harvester> hc = (harvesterClass == null) ? siconf.harvesterClass
             : harvesterClass;
@@ -163,8 +162,6 @@ public abstract class Harvester {
               + "\" occurred:", e);
         }
       }
-    } finally {
-      es.close();
     }
   }
   

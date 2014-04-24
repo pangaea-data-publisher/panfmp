@@ -139,6 +139,7 @@ public class LogUtil {
         public void close() throws IOException {
           if (!hasNewline()) write('\n');
           flush();
+          super.close();
         }
       }, true, "US-ASCII");
     } catch (java.io.UnsupportedEncodingException ue) {
