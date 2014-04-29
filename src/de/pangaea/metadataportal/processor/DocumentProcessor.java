@@ -235,7 +235,7 @@ public final class DocumentProcessor {
   
   private static XContentBuilder addNotAnalyzedFieldMapping(XContentBuilder builder, String name) throws IOException {
     return builder.startObject(name)
-        .field("type", "string").field("index", "not_analyzed")
+        .field("type", "string").field("index", "not_analyzed").field("include_in_all", false)
       .endObject();
   }
   
@@ -274,15 +274,25 @@ public final class DocumentProcessor {
       final PutMappingResponse resp = indicesAdmin.preparePutMapping(targetIndex)
           .setType(HARVESTER_METADATA_TYPE)
           .setSource(builder)
+          .setIgnoreConflicts(false)
           .get();
       log.info("Harvester metadata mapping updated: " + resp.isAcknowledged());
     }    
     
+    if (iconfig.parent.esMapping != null) {
+      final PutMappingResponse resp = indicesAdmin.preparePutMapping(targetIndex)
+          .setType(iconfig.parent.typeName)
+          .setSource(iconfig.parent.esMapping)
+          .setIgnoreConflicts(false)
+          .get();
+      log.info("Field mappings updated with provided file: " + resp.isAcknowledged());
+    }
+
     {
       final XContentBuilder builder = XContentFactory.jsonBuilder().startObject()
         .startObject("properties")
           .startObject(iconfig.parent.fieldnameDatestamp)
-            .field("type", "date").field("format", "dateOptionalTime")
+            .field("type", "date").field("format", "dateOptionalTime").field("include_in_all", false)
           .endObject();
           addNotAnalyzedFieldMapping(builder, iconfig.parent.fieldnameSource);
           builder.startObject(iconfig.parent.fieldnameXML)
@@ -293,16 +303,9 @@ public final class DocumentProcessor {
       final PutMappingResponse resp = indicesAdmin.preparePutMapping(targetIndex)
           .setType(iconfig.parent.typeName)
           .setSource(builder)
+          .setIgnoreConflicts(false)
           .get();
       log.info("Internal field mappings updated: " + resp.isAcknowledged());
-    }
-    
-    if (iconfig.parent.esMapping != null) {
-      final PutMappingResponse resp = indicesAdmin.preparePutMapping(targetIndex)
-          .setType(iconfig.parent.typeName)
-          .setSource(iconfig.parent.esMapping)
-          .get();
-      log.info("Field mappings updated with provided file: " + resp.isAcknowledged());
     }
   }
   
