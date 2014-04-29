@@ -19,12 +19,12 @@ package de.pangaea.metadataportal.harvester;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.search.SearchHit;
 
 import de.pangaea.metadataportal.config.HarvesterConfig;
 import de.pangaea.metadataportal.processor.MetadataDocument;
 import de.pangaea.metadataportal.utils.ISODateFormatter;
+import de.pangaea.metadataportal.utils.KeyValuePairs;
 import de.pangaea.metadataportal.utils.PublicForDigesterUse;
 
 /**
@@ -79,14 +79,14 @@ public class OAIMetadataDocument extends MetadataDocument {
   }
   
   @Override
-  protected XContentBuilder createEmptyJSON() throws Exception {
-    XContentBuilder builder = super.createEmptyJSON();
+  protected KeyValuePairs createEmptyKeyValuePairs() throws Exception {
+    final KeyValuePairs kv = super.createEmptyKeyValuePairs();
     /* TODO supply as variable!
     if (builder != null) {
-      builder.field(IndexConstants.FIELDNAME_SET, sets.toArray(new String[sets.size()]));
+      kv.add(IndexConstants.FIELDNAME_SET, sets.toArray(new String[sets.size()]));
     }
     */
-    return builder;
+    return kv;
   }
   
   @Override
