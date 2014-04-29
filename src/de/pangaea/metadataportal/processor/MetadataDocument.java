@@ -20,10 +20,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -42,7 +39,6 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 
 import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHitField;
 import org.w3c.dom.Document;
@@ -61,6 +57,7 @@ import de.pangaea.metadataportal.config.HarvesterConfig;
 import de.pangaea.metadataportal.config.VariableConfig;
 import de.pangaea.metadataportal.utils.BooleanParser;
 import de.pangaea.metadataportal.utils.ISODateFormatter;
+import de.pangaea.metadataportal.utils.KeyValuePairs;
 import de.pangaea.metadataportal.utils.LenientDateParser;
 import de.pangaea.metadataportal.utils.LoggingErrorListener;
 import de.pangaea.metadataportal.utils.StaticFactories;
@@ -234,10 +231,10 @@ public class MetadataDocument {
    * @throws IllegalStateException
    *           if index configuration is unknown
    */
-  public XContentBuilder getElasticSearchJSON() throws Exception {
-    final XContentBuilder builder = createEmptyJSON();
+  public KeyValuePairs getKeyValuePairs() throws Exception {
+    final KeyValuePairs kv = createEmptyKeyValuePairs();
     if (!deleted) {
-      assert builder != null;
+      assert kv != null;
       if (dom == null) throw new NullPointerException(
           "The DOM-Tree of document may not be 'null'!");
       processXPathVariables();
@@ -247,13 +244,13 @@ public class MetadataDocument {
           log.debug("Document filtered: " + identifier);
           return null;
         }
-        addFields(builder);
-        closeJSON(builder);
+        addFields(kv);
+        finalizeKeyValuePairs(kv);
       } finally {
         XPathResolverImpl.getInstance().unsetVariables();
       }
     }
-    return builder;
+    return kv;
   }
   
   /**
@@ -267,26 +264,25 @@ public class MetadataDocument {
    * @throws IllegalStateException
    *           if identifier is empty.
    */
-  protected XContentBuilder createEmptyJSON() throws Exception {
+  protected KeyValuePairs createEmptyKeyValuePairs() throws Exception {
     // make a new, empty document
     if (deleted) {
       return null; // to delete
     } else {
-      XContentBuilder builder = XContentFactory.jsonBuilder().startObject()
-        .field(iconfig.parent.fieldnameSource, iconfig.id);
+      KeyValuePairs kv = new KeyValuePairs();
+      kv.add(iconfig.parent.fieldnameSource, iconfig.id);
       if (datestamp != null) {
-        builder.field(iconfig.parent.fieldnameDatestamp, datestamp);
+        kv.add(iconfig.parent.fieldnameDatestamp, datestamp);
       }
-      return builder;
+      return kv;
     }
   }
   
   /**
    * Helper method that finalizes the JSON document
    */
-  protected void closeJSON(XContentBuilder builder) throws Exception {
-    builder.field(iconfig.parent.fieldnameXML, this.getXML())
-      .endObject();
+  protected void finalizeKeyValuePairs(KeyValuePairs kv) throws Exception {
+    kv.add(iconfig.parent.fieldnameXML, this.getXML());
   }
   
   /**
@@ -298,10 +294,10 @@ public class MetadataDocument {
    *           if an exception occurs during transformation (various types of
    *           exceptions can be thrown).
    */
-  protected void addFields(XContentBuilder builder) throws Exception {
+  protected void addFields(KeyValuePairs kv) throws Exception {
     for (FieldConfig f : iconfig.parent.fields.values()) {
       if (f.datatype == FieldConfig.DataType.XHTML) {
-        addField(builder, f, evaluateTemplateAsXHTML(f));
+        addField(kv, f, evaluateTemplateAsXHTML(f));
       } else {
         boolean needDefault = (f.datatype == FieldConfig.DataType.NUMBER || f.datatype == FieldConfig.DataType.DATETIME);
         Object value = null;
@@ -319,30 +315,21 @@ public class MetadataDocument {
           }
         } else if (f.xslt != null) {
           value = evaluateTemplate(f);
-        } else throw new NullPointerException(
-            "Both XPath and template are NULL for field " + f.name);
+        } else {
+          throw new NullPointerException("Both XPath and template are NULL for field " + f.name);
+        }
         
         // interpret result
         if (value instanceof NodeList) {
           final NodeList nodes = (NodeList) value;
           final int c = nodes.getLength();
-          if (f.datatype == FieldConfig.DataType.JSON) {
-            builder.startArray(f.name);
-            final XMLToJSON serializer = new XMLToJSON(builder, true, true);
-            for (int i = 0; i < c; i++) {
-              final Node n = nodes.item(i);
-              // we need to do this, otherwise may get adjacent text nodes (e.g. for XSL docfrags):
-              n.normalize();
-              serializer.serializeChilds(n);
-            }
-            builder.endArray();
-          } else {
-            final List<String> vals = new ArrayList<String>(c / 2);
-            for (int i = 0; i < c; i++) {
-              if (f.datatype == FieldConfig.DataType.XML) { 
-                final DOMSource in = new DOMSource(nodes.item(i));
-                if (in.getNode().getNodeType() != Node.ELEMENT_NODE)
+          for (int i = 0; i < c; i++) {
+            final Node nod = nodes.item(i);
+            switch (f.datatype) {
+              case XML:
+                if (nod.getNodeType() != Node.ELEMENT_NODE)
                   continue;
+                final DOMSource in = new DOMSource(nodes.item(i));
                 final StringWriter xmlWriter = new StringWriter();
                 final StreamResult out = new StreamResult(xmlWriter);
                 final Transformer trans = StaticFactories.transFactory.newTransformer();
@@ -351,19 +338,28 @@ public class MetadataDocument {
                 trans.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
                 trans.transform(in, out);
                 xmlWriter.close();
-                vals.add(xmlWriter.toString());
-              } else {
+                addField(kv, f, xmlWriter.toString());
+                break;
+              case JSON:
+                if (nod.getNodeType() != Node.ELEMENT_NODE)
+                  continue;
+                final XMLToJSON serializer = new XMLToJSON(true, true);
+                // we need to do this, otherwise may get adjacent text nodes (e.g. for XSL docfrags):
+                nod.normalize();
+                final Object o = serializer.serializeChilds(nod);
+                if (o != null) {
+                  if (log.isTraceEnabled()) log.trace("AddField: " + f.name + '=' + o);
+                  kv.add(f.name, o);
+                }
+                break;
+              default:
                 final StringBuilder sb = new StringBuilder();
-                walkNodeTexts(sb, nodes.item(i), true);
+                walkNodeTexts(sb, nod, true);
                 final String val = sb.toString().trim();
                 if (!val.isEmpty()) {
-                  vals.add(val);
+                  addField(kv, f, val);
                   needDefault = false;
                 }
-              }
-            }
-            if (!vals.isEmpty()) {
-              addField(builder, f, vals.toArray(new String[vals.size()]));
             }
           }
         } else if (value instanceof String) {
@@ -378,15 +374,15 @@ public class MetadataDocument {
               String s = (String) value;
               s = s.trim();
               if (!s.isEmpty()) {
-                addField(builder, f, s);
+                addField(kv, f, s);
                 needDefault = false;
               }
           }
-        } else throw new UnsupportedOperationException(
-          "Invalid Java data type of expression result: "
-                + value.getClass().getName());
+        } else {
+          throw new UnsupportedOperationException("Invalid Java data type of expression result: " + value.getClass().getName());
+        }
         
-        if (needDefault && f.defaultValue != null) addField(builder, f,
+        if (needDefault && f.defaultValue != null) addField(kv, f,
             f.defaultValue);
       }
     }
@@ -584,26 +580,18 @@ public class MetadataDocument {
    *           if an exception occurs during transformation (various types of
    *           exceptions can be thrown).
    */
-  protected void addField(XContentBuilder builder, FieldConfig f, String... vals)
+  protected void addField(KeyValuePairs kv, FieldConfig f, String val)
       throws Exception {
-    if (log.isTraceEnabled()) log.trace("AddField: " + f.name + '=' + Arrays.toString(vals));
+    if (log.isTraceEnabled()) log.trace("AddField: " + f.name + '=' + val);
     switch (f.datatype) {
       case DATETIME:
-        final Object[] dates = new Object[vals.length];
-        for (int i = 0; i < vals.length; i++) {
-          dates[i] = LenientDateParser.parseDate(vals[i]);
-        }
-        builder.field(f.name, dates);
+        kv.add(f.name, LenientDateParser.parseDate(val));
         break;
       case NUMBER:
-        final double[] numbers = new double[vals.length];
-        for (int i = 0; i < vals.length; i++) {
-          numbers[i] =Double.parseDouble(vals[i]);
-        }
-        builder.field(f.name, numbers);
+        kv.add(f.name, Double.parseDouble(val));
         break;
       case STRING:
-        builder.field(f.name, vals);
+        kv.add(f.name, val);
         break;
       default:
         throw new AssertionError("Invalid field datatype for addField(): " + f.datatype);

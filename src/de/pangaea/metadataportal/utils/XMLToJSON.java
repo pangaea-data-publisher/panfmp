@@ -17,10 +17,7 @@
 package de.pangaea.metadataportal.utils;
 
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
 
-import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.w3c.dom.Node;
 
 /**
@@ -31,11 +28,9 @@ import org.w3c.dom.Node;
  * @author Uwe Schindler
  */
 public final class XMLToJSON {
-  private final XContentBuilder builder;
   private final boolean serializeMixedContentText, serializeAttributes;
   
-  public XMLToJSON(XContentBuilder builder, boolean serializeMixedContentText, boolean serializeAttributes) {
-    this.builder = builder;
+  public XMLToJSON(boolean serializeMixedContentText, boolean serializeAttributes) {
     this.serializeMixedContentText = serializeMixedContentText;
     this.serializeAttributes = serializeAttributes;
   }
@@ -47,17 +42,20 @@ public final class XMLToJSON {
    * In all other cases its starts a new JSON object and serializes every
    * contained node with {@link #serializeNode(Node)}.
    */
-  public void serializeChilds(Node n) throws IOException {
-    if (n == null) {
-      builder.nullValue();
-      return;
+  public Object serializeChilds(final Node parentNode) throws IOException {
+    if (parentNode == null) {
+      return null;
     }
     boolean hasText = false, hasElementsOrAttrs = false;
-    for (Node nod = n.getFirstChild(); nod != null; nod = nod.getNextSibling()) {
+    for (Node nod = parentNode.getFirstChild(); nod != null; nod = nod.getNextSibling()) {
       switch (nod.getNodeType()) {
         case Node.ELEMENT_NODE:
-        case Node.ATTRIBUTE_NODE:
           hasElementsOrAttrs = true;
+          break;
+        case Node.ATTRIBUTE_NODE:
+          if (serializeAttributes) {
+            hasElementsOrAttrs = true;
+          }
           break;
         case Node.TEXT_NODE:
         case Node.CDATA_SECTION_NODE:
@@ -68,23 +66,15 @@ public final class XMLToJSON {
       }
     }
     if (hasElementsOrAttrs) {
-      builder.startObject();
-      final Set<String> seen = new HashSet<String>();
-      for (Node nod = n.getFirstChild(); nod != null; nod = nod.getNextSibling()) {
-        final String localName = nod.getLocalName();
-        //NodeList nodes = ((Element) nod).getElementsByTagNameNS("*", localName);
-        if (!seen.contains(localName)) {
-          // TODO: collect other nodes with same name
-          serializeNode(nod);
-          // add for next round
-          seen.add(localName);
-        }
+      final KeyValuePairs kv = new KeyValuePairs();
+      for (Node nod = parentNode.getFirstChild(); nod != null; nod = nod.getNextSibling()) {
+        serializeNode(kv, nod);
       }
-      builder.endObject();
+      return kv.isEmpty() ? null : kv;
     } else if (hasText) {
-      builder.value(n.getTextContent());
+      return parentNode.getTextContent();
     } else {
-      builder.nullValue();
+      return null;
     }
   }
   
@@ -96,26 +86,24 @@ public final class XMLToJSON {
    * name &quot;#text&quot;. Attributes are serialized as JSON fields prefixed
    * with &quot;@&quot;.
    */
-  public void serializeNode(Node n) throws IOException {
+  private void serializeNode(final KeyValuePairs kv, final Node n) throws IOException {
     if (n == null) return;
     switch (n.getNodeType()) {
       case Node.ELEMENT_NODE:
-        builder.field(n.getLocalName());
-        serializeChilds(n);
+        kv.add(n.getLocalName(), serializeChilds(n));
         break;
       case Node.DOCUMENT_NODE:
       case Node.DOCUMENT_FRAGMENT_NODE:
-        serializeChilds(n);
-        break;
+        throw new IllegalArgumentException("Invalid node type (DOCUMENT_NODE or DOCUMENT_FRAGMENT_NODE)");
       case Node.ATTRIBUTE_NODE:
         if (serializeAttributes) {
-          builder.field("@" + n.getLocalName(), n.getNodeValue());
+          kv.add("@" + n.getLocalName(), n.getNodeValue());
         }
         break;
       case Node.TEXT_NODE:
       case Node.CDATA_SECTION_NODE:
         if (serializeMixedContentText) {
-          builder.field("#text", n.getNodeValue());
+          kv.add("#text", n.getNodeValue());
         }
         break;
     }

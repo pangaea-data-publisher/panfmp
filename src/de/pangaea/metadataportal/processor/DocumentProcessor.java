@@ -46,6 +46,7 @@ import org.elasticsearch.indices.IndexAlreadyExistsException;
 import org.elasticsearch.indices.IndexMissingException;
 
 import de.pangaea.metadataportal.config.HarvesterConfig;
+import de.pangaea.metadataportal.utils.KeyValuePairs;
 
 /**
  * Component of <b>panFMP</b> that analyzes and indexes harvested documents in
@@ -390,11 +391,9 @@ public final class DocumentProcessor {
     if (log.isDebugEnabled()) log.debug("Converting document: "
         + mdoc.toString());
     if (log.isTraceEnabled()) log.trace("XML: " + mdoc.getXML());
-    XContentBuilder json = null;
+    KeyValuePairs kv = null;
     try {
-      json = mdoc.getElasticSearchJSON();
-    } catch (InterruptedException ie) {
-      throw ie; // no handling here
+      kv = mdoc.getKeyValuePairs();
     } catch (Exception e) {
       // handle exception
       switch (conversionErrorAction) {
@@ -408,7 +407,7 @@ public final class DocumentProcessor {
           log.error(
               "Conversion XML to Elasticsearch document failed for '"
                   + identifier + "' (object marked deleted):", e);
-          json = null;
+          kv = null;
           break;
         default:
           log.fatal("Conversion XML to Lucene document failed for '"
@@ -417,14 +416,17 @@ public final class DocumentProcessor {
       }
     }
 
-    if (json == null) {
+    if (kv == null || kv.isEmpty()) {
       if (log.isDebugEnabled()) log.debug("Deleting document: " + identifier);
       bulkRequest.add(
         client.prepareDelete(targetIndex, iconfig.parent.typeName, identifier)
       );
     } else {
+      final XContentBuilder json = XContentFactory.jsonBuilder();
+      kv.serializeToJSON(json);
       if (log.isDebugEnabled()) log.debug("Updating document: " + identifier);
       if (log.isTraceEnabled()) log.trace("Data: " + json.string());
+      //log.info("Data: " + json.string());
       bulkRequest.add(
         client.prepareIndex(targetIndex, iconfig.parent.typeName, identifier).setSource(json)
       );
