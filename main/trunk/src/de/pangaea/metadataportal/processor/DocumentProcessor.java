@@ -235,7 +235,7 @@ public final class DocumentProcessor {
   
   private static XContentBuilder addNotAnalyzedFieldMapping(XContentBuilder builder, String name) throws IOException {
     return builder.startObject(name)
-        .field("type", "string").field("index", "not_analyzed").field("include_in_all", false)
+        .field("type", "string").field("index", "not_analyzed")
       .endObject();
   }
   
@@ -282,7 +282,7 @@ public final class DocumentProcessor {
       final XContentBuilder builder = XContentFactory.jsonBuilder().startObject()
         .startObject("properties")
           .startObject(iconfig.parent.fieldnameDatestamp)
-            .field("type", "date").field("format", "dateOptionalTime").field("include_in_all", false)
+            .field("type", "date").field("format", "dateOptionalTime")
           .endObject();
           addNotAnalyzedFieldMapping(builder, iconfig.parent.fieldnameSource);
           builder.startObject(iconfig.parent.fieldnameXML)
