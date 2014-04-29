@@ -16,33 +16,33 @@
 
 package de.pangaea.metadataportal.utils;
 
-import java.io.IOException;
-
 import org.w3c.dom.Node;
 
 /**
- * Used to serialize {@link Node} from a DOM tree to a JSON builder.
+ * Used to serialize {@link Node} from a DOM tree to an Object (mainly {@link KeyValuePairs}).
  * This class cannot handle adjacent text nodes, so the DOM tree should
  * be normalized first.
+ * Nodes that have child elements or mixed content with get transformed to {@link KeyValuePairs},
+ * String only nodes will be returned as String and empty nodes will return {@code null}.
  * @see Node#normalize()
  * @author Uwe Schindler
  */
-public final class XMLToJSON {
+public final class XMLToKeyValuePairs {
   private final boolean serializeMixedContentText, serializeAttributes;
   
-  public XMLToJSON(boolean serializeMixedContentText, boolean serializeAttributes) {
+  public XMLToKeyValuePairs(boolean serializeMixedContentText, boolean serializeAttributes) {
     this.serializeMixedContentText = serializeMixedContentText;
     this.serializeAttributes = serializeAttributes;
   }
   
   /**
-   * Serialize all children of a node:
+   * Convert all children of a node:
    * It first checks if all child nodes are text-only, in that case
-   * the whole node is serialized as text (using {@link Node#getTextContent()}.
-   * In all other cases its starts a new JSON object and serializes every
-   * contained node with {@link #serializeNode(Node)}.
+   * the whole node is returned as String (using {@link Node#getTextContent()}.
+   * In all other cases its starts a new JSON object and converts every
+   * contained node. Empty nodes will be returned as {@code null}.
    */
-  public Object serializeChilds(final Node parentNode) throws IOException {
+  public Object convertChilds(final Node parentNode) {
     if (parentNode == null) {
       return null;
     }
@@ -68,7 +68,7 @@ public final class XMLToJSON {
     if (hasElementsOrAttrs) {
       final KeyValuePairs kv = new KeyValuePairs();
       for (Node nod = parentNode.getFirstChild(); nod != null; nod = nod.getNextSibling()) {
-        serializeNode(kv, nod);
+        convertNode(kv, nod);
       }
       return kv.isEmpty() ? null : kv;
     } else if (hasText) {
@@ -78,19 +78,11 @@ public final class XMLToJSON {
     }
   }
   
-  /**
-   * Serializes a node depending on its type. In general, this calls
-   * {@link #serializeChilds(Node)} for all child nodes, but creates the
-   * parent field first.
-   * <p>Text nodes get special handling: they are serialized as JSON fields with
-   * name &quot;#text&quot;. Attributes are serialized as JSON fields prefixed
-   * with &quot;@&quot;.
-   */
-  private void serializeNode(final KeyValuePairs kv, final Node n) throws IOException {
+  private void convertNode(final KeyValuePairs kv, final Node n) {
     if (n == null) return;
     switch (n.getNodeType()) {
       case Node.ELEMENT_NODE:
-        kv.add(n.getLocalName(), serializeChilds(n));
+        kv.add(n.getLocalName(), convertChilds(n));
         break;
       case Node.DOCUMENT_NODE:
       case Node.DOCUMENT_FRAGMENT_NODE:

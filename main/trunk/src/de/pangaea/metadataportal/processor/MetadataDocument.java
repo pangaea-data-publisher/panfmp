@@ -61,7 +61,7 @@ import de.pangaea.metadataportal.utils.KeyValuePairs;
 import de.pangaea.metadataportal.utils.LenientDateParser;
 import de.pangaea.metadataportal.utils.LoggingErrorListener;
 import de.pangaea.metadataportal.utils.StaticFactories;
-import de.pangaea.metadataportal.utils.XMLToJSON;
+import de.pangaea.metadataportal.utils.XMLToKeyValuePairs;
 
 /**
  * This class holds all information harvested and provides methods for
@@ -343,10 +343,9 @@ public class MetadataDocument {
               case JSON:
                 if (nod.getNodeType() != Node.ELEMENT_NODE)
                   continue;
-                final XMLToJSON serializer = new XMLToJSON(true, true);
                 // we need to do this, otherwise may get adjacent text nodes (e.g. for XSL docfrags):
                 nod.normalize();
-                final Object o = serializer.serializeChilds(nod);
+                final Object o = new XMLToKeyValuePairs(true, true).convertChilds(nod);
                 if (o != null) {
                   if (log.isTraceEnabled()) log.trace("AddField: " + f.name + '=' + o);
                   kv.add(f.name, o);
