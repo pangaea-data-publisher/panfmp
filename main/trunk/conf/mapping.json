@@ -31,20 +31,20 @@
     "boost" : {
       "type" : "float",
       "index" : "no",
-      "doc_values" : true,
-      "include_in_all": false
+      "doc_values" : true
     },
     "coordinates" : {
-      "type" : "geo_point",
-      "include_in_all": false
+      "type" : "geo_point"
     },
     "minDateTime" : {
       "type" : "date",
-      "format" : "dateOptionalTime"
+      "format" : "dateOptionalTime",
+      "precision_step": 8
     },
     "maxDateTime" : {
       "type" : "date",
-      "format" : "dateOptionalTime"
+      "format" : "dateOptionalTime",
+      "precision_step": 8
     },
     "minLatitude" : {
       "type" : "double",
