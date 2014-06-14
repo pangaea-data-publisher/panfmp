@@ -29,7 +29,7 @@ import de.pangaea.metadataportal.utils.QNameParser;
  * 
  * @author Uwe Schindler
  */
-public class VariableConfig extends ExpressionConfig {
+public final class VariableConfig extends ExpressionConfig {
   
   @PublicForDigesterUse
   @Deprecated

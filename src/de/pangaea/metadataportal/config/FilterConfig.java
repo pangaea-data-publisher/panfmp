@@ -29,7 +29,7 @@ import de.pangaea.metadataportal.utils.PublicForDigesterUse;
  * 
  * @author Uwe Schindler
  */
-public class FilterConfig extends ExpressionConfig {
+public final class FilterConfig extends ExpressionConfig {
   
   @PublicForDigesterUse
   @Deprecated

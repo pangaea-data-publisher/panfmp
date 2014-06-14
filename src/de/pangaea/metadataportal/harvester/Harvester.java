@@ -16,8 +16,8 @@
 
 package de.pangaea.metadataportal.harvester;
 
+import java.io.IOException;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Set;
@@ -29,6 +29,7 @@ import org.xml.sax.SAXParseException;
 
 import de.pangaea.metadataportal.config.Config;
 import de.pangaea.metadataportal.config.HarvesterConfig;
+import de.pangaea.metadataportal.config.TargetIndexConfig;
 import de.pangaea.metadataportal.processor.ElasticsearchConnection;
 import de.pangaea.metadataportal.processor.CommitEvent;
 import de.pangaea.metadataportal.processor.DocumentProcessor;
@@ -109,57 +110,75 @@ public abstract class Harvester {
    * {@link Rebuilder}. Public code should use
    * {@link #runHarvester(Config,String)}.
    */
-  protected static void runHarvester(Config conf, String harvesterId,
-      Class<? extends Harvester> harvesterClass) {
-    Collection<HarvesterConfig> harvesterList = null;
-    if (harvesterId == null || "*".equals(harvesterId) || "all".equals(harvesterId)) {
-      harvesterList = conf.harvesters.values();
+  protected static void runHarvester(Config conf, String id, Class<? extends Harvester> harvesterClass) {
+    final Set<String> activeIds;
+    if (id == null || "*".equals(id) || "all".equals(id)) {
+      activeIds = conf.targetIndexes.keySet();
     } else {
-      HarvesterConfig iconf = conf.harvesters.get(harvesterId);
-      if (iconf == null || !(iconf instanceof HarvesterConfig)) throw new IllegalArgumentException(
-          "There is no harvester defined with id=\"" + harvesterId + "\"!");
-      harvesterList = Collections.singletonList(iconf);
+      if (!conf.harvestersAndIndexes.contains(id)) throw new IllegalArgumentException(
+          "There is no harvester or targetIndex defined with id=\"" + id + "\"!");
+      activeIds = Collections.singleton(id);
+    }
+    
+    if (Collections.disjoint(activeIds, conf.harvestersAndIndexes)) {
+      staticLog.warn("No sources to harvest.");
+      return;
     }
     
     try (final ElasticsearchConnection es = new ElasticsearchConnection(conf)) {
-      for (HarvesterConfig siconf : harvesterList) {
-        Class<? extends Harvester> hc = (harvesterClass == null) ? siconf.harvesterClass
-            : harvesterClass;
-        staticLog.info("Harvesting documents from \"" + siconf.id
-            + "\" using harvester class \"" + hc.getName() + "\"...");
-        Harvester h = null;
-        boolean cleanShutdown = false;
+      for (TargetIndexConfig ticonf : conf.targetIndexes.values()) {
+        if (!activeIds.contains(ticonf.indexName) && Collections.disjoint(activeIds, ticonf.harvesters.keySet()))
+          continue; // nothing to do for this index!
         try {
-          h = hc.getConstructor(HarvesterConfig.class).newInstance(siconf);
-          h.open(es);
-          h.harvest();
-          // everything OK => clean shutdown with storing all infos
-          cleanShutdown = true;
-        } catch (BackgroundFailure ibf) {
-          // do nothing, this exception is only to break out, real exception is
-          // thrown on close
-        } catch (SAXParseException saxe) {
-          staticLog.fatal(
-              "Harvesting documents from \"" + siconf.id
-                  + "\" failed due to SAX parse error in \""
-                  + saxe.getSystemId() + "\", line " + saxe.getLineNumber()
-                  + ", column " + saxe.getColumnNumber() + ":", saxe);
-        } catch (TransformerException transfe) {
-          String loc = transfe.getLocationAsString();
-          staticLog.fatal("Harvesting documents from \"" + siconf.id
-              + "\" failed due to transformer/parse error"
-              + ((loc != null) ? (" at " + loc) : "") + ":", transfe);
-        } catch (Exception e) {
-          staticLog.fatal("Harvesting documents from \"" + siconf.id
-              + "\" failed!", e);
-        }
-        // cleanup
-        if (h != null && !h.isClosed()) try {
-          h.close(cleanShutdown);
-          staticLog.info("Harvester \"" + siconf.id + "\" closed.");
-        } catch (Exception e) {
-          staticLog.fatal("Error during harvesting from \"" + siconf.id
-              + "\" occurred:", e);
+          final boolean isRebuilder = (harvesterClass == Rebuilder.class);
+          final String targetIndex = ticonf.createIndex(es.client(), isRebuilder);
+          boolean globalCleanShutdown = true;
+          for (HarvesterConfig harvesterConf : ticonf.harvesters.values()) {
+            if (!(activeIds.contains(ticonf.indexName) || activeIds.contains(harvesterConf.id)))
+              continue;
+            final Class<? extends Harvester> hc = (harvesterClass == null) ? harvesterConf.harvesterClass : harvesterClass;
+            staticLog.info("Harvesting documents from \"" + harvesterConf.id + "\" using harvester class \"" + hc.getName() + "\"...");
+            Harvester h = null;
+            boolean cleanShutdown = false;
+            try {
+              try {
+                h = hc.getConstructor(HarvesterConfig.class).newInstance(harvesterConf);
+                h.open(es, targetIndex);
+                h.harvest();
+                // everything OK => clean shutdown with storing all infos
+                cleanShutdown = true;
+              } catch (BackgroundFailure ibf) {
+                // do nothing, this exception is only to break out, real exception is
+                // thrown on close
+              } catch (SAXParseException saxe) {
+                staticLog.fatal("Harvesting documents from \"" + harvesterConf.id
+                    + "\" failed due to SAX parse error in \""
+                    + saxe.getSystemId() + "\", line " + saxe.getLineNumber()
+                    + ", column " + saxe.getColumnNumber() + ":", saxe);
+              } catch (TransformerException transfe) {
+                String loc = transfe.getLocationAsString();
+                staticLog.fatal("Harvesting documents from \"" + harvesterConf.id
+                    + "\" failed due to transformer/parse error"
+                    + ((loc != null) ? (" at " + loc) : "") + ":", transfe);
+              } catch (Exception e) {
+                staticLog.fatal("Harvesting documents from \"" + harvesterConf.id
+                    + "\" failed!", e);
+              }
+              // cleanup
+              if (h != null && !h.isClosed()) try {
+                h.close(cleanShutdown);
+                staticLog.info("Harvester \"" + harvesterConf.id + "\" closed.");
+              } catch (Exception e) {
+                staticLog.fatal("Error during harvesting from \"" + harvesterConf.id
+                    + "\" occurred:", e);
+              }
+            } finally {
+              globalCleanShutdown &= cleanShutdown;
+            }
+          }
+          ticonf.closeIndex(es.client(), targetIndex, globalCleanShutdown);
+        } catch (IOException ioe) {
+          staticLog.fatal("Cannot initialize Elasticsearch index: " + ticonf.indexName, ioe);
         }
       }
     }
@@ -216,13 +235,13 @@ public abstract class Harvester {
    *           if an exception occurs during opening (various types of
    *           exceptions can be thrown).
    */
-  public void open(ElasticsearchConnection es) throws Exception {
+  public void open(ElasticsearchConnection es, String targetIndex) throws Exception {
     harvestMessageStep = Integer.parseInt(iconfig.properties
         .getProperty("harvestMessageStep", "100"));
     if (harvestMessageStep <= 0) throw new IllegalArgumentException(
         "Invalid value for harvestMessageStep: " + harvestMessageStep);
-    processor = es.getDocumentProcessor(iconfig);
     
+    processor = es.getDocumentProcessor(iconfig, targetIndex);
     fromDateReference = processor.getLastHarvestedFromDisk();
   }
   
@@ -234,17 +253,17 @@ public abstract class Harvester {
   }
   
   /**
-   * Closes harvester. All ressources are freed and the {@link #processor} is
+   * Closes harvester. All resources are freed and the {@link #processor} is
    * closed.
    * 
    * @param cleanShutdown
    *          enables writing of status information to the Elasticsearch instance for the next
-   *          harvesting. If an error occured during harvesting this should not
+   *          harvesting. If an error occurred during harvesting this should not
    *          be done.
    * @throws Exception
    *           if an exception occurs during closing (various types of
    *           exceptions can be thrown). Exceptions can be thrown asynchronous
-   *           and may not affect the currect document.
+   *           and may not affect the correct document.
    */
   public void close(boolean cleanShutdown) throws Exception {
     if (processor == null) throw new IllegalStateException(
@@ -309,8 +328,7 @@ public abstract class Harvester {
    * @see #isDocumentOutdated(Date)
    */
   protected boolean isDocumentOutdated(long lastModified) {
-    return (lastModified <= 0L || fromDateReference == null || fromDateReference
-        .getTime() < lastModified);
+    return (lastModified <= 0L || fromDateReference == null || fromDateReference.getTime() < lastModified);
   }
   
   /**
@@ -337,7 +355,6 @@ public abstract class Harvester {
         // own
         "harvestMessageStep",
         // DocumentProcessor
-        "targetIndex",
         "bulkSize", "numThreads", "maxQueue",
         "conversionErrorAction",
         // XMLConverter

@@ -69,19 +69,19 @@ public class ElasticsearchHarvester extends SingleFileEntitiesHarvester {
   }
 
   @Override
-  public void open(ElasticsearchConnection es) throws Exception {
-    super.open(es);
+  public void open(ElasticsearchConnection es, String targetIndex) throws Exception {
+    super.open(es, targetIndex);
 
     bulkSize = Integer.parseInt(iconfig.properties.getProperty("bulkSize", Integer.toString(DocumentProcessor.DEFAULT_BULK_SIZE)));
     identifierPrefix = iconfig.properties.getProperty("identifierPrefix", "");
-    datestampField = iconfig.properties.getProperty("datestampField", iconfig.parent.fieldnameDatestamp);
-    xmlField = iconfig.properties.getProperty("xmlField", iconfig.parent.fieldnameXML);
+    datestampField = iconfig.properties.getProperty("datestampField", iconfig.root.fieldnameDatestamp);
+    xmlField = iconfig.properties.getProperty("xmlField", iconfig.root.fieldnameXML);
     final String v = iconfig.properties.getProperty("indexes");
     if (v == null || v.isEmpty()) {
       throw new IllegalArgumentException("Missing harvester property 'indexes'.");
     }
     sourceIndexes = v.split("\\s*,\\s*");
-    types = iconfig.properties.getProperty("types", iconfig.parent.typeName).split("\\s*,\\s*");
+    types = iconfig.properties.getProperty("types", iconfig.root.typeName).split("\\s*,\\s*");
 
     final String info, qstr = iconfig.properties.getProperty("queryString"),
         jsonQuery = iconfig.properties.getProperty("jsonQuery");
@@ -104,7 +104,7 @@ public class ElasticsearchHarvester extends SingleFileEntitiesHarvester {
     final String esAddress = iconfig.properties.getProperty("elasticsearchAddress");
     if (esAddress != null && !esAddress.isEmpty()) {
       // TODO: Really use ES settings from config!? => make configurable somehow
-      final Settings settings = iconfig.parent.esSettings == null ? ImmutableSettings.Builder.EMPTY_SETTINGS : iconfig.parent.esSettings;
+      final Settings settings = iconfig.root.esSettings == null ? ImmutableSettings.Builder.EMPTY_SETTINGS : iconfig.root.esSettings;
       final InetSocketTransportAddress addr = new InetSocketTransportAddress(HostAndPort.parse(esAddress, ElasticsearchConnection.ELASTICSEARCH_DEFAULT_PORT));
       
       log.info("Connecting to external Elasticsearch node " + addr + " for harvesting " + info + "...");

@@ -62,8 +62,8 @@ public class OAIHarvester extends OAIHarvesterBase {
 
   // construtor
   @Override
-  public void open(ElasticsearchConnection es) throws Exception {
-    super.open(es);
+  public void open(ElasticsearchConnection es, String targetIndex) throws Exception {
+    super.open(es, targetIndex);
     filterIncomingSets = sets != null && sets.size() > 1;
     
     // *** ListRecords ***

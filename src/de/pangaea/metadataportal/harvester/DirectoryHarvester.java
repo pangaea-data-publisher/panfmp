@@ -58,14 +58,14 @@ public class DirectoryHarvester extends SingleFileEntitiesHarvester implements F
   }
 
   @Override
-  public void open(ElasticsearchConnection es) throws Exception {
-    super.open(es);
+  public void open(ElasticsearchConnection es, String targetIndex) throws Exception {
+    super.open(es, targetIndex);
     
     String s = iconfig.properties.getProperty("directory");
     if (s == null) throw new IllegalArgumentException(
         "Missing directory name to start harvesting (property \"directory\")");
     
-    directory = new File(iconfig.parent.makePathAbsolute(s, false));
+    directory = new File(iconfig.root.makePathAbsolute(s, false));
     recursive = BooleanParser.parseBoolean(iconfig.properties
         .getProperty("recursive", "false"));
     identifierPrefix = iconfig.properties.getProperty(

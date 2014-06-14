@@ -31,18 +31,14 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
-import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.client.IndicesAdminClient;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.indices.IndexAlreadyExistsException;
 import org.elasticsearch.indices.IndexMissingException;
 
 import de.pangaea.metadataportal.config.HarvesterConfig;
@@ -59,7 +55,7 @@ public final class DocumentProcessor {
   
   protected final HarvesterConfig iconfig;
   protected final Client client;
-  protected final String targetIndex;
+  protected final String targetIndex, sourceIndex; // differs if rebuilding
   
   private Date lastHarvested = null;
   
@@ -82,24 +78,21 @@ public final class DocumentProcessor {
   public static final String HARVESTER_METADATA_TYPE = "panfmp_meta";
   public static final String HARVESTER_METADATA_FIELD_LAST_HARVESTED = "lastHarvested";
 
-  public static final String DEFAULT_INDEX = "panfmp";
   public static final int DEFAULT_BULK_SIZE = 100;
 
-  DocumentProcessor(Client client, HarvesterConfig iconfig) throws IOException {
+  DocumentProcessor(Client client, HarvesterConfig iconfig, String targetIndex) throws IOException {
     this.client = client;
     this.iconfig = iconfig;
-    this.targetIndex = iconfig.properties.getProperty("targetIndex", DEFAULT_INDEX);
+    this.sourceIndex = iconfig.parent.indexName;
+    this.targetIndex = (targetIndex == null) ? this.sourceIndex : targetIndex;
     this.bulkSize = Integer.parseInt(iconfig.properties.getProperty("bulkSize", Integer.toString(DEFAULT_BULK_SIZE)));
     
     final String s = iconfig.properties.getProperty("conversionErrorAction", "STOP");
     try {
       this.conversionErrorAction = DocumentErrorAction.valueOf(s.toUpperCase(Locale.ROOT));
     } catch (IllegalArgumentException e) {
-      throw new IllegalArgumentException(
-          "Invalid value '"
-              + s
-              + "' for harvester property 'conversionErrorAction', valid ones are: "
-              + Arrays.toString(DocumentErrorAction.values()));
+      throw new IllegalArgumentException("Invalid value '" + s + "' for harvester property 'conversionErrorAction', valid ones are: "
+          + Arrays.toString(DocumentErrorAction.values()));
     }
     
     final int threadCount = Integer.parseInt(iconfig.properties.getProperty("numThreads", "1"));
@@ -123,9 +116,6 @@ public final class DocumentProcessor {
         }
       }, getClass().getName() + "#" + (i + 1));
     }
-    
-    // setup ES index
-    initIndexSettings();
   }
   
   public boolean isFailed() {
@@ -210,7 +200,7 @@ public final class DocumentProcessor {
   public Date getLastHarvestedFromDisk() {
     Date d = null;
     try {
-      final GetResponse resp = client.prepareGet(targetIndex, HARVESTER_METADATA_TYPE, iconfig.id)
+      final GetResponse resp = client.prepareGet(sourceIndex, HARVESTER_METADATA_TYPE, iconfig.id)
           .setFields(HARVESTER_METADATA_FIELD_LAST_HARVESTED).setFetchSource(false).get();
       final Object v;
       if (resp.isExists() && (v = resp.getField(HARVESTER_METADATA_FIELD_LAST_HARVESTED).getValue()) != null) {
@@ -233,82 +223,6 @@ public final class DocumentProcessor {
     }
   }
   
-  private static XContentBuilder addNotAnalyzedFieldMapping(XContentBuilder builder, String name) throws IOException {
-    return builder.startObject(name)
-        .field("type", "string").field("index", "not_analyzed").field("include_in_all", false)
-      .endObject();
-  }
-  
-  private void initIndexSettings() throws IOException {
-    final IndicesAdminClient indicesAdmin = client.admin().indices();
-    
-    log.info("Creating index='" + targetIndex + "'...");
-    try {
-      final CreateIndexResponse resp = indicesAdmin.prepareCreate(targetIndex).get();
-      log.info("Index created: " + resp.isAcknowledged());
-    } catch (IndexAlreadyExistsException e) {
-      log.info("Index already exists.");
-    }
-    
-    log.info("Updating mappings for index='" + targetIndex + "'...");
-    
-    {
-      final XContentBuilder builder = XContentFactory.jsonBuilder().startObject()
-        .startObject("_source")
-          .field("enabled", false)
-        .endObject()
-        .startObject("_all")
-          .field("enabled", false)
-        .endObject()
-        .startArray("dynamic_templates")
-          .startObject()
-            .startObject("kv_pairs")
-              .field("match", "*")
-              .startObject("mapping")
-                .field("type", "string").field("index", "no").field("store", true)
-              .endObject()
-            .endObject()
-          .endObject()
-        .endArray()
-      .endObject();
-      final PutMappingResponse resp = indicesAdmin.preparePutMapping(targetIndex)
-          .setType(HARVESTER_METADATA_TYPE)
-          .setSource(builder)
-          .setIgnoreConflicts(false)
-          .get();
-      log.info("Harvester metadata mapping updated: " + resp.isAcknowledged());
-    }    
-    
-    if (iconfig.parent.esMapping != null) {
-      final PutMappingResponse resp = indicesAdmin.preparePutMapping(targetIndex)
-          .setType(iconfig.parent.typeName)
-          .setSource(iconfig.parent.esMapping)
-          .setIgnoreConflicts(false)
-          .get();
-      log.info("Field mappings updated with provided file: " + resp.isAcknowledged());
-    }
-
-    {
-      final XContentBuilder builder = XContentFactory.jsonBuilder().startObject()
-        .startObject("properties")
-          .startObject(iconfig.parent.fieldnameDatestamp)
-            .field("type", "date").field("format", "dateOptionalTime").field("include_in_all", false)
-          .endObject();
-          addNotAnalyzedFieldMapping(builder, iconfig.parent.fieldnameSource);
-          builder.startObject(iconfig.parent.fieldnameXML)
-            .field("type", "string").field("index", "no")
-          .endObject()
-        .endObject()
-      .endObject();
-      final PutMappingResponse resp = indicesAdmin.preparePutMapping(targetIndex)
-          .setType(iconfig.parent.typeName)
-          .setSource(builder)
-          .setIgnoreConflicts(false)
-          .get();
-      log.info("Internal field mappings updated: " + resp.isAcknowledged());
-    }
-  }
-  
   /**
    * check for validIdentifiers Set and remove all unknown
    * identifiers from ES.
@@ -317,11 +231,11 @@ public final class DocumentProcessor {
     if (validIdentifiers != null) {
       log.info("Removing metadata items not seen while harvesting (this may take a while)...");
       final QueryBuilder query = QueryBuilders.boolQuery()
-          .must(QueryBuilders.termQuery(iconfig.parent.fieldnameSource, iconfig.id))
-          .mustNot(QueryBuilders.idsQuery(iconfig.parent.typeName).ids(validIdentifiers.toArray(new String[validIdentifiers.size()])));
-      final long count = client.prepareCount(targetIndex).setTypes(iconfig.parent.typeName).setQuery(query).get().getCount();
+          .must(QueryBuilders.termQuery(iconfig.root.fieldnameSource, iconfig.id))
+          .mustNot(QueryBuilders.idsQuery(iconfig.root.typeName).ids(validIdentifiers.toArray(new String[validIdentifiers.size()])));
+      final long count = client.prepareCount(targetIndex).setTypes(iconfig.root.typeName).setQuery(query).get().getCount();
       log.info("Deleting approx. " + count + " metadata items...");
-      client.prepareDeleteByQuery(targetIndex).setTypes(iconfig.parent.typeName).setQuery(query).get();
+      client.prepareDeleteByQuery(targetIndex).setTypes(iconfig.root.typeName).setQuery(query).get();
     }
   }
   
@@ -422,7 +336,7 @@ public final class DocumentProcessor {
     if (kv == null || kv.isEmpty()) {
       if (log.isDebugEnabled()) log.debug("Deleting document: " + identifier);
       bulkRequest.add(
-        client.prepareDelete(targetIndex, iconfig.parent.typeName, identifier)
+        client.prepareDelete(targetIndex, iconfig.root.typeName, identifier)
       );
     } else {
       final XContentBuilder json = XContentFactory.jsonBuilder();
@@ -431,7 +345,7 @@ public final class DocumentProcessor {
       if (log.isTraceEnabled()) log.trace("Data: " + json.string());
       //log.info("Data: " + json.string());
       bulkRequest.add(
-        client.prepareIndex(targetIndex, iconfig.parent.typeName, identifier).setSource(json)
+        client.prepareIndex(targetIndex, iconfig.root.typeName, identifier).setSource(json)
       );
     }
     

@@ -29,11 +29,12 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Properties;
+import java.util.Set;
 
 import javax.xml.XMLConstants;
 import javax.xml.transform.Templates;
@@ -64,7 +65,7 @@ import de.pangaea.metadataportal.utils.StaticFactories;
  * 
  * @author Uwe Schindler
  */
-public class Config {
+public final class Config {
   
   private static final org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory
       .getLog(Config.class);
@@ -185,36 +186,38 @@ public class Config {
       dig.addCallMethod("config/metadata/elasticsearchMapping/typeName", "setTypeName", 0);
       dig.addCallMethod("config/metadata/elasticsearchMapping/file", "setEsMappingFile", 0);
       
-      // *** HARVESTER CONFIG ***
+      // *** TARGET INDEX CONFIG ***
       dig.addDoNothing("config/sources");
+      dig.addFactoryCreate("config/sources",
+          new AbstractObjectCreationFactory() {
+            @Override
+            public Object createObject(Attributes attributes) {
+              return new TargetIndexConfig(Config.this, attributes.getValue("targetIndex"));
+            }
+          });
+      dig.addSetNext("config/sources", "addTargetIndex");
       
       // *** GLOBAL HARVESTER PROPERTIES ***
       dig.addDoNothing("config/sources/globalProperties");
-      dig.addCallMethod("config/sources/globalProperties/*",
-          "addGlobalHarvesterProperty", 0);
+      dig.addCallMethod("config/sources/globalProperties/*", "addGlobalHarvesterProperty", 0);
       
       // *** CONFIG FOR EACH HARVESTER ***
       dig.addFactoryCreate("config/sources/harvester",
           new AbstractObjectCreationFactory() {
             @Override
             public Object createObject(Attributes attributes) {
-              return new HarvesterConfig(Config.this);
+              return new HarvesterConfig(Config.this, (TargetIndexConfig) dig.peek(), attributes.getValue("id"));
             }
           });
       dig.addSetNext("config/sources/harvester", "addHarvester");
-      dig.addCallMethod("config/sources/harvester", "setId", 1);
-      dig.addCallParam("config/sources/harvester", 0, "id");
       
       dig.addCallMethod("config/sources/harvester/class",
           "setHarvesterClass", 0);
       
-      dig.addRule(
-          "config/sources/harvester/transform",
-          new HarvesterConfigTransformerSaxRule(this));
+      dig.addRule("config/sources/harvester/transform", new HarvesterConfigTransformerSaxRule(this));
       
       dig.addDoNothing("config/sources/harvester/properties");
-      dig.addCallMethod("config/sources/harvester/properties/*",
-          "addHarvesterProperty", 0);
+      dig.addCallMethod("config/sources/harvester/properties/*", "addHarvesterProperty", 0);
             
       // *** ELASTICSEARCH TransportClient settings ***
       dig.addDoNothing("config/elasticsearchCluster");
@@ -246,8 +249,9 @@ public class Config {
     
     // *** After loading do final checks ***
     // consistency in harvesters:
-    for (HarvesterConfig iconf : harvesters.values())
+    for (TargetIndexConfig iconf : targetIndexes.values()) {
       iconf.check();
+    }
     
     // cleanup
     templatesCache.clear();
@@ -327,11 +331,10 @@ public class Config {
     filters.add(f);
   }
   
-  public void addHarvester(HarvesterConfig i) {
-    if (harvesters.containsKey(i.id)) throw new IllegalArgumentException(
-        "There is already a harvester with id=\"" + i.id
-            + "\" added to configuration!");
-    harvesters.put(i.id, i);
+  public void addTargetIndex(TargetIndexConfig tic) {
+    if (!harvestersAndIndexes.add(tic.indexName)) throw new IllegalArgumentException(
+        "There is already a harvester or targetIndex with id=\"" + tic.indexName + "\" added to configuration!");
+    targetIndexes.put(tic.indexName, tic);
   }
   
   @PublicForDigesterUse
@@ -360,12 +363,6 @@ public class Config {
     FilterConfig f = new FilterConfig();
     f.setType(v);
     filterDefault = f.type;
-  }
-  
-  @PublicForDigesterUse
-  @Deprecated
-  public void addGlobalHarvesterProperty(String value) {
-    globalHarvesterProperties.setProperty(dig.getCurrentElementName(), value);
   }
   
   public void setSchema(String namespace, String url) throws Exception {
@@ -456,7 +453,8 @@ public class Config {
   }
   
   // harvesters
-  public final Map<String,HarvesterConfig> harvesters = new LinkedHashMap<String,HarvesterConfig>();
+  public final Set<String> harvestersAndIndexes = new HashSet<>();
+  public final Map<String,TargetIndexConfig> targetIndexes = new LinkedHashMap<>();
   
   // metadata mapping name
   public String typeName = "doc";
@@ -491,8 +489,6 @@ public class Config {
   // Template cache
   private final Map<String,Templates> templatesCache = new HashMap<String,Templates>();
   
-  public final Properties globalHarvesterProperties = new Properties();
-    
   public String file;
   
   protected ExtendedDigester dig = null;

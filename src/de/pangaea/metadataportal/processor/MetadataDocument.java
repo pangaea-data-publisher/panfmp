@@ -94,7 +94,7 @@ public class MetadataDocument {
     // read identifier
     identifier = hit.getId();
     // try to read date stamp
-    final SearchHitField dateFld = hit.field(iconfig.parent.fieldnameDatestamp);
+    final SearchHitField dateFld = hit.field(iconfig.root.fieldnameDatestamp);
     final String datestampStr = (dateFld == null) ? null : dateFld.<String>getValue();
     if (datestampStr != null) {
       try {
@@ -105,7 +105,7 @@ public class MetadataDocument {
       }
     }
     // read XML
-    final SearchHitField xmlFld = hit.field(iconfig.parent.fieldnameXML);
+    final SearchHitField xmlFld = hit.field(iconfig.root.fieldnameXML);
     final String xml = (xmlFld == null) ? null : xmlFld.<String>getValue();
     if (xml == null) {
       setFinalDOM(null);
@@ -270,9 +270,9 @@ public class MetadataDocument {
       return null; // to delete
     } else {
       KeyValuePairs kv = new KeyValuePairs();
-      kv.add(iconfig.parent.fieldnameSource, iconfig.id);
+      kv.add(iconfig.root.fieldnameSource, iconfig.id);
       if (datestamp != null) {
-        kv.add(iconfig.parent.fieldnameDatestamp, datestamp);
+        kv.add(iconfig.root.fieldnameDatestamp, datestamp);
       }
       return kv;
     }
@@ -282,7 +282,7 @@ public class MetadataDocument {
    * Helper method that finalizes the JSON document
    */
   protected void finalizeKeyValuePairs(KeyValuePairs kv) throws Exception {
-    kv.add(iconfig.parent.fieldnameXML, this.getXML());
+    kv.add(iconfig.root.fieldnameXML, this.getXML());
   }
   
   /**
@@ -295,7 +295,7 @@ public class MetadataDocument {
    *           exceptions can be thrown).
    */
   protected void addFields(KeyValuePairs kv) throws Exception {
-    for (FieldConfig f : iconfig.parent.fields.values()) {
+    for (FieldConfig f : iconfig.root.fields.values()) {
       if (f.datatype == FieldConfig.DataType.XHTML) {
         addField(kv, f, evaluateTemplateAsXHTML(f));
       } else {
@@ -397,8 +397,8 @@ public class MetadataDocument {
    *           exceptions can be thrown).
    */
   protected boolean processFilters() throws Exception {
-    boolean accept = (iconfig.parent.filterDefault == FilterConfig.FilterType.ACCEPT);
-    for (FilterConfig f : iconfig.parent.filters) {
+    boolean accept = (iconfig.root.filterDefault == FilterConfig.FilterType.ACCEPT);
+    for (FilterConfig f : iconfig.root.filters) {
       if (f.xPathExpr == null) throw new NullPointerException(
           "Filters need to contain a XPath expression, which is NULL!");
       Boolean b = (Boolean) f.xPathExpr.evaluate(dom, XPathConstants.BOOLEAN);
@@ -450,7 +450,7 @@ public class MetadataDocument {
       addSystemVariables(data);
       
       // variables in config
-      for (VariableConfig f : iconfig.parent.xPathVariables) {
+      for (VariableConfig f : iconfig.root.xPathVariables) {
         Object value = null;
         if (f.xPathExpr != null) {
           try {
@@ -633,7 +633,7 @@ public class MetadataDocument {
     
     private XMLConverter() {
       String v = iconfig.properties.getProperty("validate");
-      if (iconfig.parent.schema == null) {
+      if (iconfig.root.schema == null) {
         if (v != null) throw new IllegalStateException(
             "The <validate> harvester property is only allowed if a XML schema is set in the metadata properties!");
         validate = false; // no validation if no schema available
@@ -650,7 +650,7 @@ public class MetadataDocument {
       } else {
         if (log.isDebugEnabled()) log.debug("Validating '" + ds.getSystemId()
             + "'...");
-        Validator val = iconfig.parent.schema.newValidator();
+        Validator val = iconfig.root.schema.newValidator();
         val.setErrorHandler(new ErrorHandler() {
           public void warning(SAXParseException e) throws SAXException {
             log.warn("Validation warning in "
@@ -662,7 +662,7 @@ public class MetadataDocument {
             String msg = "Validation error in "
                 + (wasTransformed ? "XSL transformed " : "") + "document '"
                 + ds.getSystemId() + "': " + e.getMessage();
-            if (iconfig.parent.haltOnSchemaError) throw new SAXException(msg);
+            if (iconfig.root.haltOnSchemaError) throw new SAXException(msg);
             log.error(msg);
           }
           
@@ -672,7 +672,7 @@ public class MetadataDocument {
                 + ds.getSystemId() + "': " + e.getMessage());
           }
         });
-        DOMResult dr = (iconfig.parent.validateWithAugmentation) ? emptyDOMResult(ds
+        DOMResult dr = (iconfig.root.validateWithAugmentation) ? emptyDOMResult(ds
             .getSystemId()) : null;
         val.validate(ds, dr);
         return (dr == null) ? DOMSource2Result(ds) : dr;
