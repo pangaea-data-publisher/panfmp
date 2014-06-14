@@ -97,7 +97,7 @@ public final class TargetIndexConfig {
     final IndicesAdminClient indicesAdmin = client.admin().indices();
     
     log.info("Getting index name for alias='" + indexName + "'...");
-    final String realIndex;
+    final String realIndexName;
     final Iterator<String> indexes = indicesAdmin.prepareGetAliases(indexName).get().getAliases().keysIt();
     if (indexes.hasNext()) {
       String found = indexes.next();
@@ -106,21 +106,21 @@ public final class TargetIndexConfig {
         throw new IOException("There are more than one index referred by alias='"+indexName+"'");
       }
       if (rebuilder) {
-        realIndex = indexName + (found.equals(indexName + nameSuffix1) ? nameSuffix2 : nameSuffix1);
-        log.info("As rebuilding is requested, we create a new index: " + realIndex);
-        final DeleteIndexResponse resp = indicesAdmin.prepareDelete(realIndex).setIndicesOptions(IndicesOptions.lenientExpandOpen()).get();
+        realIndexName = indexName + (found.equals(indexName + nameSuffix1) ? nameSuffix2 : nameSuffix1);
+        log.info("As rebuilding is requested, we create a new index: " + realIndexName);
+        final DeleteIndexResponse resp = indicesAdmin.prepareDelete(realIndexName).setIndicesOptions(IndicesOptions.lenientExpandOpen()).get();
         log.info("Pre-existing index deleted: " + resp.isAcknowledged());
       } else {
-        realIndex = found;
+        realIndexName = found;
       }
     } else {
       log.info("Alias does not yet exist, start fresh...");
-      realIndex = indexName + nameSuffix1;
+      realIndexName = indexName + nameSuffix1;
     }
 
-    log.info("Creating index='" + realIndex + "'...");
+    log.info("Creating index='" + realIndexName + "'...");
     try {
-      final CreateIndexRequestBuilder req = indicesAdmin.prepareCreate(realIndex);
+      final CreateIndexRequestBuilder req = indicesAdmin.prepareCreate(realIndexName);
       req.setCause(rebuilder ? "for rebuilding" : "new harvesting");
       if (!rebuilder) req.addAlias(new Alias(indexName));
       final CreateIndexResponse resp = req.get();
@@ -129,7 +129,7 @@ public final class TargetIndexConfig {
       log.info("Index already exists.");
     }
 
-    log.info("Updating mappings for index='" + realIndex + "'...");
+    log.info("Updating mappings for index='" + realIndexName + "'...");
     
     {
       final XContentBuilder builder = XContentFactory.jsonBuilder().startObject()
@@ -150,7 +150,7 @@ public final class TargetIndexConfig {
           .endObject()
         .endArray()
       .endObject();
-      final PutMappingResponse resp = indicesAdmin.preparePutMapping(realIndex)
+      final PutMappingResponse resp = indicesAdmin.preparePutMapping(realIndexName)
           .setType(DocumentProcessor.HARVESTER_METADATA_TYPE)
           .setSource(builder)
           .setIgnoreConflicts(false)
@@ -159,7 +159,7 @@ public final class TargetIndexConfig {
     }    
     
     if (root.esMapping != null) {
-      final PutMappingResponse resp = indicesAdmin.preparePutMapping(realIndex)
+      final PutMappingResponse resp = indicesAdmin.preparePutMapping(realIndexName)
           .setType(root.typeName)
           .setSource(root.esMapping)
           .setIgnoreConflicts(false)
@@ -179,7 +179,7 @@ public final class TargetIndexConfig {
           .endObject()
         .endObject()
       .endObject();
-      final PutMappingResponse resp = indicesAdmin.preparePutMapping(realIndex)
+      final PutMappingResponse resp = indicesAdmin.preparePutMapping(realIndexName)
           .setType(root.typeName)
           .setSource(builder)
           .setIgnoreConflicts(false)
@@ -187,11 +187,17 @@ public final class TargetIndexConfig {
       log.info("Internal field mappings updated: " + resp.isAcknowledged());
     }
     
-    return realIndex;
+    waitClusterState(client, realIndexName);
+    
+    return realIndexName;
   }
   
   /** Closes the index after harvesting and update the aliases to point to the active index. */
   public void closeIndex(Client client, String realIndexName, boolean cleanShutdown) throws IOException {
+    log.info("Flushing data...");
+    client.admin().indices().prepareFlush(realIndexName).get();
+    waitClusterState(client, realIndexName);
+    
     final IndicesAdminClient indicesAdmin = client.admin().indices();
     
     final Iterator<String> indexes = indicesAdmin.prepareGetAliases(indexName).get().getAliases().keysIt();
@@ -218,6 +224,14 @@ public final class TargetIndexConfig {
         DeleteIndexResponse resp = indicesAdmin.prepareDelete(aliasedIndex).get();
         log.info("Index deleted: " + resp.isAcknowledged());
       }
+      waitClusterState(client, realIndexName, indexName);
+    }
+  }
+  
+  public void waitClusterState(Client client, String... realIndexName) throws IOException {
+    log.info("Waiting for yellow cluster state...");
+    if (client.admin().cluster().prepareHealth(realIndexName).setWaitForYellowStatus().get().isTimedOut()) {
+      throw new IOException("Waiting for yellow cluster state timed out.");
     }
   }
 
