@@ -115,8 +115,8 @@ public class WebCrawlingHarvester extends SingleFileEntitiesHarvester {
   }
 
   @Override
-  public void open(ElasticsearchConnection es) throws Exception {
-    super.open(es);
+  public void open(ElasticsearchConnection es, String targetIndex) throws Exception {
+    super.open(es, targetIndex);
     
     String s = iconfig.properties.getProperty("baseUrl");
     if (s == null) throw new IllegalArgumentException(

@@ -58,8 +58,8 @@ public class OAIStaticRepositoryHarvester extends OAIHarvesterBase {
   }
 
   @Override
-  public void open(ElasticsearchConnection es) throws Exception {
-    super.open(es);
+  public void open(ElasticsearchConnection es, String targetIndex) throws Exception {
+    super.open(es, targetIndex);
     filterIncomingSets = true; // always filter set names
     
     if (sets != null) {
@@ -161,8 +161,7 @@ public class OAIStaticRepositoryHarvester extends OAIHarvesterBase {
         "No URL of the OAI static repository was given!");
     
     log.info("Harvesting static repository at \"" + url + "\"...");
-    AtomicReference<Date> modifiedDate = new AtomicReference<Date>(
-        fromDateReference);
+    AtomicReference<Date> modifiedDate = new AtomicReference<>(fromDateReference);
     if (doParse(dig, url, modifiedDate)) {
       // set the date for next harvesting
       setHarvestingDateReference(modifiedDate.get());

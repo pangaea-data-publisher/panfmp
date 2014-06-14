@@ -27,7 +27,7 @@ import de.pangaea.metadataportal.utils.PublicForDigesterUse;
  * 
  * @author Uwe Schindler
  */
-public class FieldConfig extends ExpressionConfig {
+public final class FieldConfig extends ExpressionConfig {
   
   public void setName(String v) {
     name = v;

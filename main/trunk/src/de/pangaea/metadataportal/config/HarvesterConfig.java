@@ -28,23 +28,19 @@ import de.pangaea.metadataportal.harvester.Harvester;
 import de.pangaea.metadataportal.utils.PublicForDigesterUse;
 
 /**
- * Configuration of an panFMP harvester.
+ * Configuration of a panFMP harvester.
  * 
  * @author Uwe Schindler
  */
-public class HarvesterConfig {
+public final class HarvesterConfig {
   
   /** Default constructor **/
-  public HarvesterConfig(Config parent) {
+  public HarvesterConfig(Config root, TargetIndexConfig parent, String id) {
+    if (id == null) throw new NullPointerException("Every harvester needs a unique id!");
+    this.root = root;
     this.parent = parent;
+    this.id = id;
     properties = new Properties(parent.globalHarvesterProperties);
-  }
-  
-  /** Sets the ID of this harvester configuration. **/
-  public void setId(String v) {
-    if (checked) throw new IllegalStateException(
-        "Harvester configuration cannot be changed anymore!");
-    id = v;
   }
   
   /** Sets class name of harvester (called from Digester on config load). **/
@@ -63,7 +59,7 @@ public class HarvesterConfig {
     if (checked) throw new IllegalStateException(
         "Harvester configuration cannot be changed anymore!");
     if (value != null) properties.setProperty(
-        parent.dig.getCurrentElementName(), value.trim());
+        parent.root.dig.getCurrentElementName(), value.trim());
   }
 
   /**
@@ -71,8 +67,6 @@ public class HarvesterConfig {
    * change anything in this instance.
    **/
   public void check() throws Exception {
-    if (id == null) throw new IllegalStateException(
-        "Every harvester needs a unique id!");
     Harvester h = harvesterClass.getConstructor(HarvesterConfig.class).newInstance(this);
     Set<String> validProperties = h.getValidHarvesterPropertyNames();
     @SuppressWarnings("unchecked")
@@ -92,8 +86,9 @@ public class HarvesterConfig {
   protected boolean checked = false;
   
   // members "the configuration"
-  public String id = null;
-  public final Config parent;
+  public final String id;
+  public final Config root;
+  public final TargetIndexConfig parent;
 
   public Class<? extends Harvester> harvesterClass = null;
 

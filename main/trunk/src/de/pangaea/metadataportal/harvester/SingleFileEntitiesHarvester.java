@@ -61,8 +61,8 @@ public abstract class SingleFileEntitiesHarvester extends Harvester {
   }
 
   @Override
-  public void open(ElasticsearchConnection es) throws Exception {
-    super.open(es);
+  public void open(ElasticsearchConnection es, String targetIndex) throws Exception {
+    super.open(es, targetIndex);
     
     String s = iconfig.properties.getProperty("parseErrorAction");
     if (s != null) try {

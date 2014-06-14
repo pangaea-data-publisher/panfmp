@@ -43,7 +43,7 @@ import de.pangaea.metadataportal.processor.MetadataDocument;
  * 
  * @author Uwe Schindler
  */
-public class Rebuilder extends Harvester {
+public final class Rebuilder extends Harvester {
   
   private static final org.apache.commons.logging.Log staticLog = org.apache.commons.logging.LogFactory
       .getLog(Rebuilder.class);
@@ -65,25 +65,23 @@ public class Rebuilder extends Harvester {
   }
   
   // harvester interface
-  private Harvester wrappedHarvester = null;
+  private final String sourceIndex;
+  private final Harvester wrappedHarvester;
   private Client client = null;
-  private String sourceIndex = null;
   private int bulkSize = DocumentProcessor.DEFAULT_BULK_SIZE;
   
-  public Rebuilder(HarvesterConfig iconfig) {
+  public Rebuilder(HarvesterConfig iconfig) throws Exception {
     super(iconfig);
+    this.sourceIndex = iconfig.parent.indexName;
+    this.wrappedHarvester = iconfig.harvesterClass.getConstructor(HarvesterConfig.class).newInstance(iconfig);
   }
 
   @Override
-  public void open(ElasticsearchConnection es) throws Exception {
-    this.sourceIndex = iconfig.properties.getProperty("targetIndex", DocumentProcessor.DEFAULT_INDEX);
-    this.bulkSize = Integer.parseInt(iconfig.properties.getProperty("bulkSize", Integer.toString(DocumentProcessor.DEFAULT_BULK_SIZE)));
+  public void open(ElasticsearchConnection es, String targetIndex) throws Exception {
     log.info("Opening Elasticsearch index '" + sourceIndex + "' for rebuilding all documents of harvester '" + iconfig.id + "'...");
-
-    this.wrappedHarvester = iconfig.harvesterClass.getConstructor(HarvesterConfig.class).newInstance(iconfig);
-    
     this.client = es.client();
-    super.open(es);
+    this.bulkSize = Integer.parseInt(iconfig.properties.getProperty("bulkSize", Integer.toString(DocumentProcessor.DEFAULT_BULK_SIZE)));    
+    super.open(es, targetIndex);
   }
   
   @Override
@@ -107,9 +105,9 @@ public class Rebuilder extends Harvester {
     if (client == null) throw new IllegalStateException("Rebuilder was not opened!");
     final TimeValue time = TimeValue.timeValueMinutes(10);
     SearchResponse scrollResp = client.prepareSearch(sourceIndex)
-      .setTypes(iconfig.parent.typeName)
-      .addFields(iconfig.parent.fieldnameDatestamp, iconfig.parent.fieldnameXML, iconfig.parent.fieldnameSource)
-      .setQuery(QueryBuilders.termQuery(iconfig.parent.fieldnameSource, iconfig.id))
+      .setTypes(iconfig.root.typeName)
+      .addFields(iconfig.root.fieldnameDatestamp, iconfig.root.fieldnameXML, iconfig.root.fieldnameSource)
+      .setQuery(QueryBuilders.termQuery(iconfig.root.fieldnameSource, iconfig.id))
       .setFetchSource(false)
       .setSize(bulkSize)
       .setSearchType(SearchType.SCAN).setScroll(time)
@@ -119,7 +117,7 @@ public class Rebuilder extends Harvester {
         .setScroll(time)
         .get();
       for (final SearchHit hit : scrollResp.getHits()) {
-        SearchHitField fld = hit.field(iconfig.parent.fieldnameSource);
+        SearchHitField fld = hit.field(iconfig.root.fieldnameSource);
         if (fld == null || !iconfig.id.equals(fld.getValue())) {
           log.warn("Document '" + hit.getId() + "' is from an invalid source, the harvester ID does not match! This may be caused by an invalid Elasticsearch mapping.");
           continue;
@@ -133,6 +131,8 @@ public class Rebuilder extends Harvester {
         addDocument(mdoc);
       }
     } while (scrollResp.getHits().getHits().length > 0);
+    // finally update the date reference to be the same as from original index:
+    setHarvestingDateReference(fromDateReference);
   }
   
 }

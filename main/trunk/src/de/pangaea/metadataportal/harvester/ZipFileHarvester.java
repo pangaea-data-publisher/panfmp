@@ -90,13 +90,13 @@ public class ZipFileHarvester extends SingleFileEntitiesHarvester {
   }
 
   @Override
-  public void open(ElasticsearchConnection es) throws Exception {
-    super.open(es);
+  public void open(ElasticsearchConnection es, String targetIndex) throws Exception {
+    super.open(es, targetIndex);
     
     zipFile = iconfig.properties.getProperty("zipFile");
     if (zipFile == null) throw new IllegalArgumentException(
         "Missing name / URL of ZIP file to harvest (property \"zipFile\")");
-    zipFile = iconfig.parent.makePathAbsolute(zipFile, true);
+    zipFile = iconfig.root.makePathAbsolute(zipFile, true);
     
     identifierPrefix = iconfig.properties.getProperty(
         "identifierPrefix", "");

@@ -96,8 +96,8 @@ public class PanFMP1IndexHarvester extends SingleFileEntitiesHarvester {
 
   @SuppressWarnings("deprecation")
   @Override
-  public void open(ElasticsearchConnection es) throws Exception {
-    super.open(es);
+  public void open(ElasticsearchConnection es, String targetIndex) throws Exception {
+    super.open(es, targetIndex);
     
     identifierPrefix = iconfig.properties.getProperty("identifierPrefix", "");
     
@@ -105,7 +105,7 @@ public class PanFMP1IndexHarvester extends SingleFileEntitiesHarvester {
     if (s == null) {
       throw new IllegalArgumentException("Missing index directory path (property \"indexDir\")");
     }
-    final File dir = new File(iconfig.parent.makePathAbsolute(s, false));
+    final File dir = new File(iconfig.root.makePathAbsolute(s, false));
     
     String info, qstr = iconfig.properties.getProperty("query");
     if (qstr == null || qstr.length() == 0) {

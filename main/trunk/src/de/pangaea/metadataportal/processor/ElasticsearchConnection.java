@@ -63,8 +63,8 @@ public class ElasticsearchConnection implements Closeable {
     return client;
   }
   
-  public DocumentProcessor getDocumentProcessor(HarvesterConfig iconfig) throws IOException {
-    return new DocumentProcessor(client(), iconfig);
+  public DocumentProcessor getDocumentProcessor(HarvesterConfig iconfig, String targetIndex) throws IOException {
+    return new DocumentProcessor(client(), iconfig, targetIndex);
   }
   
 }
