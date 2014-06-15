@@ -109,8 +109,11 @@ public final class DocumentProcessor {
     try {
       final GetResponse resp = client.prepareGet(sourceIndex, HARVESTER_METADATA_TYPE, iconfig.id).setFetchSource(true).get();
       if (resp.isExists()) {
-        for (final Map.Entry<String,Object> e : resp.getSourceAsMap().entrySet()) {
-          harvesterMetadata.put(e.getKey(), e.getValue().toString());
+        Map<String,Object> map = resp.getSourceAsMap();
+        if (map != null) {
+          for (final Map.Entry<String,Object> e : map.entrySet()) {
+            harvesterMetadata.put(e.getKey(), e.getValue().toString());
+          }
         }
       }
     } catch (IndexMissingException e) {
