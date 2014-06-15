@@ -134,7 +134,7 @@ public final class TargetIndexConfig {
     {
       final XContentBuilder builder = XContentFactory.jsonBuilder().startObject()
         .startObject("_source")
-          .field("enabled", false)
+          .field("enabled", true)
         .endObject()
         .startObject("_all")
           .field("enabled", false)
@@ -144,7 +144,7 @@ public final class TargetIndexConfig {
             .startObject("kv_pairs")
               .field("match", "*")
               .startObject("mapping")
-                .field("type", "string").field("index", "no").field("store", true)
+                .field("type", "string").field("index", "no").field("store", false)
               .endObject()
             .endObject()
           .endObject()
@@ -187,8 +187,6 @@ public final class TargetIndexConfig {
       log.info("Internal field mappings updated: " + resp.isAcknowledged());
     }
     
-    waitClusterState(client, realIndexName);
-    
     return realIndexName;
   }
   
@@ -196,7 +194,6 @@ public final class TargetIndexConfig {
   public void closeIndex(Client client, String realIndexName, boolean cleanShutdown) throws IOException {
     log.info("Flushing data...");
     client.admin().indices().prepareFlush(realIndexName).get();
-    waitClusterState(client, realIndexName);
     
     final IndicesAdminClient indicesAdmin = client.admin().indices();
     
@@ -224,17 +221,9 @@ public final class TargetIndexConfig {
         DeleteIndexResponse resp = indicesAdmin.prepareDelete(aliasedIndex).get();
         log.info("Index deleted: " + resp.isAcknowledged());
       }
-      waitClusterState(client, realIndexName, indexName);
     }
   }
   
-  public void waitClusterState(Client client, String... realIndexName) throws IOException {
-    log.info("Waiting for yellow cluster state...");
-    if (client.admin().cluster().prepareHealth(realIndexName).setWaitForYellowStatus().get().isTimedOut()) {
-      throw new IOException("Waiting for yellow cluster state timed out.");
-    }
-  }
-
   protected boolean checked = false;
   
   // members "the configuration"
