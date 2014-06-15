@@ -19,9 +19,10 @@ package de.pangaea.metadataportal.processor;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -57,7 +58,7 @@ public final class DocumentProcessor {
   protected final Client client;
   protected final String targetIndex, sourceIndex; // differs if rebuilding
   
-  private Date lastHarvested = null;
+  public final Map<String,String> harvesterMetadata = new LinkedHashMap<>();
   
   private static final MetadataDocument MDOC_EOF = new MetadataDocument(null);
   private final BlockingQueue<MetadataDocument> mdocBuffer;
@@ -76,7 +77,6 @@ public final class DocumentProcessor {
   private Thread[] threadList;
   
   public static final String HARVESTER_METADATA_TYPE = "panfmp_meta";
-  public static final String HARVESTER_METADATA_FIELD_LAST_HARVESTED = "lastHarvested";
 
   public static final int DEFAULT_BULK_SIZE = 100;
 
@@ -104,6 +104,18 @@ public final class DocumentProcessor {
       throw new IllegalArgumentException("maxQueue must be >=numThreads!");
     }
     this.mdocBuffer = new ArrayBlockingQueue<MetadataDocument>(maxQueue, true);
+    
+    // load metadata
+    try {
+      final GetResponse resp = client.prepareGet(sourceIndex, HARVESTER_METADATA_TYPE, iconfig.id).setFetchSource(true).get();
+      if (resp.isExists()) {
+        for (final Map.Entry<String,Object> e : resp.getSourceAsMap().entrySet()) {
+          harvesterMetadata.put(e.getKey(), e.getValue().toString());
+        }
+      }
+    } catch (IndexMissingException e) {
+      // ignore
+    }
     
     // threads
     this.threadGroup = new ThreadGroup(getClass().getName() + "#ThreadGroup");
@@ -155,12 +167,16 @@ public final class DocumentProcessor {
     // exit here before we write any status info to disk:
     throwFailure();
     
-    // delet all unseen documents, if validIdentifiers is given:
+    // delete all unseen documents, if validIdentifiers is given:
     deleteUnseenDocuments();
     
-    // save datestamp:
-    saveLastHarvestedOnDisk();
-    
+    // save harvester metadata:
+    log.info("Saving harvester metadata...");
+    @SuppressWarnings({"rawtypes", "unchecked"}) // fix this type stupidness in ES:
+    final XContentBuilder builder = XContentFactory.jsonBuilder().map((Map) harvesterMetadata);
+    client.prepareIndex(targetIndex, HARVESTER_METADATA_TYPE, iconfig.id)
+      .setSource(builder).get();
+
     log.info(processed + " metadata items processed - finished.");
   }
   
@@ -190,37 +206,6 @@ public final class DocumentProcessor {
     if (ce != null) ce.harvesterCommitted(Collections.singleton(mdoc.getIdentifier()));
  
     log.info("Document update '" + mdoc.getIdentifier() + "' processed and submitted to Elasticsearch.");
-  }
-  
-  // sets the date of last harvesting (written to disk after closing!!!)
-  public void setLastHarvested(Date datestamp) {
-    this.lastHarvested = datestamp;
-  }
-  
-  public Date getLastHarvestedFromDisk() {
-    Date d = null;
-    try {
-      final GetResponse resp = client.prepareGet(sourceIndex, HARVESTER_METADATA_TYPE, iconfig.id)
-          .setFields(HARVESTER_METADATA_FIELD_LAST_HARVESTED).setFetchSource(false).get();
-      final Object v;
-      if (resp.isExists() && (v = resp.getField(HARVESTER_METADATA_FIELD_LAST_HARVESTED).getValue()) != null) {
-        d = XContentBuilder.defaultDatePrinter
-            .parseDateTime(v.toString())
-            .toDate();
-      }
-    } catch (IndexMissingException e) {
-      d = null;
-    }
-    return d;
-  }
-  
-  private void saveLastHarvestedOnDisk() {
-    if (lastHarvested != null) {
-      log.info("Saving timestamp for incremental harvesting...");
-      client.prepareIndex(targetIndex, HARVESTER_METADATA_TYPE, iconfig.id)
-        .setSource(HARVESTER_METADATA_FIELD_LAST_HARVESTED, lastHarvested).get();
-      lastHarvested = null;
-    }
   }
   
   /**

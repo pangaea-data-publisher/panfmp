@@ -25,6 +25,7 @@ import java.util.TreeSet;
 
 import javax.xml.transform.TransformerException;
 
+import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.xml.sax.SAXParseException;
 
 import de.pangaea.metadataportal.config.Config;
@@ -242,7 +243,14 @@ public abstract class Harvester {
         "Invalid value for harvestMessageStep: " + harvestMessageStep);
     
     processor = es.getDocumentProcessor(iconfig, targetIndex);
-    fromDateReference = processor.getLastHarvestedFromDisk();
+    Object v = processor.harvesterMetadata.get(HARVESTER_METADATA_FIELD_LAST_HARVESTED);
+    if (v != null) {
+      fromDateReference = XContentBuilder.defaultDatePrinter
+          .parseDateTime(v.toString())
+          .toDate();
+    } else {
+      fromDateReference = null;
+    }
   }
   
   /**
@@ -266,19 +274,22 @@ public abstract class Harvester {
    *           and may not affect the correct document.
    */
   public void close(boolean cleanShutdown) throws Exception {
-    if (processor == null) throw new IllegalStateException(
-        "Harvester must be opened before closing");
+    if (processor == null) throw new IllegalStateException("Harvester must be opened before closing");
     
-    if (cleanShutdown && harvestingDateReference != null) processor
-        .setLastHarvested(harvestingDateReference);
+    if (cleanShutdown && harvestingDateReference != null) {
+      processor.harvesterMetadata.put(HARVESTER_METADATA_FIELD_LAST_HARVESTED,
+          XContentBuilder.defaultDatePrinter.print(harvestingDateReference.getTime()));
+    }
+    harvestingDateReference = null;
     
     if (!processor.isClosed()) processor.close();
     processor = null;
     
-    if (cleanShutdown) log.info("Harvested " + harvestCount
-        + " objects - finished.");
-    else log.warn("Harvesting stopped unexspected, but " + harvestCount
-        + " objects harvested - finished.");
+    if (cleanShutdown) {
+      log.info("Harvested " + harvestCount + " objects - finished.");
+    } else {
+      log.warn("Harvesting stopped unexspected, but " + harvestCount + " objects harvested - finished.");
+    }
   }
   
   /**
@@ -390,5 +401,7 @@ public abstract class Harvester {
   
   // private mebers
   private Date harvestingDateReference = null;
+  
+  public static final String HARVESTER_METADATA_FIELD_LAST_HARVESTED = "lastHarvested";
   
 }
