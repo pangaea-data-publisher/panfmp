@@ -83,8 +83,7 @@ public final class Config {
     }
     
     try {
-      final Class<?>[] DIGSTRING_PARAMS = new Class<?>[] {ExtendedDigester.class,
-          String.class};
+      final Class<?>[] DIGSTRING_PARAMS = new Class<?>[] { ExtendedDigester.class, String.class };
       
       dig = new ExtendedDigester();
       dig.setNamespaceAware(true);
@@ -101,24 +100,19 @@ public final class Config {
       // variables
       dig.addDoNothing("config/metadata/variables");
       
-      dig.addObjectCreate("config/metadata/variables/variable",
-          VariableConfig.class);
+      dig.addObjectCreate("config/metadata/variables/variable", VariableConfig.class);
       dig.addSetNext("config/metadata/variables/variable", "addVariable");
-      dig.addCallMethod("config/metadata/variables/variable", "setName", 2,
-          DIGSTRING_PARAMS);
+      dig.addCallMethod("config/metadata/variables/variable", "setName", 2, DIGSTRING_PARAMS);
       dig.addObjectParam("config/metadata/variables/variable", 0, dig);
       dig.addCallParam("config/metadata/variables/variable", 1, "name");
-      dig.addCallMethod("config/metadata/variables/variable", "setXPath", 2,
-          DIGSTRING_PARAMS);
+      dig.addCallMethod("config/metadata/variables/variable", "setXPath", 2, DIGSTRING_PARAMS);
       dig.addObjectParam("config/metadata/variables/variable", 0, dig);
       dig.addCallParam("config/metadata/variables/variable", 1);
       
       dig.addObjectCreate("config/metadata/variables/variable-template",
           VariableConfig.class);
-      dig.addSetNext("config/metadata/variables/variable-template",
-          "addVariable");
-      dig.addCallMethod("config/metadata/variables/variable-template",
-          "setName", 2, DIGSTRING_PARAMS);
+      dig.addSetNext("config/metadata/variables/variable-template", "addVariable");
+      dig.addCallMethod("config/metadata/variables/variable-template", "setName", 2, DIGSTRING_PARAMS);
       dig.addObjectParam("config/metadata/variables/variable-template", 0, dig);
       dig.addCallParam("config/metadata/variables/variable-template", 1, "name");
       dig.addRule("config/metadata/variables/variable-template", new TemplateSaxRule(this));
@@ -129,8 +123,7 @@ public final class Config {
       
       dig.addObjectCreate("config/metadata/filters/*", FilterConfig.class);
       dig.addSetNext("config/metadata/filters/*", "addFilter");
-      dig.addCallMethod("config/metadata/filters/*", "setXPath", 2,
-          DIGSTRING_PARAMS);
+      dig.addCallMethod("config/metadata/filters/*", "setXPath", 2, DIGSTRING_PARAMS);
       dig.addObjectParam("config/metadata/filters/*", 0, dig);
       dig.addCallParam("config/metadata/filters/*", 1);
       
@@ -149,17 +142,15 @@ public final class Config {
       // XPath / template fields
       dig.addObjectCreate("config/metadata/fields/field", FieldConfig.class);
       dig.addSetNext("config/metadata/fields/field", "addField");
-      String[] propAttr = new String[] { "datatype"}, propMapping = new String[] {"dataType"};
+      String[] propAttr = new String[] { "datatype" }, propMapping = new String[] { "dataType" };
       SetPropertiesRule r = new SetPropertiesRule(propAttr, propMapping);
       r.setIgnoreMissingProperty(false);
       dig.addRule("config/metadata/fields/field", r);
-      dig.addCallMethod("config/metadata/fields/field", "setXPath", 2,
-          DIGSTRING_PARAMS);
+      dig.addCallMethod("config/metadata/fields/field", "setXPath", 2, DIGSTRING_PARAMS);
       dig.addObjectParam("config/metadata/fields/field", 0, dig);
       dig.addCallParam("config/metadata/fields/field", 1);
       
-      dig.addObjectCreate("config/metadata/fields/field-template",
-          FieldConfig.class);
+      dig.addObjectCreate("config/metadata/fields/field-template", FieldConfig.class);
       dig.addSetNext("config/metadata/fields/field-template", "addField");
       r = new SetPropertiesRule(propAttr, propMapping);
       r.setIgnoreMissingProperty(false);
@@ -176,10 +167,8 @@ public final class Config {
       dig.addCallMethod("config/metadata/schema/url", "setSchema", 2);
       dig.addCallParam("config/metadata/schema/url", 0, "namespace");
       dig.addCallParam("config/metadata/schema/url", 1);
-      dig.addCallMethod("config/metadata/schema/haltOnError",
-          "setHaltOnSchemaError", 0);
-      dig.addCallMethod("config/metadata/schema/augmentation",
-          "setAugmentation", 0);
+      dig.addCallMethod("config/metadata/schema/haltOnError", "setHaltOnSchemaError", 0);
+      dig.addCallMethod("config/metadata/schema/augmentation", "setAugmentation", 0);
       
       // typeName
       dig.addDoNothing("config/metadata/elasticsearchMapping");
@@ -206,7 +195,7 @@ public final class Config {
           new AbstractObjectCreationFactory() {
             @Override
             public Object createObject(Attributes attributes) {
-              return new HarvesterConfig(Config.this, (TargetIndexConfig) dig.peek(), attributes.getValue("id"));
+              return new HarvesterConfig(Config.this, (TargetIndexConfig) getDigester().peek(), attributes.getValue("id"));
             }
           });
       dig.addSetNext("config/sources/harvester", "addHarvester");
