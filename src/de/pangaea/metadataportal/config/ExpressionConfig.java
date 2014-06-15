@@ -21,6 +21,7 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
 
+import de.pangaea.metadataportal.processor.XPathResolverImpl;
 import de.pangaea.metadataportal.utils.ExtendedDigester;
 import de.pangaea.metadataportal.utils.PublicForDigesterUse;
 import de.pangaea.metadataportal.utils.StaticFactories;
@@ -40,10 +41,8 @@ public class ExpressionConfig {
     if ("".equals(xpath)) return; // Exception throws the Config.addField()
                                   // method
     XPath x = StaticFactories.xpathFactory.newXPath();
-    x.setXPathFunctionResolver(de.pangaea.metadataportal.processor.XPathResolverImpl
-        .getInstance());
-    x.setXPathVariableResolver(de.pangaea.metadataportal.processor.XPathResolverImpl
-        .getInstance());
+    x.setXPathFunctionResolver(XPathResolverImpl.getInstance());
+    x.setXPathVariableResolver(XPathResolverImpl.getInstance());
     // current namespace context with strict=true (display errors when namespace
     // declaration is missing [non-standard!])
     // and with possibly declared default namespace is redefined/deleted to ""
