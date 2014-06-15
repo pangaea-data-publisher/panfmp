@@ -88,7 +88,7 @@ public abstract class Harvester {
     
     try {
       Config conf = new Config(args[0]);
-      runHarvester(conf, (args.length == 2) ? args[1] : "*");
+      runHarvester(conf, (args.length == 2) ? args[1] : null);
     } catch (Exception e) {
       staticLog.fatal("Harvester general error:", e);
     }
@@ -105,7 +105,7 @@ public abstract class Harvester {
   
   /**
    * Harvests one (<code>harvesterId="name"</code>) or more (
-   * <code>harvesterId="*"</code>) sources. The harvester implementation is defined by
+   * <code>harvesterId="*"/"all"/null</code>) sources. The harvester implementation is defined by
    * the given configuration or if <code>harvesterClass</code> is not
    * <code>null</code>, the specified harvester will be used. This is used by
    * {@link Rebuilder}. Public code should use
@@ -113,11 +113,11 @@ public abstract class Harvester {
    */
   protected static void runHarvester(Config conf, String id, Class<? extends Harvester> harvesterClass) {
     final Set<String> activeIds;
-    if (id == null || "*".equals(id) || "all".equals(id)) {
+    if (isAllIndexes(id)) {
       activeIds = conf.targetIndexes.keySet();
     } else {
-      if (!conf.harvestersAndIndexes.contains(id)) throw new IllegalArgumentException(
-          "There is no harvester or targetIndex defined with id=\"" + id + "\"!");
+      if (!conf.harvestersAndIndexes.contains(id))
+        throw new IllegalArgumentException("There is no harvester or targetIndex defined with id=\"" + id + "\"!");
       activeIds = Collections.singleton(id);
     }
     
@@ -183,6 +183,10 @@ public abstract class Harvester {
         }
       }
     }
+  }
+  
+  protected static boolean isAllIndexes(String id) {
+    return id == null || "*".equals(id) || "all".equals(id);
   }
   
   /**
