@@ -52,15 +52,23 @@ public final class Rebuilder extends Harvester {
   public static void main(String[] args) {
     if (args.length < 1 || args.length > 2) {
       System.err.println("Command line: java " + Rebuilder.class.getName()
-          + " config.xml [index-name|*]");
+          + " config.xml [elasticsearch-target-index|*]");
       return;
     }
     
     try {
       Config conf = new Config(args[0]);
-      runHarvester(conf, (args.length == 2) ? args[1] : "*", Rebuilder.class);
+      runRebuilder(conf, (args.length == 2) ? args[1] : null);
     } catch (Exception e) {
       staticLog.fatal("Rebuilder general error:", e);
+    }
+  }
+  
+  public static void runRebuilder(Config conf, String id) {
+    if (isAllIndexes(id) || conf.targetIndexes.containsKey(id)) {
+      runHarvester(conf, id, Rebuilder.class);
+    } else {
+      throw new IllegalArgumentException("There is no targetIndex defined with id=\"" + id + "\"!");
     }
   }
   
