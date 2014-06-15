@@ -17,6 +17,7 @@
 package de.pangaea.metadataportal.config;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -32,8 +33,10 @@ import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
 import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.IndicesAdminClient;
+import org.elasticsearch.common.collect.ImmutableMap;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
+import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.indices.IndexAlreadyExistsException;
 
 import de.pangaea.metadataportal.processor.DocumentProcessor;
@@ -86,10 +89,73 @@ public final class TargetIndexConfig {
     checked = true;
   }
   
-  private static XContentBuilder addNotAnalyzedFieldMapping(XContentBuilder builder, String name) throws IOException {
-    return builder.startObject(name)
-        .field("type", "string").field("index", "not_analyzed").field("include_in_all", false)
-      .endObject();
+  private static XContentBuilder getHarvesterMetadataMapping() throws IOException {
+    return XContentFactory.jsonBuilder().startObject()
+        .startObject("_source")
+        .field("enabled", true)
+      .endObject()
+      .startObject("_all")
+        .field("enabled", false)
+      .endObject()
+      .startArray("dynamic_templates")
+        .startObject()
+          .startObject("kv_pairs")
+            .field("match", "*")
+            .startObject("mapping")
+              .field("type", "string").field("index", "no").field("store", false)
+            .endObject()
+          .endObject()
+        .endObject()
+      .endArray()
+    .endObject();
+  }
+  
+  private void addFieldMappings(Map<String, Object> map) throws IOException {
+    if (map.containsKey(root.fieldnameDatestamp) || map.containsKey(root.fieldnameSource) || map.containsKey(root.fieldnameXML)) {
+      throw new IllegalArgumentException("The given mapping is not allowed to contain properties for internal field: " +
+          Arrays.asList(root.fieldnameDatestamp, root.fieldnameSource, root.fieldnameXML));
+    }
+    map.put(root.fieldnameDatestamp, ImmutableMap.of(
+      "type", "date",
+      "format", "dateOptionalTime",
+      "precision_step", 8,
+      "include_in_all", false
+    ));
+    map.put(root.fieldnameSource, ImmutableMap.of(
+      "type", "string",
+      "index", "not_analyzed",
+      "include_in_all", false,
+      "store", false
+    ));
+    map.put(root.fieldnameXML, ImmutableMap.of(
+      "type", "string",
+      "index", "no",
+      "include_in_all", false,
+      "store", false
+    ));
+  }
+  
+  @SuppressWarnings("unchecked")
+  private Map<String,Object> getMapping() throws IOException {
+    Map<String,Object> mapping, props;
+    if (root.esMapping != null) {
+      mapping = XContentFactory.xContent(XContentType.JSON).createParser(root.esMapping).mapOrderedAndClose();
+      if (mapping.containsKey(root.typeName)) {
+        if (mapping.size() != 1) {
+          throw new IllegalArgumentException("If the typeName is part of the mapping, it must be the single root element.");
+        }
+        mapping = (Map<String,Object>) mapping.get(root.typeName);
+      }
+      props = (Map<String,Object>) mapping.get("properties");
+      if (props == null) {
+        mapping.put("properties", props = new LinkedHashMap<>());
+      }
+    } else {
+      mapping = new LinkedHashMap<>();
+      mapping.put("properties", props = new LinkedHashMap<>());
+    }
+    addFieldMappings(props);
+    return mapping;
   }
   
   /** Creates the index (if needed), configures it (mapping), and creates aliases. The real index name to be used is returned. */
@@ -120,73 +186,33 @@ public final class TargetIndexConfig {
 
     log.info("Creating index='" + realIndexName + "'...");
     try {
-      final CreateIndexRequestBuilder req = indicesAdmin.prepareCreate(realIndexName);
-      req.setCause(rebuilder ? "for rebuilding" : "new harvesting");
+      final CreateIndexRequestBuilder req = indicesAdmin.prepareCreate(realIndexName)
+        .setCause(rebuilder ? "for rebuilding" : "new harvesting")
+        .addMapping(DocumentProcessor.HARVESTER_METADATA_TYPE, getHarvesterMetadataMapping())
+        .addMapping(root.typeName, getMapping());
       if (!rebuilder) req.addAlias(new Alias(indexName));
       final CreateIndexResponse resp = req.get();
-      log.info("Index created: " + resp.isAcknowledged());
+      log.info("Index and mappings created: " + resp.isAcknowledged());
     } catch (IndexAlreadyExistsException e) {
-      log.info("Index already exists.");
+      log.info("Index already exists. Updating mappings for index='" + realIndexName + "'...");
+      {
+        final PutMappingResponse resp = indicesAdmin.preparePutMapping(realIndexName)
+            .setType(DocumentProcessor.HARVESTER_METADATA_TYPE)
+            .setSource(getHarvesterMetadataMapping())
+            .setIgnoreConflicts(false)
+            .get();
+        log.info("Harvester metadata mapping updated: " + resp.isAcknowledged());
+      }
+      {
+        final PutMappingResponse resp = indicesAdmin.preparePutMapping(realIndexName)
+            .setType(root.typeName)
+            .setSource(getMapping())
+            .setIgnoreConflicts(false)
+            .get();
+        log.info("XML metadata mapping updated: " + resp.isAcknowledged());
+      }
     }
 
-    log.info("Updating mappings for index='" + realIndexName + "'...");
-    
-    {
-      final XContentBuilder builder = XContentFactory.jsonBuilder().startObject()
-        .startObject("_source")
-          .field("enabled", true)
-        .endObject()
-        .startObject("_all")
-          .field("enabled", false)
-        .endObject()
-        .startArray("dynamic_templates")
-          .startObject()
-            .startObject("kv_pairs")
-              .field("match", "*")
-              .startObject("mapping")
-                .field("type", "string").field("index", "no").field("store", false)
-              .endObject()
-            .endObject()
-          .endObject()
-        .endArray()
-      .endObject();
-      final PutMappingResponse resp = indicesAdmin.preparePutMapping(realIndexName)
-          .setType(DocumentProcessor.HARVESTER_METADATA_TYPE)
-          .setSource(builder)
-          .setIgnoreConflicts(false)
-          .get();
-      log.info("Harvester metadata mapping updated: " + resp.isAcknowledged());
-    }    
-    
-    if (root.esMapping != null) {
-      final PutMappingResponse resp = indicesAdmin.preparePutMapping(realIndexName)
-          .setType(root.typeName)
-          .setSource(root.esMapping)
-          .setIgnoreConflicts(false)
-          .get();
-      log.info("Field mappings updated with provided file: " + resp.isAcknowledged());
-    }
-
-    {
-      final XContentBuilder builder = XContentFactory.jsonBuilder().startObject()
-        .startObject("properties")
-          .startObject(root.fieldnameDatestamp)
-            .field("type", "date").field("format", "dateOptionalTime").field("include_in_all", false)
-          .endObject();
-          addNotAnalyzedFieldMapping(builder, root.fieldnameSource);
-          builder.startObject(root.fieldnameXML)
-            .field("type", "string").field("index", "no")
-          .endObject()
-        .endObject()
-      .endObject();
-      final PutMappingResponse resp = indicesAdmin.preparePutMapping(realIndexName)
-          .setType(root.typeName)
-          .setSource(builder)
-          .setIgnoreConflicts(false)
-          .get();
-      log.info("Internal field mappings updated: " + resp.isAcknowledged());
-    }
-    
     return realIndexName;
   }
   
