@@ -211,8 +211,7 @@ public final class Config {
           });
       dig.addSetNext("config/sources/harvester", "addHarvester");
       
-      dig.addCallMethod("config/sources/harvester/class",
-          "setHarvesterClass", 0);
+      dig.addCallMethod("config/sources/harvester/class", "setHarvesterClass", 0);
       
       dig.addRule("config/sources/harvester/transform", new HarvesterConfigTransformerSaxRule(this));
       
