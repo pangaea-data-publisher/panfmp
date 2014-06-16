@@ -701,7 +701,7 @@ public class MetadataDocument {
       // set variables
       addSystemVariables(paramMap);
       // set additional variables from <cfg:transform/> attributes
-      if (iconfig.xsltParams != null) paramMap.putAll(iconfig.xsltParams);
+      paramMap.putAll(iconfig.xsltParams);
     }
     
     private final DOMSource DOMResult2Source(DOMResult dr) {

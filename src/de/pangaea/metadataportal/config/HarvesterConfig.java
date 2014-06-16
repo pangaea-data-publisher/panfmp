@@ -17,6 +17,7 @@
 package de.pangaea.metadataportal.config;
 
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -43,12 +44,15 @@ public final class HarvesterConfig {
     properties = new Properties(parent.globalHarvesterProperties);
   }
   
+  private void checkImmutable() {
+    if (checked) throw new IllegalStateException("Harvester configuration cannot be changed anymore!");
+  }
+  
   /** Sets class name of harvester (called from Digester on config load). **/
   @PublicForDigesterUse
   @Deprecated
   public void setHarvesterClass(String v) throws ClassNotFoundException {
-    if (checked) throw new IllegalStateException(
-        "Harvester configuration cannot be changed anymore!");
+    checkImmutable();
     harvesterClass = Class.forName(v).asSubclass(Harvester.class);
   }
 
@@ -56,10 +60,9 @@ public final class HarvesterConfig {
   @PublicForDigesterUse
   @Deprecated
   public void addHarvesterProperty(String value) {
-    if (checked) throw new IllegalStateException(
-        "Harvester configuration cannot be changed anymore!");
-    if (value != null) properties.setProperty(
-        parent.root.dig.getCurrentElementName(), value.trim());
+    checkImmutable();
+    if (value != null)
+      properties.setProperty(parent.root.dig.getCurrentElementName(), value.trim());
   }
 
   /**
@@ -89,12 +92,11 @@ public final class HarvesterConfig {
   public final String id;
   public final Config root;
   public final TargetIndexConfig parent;
+  public final Map<QName,Object> xsltParams = new HashMap<>();
 
   public Class<? extends Harvester> harvesterClass = null;
 
   public final Properties properties;
 
   public Templates xslt = null;
-
-  public Map<QName,Object> xsltParams = null;
 }

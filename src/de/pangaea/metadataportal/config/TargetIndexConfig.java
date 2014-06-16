@@ -38,19 +38,21 @@ public final class TargetIndexConfig {
     this.indexName = name;
   }
   
+  private void checkImmutable() {
+    if (checked) throw new IllegalStateException("Target index configuration cannot be changed anymore!");
+  }
+  
   /** Adds property for harvester (called from Digester on config load). **/
   @PublicForDigesterUse
   @Deprecated
   public void addGlobalHarvesterProperty(String value) {
-    if (checked) throw new IllegalStateException(
-        "Target index configuration cannot be changed anymore!");
+    checkImmutable();
     if (value != null) globalHarvesterProperties.setProperty(
         root.dig.getCurrentElementName(), value.trim());
   }
 
   public void addHarvester(HarvesterConfig i) {
-    if (checked) throw new IllegalStateException(
-        "Target index configuration cannot be changed anymore!");
+    checkImmutable();
     if (!root.harvestersAndIndexes.add(i.id)) throw new IllegalArgumentException(
         "There is already a harvester or targetIndex with id=\"" + i.id + "\" added to configuration!");
     harvesters.put(i.id, i);
@@ -59,6 +61,7 @@ public final class TargetIndexConfig {
   @PublicForDigesterUse
   @Deprecated
   public void setIndexSettings(Settings.Builder bld) {
+    checkImmutable();
     if (indexSettings != null)
       throw new IllegalArgumentException("Duplicate indexSettings element");
     // strip the XML matcher path:
@@ -66,10 +69,12 @@ public final class TargetIndexConfig {
   }
   
   public void setNameSuffix1(String nameSuffix1) {
+    checkImmutable();
     this.nameSuffix1 = nameSuffix1;
   }
   
   public void setNameSuffix2(String nameSuffix2) {
+    checkImmutable();
     this.nameSuffix2 = nameSuffix2;
   }
   
