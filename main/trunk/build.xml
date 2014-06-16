@@ -140,6 +140,14 @@
 		</java>
 	</target>
 
+	<target name="run-update-aliases" depends="compile">
+		<java fork="true" dir="." classname="de.pangaea.metadataportal.harvester.UpdateAliases" classpathref="path.run">
+			 <sysproperty key="log4j.configuration" value="${log4j-conf}"/>
+			 <arg file="conf/config.xml"/>
+			 <arg value="${harvester.index}"/>
+		</java>
+	</target>
+
   <!-- JAVADOCS TARGET -->
   <target name="javadocs" depends="-init">
     <delete dir="${docs}"/>

@@ -112,7 +112,8 @@
 	<cfg:sources targetIndex="panfmp">
 		<cfg:targetIndex>
 			<!-- nameSuffix1 and nameSuffix2 are used alternately to create the real index name.
-				The tragetIndex name is created as alias to the active one: -->
+				The targetIndex name is created as alias to the active one:
+			-->
 			<cfg:nameSuffix1>_v1</cfg:nameSuffix1>
 			<cfg:nameSuffix2>_v2</cfg:nameSuffix2>
 			<!-- settings that are used when creating the index for the first time (or for rebuild),
@@ -121,6 +122,17 @@
 				<cfg:number_of_shards>1</cfg:number_of_shards>
 				<cfg:number_of_replicas>0</cfg:number_of_replicas>
 			</cfg:settings>
+			<!-- aliases can be used to set some filters on specific fields, see:
+				http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-aliases.html
+				A common example is filtering on the harvester ID to only search subsets:
+				(please note, aliases are not updated while harvesting). To update them, manually
+				start the command line tool or rebuild the index)
+			-->
+			<cfg:alias name="demo-alias"><![CDATA[{
+				"terms" : {
+					"internal-source" : [ "pangaea-carboocean", "badc" ]
+				}
+			}]]></cfg:alias>
 		</cfg:targetIndex>
 		<!-- global harvester properties are inherited to each harvester, so only give properties available to all harvester types: -->
 		<cfg:globalProperties>

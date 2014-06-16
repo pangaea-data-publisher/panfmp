@@ -16,11 +16,14 @@
 
 package de.pangaea.metadataportal.config;
 
+import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
 
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.xcontent.XContentFactory;
+import org.elasticsearch.common.xcontent.XContentParser;
 
 import de.pangaea.metadataportal.utils.PublicForDigesterUse;
 
@@ -51,11 +54,33 @@ public final class TargetIndexConfig {
         root.dig.getCurrentElementName(), value.trim());
   }
 
+  /** Adds harvester. **/
   public void addHarvester(HarvesterConfig i) {
     checkImmutable();
     if (!root.harvestersAndIndexes.add(i.id)) throw new IllegalArgumentException(
         "There is already a harvester or targetIndex with id=\"" + i.id + "\" added to configuration!");
     harvesters.put(i.id, i);
+  }
+  
+  /** Adds alias to index. **/
+  public void addAlias(String name, String filter) throws IOException {
+    checkImmutable();
+    if (name == null) {
+      throw new NullPointerException("targetIndex alias name cannot be null.");
+    }
+    name = name.trim();
+    if (this.indexName.equals(name) || aliases.containsKey(name)) {
+      throw new IllegalArgumentException("targetIndex alias name already exists.");
+    }
+    if (filter != null && filter.trim().isEmpty()) {
+      filter = null;
+    }
+    if (filter != null) {
+      // validate JSON/...
+      final XContentParser parser = XContentFactory.xContent(filter).createParser(filter);
+      while (parser.nextToken() != null);
+    }
+    aliases.put(name, filter);
   }
   
   @PublicForDigesterUse
@@ -102,6 +127,7 @@ public final class TargetIndexConfig {
   public final Config root;
   public final Properties globalHarvesterProperties = new Properties();
   public final Map<String,HarvesterConfig> harvesters = new LinkedHashMap<>();
+  public final Map<String,String> aliases = new LinkedHashMap<>();
   private String nameSuffix1 = "_v1", nameSuffix2 = "_v2";
   public Settings indexSettings = null;
 }

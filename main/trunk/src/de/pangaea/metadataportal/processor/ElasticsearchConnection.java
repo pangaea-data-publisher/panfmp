@@ -150,7 +150,7 @@ public final class ElasticsearchConnection implements Closeable {
       realIndexName = ticonf.getRawIndexName(false);
     }
 
-    log.info("Creating index='" + realIndexName + "'...");
+    log.info("Creating index='" + realIndexName + "' and aliases...");
     final String mapping = getMapping();
     try {
       final CreateIndexRequestBuilder req = indicesAdmin.prepareCreate(realIndexName)
@@ -158,7 +158,12 @@ public final class ElasticsearchConnection implements Closeable {
         .addMapping(DocumentProcessor.HARVESTER_METADATA_TYPE, HARVESTER_METADATA_MAPPING)
         .addMapping(conf.typeName, mapping);
       if (ticonf.indexSettings != null) req.setSettings(ticonf.indexSettings);
-      if (!rebuilder) req.addAlias(new Alias(ticonf.indexName));
+      if (!rebuilder) {
+        req.addAlias(new Alias(ticonf.indexName));
+        for (Map.Entry<String,String> e : ticonf.aliases.entrySet()) {
+          req.addAlias(new Alias(e.getKey()).filter(e.getValue()));
+        }
+      }
       final CreateIndexResponse resp = req.get();
       log.info("Index created and mappings assigned: " + resp.isAcknowledged());
     } catch (IndexAlreadyExistsException e) {
@@ -195,13 +200,23 @@ public final class ElasticsearchConnection implements Closeable {
     
     final String aliasedIndex = getAliasedIndex(ticonf);
     if (cleanShutdown && !realIndexName.equals(aliasedIndex)) {
-      log.info("Redirecting alias '" + ticonf.indexName + "' to new index: " + realIndexName);
       {
+        log.info("Redirecting alias '" + ticonf.indexName + "' to new index: " + realIndexName);
+        if (!ticonf.aliases.isEmpty()) {
+          log.info("Redirecting additional alias(es) " + ticonf.aliases.keySet() + " to new index: " + realIndexName);
+        }
         IndicesAliasesRequestBuilder req = indicesAdmin.prepareAliases();
         if (aliasedIndex != null) {
           req.removeAlias(aliasedIndex, ticonf.indexName);
+          for (String a : ticonf.aliases.keySet()) {
+            req.removeAlias(aliasedIndex, a);
+          }
         }
-        IndicesAliasesResponse resp = req.addAlias(realIndexName, ticonf.indexName).get();
+        req.addAlias(realIndexName, ticonf.indexName);
+        for (Map.Entry<String,String> e : ticonf.aliases.entrySet()) {
+          req.addAlias(realIndexName, e.getKey(), e.getValue());
+        }
+        IndicesAliasesResponse resp = req.get();
         log.info("Aliases redirected: " + resp.isAcknowledged());
       }
       if (aliasedIndex != null) {
@@ -210,6 +225,19 @@ public final class ElasticsearchConnection implements Closeable {
         log.info("Index deleted: " + resp.isAcknowledged());
       }
     }
+  }
+  
+  /** Closes the index after harvesting and update the aliases to point to the active index. */
+  public void updateAliases(TargetIndexConfig ticonf) throws IOException {
+    checkOpen();
+    
+    log.info("Redirecting additional alias(es) " + ticonf.aliases.keySet() + " to index: " + ticonf.indexName);
+    final IndicesAliasesRequestBuilder req = client.admin().indices().prepareAliases();
+    for (Map.Entry<String,String> e : ticonf.aliases.entrySet()) {
+      req.addAlias(ticonf.indexName, e.getKey(), e.getValue());
+    }
+    final IndicesAliasesResponse resp = req.get();
+    log.info("Aliases redirected: " + resp.isAcknowledged());
   }
   
   @SuppressWarnings("unchecked")
