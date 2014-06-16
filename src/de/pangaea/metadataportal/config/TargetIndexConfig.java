@@ -34,6 +34,7 @@ import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.IndicesAdminClient;
 import org.elasticsearch.common.collect.ImmutableMap;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentType;
@@ -74,6 +75,23 @@ public final class TargetIndexConfig {
     if (!root.harvestersAndIndexes.add(i.id)) throw new IllegalArgumentException(
         "There is already a harvester or targetIndex with id=\"" + i.id + "\" added to configuration!");
     harvesters.put(i.id, i);
+  }
+  
+  @PublicForDigesterUse
+  @Deprecated
+  public void setIndexSettings(Settings.Builder bld) {
+    if (indexSettings != null)
+      throw new IllegalArgumentException("Duplicate indexSettings element");
+    // strip the XML matcher path:
+    indexSettings = bld.build().getByPrefix(root.dig.getMatch() + "/");
+  }
+  
+  public void setNameSuffix1(String nameSuffix1) {
+    this.nameSuffix1 = nameSuffix1;
+  }
+  
+  public void setNameSuffix2(String nameSuffix2) {
+    this.nameSuffix2 = nameSuffix2;
   }
   
   /**
@@ -190,6 +208,7 @@ public final class TargetIndexConfig {
         .setCause(rebuilder ? "for rebuilding" : "new harvesting")
         .addMapping(DocumentProcessor.HARVESTER_METADATA_TYPE, getHarvesterMetadataMapping())
         .addMapping(root.typeName, getMapping());
+      if (indexSettings != null) req.setSettings(indexSettings);
       if (!rebuilder) req.addAlias(new Alias(indexName));
       final CreateIndexResponse resp = req.get();
       log.info("Index and mappings created: " + resp.isAcknowledged());
@@ -258,5 +277,7 @@ public final class TargetIndexConfig {
   public final Properties globalHarvesterProperties = new Properties();
   public final Map<String,HarvesterConfig> harvesters = new LinkedHashMap<String,HarvesterConfig>();
   
-  public final String nameSuffix1 = "_v1", nameSuffix2 = "_v2"; // TODO
+  public String nameSuffix1 = "_v1", nameSuffix2 = "_v2";
+  
+  public Settings indexSettings = null;
 }

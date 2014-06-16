@@ -44,6 +44,7 @@ import javax.xml.validation.SchemaFactory;
 
 import org.apache.commons.digester.AbstractObjectCreationFactory;
 import org.apache.commons.digester.ExtendedBaseRules;
+import org.apache.commons.digester.ObjectCreationFactory;
 import org.apache.commons.digester.SetPropertiesRule;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
@@ -67,8 +68,7 @@ import de.pangaea.metadataportal.utils.StaticFactories;
  */
 public final class Config {
   
-  private static final org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory
-      .getLog(Config.class);
+  private static final org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(Config.class);
   
   public Config(String file) throws Exception {
     this.file = file;
@@ -83,8 +83,6 @@ public final class Config {
     }
     
     try {
-      final Class<?>[] DIGSTRING_PARAMS = new Class<?>[] { ExtendedDigester.class, String.class };
-      
       dig = new ExtendedDigester();
       dig.setNamespaceAware(true);
       dig.setValidating(false);
@@ -186,6 +184,15 @@ public final class Config {
           });
       dig.addSetNext("config/sources", "addTargetIndex");
       
+      dig.addDoNothing("config/sources/targetIndex");
+      dig.addCallMethod("config/sources/targetIndex/nameSuffix1", "setNameSuffix1", 0);
+      dig.addCallMethod("config/sources/targetIndex/nameSuffix2", "setNameSuffix2", 0);
+      dig.addFactoryCreate("config/sources/targetIndex/settings", ES_SETTINGS_BUILDER);
+      dig.addSetNext("config/sources/targetIndex/settings", "setIndexSettings");
+      dig.addCallMethod("config/sources/targetIndex/settings/*", "put", 2);
+      dig.addCallParamPath("config/sources/targetIndex/settings/*", 0);
+      dig.addCallParam("config/sources/targetIndex/settings/*", 1);
+            
       // *** GLOBAL HARVESTER PROPERTIES ***
       dig.addDoNothing("config/sources/globalProperties");
       dig.addCallMethod("config/sources/globalProperties/*", "addGlobalHarvesterProperty", 0);
@@ -210,13 +217,7 @@ public final class Config {
       // *** ELASTICSEARCH TransportClient settings ***
       dig.addDoNothing("config/elasticsearchCluster");
       dig.addCallMethod("config/elasticsearchCluster/address", "addEsAddress", 0);
-      dig.addFactoryCreate("config/elasticsearchCluster/settings",
-          new AbstractObjectCreationFactory() {
-            @Override
-            public Object createObject(Attributes attributes) {
-              return ImmutableSettings.settingsBuilder();
-            }
-          });
+      dig.addFactoryCreate("config/elasticsearchCluster/settings", ES_SETTINGS_BUILDER);
       dig.addSetNext("config/elasticsearchCluster/settings", "setEsSettings");
       dig.addCallMethod("config/elasticsearchCluster/settings/*", "put", 2);
       dig.addCallParamPath("config/elasticsearchCluster/settings/*", 0);
@@ -455,14 +456,14 @@ public final class Config {
   public String fieldnameDatestamp = "internal-datestamp";
 
   // fields
-  public final Map<String,FieldConfig> fields = new LinkedHashMap<String,FieldConfig>();
+  public final Map<String,FieldConfig> fields = new LinkedHashMap<>();
   
   // filters
   public FilterConfig.FilterType filterDefault = FilterConfig.FilterType.ACCEPT;
-  public final List<FilterConfig> filters = new ArrayList<FilterConfig>();
+  public final List<FilterConfig> filters = new ArrayList<>();
   
   // variables
-  public final List<VariableConfig> xPathVariables = new ArrayList<VariableConfig>();
+  public final List<VariableConfig> xPathVariables = new ArrayList<>();
   
   // schema etc
   public Schema schema = null;
@@ -472,15 +473,22 @@ public final class Config {
   public final List<InetSocketTransportAddress> esTransports = new ArrayList<InetSocketTransportAddress>();
   public Settings esSettings = null;
   
+  public final String file;
+  
   /* public Templates xsltBeforeXPath=null; */
   
-  // Template cache
+  // Template cache:
   private final Map<String,Templates> templatesCache = new HashMap<String,Templates>();
-  
-  public String file;
   
   protected ExtendedDigester dig = null;
   
-  public static final int DEFAULT_MAX_CLAUSE_COUNT = 131072;
+  // internal stuff (paramlists, factories, needed while parsing):
+  private static final ObjectCreationFactory ES_SETTINGS_BUILDER = new AbstractObjectCreationFactory() {
+    @Override
+    public Object createObject(Attributes attributes) {
+      return ImmutableSettings.settingsBuilder();
+    }
+  };
+  private static final Class<?>[] DIGSTRING_PARAMS = new Class<?>[] { ExtendedDigester.class, String.class };
   
 }
