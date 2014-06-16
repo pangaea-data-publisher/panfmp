@@ -109,7 +109,19 @@
 	</cfg:metadata>
 	<!-- Definition of metadata sources and their harvesters and properties, one element per targetIndex -->
 	<cfg:sources targetIndex="panfmp">
-		<!-- global harvester properties are inherited to each harvester, so only give properties available to all harvester types -->
+		<cfg:targetIndex>
+			<!-- nameSuffix1 and nameSuffix2 are used alternately to create the real index name.
+				The tragetIndex name is created as alias to the active one: -->
+			<cfg:nameSuffix1>_v1</cfg:nameSuffix1>
+			<cfg:nameSuffix2>_v2</cfg:nameSuffix2>
+			<!-- settings that are used when creating the index for the first time (or for rebuild),
+				see: http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/index-modules.html -->
+			<cfg:settings>
+				<cfg:number_of_shards>1</cfg:number_of_shards>
+				<cfg:number_of_replicas>0</cfg:number_of_replicas>
+			</cfg:settings>
+		</cfg:targetIndex>
+		<!-- global harvester properties are inherited to each harvester, so only give properties available to all harvester types: -->
 		<cfg:globalProperties>
 			<cfg:numThreads>1</cfg:numThreads>
 			<cfg:maxQueue>100</cfg:maxQueue>
