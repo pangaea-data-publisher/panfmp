@@ -1,7 +1,5 @@
 package de.pangaea.metadataportal.config;
 
-import java.util.HashMap;
-
 import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
 import javax.xml.transform.Templates;
@@ -49,10 +47,8 @@ final class HarvesterConfigTransformerSaxRule extends TransformerSaxRule {
       });
     }
     // collect all params to additionally pass to XSL and store in Map
-    iconf.xsltParams = new HashMap<>();
     for (int i = 0, c = attributes.getLength(); i < c; i++) {
-      QName qname = new QName(attributes.getURI(i),
-          attributes.getLocalName(i));
+      QName qname = new QName(attributes.getURI(i), attributes.getLocalName(i));
       // filter src attribute
       if (new QName(XMLConstants.NULL_NS_URI, "src").equals(qname)) continue;
       iconf.xsltParams.put(qname, attributes.getValue(i));
