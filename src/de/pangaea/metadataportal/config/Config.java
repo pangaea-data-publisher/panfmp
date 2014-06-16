@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.lang.reflect.InvocationTargetException;
 import java.net.CookieHandler;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -185,11 +186,16 @@ public final class Config {
       dig.addDoNothing("config/sources/targetIndex");
       dig.addCallMethod("config/sources/targetIndex/nameSuffix1", "setNameSuffix1", 0);
       dig.addCallMethod("config/sources/targetIndex/nameSuffix2", "setNameSuffix2", 0);
+      
       dig.addFactoryCreate("config/sources/targetIndex/settings", ES_SETTINGS_BUILDER);
       dig.addSetNext("config/sources/targetIndex/settings", "setIndexSettings");
       dig.addCallMethod("config/sources/targetIndex/settings/*", "put", 2);
       dig.addCallParamPath("config/sources/targetIndex/settings/*", 0);
       dig.addCallParam("config/sources/targetIndex/settings/*", 1);
+      
+      dig.addCallMethod("config/sources/targetIndex/alias", "addAlias", 2);
+      dig.addCallParam("config/sources/targetIndex/alias", 0, "name");
+      dig.addCallParam("config/sources/targetIndex/alias", 1);
             
       // *** GLOBAL HARVESTER PROPERTIES ***
       dig.addDoNothing("config/sources/globalProperties");
@@ -226,9 +232,13 @@ public final class Config {
         dig.push(this);
         dig.parse(new File(file));
       } catch (SAXException saxe) {
+        Throwable e = saxe;
         // throw the real Exception not the digester one
-        if (saxe.getException() != null) throw saxe.getException();
-        else throw saxe;
+        if (saxe.getException() != null) e = saxe.getException();
+        if (e instanceof InvocationTargetException) e = e.getCause();
+        if (e instanceof Error) throw (Error) e;
+        if (e instanceof Exception) throw (Exception) e;
+        throw saxe;
       }
     } finally {
       dig = null;
