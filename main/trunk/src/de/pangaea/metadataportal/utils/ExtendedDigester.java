@@ -319,6 +319,7 @@ public class ExtendedDigester extends Digester {
     }
     // create return class
     return new NamespaceContext() {
+      @Override
       public String getNamespaceURI(String prefix) {
         if (prefix == null) throw new IllegalArgumentException(
             "Namespace prefix cannot be null");
@@ -328,11 +329,13 @@ public class ExtendedDigester extends Digester {
         return (uri == null) ? XMLConstants.NULL_NS_URI : uri;
       }
       
+      @Override
       public String getPrefix(String namespaceURI) {
         Iterator<String> i = getPrefixes(namespaceURI);
         return i.hasNext() ? (String) i.next() : null;
       }
       
+      @Override
       public Iterator<String> getPrefixes(String namespaceURI) {
         if (namespaceURI == null) throw new IllegalArgumentException(
             "Namespace URI cannot be null");
@@ -355,6 +358,7 @@ public class ExtendedDigester extends Digester {
     
     InvalidElementRule() {}
     
+    @Override
     public void begin(String namespace, String name, Attributes attributes)
         throws Exception {
       throw new SAXException("Unknown element at XML path: '"

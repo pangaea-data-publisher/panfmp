@@ -206,6 +206,7 @@ public final class SimpleCookieHandler extends CookieHandler {
       return ok && path.startsWith(this._path);
     }
     
+    @Override
     public String toString() {
       return new StringBuilder(_name).append("=").append(_value).toString();
     }
