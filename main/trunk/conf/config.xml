@@ -95,11 +95,12 @@
         </xsl:for-each>
 			</cfg:field-template>
 		</cfg:fields>
-		<!--<cfg:schema>
-			<cfg:url>http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/dif_v9.4.xsd</cfg:url>
+		<cfg:schema>
+			<cfg:url>./dif_v9.4.xsd</cfg:url>
 			<cfg:haltOnError>false</cfg:haltOnError>
+			<!-- if the validator augments the source document (e.g., adds default attributes), use this as basis for indexing? -->
 			<cfg:augmentation>false</cfg:augmentation>
-		</cfg:schema>-->
+		</cfg:schema>
 		<cfg:elasticsearchMapping>
 			<!-- This is the type used by Elasticsearch to index the documents: -->
 			<cfg:typeName>doc</cfg:typeName>
@@ -135,6 +136,7 @@
 				<cfg:baseUrl>http://ws.pangaea.de/oai/</cfg:baseUrl>
 				<cfg:metadataPrefix>dif</cfg:metadataPrefix>
 				<cfg:setSpec>CARBOOCEAN</cfg:setSpec>
+				<cfg:validate>false</cfg:validate>
 			</cfg:properties>
 		</cfg:harvester>
 		<cfg:harvester id="badc">
@@ -142,6 +144,7 @@
 			<cfg:properties>
 				<cfg:baseUrl>http://badc.nerc.ac.uk/badc_oai/provider</cfg:baseUrl>
 				<cfg:metadataPrefix>dif</cfg:metadataPrefix>
+				<cfg:validate>true</cfg:validate>
 			</cfg:properties>
 			<!--
 			Here are two possibilities to do a inline transformation of harvested metadata (just as example):
@@ -174,6 +177,7 @@
 			<cfg:properties>
 				<cfg:baseUrl>http://www.st.nmfs.noaa.gov/plankton/content/xml_src/</cfg:baseUrl>
 				<cfg:filenameFilter>.*\.xml</cfg:filenameFilter>
+				<cfg:validate>true</cfg:validate>
 			</cfg:properties>
 		</cfg:harvester>
 	</cfg:sources>
