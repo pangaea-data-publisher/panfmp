@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <project name="panFMP" default="dist" basedir="." xmlns:ivy="antlib:org.apache.ivy.ant" xmlns:fa="antlib:de.thetaphi.forbiddenapis">
   <fail message="Minimum supported ANT version is 1.8.0. Yours: ${ant.version}">
     <condition>
@@ -254,10 +255,7 @@
     </delete>
   </target>
 
-  <!-- Macro for building checksum files
-  This is only needed until the "format" option is supported
-  by ant's built in checksum task
-  -->
+  <!-- Macro for building checksum files: MD5 and SHA1 -->
   <macrodef name="panfmp-checksum">
     <attribute name="file"/>
     <sequential>
