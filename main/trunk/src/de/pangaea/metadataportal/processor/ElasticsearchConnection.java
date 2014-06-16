@@ -117,52 +117,47 @@ public final class ElasticsearchConnection implements Closeable {
     }
   }
   
-  private void addFieldMappings(Map<String, Object> map) throws IOException {
-    if (map.containsKey(conf.fieldnameDatestamp) || map.containsKey(conf.fieldnameSource) || map.containsKey(conf.fieldnameXML)) {
-      throw new IllegalArgumentException("The given mapping is not allowed to contain properties for internal field: " +
-          Arrays.asList(conf.fieldnameDatestamp, conf.fieldnameSource, conf.fieldnameXML));
-    }
-    map.put(conf.fieldnameDatestamp, ImmutableMap.of(
-      "type", "date",
-      "format", "dateOptionalTime",
-      "precision_step", 8,
-      "include_in_all", false
-    ));
-    map.put(conf.fieldnameSource, ImmutableMap.of(
-      "type", "string",
-      "index", "not_analyzed",
-      "include_in_all", false,
-      "store", false
-    ));
-    map.put(conf.fieldnameXML, ImmutableMap.of(
-      "type", "string",
-      "index", "no",
-      "include_in_all", false,
-      "store", false
-    ));
-  }
-  
   @SuppressWarnings("unchecked")
-  private Map<String,Object> getMapping() throws IOException {
+  private String getMapping() throws IOException {
     Map<String,Object> mapping, props;
     if (conf.esMapping != null) {
-      mapping = XContentFactory.xContent(XContentType.JSON).createParser(conf.esMapping).mapOrderedAndClose();
+      mapping = XContentFactory.xContent(conf.esMapping).createParser(conf.esMapping).mapOrderedAndClose();
       if (mapping.containsKey(conf.typeName)) {
         if (mapping.size() != 1) {
           throw new IllegalArgumentException("If the typeName is part of the mapping, it must be the single root element.");
         }
         mapping = (Map<String,Object>) mapping.get(conf.typeName);
       }
-      props = (Map<String,Object>) mapping.get("properties");
-      if (props == null) {
-        mapping.put("properties", props = new LinkedHashMap<>());
-      }
     } else {
       mapping = new LinkedHashMap<>();
+    }
+    props = (Map<String,Object>) mapping.get("properties");
+    if (props == null) {
       mapping.put("properties", props = new LinkedHashMap<>());
     }
-    addFieldMappings(props);
-    return mapping;
+    if (props.containsKey(conf.fieldnameDatestamp) || props.containsKey(conf.fieldnameSource) || props.containsKey(conf.fieldnameXML)) {
+      throw new IllegalArgumentException("The given mapping is not allowed to contain properties for internal field: " +
+          Arrays.asList(conf.fieldnameDatestamp, conf.fieldnameSource, conf.fieldnameXML));
+    }
+    props.put(conf.fieldnameDatestamp, ImmutableMap.of(
+      "type", "date",
+      "format", "dateOptionalTime",
+      "precision_step", 8,
+      "include_in_all", false
+    ));
+    props.put(conf.fieldnameSource, ImmutableMap.of(
+      "type", "string",
+      "index", "not_analyzed",
+      "include_in_all", false,
+      "store", false
+    ));
+    props.put(conf.fieldnameXML, ImmutableMap.of(
+      "type", "string",
+      "index", "no",
+      "include_in_all", false,
+      "store", false
+    ));
+    return XContentFactory.jsonBuilder().value(mapping).string();
   }
   
   /** Creates the index (if needed), configures it (mapping), and creates aliases. The real index name to be used is returned. */
