@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.elasticsearch.action.admin.indices.alias.Alias;
@@ -34,7 +35,9 @@ import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.IndicesAdminClient;
 import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.cluster.metadata.AliasMetaData;
 import org.elasticsearch.common.collect.ImmutableMap;
+import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.TransportAddress;
@@ -231,13 +234,37 @@ public final class ElasticsearchConnection implements Closeable {
   public void updateAliases(TargetIndexConfig ticonf) throws IOException {
     checkOpen();
     
-    log.info("Redirecting additional alias(es) " + ticonf.aliases.keySet() + " to index: " + ticonf.indexName);
-    final IndicesAliasesRequestBuilder req = client.admin().indices().prepareAliases();
-    for (Map.Entry<String,String> e : ticonf.aliases.entrySet()) {
-      req.addAlias(ticonf.indexName, e.getKey(), e.getValue());
+    final IndicesAdminClient indicesAdmin = client.admin().indices();
+    
+    final ImmutableOpenMap<String, List<AliasMetaData>> indexCol = indicesAdmin.prepareGetAliases("*")
+        .setIndices(ticonf.indexName)
+        .setIndicesOptions(IndicesOptions.strictSingleIndexNoExpand())
+        .get().getAliases();
+    final Iterator<String> indexes = indexCol.keysIt();
+    if (indexes.hasNext()) {
+      final String aliasedIndex = indexes.next();
+      if (indexes.hasNext()) {
+        throw new IOException("There are more than one index referred by alias='" + ticonf.indexName + "'");
+      }
+      final List<AliasMetaData> aliases = indexCol.get(aliasedIndex);
+      final IndicesAliasesRequestBuilder req = indicesAdmin.prepareAliases();
+      for (AliasMetaData a : aliases) {
+        final String alias = a.alias();
+        if (!(ticonf.indexName.equals(alias) || ticonf.aliases.containsKey(alias))) {
+          log.info("Removing outdated alias: " + alias);
+          req.removeAlias(aliasedIndex, alias);
+        }
+      }
+      for (Map.Entry<String,String> e : ticonf.aliases.entrySet()) {
+        log.info("Updating alias: " + e.getKey());
+        req.addAlias(aliasedIndex, e.getKey(), e.getValue());
+      }
+      final IndicesAliasesResponse resp = req.get();
+      log.info("Aliases updated: " + resp.isAcknowledged());
+
+    } else {
+      throw new IOException("The alias='" + ticonf.indexName + "' does not exist.");
     }
-    final IndicesAliasesResponse resp = req.get();
-    log.info("Aliases redirected: " + resp.isAcknowledged());
   }
   
   @SuppressWarnings("unchecked")
