@@ -46,7 +46,7 @@ final class TemplateSaxRule extends TransformerSaxRule {
     atts.clear();
     
     // register variables as params for template
-    HashSet<QName> vars = new HashSet<QName>(
+    HashSet<QName> vars = new HashSet<>(
         de.pangaea.metadataportal.processor.XPathResolverImpl.BASE_VARIABLES);
     for (VariableConfig v : this.config.xPathVariables)
       vars.add(v.name);

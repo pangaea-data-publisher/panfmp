@@ -73,7 +73,7 @@ public final class XPathResolverImpl implements XPathFunctionResolver, XPathVari
     
   // API
   public synchronized Map<QName,Object> initVariables() {
-    HashMap<QName,Object> data = new HashMap<QName,Object>();
+    HashMap<QName,Object> data = new HashMap<>();
     xPathVariableData.set(data);
     return data;
   }
@@ -98,14 +98,14 @@ public final class XPathResolverImpl implements XPathFunctionResolver, XPathVari
       DOCUMENT_PROCESSOR_NAMESPACE, "harvesterIdentifier");
   
   public static final Set<QName> BASE_VARIABLES = Collections
-      .unmodifiableSet(new HashSet<QName>(Arrays.asList(
+      .unmodifiableSet(new HashSet<>(Arrays.asList(
           VARIABLE_DOC_IDENTIFIER, VARIABLE_DOC_DATESTAMP,
           VARIABLE_HARVESTER_ID)));
   
   private static XPathResolverImpl instance = new XPathResolverImpl();
   
   // object members
-  private ThreadLocal<Map<QName,Object>> xPathVariableData = new ThreadLocal<Map<QName,Object>>();
+  private ThreadLocal<Map<QName,Object>> xPathVariableData = new ThreadLocal<>();
   
   private final XPathFunctionResolver parent;
   

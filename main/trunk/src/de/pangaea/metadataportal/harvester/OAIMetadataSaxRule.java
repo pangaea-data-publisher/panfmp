@@ -91,7 +91,7 @@ public class OAIMetadataSaxRule extends SaxRule {
   }
   
   private static final Set<String> EXCLUDE_NS = Collections
-      .unmodifiableSet(new HashSet<String>(Arrays.asList(
+      .unmodifiableSet(new HashSet<>(Arrays.asList(
           OAIHarvesterBase.OAI_NS, OAIHarvesterBase.OAI_STATICREPOSITORY_NS)));
   
 }

@@ -103,7 +103,7 @@ public abstract class OAIHarvesterBase extends Harvester {
     
     String s = iconfig.properties.getProperty("setSpec");
     if (s != null) {
-      sets = new HashSet<String>();
+      sets = new HashSet<>();
       Collections.addAll(sets, s.split("[\\,\\;\\s]+"));
       if (sets.isEmpty()) sets = null;
     }

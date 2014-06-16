@@ -97,6 +97,6 @@ public class OAIMetadataDocument extends MetadataDocument {
   /**
    * @see #getSets
    */
-  protected Set<String> sets = new LinkedHashSet<String>();
+  protected Set<String> sets = new LinkedHashSet<>();
   
 }

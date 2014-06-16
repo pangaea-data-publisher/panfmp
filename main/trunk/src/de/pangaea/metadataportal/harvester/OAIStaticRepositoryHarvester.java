@@ -67,7 +67,7 @@ public class OAIStaticRepositoryHarvester extends OAIHarvesterBase {
           + "This may change in future (and so it is implemented in the harvester), "
           + "but may only work with non-conformant repositories, that list setSpecs in metadata headers.");
     }
-    validIdentifiers = new HashSet<String>();
+    validIdentifiers = new HashSet<>();
     
     // *** ListRecords ***
     dig = new ExtendedDigester();

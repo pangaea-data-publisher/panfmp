@@ -63,8 +63,8 @@ public final class DocumentProcessor {
   private static final MetadataDocument MDOC_EOF = new MetadataDocument(null);
   private final BlockingQueue<MetadataDocument> mdocBuffer;
     
-  private final AtomicReference<Exception> failure = new AtomicReference<Exception>(null);
-  private final AtomicReference<CommitEvent> commitEvent = new AtomicReference<CommitEvent>(null);
+  private final AtomicReference<Exception> failure = new AtomicReference<>(null);
+  private final AtomicReference<CommitEvent> commitEvent = new AtomicReference<>(null);
   private Set<String> validIdentifiers = null;
   
   private final AtomicInteger processed = new AtomicInteger(0);
@@ -103,7 +103,7 @@ public final class DocumentProcessor {
     if (maxQueue < threadCount) {
       throw new IllegalArgumentException("maxQueue must be >=numThreads!");
     }
-    this.mdocBuffer = new ArrayBlockingQueue<MetadataDocument>(maxQueue, true);
+    this.mdocBuffer = new ArrayBlockingQueue<>(maxQueue, true);
     
     // load metadata
     try {
@@ -232,7 +232,7 @@ public final class DocumentProcessor {
     log.info("Processor thread started.");
     boolean finished = false;
     try {
-      final HashSet<String> committedIdentifiers = new HashSet<String>(bulkSize);
+      final HashSet<String> committedIdentifiers = new HashSet<>(bulkSize);
       BulkRequestBuilder bulkRequest = client.prepareBulk();
       
       while (failure.get() == null) {

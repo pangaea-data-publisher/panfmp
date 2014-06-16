@@ -477,7 +477,7 @@ public final class Config {
   public boolean haltOnSchemaError = false, validateWithAugmentation = true;
   
   // TransportClient settings
-  public final List<InetSocketTransportAddress> esTransports = new ArrayList<InetSocketTransportAddress>();
+  public final List<InetSocketTransportAddress> esTransports = new ArrayList<>();
   public Settings esSettings = null;
   
   public final String file;
@@ -485,7 +485,7 @@ public final class Config {
   /* public Templates xsltBeforeXPath=null; */
   
   // Template cache:
-  private final Map<String,Templates> templatesCache = new HashMap<String,Templates>();
+  private final Map<String,Templates> templatesCache = new HashMap<>();
   
   ExtendedDigester dig = null;
   

@@ -76,7 +76,7 @@ public abstract class SingleFileEntitiesHarvester extends Harvester {
     
     validIdentifiers = null;
     if (BooleanParser.parseBoolean(iconfig.properties.getProperty(
-        "deleteMissingDocuments", "true"))) validIdentifiers = new HashSet<String>();
+        "deleteMissingDocuments", "true"))) validIdentifiers = new HashSet<>();
   }
   
   @Override

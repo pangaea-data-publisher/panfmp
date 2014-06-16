@@ -93,20 +93,20 @@ public class WebCrawlingHarvester extends SingleFileEntitiesHarvester {
    * revisit the features for this parser in the parsing method.
    */
   public static final String HTML_SAX_PARSER_CLASS = "org.cyberneko.html.parsers.SAXParser";
-  public static final Set<String> HTML_CONTENT_TYPES = new HashSet<String>(
+  public static final Set<String> HTML_CONTENT_TYPES = new HashSet<>(
       Arrays.asList("text/html", "application/xhtml+xml"));
   
   // Class members
   private String baseURL = null;
   private Pattern filenameFilter = null, excludeUrlPattern = null;
-  private Set<String> contentTypes = new HashSet<String>();
+  private Set<String> contentTypes = new HashSet<>();
   private int retryCount = DEFAULT_RETRY_COUNT;
   private int retryTime = DEFAULT_RETRY_TIME;
   private int timeout = DEFAULT_TIMEOUT;
   private long pauseBetweenRequests = 0;
   
-  private Set<String> harvested = new HashSet<String>();
-  private SortedSet<String> needsHarvest = new TreeSet<String>();
+  private Set<String> harvested = new HashSet<>();
+  private SortedSet<String> needsHarvest = new TreeSet<>();
   
   private Class<? extends XMLReader> htmlReaderClass = null;
   
