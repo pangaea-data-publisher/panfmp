@@ -86,6 +86,10 @@ public final class TargetIndexConfig {
     checked = true;
   }
   
+  public String getRawIndexName(boolean alternate) {
+    return indexName + (alternate ? nameSuffix1 : nameSuffix2);
+  }
+  
   private boolean checked = false;
   
   // members "the configuration"
@@ -93,6 +97,6 @@ public final class TargetIndexConfig {
   public final Config root;
   public final Properties globalHarvesterProperties = new Properties();
   public final Map<String,HarvesterConfig> harvesters = new LinkedHashMap<String,HarvesterConfig>();
-  public String nameSuffix1 = "_v1", nameSuffix2 = "_v2";
+  private String nameSuffix1 = "_v1", nameSuffix2 = "_v2";
   public Settings indexSettings = null;
 }
