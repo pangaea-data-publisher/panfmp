@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="ISO-8859-1"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <cfg:config xmlns:cfg="urn:java:de.pangaea.metadataportal.config.Config" xmlns:dp="urn:java:de.pangaea.metadataportal.processor.DocumentProcessor">
 	<!-- Definition of the metadata schema and fields for harvesting: -->
 	<cfg:metadata xmlns:dif="http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/">
