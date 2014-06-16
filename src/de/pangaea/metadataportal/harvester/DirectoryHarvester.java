@@ -87,6 +87,7 @@ public class DirectoryHarvester extends SingleFileEntitiesHarvester implements F
         "identifierPrefix", "filenameFilter"));
   }
   
+  @Override
   public boolean accept(File dir, String name) {
     File file = new File(dir, name);
     if (file.isDirectory()) return (recursive && !".".equals(name) && !".."

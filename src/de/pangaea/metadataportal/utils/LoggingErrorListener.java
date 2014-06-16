@@ -43,16 +43,19 @@ public final class LoggingErrorListener implements ErrorListener {
   }
   
   /** Just throws <code>e</code>. */
+  @Override
   public void error(TransformerException e) throws TransformerException {
     throw e;
   }
   
   /** Just throws <code>e</code>. */
+  @Override
   public void fatalError(TransformerException e) throws TransformerException {
     throw e;
   }
   
   /** Logs message and location with WARN method. */
+  @Override
   public void warning(TransformerException e) throws TransformerException {
     log.warn(e.getMessageAndLocation());
   }

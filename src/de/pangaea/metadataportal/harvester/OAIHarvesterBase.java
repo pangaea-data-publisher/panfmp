@@ -144,6 +144,7 @@ public abstract class OAIHarvesterBase extends Harvester {
    */
   protected ObjectCreationFactory getMetadataDocumentFactory() {
     return new AbstractObjectCreationFactory() {
+      @Override
       public Object createObject(org.xml.sax.Attributes attributes) {
         return createMetadataDocumentInstance();
       }
@@ -220,6 +221,7 @@ public abstract class OAIHarvesterBase extends Harvester {
    */
   protected EntityResolver getEntityResolver(final EntityResolver parent) {
     return new EntityResolver() {
+      @Override
       public InputSource resolveEntity(String publicId, String systemId)
           throws IOException, SAXException {
         try {

@@ -652,12 +652,14 @@ public class MetadataDocument {
             + "'...");
         Validator val = iconfig.root.schema.newValidator();
         val.setErrorHandler(new ErrorHandler() {
+          @Override
           public void warning(SAXParseException e) throws SAXException {
             log.warn("Validation warning in "
                 + (wasTransformed ? "XSL transformed " : "") + "document '"
                 + ds.getSystemId() + "': " + e.getMessage());
           }
           
+          @Override
           public void error(SAXParseException e) throws SAXException {
             String msg = "Validation error in "
                 + (wasTransformed ? "XSL transformed " : "") + "document '"
@@ -666,6 +668,7 @@ public class MetadataDocument {
             log.error(msg);
           }
           
+          @Override
           public void fatalError(SAXParseException e) throws SAXException {
             throw new SAXException("Fatal validation error in "
                 + (wasTransformed ? "XSL transformed " : "") + "document '"

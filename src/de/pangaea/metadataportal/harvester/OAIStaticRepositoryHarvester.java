@@ -96,6 +96,7 @@ public class OAIStaticRepositoryHarvester extends OAIHarvesterBase {
       // special rule that sets current metadataPrefix on begin of ListRecords
       // and unsets it at the end (to be sure, to not harvest documents with
       // missing prefix)
+      @Override
       public void begin(String namespace, String name, Attributes attributes)
           throws Exception {
         currMetadataPrefix = attributes.getValue("metadataPrefix");
@@ -105,6 +106,7 @@ public class OAIStaticRepositoryHarvester extends OAIHarvesterBase {
         metadataSaxRule.setEnabled(metadataPrefix.equals(currMetadataPrefix));
       }
       
+      @Override
       public void end(String namespace, String name) throws Exception {
         currMetadataPrefix = null;
         metadataSaxRule.setEnabled(false);
