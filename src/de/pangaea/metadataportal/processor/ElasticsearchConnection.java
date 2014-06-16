@@ -157,7 +157,7 @@ public final class ElasticsearchConnection implements Closeable {
       "include_in_all", false,
       "store", false
     ));
-    return XContentFactory.jsonBuilder().value(mapping).string();
+    return XContentFactory.jsonBuilder().map(mapping).string();
   }
   
   /** Creates the index (if needed), configures it (mapping), and creates aliases. The real index name to be used is returned. */
