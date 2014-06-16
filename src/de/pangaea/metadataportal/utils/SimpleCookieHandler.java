@@ -47,7 +47,7 @@ public final class SimpleCookieHandler extends CookieHandler {
   
   private SimpleCookieHandler() {}
   
-  private final ThreadLocal<List<Cookie>> cache = new ThreadLocal<List<Cookie>>();
+  private final ThreadLocal<List<Cookie>> cache = new ThreadLocal<>();
   
   /**
    * Resets all recorded cookies for the current thread. This method is called

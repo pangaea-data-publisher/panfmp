@@ -49,7 +49,7 @@ import org.xml.sax.SAXParseException;
  */
 public class ExtendedDigester extends Digester {
   
-  protected final HashMap<String,LinkedList<String>> currentNamespaceMap = new HashMap<String,LinkedList<String>>();
+  protected final HashMap<String,LinkedList<String>> currentNamespaceMap = new HashMap<>();
   protected ContentHandler custContentHandler = null;
   
   public ExtendedDigester() {
@@ -116,7 +116,7 @@ public class ExtendedDigester extends Digester {
   public void startPrefixMapping(String prefix, String uri) throws SAXException {
     LinkedList<String> stack = currentNamespaceMap.get(prefix);
     if (stack == null) currentNamespaceMap.put(prefix,
-        stack = new LinkedList<String>());
+        stack = new LinkedList<>());
     stack.addFirst(uri);
     
     if (custContentHandler != null) custContentHandler.startPrefixMapping(
@@ -273,7 +273,7 @@ public class ExtendedDigester extends Digester {
    * copy of the internal representation's current mapping).
    */
   public Map<String,String> getCurrentNamespaceMap() {
-    final HashMap<String,String> n = new HashMap<String,String>(
+    final HashMap<String,String> n = new HashMap<>(
         currentNamespaceMap.size());
     for (Map.Entry<String,LinkedList<String>> i : currentNamespaceMap
         .entrySet()) {
@@ -305,11 +305,11 @@ public class ExtendedDigester extends Digester {
         || !prefixToNS.containsKey(XMLConstants.DEFAULT_NS_PREFIX)) prefixToNS
         .put(XMLConstants.DEFAULT_NS_PREFIX, XMLConstants.NULL_NS_URI);
     // invert Map
-    final Map<String,List<String>> nsToPrefix = new HashMap<String,List<String>>();
+    final Map<String,List<String>> nsToPrefix = new HashMap<>();
     for (Map.Entry<String,String> e : prefixToNS.entrySet()) {
       List<String> dest = nsToPrefix.get(e.getValue());
       if (dest == null) nsToPrefix.put(e.getValue(),
-          dest = new ArrayList<String>());
+          dest = new ArrayList<>());
       dest.add(e.getKey());
     }
     // logging

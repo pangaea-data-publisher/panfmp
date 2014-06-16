@@ -387,7 +387,7 @@ public abstract class Harvester {
    * @see #enumerateValidHarvesterPropertyNames
    */
   public final Set<String> getValidHarvesterPropertyNames() {
-    TreeSet<String> props = new TreeSet<String>();
+    TreeSet<String> props = new TreeSet<>();
     enumerateValidHarvesterPropertyNames(props);
     return Collections.unmodifiableSet(props);
   }
