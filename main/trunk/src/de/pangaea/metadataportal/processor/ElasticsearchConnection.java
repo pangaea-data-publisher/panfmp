@@ -115,6 +115,18 @@ public final class ElasticsearchConnection implements Closeable {
     return new DocumentProcessor(client(), iconfig, targetIndex);
   }
   
+  private String getAliasedIndex(TargetIndexConfig ticonf) throws IOException {
+    final Iterator<String> indexes = client.admin().indices().prepareGetAliases(ticonf.indexName).get().getAliases().keysIt();
+    String aliasedIndex = null;
+    if (indexes.hasNext()) {
+      aliasedIndex = indexes.next();
+      if (indexes.hasNext()) {
+        throw new IOException("There are more than one index referred by alias='" + ticonf.indexName + "'");
+      }
+    }
+    return aliasedIndex;
+  }
+  
   /** Creates the index (if needed), configures it (mapping), and creates aliases. The real index name to be used is returned. */
   public String createIndex(TargetIndexConfig ticonf, boolean rebuilder) throws IOException {
     checkOpen();
@@ -122,21 +134,16 @@ public final class ElasticsearchConnection implements Closeable {
     final IndicesAdminClient indicesAdmin = client.admin().indices();
     
     log.info("Getting index name for alias='" + ticonf.indexName + "'...");
-    final String realIndexName;
-    final Iterator<String> indexes = indicesAdmin.prepareGetAliases(ticonf.indexName).get().getAliases().keysIt();
-    if (indexes.hasNext()) {
-      String found = indexes.next();
-      log.info("Alias exists and points to index='" + found + "'.");
-      if (indexes.hasNext()) {
-        throw new IOException("There are more than one index referred by alias='"+ticonf.indexName+"'");
-      }
+    final String realIndexName, aliasedIndex = getAliasedIndex(ticonf);
+    if (aliasedIndex != null) {
+      log.info("Alias exists and points to index='" + aliasedIndex + "'.");
       if (rebuilder) {
-        realIndexName = ticonf.getRawIndexName(found.equals(ticonf.getRawIndexName(false)));
+        realIndexName = ticonf.getRawIndexName(aliasedIndex.equals(ticonf.getRawIndexName(false)));
         log.info("As rebuilding is requested, we have to create a new index: " + realIndexName);
         final DeleteIndexResponse resp = indicesAdmin.prepareDelete(realIndexName).setIndicesOptions(IndicesOptions.lenientExpandOpen()).get();
         log.info("Pre-existing index deleted: " + resp.isAcknowledged());
       } else {
-        realIndexName = found;
+        realIndexName = aliasedIndex;
       }
     } else {
       log.info("Alias does not yet exist, start fresh...");
@@ -181,20 +188,12 @@ public final class ElasticsearchConnection implements Closeable {
   public void closeIndex(TargetIndexConfig ticonf, String realIndexName, boolean cleanShutdown) throws IOException {
     checkOpen();
     
-    log.info("Flushing data...");
-    client.admin().indices().prepareFlush(realIndexName).get();
-    
     final IndicesAdminClient indicesAdmin = client.admin().indices();
     
-    final Iterator<String> indexes = indicesAdmin.prepareGetAliases(ticonf.indexName).get().getAliases().keysIt();
-    String aliasedIndex = null;
-    if (indexes.hasNext()) {
-      aliasedIndex = indexes.next();
-      if (indexes.hasNext()) {
-        throw new IOException("There are more than one index referred by alias='" + ticonf.indexName + "'");
-      }
-    }
+    log.info("Flushing data...");
+    indicesAdmin.prepareFlush(realIndexName).get();
     
+    final String aliasedIndex = getAliasedIndex(ticonf);
     if (cleanShutdown && !realIndexName.equals(aliasedIndex)) {
       log.info("Redirecting alias '" + ticonf.indexName + "' to new index: " + realIndexName);
       {
