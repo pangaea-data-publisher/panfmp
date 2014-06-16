@@ -129,13 +129,12 @@ public final class Config {
       dig.addDoNothing("config/metadata/fields");
       
       // special purpose fields
-      for (final String type : Arrays.asList(
-          "xml-field", "source-field", "datestamp-field", "mdoc-impl-field"
-      )) {
-        dig.addCallMethod("config/metadata/fields/" + type, "setSpecialField", 2);
-        dig.addObjectParam("config/metadata/fields/" + type, 0, type);
-        dig.addCallParam("config/metadata/fields/" + type, 1, "name");
-      }
+      dig.addCallMethod("config/metadata/fields/xml-field", "setXMLField", 1);
+      dig.addCallParam("config/metadata/fields/xml-field", 0, "name");
+      dig.addCallMethod("config/metadata/fields/source-field", "setSourceField", 1);
+      dig.addCallParam("config/metadata/fields/source-field", 0, "name");
+      dig.addCallMethod("config/metadata/fields/datestamp-field", "setDatestampField", 1);
+      dig.addCallParam("config/metadata/fields/datestamp-field", 0, "name");
       
       // XPath / template fields
       dig.addObjectCreate("config/metadata/fields/field", FieldConfig.class);
@@ -328,20 +327,29 @@ public final class Config {
   
   @PublicForDigesterUse
   @Deprecated
-  public void setSpecialField(String type, String name) {
-    switch (type) {
-      case "xml-field":
-        fieldnameXML = name;
-        break;
-      case "source-field":
-        fieldnameSource = name;
-        break;
-      case "datestamp-field":
-        fieldnameDatestamp = name;
-        break;
-      default:
-        throw new IllegalArgumentException("Invalid special field type: " + type);
+  public void setXMLField(String name) {
+    if (name == null || name.isEmpty()) {
+      throw new IllegalArgumentException("Invalid name for XML field: " + name);
     }
+    fieldnameXML = name;
+  }
+  
+  @PublicForDigesterUse
+  @Deprecated
+  public void setDatestampField(String name) {
+    if (name == null || name.isEmpty()) {
+      throw new IllegalArgumentException("Invalid name for datestamp field: " + name);
+    }
+    fieldnameDatestamp = name;
+  }
+  
+  @PublicForDigesterUse
+  @Deprecated
+  public void setSourceField(String name) {
+    if (name == null || name.isEmpty()) {
+      throw new IllegalArgumentException("Invalid name for source field: " + name);
+    }
+    fieldnameSource = name;
   }
   
   @PublicForDigesterUse
@@ -480,7 +488,7 @@ public final class Config {
   // Template cache:
   private final Map<String,Templates> templatesCache = new HashMap<String,Templates>();
   
-  protected ExtendedDigester dig = null;
+  ExtendedDigester dig = null;
   
   // internal stuff (paramlists, factories, needed while parsing):
   private static final ObjectCreationFactory ES_SETTINGS_BUILDER = new AbstractObjectCreationFactory() {

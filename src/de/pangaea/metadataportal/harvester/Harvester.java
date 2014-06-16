@@ -132,7 +132,7 @@ public abstract class Harvester {
           continue; // nothing to do for this index!
         try {
           final boolean isRebuilder = (harvesterClass == Rebuilder.class);
-          final String targetIndex = ticonf.createIndex(es.client(), isRebuilder);
+          final String targetIndex = es.createIndex(ticonf, isRebuilder);
           boolean globalCleanShutdown = true;
           for (HarvesterConfig harvesterConf : ticonf.harvesters.values()) {
             if (!(activeIds.contains(ticonf.indexName) || activeIds.contains(harvesterConf.id)))
@@ -177,7 +177,7 @@ public abstract class Harvester {
               globalCleanShutdown &= cleanShutdown;
             }
           }
-          ticonf.closeIndex(es.client(), targetIndex, globalCleanShutdown);
+          es.closeIndex(ticonf, targetIndex, globalCleanShutdown);
         } catch (IOException ioe) {
           staticLog.fatal("Cannot initialize Elasticsearch index: " + ticonf.indexName, ioe);
         }

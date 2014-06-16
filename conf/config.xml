@@ -28,10 +28,10 @@
 			You can declare fields using <cfg:field> or <cfg:field-template> (for the latter see the example in variables-section).
 			Each field has a name and some properties for Lucene:
 			- datatype: string, number, dateTime, xml (field is stored as XML in index, ideal for field templates),
-			  xhtml (only works with field-templates because it needs a XSL-template
-			  that outputs XHTML. Can be used to generate thumbnail information for search results in HTML form),
-			  json (JSON from an XSL template).
-			  The field template should not declare the XHTML namespace.
+				xhtml (only works with field-templates because it needs a XSL-template
+				that outputs XHTML. Can be used to generate thumbnail information for search results in HTML form),
+				json (JSON from an XSL template).
+				The field template should not declare the XHTML namespace.
 		-->
 		<cfg:fields>
 			<!--
@@ -48,14 +48,14 @@
 			<cfg:field name="citation" datatype="string">/dif:DIF/dif:Data_Set_Citation|/dif:DIF/dif:Entry_Title|/dif:DIF/dif:Entry_ID</cfg:field>
 			<cfg:field name="investigator" datatype="string">/dif:DIF/dif:Personnel[contains(dif:Role,'nvestigat')]</cfg:field>
 			<cfg:field-template name="investigatorFacet" datatype="string" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
-        <xsl:for-each select="/dif:DIF/dif:Personnel[contains(dif:Role,'nvestigat')]"><tok>
-          <xsl:value-of select="dif:Last_Name"/>
-          <xsl:for-each select="dif:First_Name">
-            <xsl:text>, </xsl:text>
-            <xsl:value-of select="."/>
-          </xsl:for-each>
-        </tok></xsl:for-each>
-      </cfg:field-template>
+				<xsl:for-each select="/dif:DIF/dif:Personnel[contains(dif:Role,'nvestigat')]"><tok>
+					<xsl:value-of select="dif:Last_Name"/>
+					<xsl:for-each select="dif:First_Name">
+						<xsl:text>, </xsl:text>
+						<xsl:value-of select="."/>
+					</xsl:for-each>
+				</tok></xsl:for-each>
+			</cfg:field-template>
 			<cfg:field name="parameter" datatype="string">/dif:DIF/dif:Parameters</cfg:field>
 			<cfg:field name="parameterFacet" datatype="string">/dif:DIF/dif:Parameters/dif:Detailed_Variable</cfg:field>
 			<cfg:field name="method" datatype="string">/dif:DIF/dif:Sensor_Name</cfg:field>
@@ -79,20 +79,20 @@
 				</xsl:choose>
 			</cfg:field-template>
 			<cfg:field-template name="coordinates" datatype="json" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
-        <xsl:for-each select="/dif:DIF/dif:Spatial_Coverage">
-          <xsl:if test="dif:Southernmost_Latitude and dif:Westernmost_Longitude">
-            <coord>
-              <lat><xsl:value-of select="dif:Southernmost_Latitude"/></lat>
-              <lon><xsl:value-of select="dif:Westernmost_Longitude"/></lon>
-            </coord>
-          </xsl:if>
-          <xsl:if test="dif:Northernmost_Latitude and dif:Easternmost_Longitude">
-            <coord>
-              <lat><xsl:value-of select="dif:Northernmost_Latitude"/></lat>
-              <lon><xsl:value-of select="dif:Easternmost_Longitude"/></lon>
-            </coord>
-          </xsl:if>
-        </xsl:for-each>
+				<xsl:for-each select="/dif:DIF/dif:Spatial_Coverage">
+					<xsl:if test="dif:Southernmost_Latitude and dif:Westernmost_Longitude">
+						 <coord>
+							 <lat><xsl:value-of select="dif:Southernmost_Latitude"/></lat>
+							 <lon><xsl:value-of select="dif:Westernmost_Longitude"/></lon>
+						 </coord>
+					</xsl:if>
+					<xsl:if test="dif:Northernmost_Latitude and dif:Easternmost_Longitude">
+						<coord>
+							<lat><xsl:value-of select="dif:Northernmost_Latitude"/></lat>
+							<lon><xsl:value-of select="dif:Easternmost_Longitude"/></lon>
+						</coord>
+					</xsl:if>
+				</xsl:for-each>
 			</cfg:field-template>
 		</cfg:fields>
 		<cfg:schema>
