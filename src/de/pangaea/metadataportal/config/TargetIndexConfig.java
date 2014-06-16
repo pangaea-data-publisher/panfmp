@@ -63,7 +63,7 @@ public final class TargetIndexConfig {
   public void setIndexSettings(Settings.Builder bld) {
     checkImmutable();
     if (indexSettings != null)
-      throw new IllegalArgumentException("Duplicate indexSettings element");
+      throw new IllegalArgumentException("Duplicate <settings/> element");
     // strip the XML matcher path:
     indexSettings = bld.build().getByPrefix(root.dig.getMatch() + "/");
   }
