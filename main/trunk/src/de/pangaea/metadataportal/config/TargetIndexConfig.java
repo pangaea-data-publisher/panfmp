@@ -117,7 +117,7 @@ public final class TargetIndexConfig {
   }
   
   public String getRawIndexName(boolean alternate) {
-    return indexName + (alternate ? nameSuffix1 : nameSuffix2);
+    return indexName + (alternate ? nameSuffix2 : nameSuffix1);
   }
   
   private boolean checked = false;
