@@ -40,7 +40,6 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.indices.IndexMissingException;
 
 import de.pangaea.metadataportal.config.HarvesterConfig;
 import de.pangaea.metadataportal.utils.KeyValuePairs;
@@ -106,18 +105,14 @@ public final class DocumentProcessor {
     this.mdocBuffer = new ArrayBlockingQueue<>(maxQueue, true);
     
     // load metadata
-    try {
-      final GetResponse resp = client.prepareGet(sourceIndex, HARVESTER_METADATA_TYPE, iconfig.id).setFetchSource(true).get();
-      if (resp.isExists()) {
-        Map<String,Object> map = resp.getSourceAsMap();
-        if (map != null) {
-          for (final Map.Entry<String,Object> e : map.entrySet()) {
-            harvesterMetadata.put(e.getKey(), e.getValue().toString());
-          }
+    final GetResponse resp = client.prepareGet(sourceIndex, HARVESTER_METADATA_TYPE, iconfig.id).setFetchSource(true).get();
+    if (resp.isExists()) {
+      Map<String,Object> map = resp.getSourceAsMap();
+      if (map != null) {
+        for (final Map.Entry<String,Object> e : map.entrySet()) {
+          harvesterMetadata.put(e.getKey(), e.getValue().toString());
         }
       }
-    } catch (IndexMissingException e) {
-      // ignore
     }
     
     // threads

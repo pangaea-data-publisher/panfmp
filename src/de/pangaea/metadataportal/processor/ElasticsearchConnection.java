@@ -24,6 +24,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.admin.indices.alias.Alias;
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequestBuilder;
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesResponse;
@@ -57,9 +58,10 @@ public final class ElasticsearchConnection implements Closeable {
   private static final org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(ElasticsearchConnection.class);
   
   private Client client;
-  private Config conf;
+  private final Config conf;
 
   public static final int ELASTICSEARCH_DEFAULT_PORT = 9300;
+  
   private static final String HARVESTER_METADATA_MAPPING;
   static {
     try {
@@ -118,13 +120,13 @@ public final class ElasticsearchConnection implements Closeable {
     return new DocumentProcessor(client(), iconfig, targetIndex);
   }
   
-  private String getAliasedIndex(TargetIndexConfig ticonf) throws IOException {
+  private String getAliasedIndex(TargetIndexConfig ticonf) {
     final Iterator<String> indexes = client.admin().indices().prepareGetAliases(ticonf.indexName).get().getAliases().keysIt();
     String aliasedIndex = null;
     if (indexes.hasNext()) {
       aliasedIndex = indexes.next();
       if (indexes.hasNext()) {
-        throw new IOException("There are more than one index referred by alias='" + ticonf.indexName + "'");
+        throw new ElasticsearchException("There are more than one index referred by alias='" + ticonf.indexName + "'");
       }
     }
     return aliasedIndex;
@@ -193,7 +195,7 @@ public final class ElasticsearchConnection implements Closeable {
   }
   
   /** Closes the index after harvesting and update the aliases to point to the active index. */
-  public void closeIndex(TargetIndexConfig ticonf, String realIndexName, boolean cleanShutdown) throws IOException {
+  public void closeIndex(TargetIndexConfig ticonf, String realIndexName, boolean cleanShutdown) {
     checkOpen();
     
     final IndicesAdminClient indicesAdmin = client.admin().indices();
@@ -231,7 +233,7 @@ public final class ElasticsearchConnection implements Closeable {
   }
   
   /** Closes the index after harvesting and update the aliases to point to the active index. */
-  public void updateAliases(TargetIndexConfig ticonf) throws IOException {
+  public void updateAliases(TargetIndexConfig ticonf) {
     checkOpen();
     
     final IndicesAdminClient indicesAdmin = client.admin().indices();
@@ -244,7 +246,7 @@ public final class ElasticsearchConnection implements Closeable {
     if (indexes.hasNext()) {
       final String aliasedIndex = indexes.next();
       if (indexes.hasNext()) {
-        throw new IOException("There are more than one index referred by alias='" + ticonf.indexName + "'");
+        throw new ElasticsearchException("There are more than one index referred by alias='" + ticonf.indexName + "'");
       }
       final List<AliasMetaData> aliases = indexCol.get(aliasedIndex);
       final IndicesAliasesRequestBuilder req = indicesAdmin.prepareAliases();
@@ -263,7 +265,7 @@ public final class ElasticsearchConnection implements Closeable {
       log.info("Aliases updated: " + resp.isAcknowledged());
 
     } else {
-      throw new IOException("The alias='" + ticonf.indexName + "' does not exist.");
+      throw new ElasticsearchException("The alias='" + ticonf.indexName + "' does not exist.");
     }
   }
   
