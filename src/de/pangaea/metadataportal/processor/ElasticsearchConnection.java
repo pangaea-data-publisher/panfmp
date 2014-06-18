@@ -120,6 +120,12 @@ public final class ElasticsearchConnection implements Closeable {
     return new DocumentProcessor(client(), iconfig, targetIndex);
   }
   
+  public void waitForYellow(TargetIndexConfig ticonf) {
+    checkOpen();
+    log.info("Waiting for index '" + ticonf.indexName + "' to get available...");
+    client.admin().cluster().prepareHealth(ticonf.indexName).setWaitForYellowStatus().get();
+  }
+  
   private String getAliasedIndex(TargetIndexConfig ticonf) {
     final Iterator<String> indexes = client.admin().indices().prepareGetAliases(ticonf.indexName).get().getAliases().keysIt();
     String aliasedIndex = null;
@@ -191,6 +197,7 @@ public final class ElasticsearchConnection implements Closeable {
       }
     }
 
+    waitForYellow(ticonf);
     return realIndexName;
   }
   
@@ -234,7 +241,7 @@ public final class ElasticsearchConnection implements Closeable {
   
   /** Closes the index after harvesting and update the aliases to point to the active index. */
   public void updateAliases(TargetIndexConfig ticonf) {
-    checkOpen();
+    waitForYellow(ticonf);
     
     final IndicesAdminClient indicesAdmin = client.admin().indices();
     
