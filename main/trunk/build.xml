@@ -46,7 +46,7 @@
   <property name="ivy.jar.file" location="${ivy.jar.dir}/ivy-${ivy.install.version}.jar" />
 	
 	<makeurl property="log4j-conf" file="scripts/console.log.properties"/>
-	<property name="harvester.index" value="all"/>
+	<property name="harvester" value="all"/>
 
   <!-- GPG settings -->
   <property name="gpg.exe" value="gpg" />
@@ -128,7 +128,7 @@
 		<java fork="true" dir="." classname="de.pangaea.metadataportal.harvester.Harvester" classpathref="path.run">
 			 <sysproperty key="log4j.configuration" value="${log4j-conf}"/>
 			 <arg file="conf/config.xml"/>
-			 <arg value="${harvester.index}"/>
+			 <arg value="${harvester}"/>
 		</java>
 	</target>
 
@@ -136,7 +136,7 @@
 		<java fork="true" dir="." classname="de.pangaea.metadataportal.harvester.Rebuilder" classpathref="path.run">
 			 <sysproperty key="log4j.configuration" value="${log4j-conf}"/>
 			 <arg file="conf/config.xml"/>
-			 <arg value="${harvester.index}"/>
+			 <arg value="${harvester}"/>
 		</java>
 	</target>
 
@@ -144,7 +144,7 @@
 		<java fork="true" dir="." classname="de.pangaea.metadataportal.harvester.UpdateAliases" classpathref="path.run">
 			 <sysproperty key="log4j.configuration" value="${log4j-conf}"/>
 			 <arg file="conf/config.xml"/>
-			 <arg value="${harvester.index}"/>
+			 <arg value="${harvester}"/>
 		</java>
 	</target>
 
