@@ -22,27 +22,26 @@ final class TemplateSaxRule extends TransformerSaxRule {
 
   @Override
   protected void initDocument() throws SAXException {
+    if (!hasBody) return;
+    
     destContentHandler.startPrefixMapping(XSL_PREFIX, XSL_NAMESPACE);
     
     AttributesImpl atts = new AttributesImpl();
     
     // generate prefixes to exclude (all currently defined; if they appear,
     // they will be explicitely defined by processor)
-    StringBuilder excludePrefixes = new StringBuilder("#default ")
-        .append(XSL_PREFIX);
-    for (String prefix : ((ExtendedDigester) digester)
-        .getCurrentAssignedPrefixes()) {
-      if (!XMLConstants.DEFAULT_NS_PREFIX.equals(prefix)) excludePrefixes
-          .append(' ').append(prefix);
+    StringBuilder excludePrefixes = new StringBuilder("#default ").append(XSL_PREFIX);
+    for (String prefix : ((ExtendedDigester) digester).getCurrentAssignedPrefixes()) {
+      if (!XMLConstants.DEFAULT_NS_PREFIX.equals(prefix)) {
+        excludePrefixes.append(' ').append(prefix);
+      }
     }
     atts.addAttribute(XMLConstants.NULL_NS_URI, "exclude-result-prefixes",
         "exclude-result-prefixes", CNAME, excludePrefixes.toString());
     
     // root tag
-    atts.addAttribute(XMLConstants.NULL_NS_URI, "version", "version", CNAME,
-        "1.0");
-    destContentHandler.startElement(XSL_NAMESPACE, "stylesheet", XSL_PREFIX
-        + ":stylesheet", atts);
+    atts.addAttribute(XMLConstants.NULL_NS_URI, "version", "version", CNAME, "1.0");
+    destContentHandler.startElement(XSL_NAMESPACE, "stylesheet", XSL_PREFIX + ":stylesheet", atts);
     atts.clear();
     
     // register variables as params for template
@@ -63,27 +62,24 @@ final class TemplateSaxRule extends TransformerSaxRule {
         atts.addAttribute(XMLConstants.NULL_NS_URI, "name", "name", CNAME,
             "var:" + name.getLocalPart());
       }
-      destContentHandler.startElement(XSL_NAMESPACE, "param", XSL_PREFIX
-          + ":param", atts);
+      destContentHandler.startElement(XSL_NAMESPACE, "param", XSL_PREFIX + ":param", atts);
       atts.clear();
-      destContentHandler.endElement(XSL_NAMESPACE, "param", XSL_PREFIX
-          + ":param");
+      destContentHandler.endElement(XSL_NAMESPACE, "param", XSL_PREFIX + ":param");
       if (!nullNS) destContentHandler.endPrefixMapping("var");
     }
     
     // start a template
     atts.addAttribute(XMLConstants.NULL_NS_URI, "match", "match", CNAME, "/");
-    destContentHandler.startElement(XSL_NAMESPACE, "template", XSL_PREFIX
-        + ":template", atts);
-    // atts.clear();
+    destContentHandler.startElement(XSL_NAMESPACE, "template", XSL_PREFIX + ":template", atts);
+    atts.clear();
   }
   
   @Override
   protected void finishDocument() throws SAXException {
-    destContentHandler.endElement(XSL_NAMESPACE, "template", XSL_PREFIX
-        + ":template");
-    destContentHandler.endElement(XSL_NAMESPACE, "stylesheet", XSL_PREFIX
-        + ":stylesheet");
+    if (!hasBody) return;
+    
+    destContentHandler.endElement(XSL_NAMESPACE, "template", XSL_PREFIX + ":template");
+    destContentHandler.endElement(XSL_NAMESPACE, "stylesheet", XSL_PREFIX + ":stylesheet");
     destContentHandler.endPrefixMapping(XSL_PREFIX);
   }
   
