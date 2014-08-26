@@ -124,8 +124,8 @@ public class Config {
 			dig.addSetNext("config/metadata/fields/field", "addField");
 			String[] propAttr,propMapping;
 			SetPropertiesRule r=new SetPropertiesRule(
-				propAttr   =new String[]{"lucenestorage", "luceneindexed", "lucenetermvectors", "datatype"},
-				propMapping=new String[]{"storage",       "indexed",       "termVectors",       "dataType"}
+				propAttr   =new String[]{"lucenestorage", "luceneindexed", "lucenetermvectors", "datatype", "src"},
+				propMapping=new String[]{"storage",       "indexed",       "termVectors",       "dataType", null}
 			);
 			r.setIgnoreMissingProperty(false);
 			dig.addRule("config/metadata/fields/field",r);
@@ -593,14 +593,41 @@ public class Config {
 	// internal classes
 	private abstract class TransformerSaxRule extends SaxRule {
 
-		private TemplatesHandler th=null;
-
+		protected boolean hasBody = false;
+		private TemplatesHandler th = null;
+		
 		@Override
 		public void begin(String namespace, String name, Attributes attributes) throws Exception {
 			if (getContentHandler()==null) {
-				th=StaticFactories.transFactory.newTemplatesHandler();
-				th.setSystemId(file);
-				setContentHandler(th);
+				final String file = attributes.getValue(XMLConstants.NULL_NS_URI, "src");
+				if (file != null) {
+					setResult(loadTemplate(file));
+					th = null;
+					hasBody = false;
+					setContentHandler(new org.xml.sax.helpers.DefaultHandler() {
+						@Override
+						public void startElement(String namespaceURI, String localName, String qName, Attributes atts) throws SAXException {
+							throw new SAXException(
+									"No element content allowed here. You can either include an XSL template directly into the config file or use the 'src' attribute!");
+						}
+						
+						@Override
+						public void characters(char[] ch, int start, int length) throws SAXException {
+							for (int i = 0; i < length; i++) {
+								if (Character.isWhitespace(ch[start + i])) continue;
+								throw new SAXException(
+										"No element content allowed here. You can either include an XSL template directly into the config file or use the 'src' attribute!");
+							}
+						}
+					});
+				} else {
+					th = StaticFactories.transFactory.newTemplatesHandler();
+					th.setSystemId(Config.this.file);
+					hasBody = true;
+					setContentHandler(th);
+				}
+			} else {
+				throw new SAXException("Invalid state of SAX parser, content handler already set: " + getContentHandler());
 			}
 			super.begin(namespace,name,attributes);
 		}
@@ -612,6 +639,7 @@ public class Config {
 			super.end(namespace,name);
 			if (th!=null) setResult(th.getTemplates());
 			setContentHandler(th=null);
+			hasBody = false;
 		}
 
 	}
@@ -624,23 +652,6 @@ public class Config {
 			if (!(o instanceof SingleIndexConfig)) throw new RuntimeException("An XSLT tree is not allowed here!");
 			final SingleIndexConfig iconf=(SingleIndexConfig)o;
 
-			final String file=attributes.getValue(XMLConstants.NULL_NS_URI,"src");
-			if (file!=null) {
-				setResult(loadTemplate(file));
-				setContentHandler(new org.xml.sax.helpers.DefaultHandler() {
-					@Override
-					public void startElement(String namespaceURI, String localName, String qName, Attributes atts) throws SAXException {
-						throw new SAXException("No element content allowed here. You can either include an XSL template directly into the config file or use the 'src' attribute!");
-					}
-					@Override
-					public void characters(char[] ch, int start, int length) throws SAXException {
-						for (int i=0; i<length; i++) {
-							if (Character.isWhitespace(ch[start+i])) continue;
-							throw new SAXException("No element content allowed here. You can either include an XSL template directly into the config file or use the 'src' attribute!");
-						}
-					}
-				});
-			}
 			// collect all params to additionally pass to XSL and store in Map
 			iconf.xsltParams=new HashMap<QName,Object>();
 			for (int i=0,c=attributes.getLength(); i<c; i++) {
@@ -667,6 +678,8 @@ public class Config {
 
 		@Override
 		protected void initDocument() throws SAXException {
+			if (!hasBody) return;
+
 			destContentHandler.startPrefixMapping(XSL_PREFIX,XSL_NAMESPACE);
 
 			AttributesImpl atts=new AttributesImpl();
@@ -709,6 +722,8 @@ public class Config {
 
 		@Override
 		protected void finishDocument() throws SAXException {
+			if (!hasBody) return;
+
 			destContentHandler.endElement(XSL_NAMESPACE,"template",XSL_PREFIX+":template");
 			destContentHandler.endElement(XSL_NAMESPACE,"stylesheet",XSL_PREFIX+":stylesheet");
 			destContentHandler.endPrefixMapping(XSL_PREFIX);
