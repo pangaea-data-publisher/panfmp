@@ -139,7 +139,7 @@ public final class Config {
       // XPath / template fields
       dig.addObjectCreate("config/metadata/fields/field", FieldConfig.class);
       dig.addSetNext("config/metadata/fields/field", "addField");
-      String[] propAttr = new String[] { "datatype" }, propMapping = new String[] { "dataType" };
+      String[] propAttr = new String[] { "datatype", "src" }, propMapping = new String[] { "dataType", null };
       SetPropertiesRule r = new SetPropertiesRule(propAttr, propMapping);
       r.setIgnoreMissingProperty(false);
       dig.addRule("config/metadata/fields/field", r);
