@@ -22,7 +22,7 @@
       <artifact name="log4j" type="jar"/>
     </dependency>
     
-    <dependency org="net.sourceforge.nekohtml" name="nekohtml" rev="1.9.18" conf="bundle->default"/>
+    <dependency org="net.sourceforge.nekohtml" name="nekohtml" rev="1.9.21" conf="bundle->default"/>
     
     <!-- build tools: -->
     <dependency org="de.thetaphi" name="forbiddenapis" rev="1.5.1" conf="buildtools->default"/>
