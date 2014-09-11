@@ -590,6 +590,7 @@ public class MetadataDocument {
         kv.add(f.name, Double.parseDouble(val));
         break;
       case STRING:
+      case XML: // we must support this, the parameter is already formatted xml as string!
         kv.add(f.name, val);
         break;
       default:
