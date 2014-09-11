@@ -68,6 +68,7 @@ public class ElasticsearchHarvester extends SingleFileEntitiesHarvester {
     super(iconfig);
   }
 
+  @SuppressWarnings("resource")
   @Override
   public void open(ElasticsearchConnection es, String targetIndex) throws Exception {
     super.open(es, targetIndex);

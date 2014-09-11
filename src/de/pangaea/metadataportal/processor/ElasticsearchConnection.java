@@ -88,6 +88,7 @@ public final class ElasticsearchConnection implements Closeable {
     }
   }
   
+  @SuppressWarnings("resource")
   public ElasticsearchConnection(Config config) {
     final Settings settings = config.esSettings == null ? ImmutableSettings.Builder.EMPTY_SETTINGS : config.esSettings;
     log.info("Connecting to Elasticsearch nodes: " + config.esTransports);
