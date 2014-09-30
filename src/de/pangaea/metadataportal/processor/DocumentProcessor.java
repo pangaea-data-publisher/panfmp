@@ -203,7 +203,7 @@ public final class DocumentProcessor {
     final CommitEvent ce = commitEvent.get();
     if (ce != null) ce.harvesterCommitted(Collections.singleton(mdoc.getIdentifier()));
  
-    log.info("Document update '" + mdoc.getIdentifier() + "' processed and submitted to Elasticsearch.");
+    log.info("Document update '" + mdoc.getIdentifier() + "' processed and submitted to Elasticsearch index '" + targetIndex + "'.");
   }
   
   /**
