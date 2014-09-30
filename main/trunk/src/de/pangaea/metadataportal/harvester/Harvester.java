@@ -315,8 +315,7 @@ public abstract class Harvester {
    * @throws InterruptedException
    *           if wait operation was interrupted.
    */
-  protected void addDocument(MetadataDocument mdoc)
-      throws BackgroundFailure, InterruptedException {
+  protected void addDocument(MetadataDocument mdoc) throws Exception {
     if (processor == null) throw new IllegalStateException(
         "Harvester must be opened before using");
     processor.addDocument(mdoc);
