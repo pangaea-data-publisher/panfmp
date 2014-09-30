@@ -139,8 +139,7 @@ public class OAIStaticRepositoryHarvester extends OAIHarvesterBase {
   
   // harvester code
   @Override
-  public void addDocument(MetadataDocument mdoc)
-      throws BackgroundFailure, InterruptedException {
+  public void addDocument(MetadataDocument mdoc) throws Exception {
     if (metadataPrefix.equals(currMetadataPrefix)) {
       validIdentifiers.add(mdoc.getIdentifier());
       super.addDocument(mdoc);

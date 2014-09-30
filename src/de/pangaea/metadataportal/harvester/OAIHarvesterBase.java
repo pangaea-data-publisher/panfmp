@@ -122,8 +122,7 @@ public abstract class OAIHarvesterBase extends Harvester {
   }
   
   @Override
-  public void addDocument(MetadataDocument mdoc)
-      throws BackgroundFailure, InterruptedException {
+  public void addDocument(MetadataDocument mdoc) throws Exception {
     if (filterIncomingSets && sets != null) {
       if (Collections.disjoint(((OAIMetadataDocument) mdoc).getSets(), sets)) mdoc
           .setDeleted(true);
