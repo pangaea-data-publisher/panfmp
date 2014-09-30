@@ -121,8 +121,9 @@ public abstract class SingleFileEntitiesHarvester extends Harvester {
     if (validIdentifiers != null) validIdentifiers.add(identifier);
     
     if (lastModified > 0L) {
-      if (newestDatestamp <= 0L || newestDatestamp < lastModified) setHarvestingDateReference(new Date(
-          newestDatestamp = lastModified));
+      if (newestDatestamp <= 0L || newestDatestamp < lastModified) {
+        setHarvestingDateReference(new Date(newestDatestamp = lastModified));
+      }
       if (!isDocumentOutdated(lastModified)) return;
     }
     
