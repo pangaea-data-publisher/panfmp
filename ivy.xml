@@ -7,7 +7,7 @@
      <conf name="buildtools" transitive="true" visibility="private" />
   </configurations>
   <dependencies>
-    <dependency org="org.elasticsearch" name="elasticsearch" rev="1.3.3" conf="build,bundle->default">
+    <dependency org="org.elasticsearch" name="elasticsearch" rev="1.3.4" conf="build,bundle->default">
       <exclude org="org.apache" module="lucene-expressions"/>
       <exclude org="org.ow2.asm" module="asm.*" matcher="regexp"/>
       <exclude org="org.antlr" module="antlr-runtime"/>
