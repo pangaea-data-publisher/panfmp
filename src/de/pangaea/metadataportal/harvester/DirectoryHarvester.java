@@ -26,6 +26,7 @@ import java.util.regex.Pattern;
 import javax.xml.transform.stream.StreamSource;
 
 import de.pangaea.metadataportal.config.HarvesterConfig;
+import de.pangaea.metadataportal.processor.ElasticsearchConnection;
 import de.pangaea.metadataportal.utils.BooleanParser;
 
 /**
@@ -47,28 +48,34 @@ import de.pangaea.metadataportal.utils.BooleanParser;
 public class DirectoryHarvester extends SingleFileEntitiesHarvester implements FilenameFilter {
   
   // Class members
-  private final File directory;
   private final boolean recursive;
   private final Pattern filenameFilter;
   private final String identifierPrefix;
   
-  public DirectoryHarvester(HarvesterConfig iconfig) throws Exception {
+  private File directory = null;
+  
+  public DirectoryHarvester(HarvesterConfig iconfig) {
     super(iconfig);
     
-    String s = iconfig.properties.getProperty("directory");
-    if (s == null) throw new IllegalArgumentException(
-        "Missing directory name to start harvesting (property \"directory\")");
-    
-    directory = new File(iconfig.root.makePathAbsolute(s, false));
     recursive = BooleanParser.parseBoolean(iconfig.properties
         .getProperty("recursive", "false"));
     identifierPrefix = iconfig.properties.getProperty(
         "identifierPrefix", "");
     
-    s = iconfig.properties.getProperty("filenameFilter");
+    String s = iconfig.properties.getProperty("filenameFilter");
     filenameFilter = (s == null) ? null : Pattern.compile(s);
   }
   
+  @Override
+  public void open(ElasticsearchConnection es, String targetIndex) throws Exception {
+    super.open(es, targetIndex);
+    
+    String directoryStr = iconfig.properties.getProperty("directory");
+    if (directoryStr == null) throw new IllegalArgumentException(
+        "Missing directory name to start harvesting (property \"directory\")");
+    directory = new File(iconfig.root.makePathAbsolute(directoryStr, false));
+  }
+
   @Override
   public void harvest() throws Exception {
     processDirectory(directory);

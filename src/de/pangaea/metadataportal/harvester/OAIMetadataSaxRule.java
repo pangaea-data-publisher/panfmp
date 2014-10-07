@@ -34,7 +34,7 @@ import de.pangaea.metadataportal.utils.SaxRule;
  * 
  * @author Uwe Schindler
  */
-public class OAIMetadataSaxRule extends SaxRule {
+public final class OAIMetadataSaxRule extends SaxRule {
   
   private OAIMetadataDocument doc = null;
   private boolean enabled = true;

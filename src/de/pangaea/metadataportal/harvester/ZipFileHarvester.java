@@ -38,6 +38,7 @@ import java.util.zip.ZipInputStream;
 import javax.xml.transform.stream.StreamSource;
 
 import de.pangaea.metadataportal.config.HarvesterConfig;
+import de.pangaea.metadataportal.processor.ElasticsearchConnection;
 import de.pangaea.metadataportal.utils.BooleanParser;
 
 /**
@@ -67,8 +68,8 @@ import de.pangaea.metadataportal.utils.BooleanParser;
  */
 public class ZipFileHarvester extends SingleFileEntitiesHarvester {
   
-  // Class members
-  private final String zipFile;
+  private String zipFile = null;
+  
   private final Pattern filenameFilter;
   private final String identifierPrefix;
   private final boolean useZipFileDate;
@@ -84,13 +85,8 @@ public class ZipFileHarvester extends SingleFileEntitiesHarvester {
   /** the timeout from configuration */
   protected final int timeout;
   
-  public ZipFileHarvester(HarvesterConfig iconfig) throws Exception {
+  public ZipFileHarvester(HarvesterConfig iconfig) {
     super(iconfig);
-    
-    String zipFile = iconfig.properties.getProperty("zipFile");
-    if (zipFile == null) throw new IllegalArgumentException(
-        "Missing name / URL of ZIP file to harvest (property \"zipFile\")");
-    this.zipFile = iconfig.root.makePathAbsolute(zipFile, true);
     
     identifierPrefix = iconfig.properties.getProperty("identifierPrefix", "");
     
@@ -101,6 +97,16 @@ public class ZipFileHarvester extends SingleFileEntitiesHarvester {
     retryTime = Integer.parseInt(iconfig.properties.getProperty("retryAfterSeconds", Integer.toString(DEFAULT_RETRY_TIME)));
     timeout = Integer.parseInt(iconfig.properties.getProperty("timeoutAfterSeconds", Integer.toString(DEFAULT_TIMEOUT)));
     useZipFileDate = BooleanParser.parseBoolean(iconfig.properties.getProperty("useZipFileDate", "true"));
+  }
+
+  @Override
+  public void open(ElasticsearchConnection es, String targetIndex) throws Exception {
+    super.open(es, targetIndex);
+    
+    String zipFile = iconfig.properties.getProperty("zipFile");
+    if (zipFile == null) throw new IllegalArgumentException(
+        "Missing name / URL of ZIP file to harvest (property \"zipFile\")");
+    this.zipFile = iconfig.root.makePathAbsolute(zipFile, true);
   }
 
   @Override
