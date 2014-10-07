@@ -58,14 +58,13 @@ public class OAIHarvester extends OAIHarvesterBase {
   
   public OAIHarvester(HarvesterConfig iconfig) {
     super(iconfig);
+    this.filterIncomingSets = sets != null && sets.size() > 1;
   }
 
   // construtor
   @Override
   public void open(ElasticsearchConnection es, String targetIndex) throws Exception {
     super.open(es, targetIndex);
-    filterIncomingSets = sets != null && sets.size() > 1;
-    
     // *** ListRecords ***
     listRecordsDig = new ExtendedDigester();
     digesterAddGeneralOAIRules(listRecordsDig);

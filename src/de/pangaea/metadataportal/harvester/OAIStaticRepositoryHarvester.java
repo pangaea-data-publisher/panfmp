@@ -28,7 +28,6 @@ import org.xml.sax.SAXException;
 
 import de.pangaea.metadataportal.config.HarvesterConfig;
 import de.pangaea.metadataportal.processor.ElasticsearchConnection;
-import de.pangaea.metadataportal.processor.BackgroundFailure;
 import de.pangaea.metadataportal.processor.MetadataDocument;
 import de.pangaea.metadataportal.utils.ExtendedDigester;
 import de.pangaea.metadataportal.utils.SaxRule;
@@ -55,12 +54,12 @@ public class OAIStaticRepositoryHarvester extends OAIHarvesterBase {
   // construtor
   public OAIStaticRepositoryHarvester(HarvesterConfig iconfig) {
     super(iconfig);
+    filterIncomingSets = true; // always filter set names
   }
 
   @Override
   public void open(ElasticsearchConnection es, String targetIndex) throws Exception {
     super.open(es, targetIndex);
-    filterIncomingSets = true; // always filter set names
     
     if (sets != null) {
       log.warn("Sets are currently not supported by static OAI repositories. "

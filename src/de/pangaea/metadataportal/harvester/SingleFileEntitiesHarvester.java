@@ -26,7 +26,6 @@ import javax.xml.transform.Source;
 
 import de.pangaea.metadataportal.config.HarvesterConfig;
 import de.pangaea.metadataportal.processor.DocumentErrorAction;
-import de.pangaea.metadataportal.processor.ElasticsearchConnection;
 import de.pangaea.metadataportal.processor.MetadataDocument;
 import de.pangaea.metadataportal.utils.BooleanParser;
 
@@ -52,31 +51,25 @@ import de.pangaea.metadataportal.utils.BooleanParser;
  */
 public abstract class SingleFileEntitiesHarvester extends Harvester {
   
-  private DocumentErrorAction parseErrorAction = DocumentErrorAction.IGNOREDOCUMENT;
+  private final DocumentErrorAction parseErrorAction;
+  
   private Set<String> validIdentifiers = null;
   private long newestDatestamp = -1;
   
   public SingleFileEntitiesHarvester(HarvesterConfig iconfig) {
     super(iconfig);
-  }
 
-  @Override
-  public void open(ElasticsearchConnection es, String targetIndex) throws Exception {
-    super.open(es, targetIndex);
-    
-    String s = iconfig.properties.getProperty("parseErrorAction");
-    if (s != null) try {
-      parseErrorAction = DocumentErrorAction.valueOf(s
-          .toUpperCase(Locale.ROOT));
+    if (BooleanParser.parseBoolean(iconfig.properties.getProperty(
+        "deleteMissingDocuments", "true"))) validIdentifiers = new HashSet<>();
+
+    final String s = iconfig.properties.getProperty("parseErrorAction", DocumentErrorAction.IGNOREDOCUMENT.name());
+    try {
+      parseErrorAction = DocumentErrorAction.valueOf(s.toUpperCase(Locale.ROOT));
     } catch (IllegalArgumentException e) {
       throw new IllegalArgumentException("Invalid value '" + s
           + "' for harvester property 'parseErrorAction', valid ones are: "
           + Arrays.toString(DocumentErrorAction.values()));
     }
-    
-    validIdentifiers = null;
-    if (BooleanParser.parseBoolean(iconfig.properties.getProperty(
-        "deleteMissingDocuments", "true"))) validIdentifiers = new HashSet<>();
   }
   
   @Override

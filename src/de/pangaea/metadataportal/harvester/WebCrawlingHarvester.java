@@ -97,26 +97,21 @@ public class WebCrawlingHarvester extends SingleFileEntitiesHarvester {
       Arrays.asList("text/html", "application/xhtml+xml"));
   
   // Class members
-  private String baseURL = null;
-  private Pattern filenameFilter = null, excludeUrlPattern = null;
-  private Set<String> contentTypes = new HashSet<>();
-  private int retryCount = DEFAULT_RETRY_COUNT;
-  private int retryTime = DEFAULT_RETRY_TIME;
-  private int timeout = DEFAULT_TIMEOUT;
-  private long pauseBetweenRequests = 0;
+  private String baseURL;
+  private final Pattern filenameFilter, excludeUrlPattern;
+  private final Set<String> contentTypes = new HashSet<>();
+  private final int retryCount;
+  private final int retryTime;
+  private final int timeout;
+  private final long pauseBetweenRequests;
   
   private Set<String> harvested = new HashSet<>();
   private SortedSet<String> needsHarvest = new TreeSet<>();
   
   private Class<? extends XMLReader> htmlReaderClass = null;
   
-  public WebCrawlingHarvester(HarvesterConfig iconfig) {
+  public WebCrawlingHarvester(HarvesterConfig iconfig) throws Exception {
     super(iconfig);
-  }
-
-  @Override
-  public void open(ElasticsearchConnection es, String targetIndex) throws Exception {
-    super.open(es, targetIndex);
     
     String s = iconfig.properties.getProperty("baseUrl");
     if (s == null) throw new IllegalArgumentException(
@@ -127,21 +122,16 @@ public class WebCrawlingHarvester extends SingleFileEntitiesHarvester {
         "WebCrawlingHarvester only allows HTTP(S) as network protocol!");
     baseURL = u.toString();
     
-    s = iconfig.properties.getProperty("contentTypes",
-        "text/xml,application/xml");
+    s = iconfig.properties.getProperty("contentTypes", "text/xml,application/xml");
     for (String c : s.split("[\\,\\;\\s]+")) {
       c = c.trim().toLowerCase(Locale.ROOT);
       if (!"".equals(c)) contentTypes.add(c);
     }
     
-    if ((s = iconfig.properties.getProperty("retryCount")) != null) retryCount = Integer
-        .parseInt(s);
-    if ((s = iconfig.properties.getProperty("retryAfterSeconds")) != null) retryTime = Integer
-        .parseInt(s);
-    if ((s = iconfig.properties.getProperty("timeoutAfterSeconds")) != null) timeout = Integer
-        .parseInt(s);
-    if ((s = iconfig.properties.getProperty("pauseBetweenRequests")) != null) pauseBetweenRequests = Long
-        .parseLong(s);
+    retryCount = Integer.parseInt(iconfig.properties.getProperty("retryCount", Integer.toString(DEFAULT_RETRY_COUNT)));
+    retryTime = Integer.parseInt(iconfig.properties.getProperty("retryAfterSeconds", Integer.toString(DEFAULT_RETRY_TIME)));
+    timeout = Integer.parseInt(iconfig.properties.getProperty("timeoutAfterSeconds", Integer.toString(DEFAULT_TIMEOUT)));
+    pauseBetweenRequests = Long.parseLong(iconfig.properties.getProperty("pauseBetweenRequests", "0"));
     
     s = iconfig.properties.getProperty("filenameFilter");
     filenameFilter = (s == null) ? null : Pattern.compile(s);
@@ -151,13 +141,15 @@ public class WebCrawlingHarvester extends SingleFileEntitiesHarvester {
     
     // initialize and test for HTML SAX Parser
     try {
-      htmlReaderClass = Class.forName(HTML_SAX_PARSER_CLASS).asSubclass(
-          XMLReader.class);
+      htmlReaderClass = Class.forName(HTML_SAX_PARSER_CLASS).asSubclass(XMLReader.class);
     } catch (ClassNotFoundException cfe) {
-      throw new ClassNotFoundException(getClass().getName()
-          + " needs the NekoHTML parser in classpath!");
+      throw new ClassNotFoundException(getClass().getName() + " needs the NekoHTML parser in classpath!");
     }
-    
+  }
+
+  @Override
+  public void open(ElasticsearchConnection es, String targetIndex) throws Exception {
+    super.open(es, targetIndex);
     SimpleCookieHandler.INSTANCE.enable();
   }
   

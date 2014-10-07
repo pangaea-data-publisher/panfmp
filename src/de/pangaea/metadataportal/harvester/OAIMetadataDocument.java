@@ -19,12 +19,9 @@ package de.pangaea.metadataportal.harvester;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-import org.elasticsearch.search.SearchHit;
-
 import de.pangaea.metadataportal.config.HarvesterConfig;
 import de.pangaea.metadataportal.processor.MetadataDocument;
 import de.pangaea.metadataportal.utils.ISODateFormatter;
-import de.pangaea.metadataportal.utils.KeyValuePairs;
 import de.pangaea.metadataportal.utils.PublicForDigesterUse;
 
 /**
@@ -35,12 +32,15 @@ import de.pangaea.metadataportal.utils.PublicForDigesterUse;
  */
 public class OAIMetadataDocument extends MetadataDocument {
   
+  private final String identifierPrefix;
+  
   /**
    * Constructor, that creates an empty instance for the supplied index
    * configuration.
    */
-  public OAIMetadataDocument(HarvesterConfig iconfig) {
+  public OAIMetadataDocument(HarvesterConfig iconfig, String identifierPrefix) {
     super(iconfig);
+    this.identifierPrefix = identifierPrefix;
   }
   
   @PublicForDigesterUse
@@ -48,7 +48,7 @@ public class OAIMetadataDocument extends MetadataDocument {
   public void setHeaderInfo(String status, String identifier,
       String datestampStr) throws java.text.ParseException {
     setDeleted(status != null && status.equals("deleted"));
-    setIdentifier(identifier);
+    setIdentifier(identifierPrefix + identifier);
     setDatestamp(ISODateFormatter.parseDate(datestampStr));
   }
   
@@ -64,29 +64,6 @@ public class OAIMetadataDocument extends MetadataDocument {
    */
   public Set<String> getSets() {
     return sets;
-  }
-  
-  @Override
-  public void loadFromElasticSearchHit(SearchHit hit) throws Exception {
-    sets.clear();
-    super.loadFromElasticSearchHit(hit);
-    /* Currently Sets get lost...
-    String[] sets = ldoc.getValues(IndexConstants.FIELDNAME_SET);
-    if (sets != null) for (String set : sets) {
-      if (set != null) addSet(set);
-    }
-    */
-  }
-  
-  @Override
-  protected KeyValuePairs createEmptyKeyValuePairs() throws Exception {
-    final KeyValuePairs kv = super.createEmptyKeyValuePairs();
-    /* TODO supply as variable!
-    if (builder != null) {
-      kv.add(IndexConstants.FIELDNAME_SET, sets.toArray(new String[sets.size()]));
-    }
-    */
-    return kv;
   }
   
   @Override

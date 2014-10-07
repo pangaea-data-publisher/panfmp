@@ -73,15 +73,12 @@ import de.pangaea.metadataportal.processor.ElasticsearchConnection;
  */
 public class PanFMP1IndexHarvester extends SingleFileEntitiesHarvester {
   
-  // Class members
-  private String identifierPrefix = "";
-  
-  @SuppressWarnings("deprecation")
-  private Version luceneMatchVersion = Version.LUCENE_CURRENT;
+  private final String identifierPrefix;
+  private final Query query;
+  private final String queryInfo;
   
   private DirectoryReader reader = null;
   private Directory indexDir = null;
-  private Query query = null;
   
   // legacy constants from panFMP 1.x
   private static final String FIELD_PREFIX = "internal-";
@@ -90,30 +87,21 @@ public class PanFMP1IndexHarvester extends SingleFileEntitiesHarvester {
   public static final String FIELDNAME_DATESTAMP = (FIELD_PREFIX + "datestamp").intern();
   public static final String FIELDNAME_XML = (FIELD_PREFIX + "xml").intern();
   
-  public PanFMP1IndexHarvester(HarvesterConfig iconfig) {
+  public PanFMP1IndexHarvester(HarvesterConfig iconfig) throws Exception {
     super(iconfig);
-  }
-
-  @SuppressWarnings("deprecation")
-  @Override
-  public void open(ElasticsearchConnection es, String targetIndex) throws Exception {
-    super.open(es, targetIndex);
-    
     identifierPrefix = iconfig.properties.getProperty("identifierPrefix", "");
     
-    String s = iconfig.properties.getProperty("indexDir");
-    if (s == null) {
-      throw new IllegalArgumentException("Missing index directory path (property \"indexDir\")");
-    }
-    final File dir = new File(iconfig.root.makePathAbsolute(s, false));
-    
-    String info, qstr = iconfig.properties.getProperty("query");
+    String qstr = iconfig.properties.getProperty("query");
     if (qstr == null || qstr.length() == 0) {
-      info = "all documents";
+      queryInfo = "all documents";
       query = new MatchAllDocsQuery();
     } else {
-      info = "documents matching query [" + qstr + "]";
+      queryInfo = "documents matching query [" + qstr + "]";
 
+      @SuppressWarnings("deprecation")
+      final Version luceneMatchVersion = Version.parseLeniently(iconfig.properties.getProperty("luceneMatchVersion",
+          Version.LUCENE_CURRENT.name()));
+      
       // analyzer
       final String anaCls = iconfig.properties.getProperty("analyzerClass", StandardAnalyzer.class.getName());
       final Class<? extends Analyzer> anaClass = Class.forName(anaCls).asSubclass(Analyzer.class);
@@ -149,16 +137,24 @@ public class PanFMP1IndexHarvester extends SingleFileEntitiesHarvester {
         throw new IllegalArgumentException("Search property 'defaultQueryParserOperator' is not 'AND'/'OR'");
       }
       
-      luceneMatchVersion = Version.parseLeniently(iconfig.properties.getProperty("luceneMatchVersion",
-          Version.LUCENE_CURRENT.name()));
-      
       // create QP
       final QueryParser qp = queryParserConstructor.newInstance(luceneMatchVersion, FIELDNAME_CONTENT, ana);
       qp.setDefaultOperator(defaultQueryParserOperator);
       query = qp.parse(qstr);
     }
+  }
+
+  @Override
+  public void open(ElasticsearchConnection es, String targetIndex) throws Exception {
+    super.open(es, targetIndex);
     
-    log.info("Opening index in directory '" + dir + "' for harvesting " + info + "...");
+    String d = iconfig.properties.getProperty("indexDir");
+    if (d == null) {
+      throw new IllegalArgumentException("Missing index directory path (property \"indexDir\")");
+    }
+    final File dir = new File(iconfig.root.makePathAbsolute(d, false));
+    
+    log.info("Opening index in directory '" + dir + "' for harvesting " + queryInfo + "...");
     indexDir = FSDirectory.open(dir);
     reader = DirectoryReader.open(indexDir);
   }
@@ -168,7 +164,6 @@ public class PanFMP1IndexHarvester extends SingleFileEntitiesHarvester {
     IOUtils.closeWhileHandlingException(reader, indexDir);
     reader = null;
     indexDir = null;
-    query = null;
     super.close(cleanShutdown);
   }
   
