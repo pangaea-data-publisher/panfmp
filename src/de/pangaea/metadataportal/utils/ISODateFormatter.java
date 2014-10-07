@@ -49,7 +49,7 @@ public final class ISODateFormatter {
       if (pp.getIndex() != date.length()) throw new ParseException(
           "Invalid datestamp", pp.getIndex());
       return d;
-    } catch (java.text.ParseException e) {
+    } catch (ParseException e) {
       pp = new ParsePosition(0);
       Date d = shortDate.parse(date, pp);
       if (pp.getIndex() != date.length()) throw new ParseException(

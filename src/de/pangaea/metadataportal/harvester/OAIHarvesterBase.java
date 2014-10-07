@@ -41,6 +41,7 @@ import org.xml.sax.SAXException;
 import de.pangaea.metadataportal.config.HarvesterConfig;
 import de.pangaea.metadataportal.processor.ElasticsearchConnection;
 import de.pangaea.metadataportal.processor.MetadataDocument;
+import de.pangaea.metadataportal.utils.BooleanParser;
 import de.pangaea.metadataportal.utils.ExtendedDigester;
 import de.pangaea.metadataportal.utils.SimpleCookieHandler;
 
@@ -57,6 +58,7 @@ import de.pangaea.metadataportal.utils.SimpleCookieHandler;
  * <li><code>timeoutAfterSeconds</code>: HTTP Timeout for harvesting in seconds</li>
  * <li><code>metadataPrefix</code>: OAI metadata prefix to harvest</li>
  * <li><code>identifierPrefix</code>: prepend all identifiers returned by OAI with this string</li>
+ * <li><code>ignoreDatestamps</code>: does full harvesting, while ignoring all datestamps. They are saved, but ignored, if invalid.</li>
  * </ul>
  * 
  * @author Uwe Schindler
@@ -76,17 +78,20 @@ public abstract class OAIHarvesterBase extends Harvester {
   /** prepend all identifiers returned by OAI with this string */
   protected final String identifierPrefix;
   
-  /**
-   * the sets to harvest from the configuration, <code>null</code> to harvest
-   * all
-   */
+  /** the sets to harvest from the configuration, <code>null</code> to harvest all */
   protected final Set<String> sets;
   /** the retryCount from configuration */
+  
   protected final int retryCount;
+  
   /** the retryTime from configuration */
   protected final int retryTime;
+  
   /** the timeout from configuration */
   protected final int timeout;
+  
+  /** If enabled, does full harvesting, while ignoring all datestamps (default is {@code false}). They are saved, but ignored, if invalid. */
+  protected final boolean ignoreDatestamps;
   
   /**
    * The harvester should filter incoming documents according to its set
@@ -111,9 +116,11 @@ public abstract class OAIHarvesterBase extends Harvester {
     retryTime = Integer.parseInt(iconfig.properties.getProperty("retryAfterSeconds", Integer.toString(DEFAULT_RETRY_TIME)));
     timeout = Integer.parseInt(iconfig.properties.getProperty("timeoutAfterSeconds", Integer.toString(DEFAULT_TIMEOUT)));
     metadataPrefix = iconfig.properties.getProperty("metadataPrefix");
-    if (metadataPrefix == null) throw new NullPointerException(
-        "No metadataPrefix for the OAI repository was given!");
+    if (metadataPrefix == null) {
+      throw new NullPointerException("No metadataPrefix for the OAI repository was given!");
+    }
     identifierPrefix = iconfig.properties.getProperty("identifierPrefix", "");
+    ignoreDatestamps = BooleanParser.parseBoolean(iconfig.properties.getProperty("ignoreDatestamps", "false"));
   }
 
   @Override
@@ -133,7 +140,7 @@ public abstract class OAIHarvesterBase extends Harvester {
   
   @Override
   public MetadataDocument createMetadataDocumentInstance() {
-    return new OAIMetadataDocument(iconfig, identifierPrefix);
+    return new OAIMetadataDocument(iconfig, identifierPrefix, ignoreDatestamps);
   }
   
   /**
@@ -358,7 +365,8 @@ public abstract class OAIHarvesterBase extends Harvester {
   protected void enumerateValidHarvesterPropertyNames(Set<String> props) {
     super.enumerateValidHarvesterPropertyNames(props);
     props.addAll(Arrays.<String> asList("setSpec", "retryCount",
-        "retryAfterSeconds", "timeoutAfterSeconds", "metadataPrefix", "identifierPrefix"));
+        "retryAfterSeconds", "timeoutAfterSeconds", "metadataPrefix",
+        "identifierPrefix", "ignoreDatestamps"));
   }
   
 }
