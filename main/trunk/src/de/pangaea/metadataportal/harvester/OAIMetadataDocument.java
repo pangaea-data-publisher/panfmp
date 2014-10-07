@@ -16,6 +16,7 @@
 
 package de.pangaea.metadataportal.harvester;
 
+import java.text.ParseException;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -32,24 +33,35 @@ import de.pangaea.metadataportal.utils.PublicForDigesterUse;
  */
 public class OAIMetadataDocument extends MetadataDocument {
   
+  private static final org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(OAIMetadataDocument.class);
+  
   private final String identifierPrefix;
+  private final boolean ignoreDatestamps;
   
   /**
    * Constructor, that creates an empty instance for the supplied index
    * configuration.
    */
-  public OAIMetadataDocument(HarvesterConfig iconfig, String identifierPrefix) {
+  public OAIMetadataDocument(HarvesterConfig iconfig, String identifierPrefix, boolean ignoreDatestamps) {
     super(iconfig);
     this.identifierPrefix = identifierPrefix;
+    this.ignoreDatestamps = ignoreDatestamps;
   }
   
   @PublicForDigesterUse
   @Deprecated
-  public void setHeaderInfo(String status, String identifier,
-      String datestampStr) throws java.text.ParseException {
+  public void setHeaderInfo(String status, String identifier, String datestampStr) throws ParseException {
     setDeleted(status != null && status.equals("deleted"));
     setIdentifier(identifierPrefix + identifier);
-    setDatestamp(ISODateFormatter.parseDate(datestampStr));
+    try {
+      setDatestamp(ISODateFormatter.parseDate(datestampStr));
+    } catch (ParseException pe) {
+      if (!ignoreDatestamps) {
+        throw pe;
+      } else {
+        log.warn("Invalid datestamp in OAI response (ignored): " + datestampStr);
+      }
+    }
   }
   
   /**

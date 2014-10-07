@@ -18,6 +18,7 @@ package de.pangaea.metadataportal.harvester;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.text.ParseException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -171,9 +172,8 @@ public class OAIHarvester extends OAIHarvesterBase {
       String cursorStr, String completeListSizeStr) {
     if (token != null && token.equals("")) token = null;
     this.currResumptionToken = token;
-    if (expirationDateStr != null) try {
-      currResumptionExpiration = ISODateFormatter.parseDate(expirationDateStr)
-          .getTime() - currResponseDate.getTime();
+    if (expirationDateStr != null && currResponseDate != null) try {
+      currResumptionExpiration = ISODateFormatter.parseDate(expirationDateStr).getTime() - currResponseDate.getTime();
       if (currResumptionExpiration <= 0L) currResumptionExpiration = -1L;
     } catch (Exception e) {
       currResumptionExpiration = -1L;
@@ -188,8 +188,16 @@ public class OAIHarvester extends OAIHarvesterBase {
   
   @PublicForDigesterUse
   @Deprecated
-  public void setResponseDate(String date) throws java.text.ParseException {
-    currResponseDate = ISODateFormatter.parseDate(date);
+  public void setResponseDate(String date) throws ParseException {
+    try {
+      currResponseDate = ISODateFormatter.parseDate(date);
+    } catch (ParseException pe) {
+      if (!ignoreDatestamps) {
+        throw pe;
+      } else {
+        log.warn("Invalid datestamp in OAI response (ignored): " + date);
+      }
+    }
   }
   
   @PublicForDigesterUse
@@ -233,21 +241,20 @@ public class OAIHarvester extends OAIHarvesterBase {
     checkIdentify(baseUrl);
     reset();
     
-    StringBuilder url = new StringBuilder(baseUrl).append(
-        "?verb=ListRecords&metadataPrefix=").append(
-        URLEncoder.encode(metadataPrefix, StandardCharsets.UTF_8.name()));
+    StringBuilder url = new StringBuilder(baseUrl)
+      .append("?verb=ListRecords&metadataPrefix=")
+      .append(URLEncoder.encode(metadataPrefix, StandardCharsets.UTF_8.name()));
     if (sets != null) {
       if (sets.size() == 1) {
         url.append("&set=").append(
             URLEncoder.encode(sets.iterator().next(), StandardCharsets.UTF_8.name()));
-      } else log
-          .warn("More than one set to be harvested - this is not supported by OAI-PMH. Filtering documents during harvesting!");
+      } else {
+        log.warn("More than one set to be harvested - this is not supported by OAI-PMH. Filtering documents during harvesting!");
+      }
     }
-    if (fromDateReference != null) {
-      url.append("&from=").append(
-          URLEncoder.encode(
-              fineGranularity ? ISODateFormatter.formatLong(fromDateReference)
-                  : ISODateFormatter.formatShort(fromDateReference), StandardCharsets.UTF_8.name()));
+    if (fromDateReference != null && !ignoreDatestamps) {
+      final String from = fineGranularity ? ISODateFormatter.formatLong(fromDateReference) : ISODateFormatter.formatShort(fromDateReference);
+      url.append("&from=").append(URLEncoder.encode(from, StandardCharsets.UTF_8.name()));
     }
     readStream(url.toString());
     setHarvestingDateReference(currResponseDate);
@@ -255,9 +262,9 @@ public class OAIHarvester extends OAIHarvesterBase {
     while (currResumptionToken != null) {
       log.debug("Resumption token expires in " + currResumptionExpiration
           + " ms");
-      url = new StringBuilder(baseUrl);
-      url.append("?verb=ListRecords&resumptionToken=").append(
-          URLEncoder.encode(currResumptionToken, StandardCharsets.UTF_8.name()));
+      url = new StringBuilder(baseUrl)
+        .append("?verb=ListRecords&resumptionToken=")
+        .append(URLEncoder.encode(currResumptionToken, StandardCharsets.UTF_8.name()));
       reset();
       readStream(url.toString());
     }
