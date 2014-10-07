@@ -26,7 +26,6 @@ import java.util.regex.Pattern;
 import javax.xml.transform.stream.StreamSource;
 
 import de.pangaea.metadataportal.config.HarvesterConfig;
-import de.pangaea.metadataportal.processor.ElasticsearchConnection;
 import de.pangaea.metadataportal.utils.BooleanParser;
 
 /**
@@ -48,18 +47,13 @@ import de.pangaea.metadataportal.utils.BooleanParser;
 public class DirectoryHarvester extends SingleFileEntitiesHarvester implements FilenameFilter {
   
   // Class members
-  private File directory = null;
-  private boolean recursive = false;
-  private Pattern filenameFilter = null;
-  private String identifierPrefix = "";
+  private final File directory;
+  private final boolean recursive;
+  private final Pattern filenameFilter;
+  private final String identifierPrefix;
   
-  public DirectoryHarvester(HarvesterConfig iconfig) {
+  public DirectoryHarvester(HarvesterConfig iconfig) throws Exception {
     super(iconfig);
-  }
-
-  @Override
-  public void open(ElasticsearchConnection es, String targetIndex) throws Exception {
-    super.open(es, targetIndex);
     
     String s = iconfig.properties.getProperty("directory");
     if (s == null) throw new IllegalArgumentException(

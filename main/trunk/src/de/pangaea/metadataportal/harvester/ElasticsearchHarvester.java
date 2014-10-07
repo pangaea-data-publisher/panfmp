@@ -57,21 +57,16 @@ import de.pangaea.metadataportal.utils.HostAndPort;
 public class ElasticsearchHarvester extends SingleFileEntitiesHarvester {
   
   // Class members
-  private String identifierPrefix = "", xmlField = null, datestampField = null;
-  private String[] sourceIndexes = null, types = null;
-  private QueryBuilder query = null;
+  private final String identifierPrefix, xmlField, datestampField;
+  private final String[] sourceIndexes, types;
+  private final QueryBuilder query;
+  private final String queryInfo;
+  private final int bulkSize;
   private boolean closeClient = false;
   private Client client = null;
-  private int bulkSize = DocumentProcessor.DEFAULT_BULK_SIZE;
   
   public ElasticsearchHarvester(HarvesterConfig iconfig) {
     super(iconfig);
-  }
-
-  @SuppressWarnings("resource")
-  @Override
-  public void open(ElasticsearchConnection es, String targetIndex) throws Exception {
-    super.open(es, targetIndex);
 
     bulkSize = Integer.parseInt(iconfig.properties.getProperty("bulkSize", Integer.toString(DocumentProcessor.DEFAULT_BULK_SIZE)));
     identifierPrefix = iconfig.properties.getProperty("identifierPrefix", "");
@@ -84,38 +79,44 @@ public class ElasticsearchHarvester extends SingleFileEntitiesHarvester {
     sourceIndexes = v.split("\\s*,\\s*");
     types = iconfig.properties.getProperty("types", iconfig.root.typeName).split("\\s*,\\s*");
 
-    final String info, qstr = iconfig.properties.getProperty("queryString"),
+    final String qstr = iconfig.properties.getProperty("queryString"),
         jsonQuery = iconfig.properties.getProperty("jsonQuery");
     final boolean hasQstr = (qstr != null && !qstr.isEmpty()),
         hasJsonQuery = (jsonQuery != null && !jsonQuery.isEmpty());
     if (hasQstr && hasJsonQuery) {
       throw new IllegalArgumentException("Cannot give both 'queryString' and 'jsonQuery' harvester property.");
     } else if (hasQstr) {
-      info = "documents matching query [" + qstr + "]";
+      queryInfo = "documents matching query [" + qstr + "]";
       query = QueryBuilders.queryString(qstr);
     } else if (hasJsonQuery) {
-      info = "documents matching JSON query";
+      queryInfo = "documents matching JSON query";
       query = QueryBuilders.wrapperQuery(jsonQuery);
     } else {
       assert !hasJsonQuery && !hasQstr;
-      info = "all documents";
+      queryInfo = "all documents";
       query = QueryBuilders.matchAllQuery();
     }
-        
+  }
+
+  @SuppressWarnings("resource")
+  @Override
+  public void open(ElasticsearchConnection es, String targetIndex) throws Exception {
+    super.open(es, targetIndex);
+
     final String esAddress = iconfig.properties.getProperty("elasticsearchAddress");
     if (esAddress != null && !esAddress.isEmpty()) {
       // TODO: Really use ES settings from config!? => make configurable somehow
       final Settings settings = iconfig.root.esSettings == null ? ImmutableSettings.Builder.EMPTY_SETTINGS : iconfig.root.esSettings;
       final InetSocketTransportAddress addr = new InetSocketTransportAddress(HostAndPort.parse(esAddress, ElasticsearchConnection.ELASTICSEARCH_DEFAULT_PORT));
       
-      log.info("Connecting to external Elasticsearch node " + addr + " for harvesting " + info + "...");
+      log.info("Connecting to external Elasticsearch node " + addr + " for harvesting " + queryInfo + "...");
       if (log.isDebugEnabled()) {
         log.debug("ES connection settings: " + settings.getAsMap());
       }
       this.client = new TransportClient(settings, false).addTransportAddress(addr);
       this.closeClient = true;
     } else {
-      log.info("Connecting to global Elasticsearch node for harvesting " + info + "...");
+      log.info("Connecting to global Elasticsearch node for harvesting " + queryInfo + "...");
       this.closeClient = false;
       this.client = es.client();
     }
@@ -123,7 +124,6 @@ public class ElasticsearchHarvester extends SingleFileEntitiesHarvester {
   
   @Override
   public void close(boolean cleanShutdown) throws Exception {
-    query = null;
     try {
       if (closeClient && client != null) {
         // separate client, not the shared one!

@@ -75,20 +75,20 @@ public final class Rebuilder extends Harvester {
   // harvester interface
   private final String sourceIndex;
   private final Harvester wrappedHarvester;
+  private final int bulkSize;
   private Client client = null;
-  private int bulkSize = DocumentProcessor.DEFAULT_BULK_SIZE;
   
   public Rebuilder(HarvesterConfig iconfig) throws Exception {
     super(iconfig);
     this.sourceIndex = iconfig.parent.indexName;
     this.wrappedHarvester = iconfig.harvesterClass.getConstructor(HarvesterConfig.class).newInstance(iconfig);
+    this.bulkSize = Integer.parseInt(iconfig.properties.getProperty("bulkSize", Integer.toString(DocumentProcessor.DEFAULT_BULK_SIZE)));
   }
 
   @Override
   public void open(ElasticsearchConnection es, String targetIndex) throws Exception {
     log.info("Opening Elasticsearch index '" + sourceIndex + "' for rebuilding all documents of harvester '" + iconfig.id + "'...");
     this.client = es.client();
-    this.bulkSize = Integer.parseInt(iconfig.properties.getProperty("bulkSize", Integer.toString(DocumentProcessor.DEFAULT_BULK_SIZE)));    
     super.open(es, targetIndex);
   }
   

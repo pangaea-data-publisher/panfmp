@@ -38,7 +38,6 @@ import java.util.zip.ZipInputStream;
 import javax.xml.transform.stream.StreamSource;
 
 import de.pangaea.metadataportal.config.HarvesterConfig;
-import de.pangaea.metadataportal.processor.ElasticsearchConnection;
 import de.pangaea.metadataportal.utils.BooleanParser;
 
 /**
@@ -69,51 +68,41 @@ import de.pangaea.metadataportal.utils.BooleanParser;
 public class ZipFileHarvester extends SingleFileEntitiesHarvester {
   
   // Class members
-  private String zipFile = null;
-  private Pattern filenameFilter = null;
-  private String identifierPrefix = "";
-  private boolean useZipFileDate = true;
+  private final String zipFile;
+  private final Pattern filenameFilter;
+  private final String identifierPrefix;
+  private final boolean useZipFileDate;
   
   public static final int DEFAULT_RETRY_TIME = 60; // seconds
   public static final int DEFAULT_RETRY_COUNT = 5;
   public static final int DEFAULT_TIMEOUT = 180; // seconds
   
   /** the retryCount from configuration */
-  protected int retryCount = DEFAULT_RETRY_COUNT;
+  protected final int retryCount;
   /** the retryTime from configuration */
-  protected int retryTime = DEFAULT_RETRY_TIME;
+  protected final int retryTime;
   /** the timeout from configuration */
-  protected int timeout = DEFAULT_TIMEOUT;
+  protected final int timeout;
   
-  public ZipFileHarvester(HarvesterConfig iconfig) {
+  public ZipFileHarvester(HarvesterConfig iconfig) throws Exception {
     super(iconfig);
-  }
-
-  @Override
-  public void open(ElasticsearchConnection es, String targetIndex) throws Exception {
-    super.open(es, targetIndex);
     
-    zipFile = iconfig.properties.getProperty("zipFile");
+    String zipFile = iconfig.properties.getProperty("zipFile");
     if (zipFile == null) throw new IllegalArgumentException(
         "Missing name / URL of ZIP file to harvest (property \"zipFile\")");
-    zipFile = iconfig.root.makePathAbsolute(zipFile, true);
+    this.zipFile = iconfig.root.makePathAbsolute(zipFile, true);
     
-    identifierPrefix = iconfig.properties.getProperty(
-        "identifierPrefix", "");
+    identifierPrefix = iconfig.properties.getProperty("identifierPrefix", "");
     
     String s = iconfig.properties.getProperty("filenameFilter");
     filenameFilter = (s == null) ? null : Pattern.compile(s);
     
-    if ((s = iconfig.properties.getProperty("retryCount")) != null) retryCount = Integer
-        .parseInt(s);
-    if ((s = iconfig.properties.getProperty("retryAfterSeconds")) != null) retryTime = Integer
-        .parseInt(s);
-    if ((s = iconfig.properties.getProperty("timeoutAfterSeconds")) != null) timeout = Integer
-        .parseInt(s);
-    if ((s = iconfig.properties.getProperty("useZipFileDate")) != null) useZipFileDate = BooleanParser
-        .parseBoolean(s);
+    retryCount = Integer.parseInt(iconfig.properties.getProperty("retryCount", Integer.toString(DEFAULT_RETRY_COUNT)));
+    retryTime = Integer.parseInt(iconfig.properties.getProperty("retryAfterSeconds", Integer.toString(DEFAULT_RETRY_TIME)));
+    timeout = Integer.parseInt(iconfig.properties.getProperty("timeoutAfterSeconds", Integer.toString(DEFAULT_TIMEOUT)));
+    useZipFileDate = BooleanParser.parseBoolean(iconfig.properties.getProperty("useZipFileDate", "true"));
   }
-  
+
   @Override
   public void harvest() throws Exception {
     StringBuilder logstr = new StringBuilder("Opening and reading ZIP file \"")

@@ -40,7 +40,6 @@ import org.xml.sax.SAXException;
 
 import de.pangaea.metadataportal.config.HarvesterConfig;
 import de.pangaea.metadataportal.processor.ElasticsearchConnection;
-import de.pangaea.metadataportal.processor.BackgroundFailure;
 import de.pangaea.metadataportal.processor.MetadataDocument;
 import de.pangaea.metadataportal.utils.ExtendedDigester;
 import de.pangaea.metadataportal.utils.SimpleCookieHandler;
@@ -57,6 +56,7 @@ import de.pangaea.metadataportal.utils.SimpleCookieHandler;
  * 60)</li>
  * <li><code>timeoutAfterSeconds</code>: HTTP Timeout for harvesting in seconds</li>
  * <li><code>metadataPrefix</code>: OAI metadata prefix to harvest</li>
+ * <li><code>identifierPrefix</code>: prepend all identifiers returned by OAI with this string</li>
  * </ul>
  * 
  * @author Uwe Schindler
@@ -71,18 +71,22 @@ public abstract class OAIHarvesterBase extends Harvester {
   public static final int DEFAULT_TIMEOUT = 180; // seconds
   
   /** the used metadata prefix from the configuration */
-  protected String metadataPrefix = null;
+  protected final String metadataPrefix;
+  
+  /** prepend all identifiers returned by OAI with this string */
+  protected final String identifierPrefix;
+  
   /**
    * the sets to harvest from the configuration, <code>null</code> to harvest
    * all
    */
-  protected Set<String> sets = null;
+  protected final Set<String> sets;
   /** the retryCount from configuration */
-  protected int retryCount = DEFAULT_RETRY_COUNT;
+  protected final int retryCount;
   /** the retryTime from configuration */
-  protected int retryTime = DEFAULT_RETRY_TIME;
+  protected final int retryTime;
   /** the timeout from configuration */
-  protected int timeout = DEFAULT_TIMEOUT;
+  protected final int timeout;
   
   /**
    * The harvester should filter incoming documents according to its set
@@ -94,45 +98,42 @@ public abstract class OAIHarvesterBase extends Harvester {
   // constructor
   public OAIHarvesterBase(HarvesterConfig iconfig) {
     super(iconfig);
-  }
-
-
-  @Override
-  public void open(ElasticsearchConnection es, String targetIndex) throws Exception {
-    super.open(es, targetIndex);
     
-    String s = iconfig.properties.getProperty("setSpec");
+    final String s = iconfig.properties.getProperty("setSpec");
     if (s != null) {
-      sets = new HashSet<>();
-      Collections.addAll(sets, s.split("[\\,\\;\\s]+"));
-      if (sets.isEmpty()) sets = null;
+      String[] sets = s.split("[\\,\\;\\s]+");
+      this.sets = (sets.length == 0) ? null : Collections.unmodifiableSet(new HashSet<>(Arrays.asList(sets)));
+    } else {
+      this.sets = null;
     }
     
-    if ((s = iconfig.properties.getProperty("retryCount")) != null) retryCount = Integer
-        .parseInt(s);
-    if ((s = iconfig.properties.getProperty("retryAfterSeconds")) != null) retryTime = Integer
-        .parseInt(s);
-    if ((s = iconfig.properties.getProperty("timeoutAfterSeconds")) != null) timeout = Integer
-        .parseInt(s);
+    retryCount = Integer.parseInt(iconfig.properties.getProperty("retryCount", Integer.toString(DEFAULT_RETRY_COUNT)));
+    retryTime = Integer.parseInt(iconfig.properties.getProperty("retryAfterSeconds", Integer.toString(DEFAULT_RETRY_TIME)));
+    timeout = Integer.parseInt(iconfig.properties.getProperty("timeoutAfterSeconds", Integer.toString(DEFAULT_TIMEOUT)));
     metadataPrefix = iconfig.properties.getProperty("metadataPrefix");
     if (metadataPrefix == null) throw new NullPointerException(
         "No metadataPrefix for the OAI repository was given!");
-    
+    identifierPrefix = iconfig.properties.getProperty("identifierPrefix", "");
+  }
+
+  @Override
+  public void open(ElasticsearchConnection es, String targetIndex) throws Exception {
+    super.open(es, targetIndex);    
     SimpleCookieHandler.INSTANCE.enable();
   }
   
   @Override
   public void addDocument(MetadataDocument mdoc) throws Exception {
-    if (filterIncomingSets && sets != null) {
-      if (Collections.disjoint(((OAIMetadataDocument) mdoc).getSets(), sets)) mdoc
-          .setDeleted(true);
+    if (filterIncomingSets && sets != null && mdoc instanceof OAIMetadataDocument) {
+      final OAIMetadataDocument omdoc = (OAIMetadataDocument) mdoc;
+      if (Collections.disjoint(omdoc.getSets(), sets)) omdoc.setDeleted(true);
     }
     super.addDocument(mdoc);
   }
   
   @Override
   public MetadataDocument createMetadataDocumentInstance() {
-    return new OAIMetadataDocument(iconfig);
+    return new OAIMetadataDocument(iconfig, identifierPrefix);
   }
   
   /**
@@ -357,7 +358,7 @@ public abstract class OAIHarvesterBase extends Harvester {
   protected void enumerateValidHarvesterPropertyNames(Set<String> props) {
     super.enumerateValidHarvesterPropertyNames(props);
     props.addAll(Arrays.<String> asList("setSpec", "retryCount",
-        "retryAfterSeconds", "timeoutAfterSeconds", "metadataPrefix"));
+        "retryAfterSeconds", "timeoutAfterSeconds", "metadataPrefix", "identifierPrefix"));
   }
   
 }
