@@ -140,7 +140,9 @@ public class OAIStaticRepositoryHarvester extends OAIHarvesterBase {
   @Override
   public void addDocument(MetadataDocument mdoc) throws Exception {
     if (metadataPrefix.equals(currMetadataPrefix)) {
-      validIdentifiers.add(mdoc.getIdentifier());
+      if (!mdoc.isDeleted()) {
+        validIdentifiers.add(mdoc.getIdentifier());
+      }
       super.addDocument(mdoc);
     }
   }
@@ -167,6 +169,7 @@ public class OAIStaticRepositoryHarvester extends OAIHarvesterBase {
       setHarvestingDateReference(modifiedDate.get());
     } else {
       log.info("Static OAI repository file was not modified since last harvesting, no need for re-harvesting!");
+      validIdentifiers = null;
     }
   }
   
