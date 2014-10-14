@@ -299,7 +299,7 @@ public class MetadataDocument {
       if (f.datatype == FieldConfig.DataType.XHTML) {
         addField(kv, f, evaluateTemplateAsXHTML(f));
       } else {
-        boolean needDefault = (f.datatype == FieldConfig.DataType.NUMBER || f.datatype == FieldConfig.DataType.DATETIME);
+        boolean needDefault = (f.datatype == FieldConfig.DataType.NUMBER || f.datatype == FieldConfig.DataType.INTEGER || f.datatype == FieldConfig.DataType.DATETIME);
         Object value = null;
         if (f.xPathExpr != null) {
           try {
@@ -588,6 +588,9 @@ public class MetadataDocument {
         break;
       case NUMBER:
         kv.add(f.name, Double.parseDouble(val));
+        break;
+      case INTEGER:
+        kv.add(f.name, Long.parseLong(val));
         break;
       case STRING:
       case XHTML: // we must support this, the parameter is already formatted html as string!
