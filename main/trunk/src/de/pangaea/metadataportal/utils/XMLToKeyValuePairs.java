@@ -16,6 +16,12 @@
 
 package de.pangaea.metadataportal.utils;
 
+import javax.xml.XMLConstants;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBElement;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
+
 import org.w3c.dom.Node;
 
 /**
@@ -23,16 +29,18 @@ import org.w3c.dom.Node;
  * This class cannot handle adjacent text nodes, so the DOM tree should
  * be normalized first.
  * Nodes that have child elements or mixed content with get transformed to {@link KeyValuePairs},
- * String only nodes will be returned as String and empty nodes will return {@code null}.
+ * String only nodes with an {@code xsi:type} attribute get deserialized to the given type, {@link String} otherwise.
+ * Empty nodes will return {@code null}.
  * @see Node#normalize()
  * @author Uwe Schindler
  */
 public final class XMLToKeyValuePairs {
-  private final boolean serializeMixedContentText, serializeAttributes;
+  private final boolean serializeAttributes;
+  private final Unmarshaller jaxbUnmarshaller;
   
-  public XMLToKeyValuePairs(boolean serializeMixedContentText, boolean serializeAttributes) {
-    this.serializeMixedContentText = serializeMixedContentText;
+  public XMLToKeyValuePairs(boolean serializeAttributes) throws JAXBException {
     this.serializeAttributes = serializeAttributes;
+    this.jaxbUnmarshaller = JAXBContext.newInstance().createUnmarshaller();
   }
   
   /**
@@ -42,7 +50,7 @@ public final class XMLToKeyValuePairs {
    * In all other cases its starts a new JSON object and converts every
    * contained node. Empty nodes will be returned as {@code null}.
    */
-  public Object convertChilds(final Node parentNode) {
+  public Object convertChilds(final Node parentNode) throws JAXBException {
     if (parentNode == null) {
       return null;
     }
@@ -72,13 +80,15 @@ public final class XMLToKeyValuePairs {
       }
       return kv.isEmpty() ? null : kv;
     } else if (hasText) {
-      return parentNode.getTextContent();
+      // hack type from <String> back to <?> to not cause ClassCastException (because default is String):
+      final JAXBElement<?> ele = jaxbUnmarshaller.unmarshal(parentNode, String.class);
+      return ele.getValue();
     } else {
       return null;
     }
   }
   
-  private void convertNode(final KeyValuePairs kv, final Node n) {
+  private void convertNode(final KeyValuePairs kv, final Node n) throws JAXBException {
     if (n == null) return;
     switch (n.getNodeType()) {
       case Node.ELEMENT_NODE:
@@ -88,16 +98,15 @@ public final class XMLToKeyValuePairs {
       case Node.DOCUMENT_FRAGMENT_NODE:
         throw new IllegalArgumentException("Invalid node type (DOCUMENT_NODE or DOCUMENT_FRAGMENT_NODE)");
       case Node.ATTRIBUTE_NODE:
-        if (serializeAttributes) {
+        if (jaxbUnmarshaller != null && XMLConstants.W3C_XML_SCHEMA_INSTANCE_NS_URI.equals(n.getNamespaceURI())) {
+          // ignore xsi: attributes
+        } else if (serializeAttributes) {
           kv.add("@" + n.getLocalName(), n.getNodeValue());
         }
         break;
       case Node.TEXT_NODE:
       case Node.CDATA_SECTION_NODE:
-        if (serializeMixedContentText) {
-          kv.add("#text", n.getNodeValue());
-        }
-        break;
+        throw new IllegalArgumentException("The element contains mixed element/text content, which is not allowed for JSON");
     }
   }
   
