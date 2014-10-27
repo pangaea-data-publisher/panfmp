@@ -69,6 +69,7 @@ public final class DocumentProcessor {
   private final AtomicInteger processed = new AtomicInteger(0);
   
   private final int bulkSize;
+  private final long maxBulkMemory;
   private final DocumentErrorAction conversionErrorAction;
   
   private final AtomicInteger runningThreads = new AtomicInteger(0);
@@ -85,6 +86,7 @@ public final class DocumentProcessor {
     this.sourceIndex = iconfig.parent.indexName;
     this.targetIndex = (targetIndex == null) ? this.sourceIndex : targetIndex;
     this.bulkSize = Integer.parseInt(iconfig.properties.getProperty("bulkSize", Integer.toString(DEFAULT_BULK_SIZE)));
+    this.maxBulkMemory = Long.parseLong(iconfig.properties.getProperty("maxBulkMemory", Long.toString(Long.MAX_VALUE)));
     
     final String s = iconfig.properties.getProperty("conversionErrorAction", "STOP");
     try {
@@ -193,7 +195,7 @@ public final class DocumentProcessor {
     
     // TODO: Rewrite without 1-doc bulk!
     final BulkRequestBuilder bulkRequest = client.prepareBulk();
-    internalProcessDocument(log, bulkRequest, mdoc);
+    internalProcessDocument(log, bulkRequest, null, mdoc);
     final BulkResponse bulkResponse = bulkRequest.get();
     if (bulkResponse.hasFailures()) {
       throw new ElasticsearchException("Error while executing request: " + bulkResponse.buildFailureMessage());
@@ -231,6 +233,7 @@ public final class DocumentProcessor {
     try {
       final HashSet<String> committedIdentifiers = new HashSet<>(bulkSize);
       BulkRequestBuilder bulkRequest = client.prepareBulk();
+      long[] totalSize = new long[1];
       
       while (failure.get() == null) {
         final MetadataDocument mdoc;
@@ -241,12 +244,13 @@ public final class DocumentProcessor {
         }
         if (mdoc == MDOC_EOF) break;
         
-        if (internalProcessDocument(log, bulkRequest, mdoc)) {
+        if (internalProcessDocument(log, bulkRequest, totalSize, mdoc)) {
           committedIdentifiers.add(mdoc.getIdentifier());
-          if (bulkRequest.numberOfActions() >= bulkSize) {
+          if (needToSubmitBulk(bulkRequest, totalSize[0])) {
             pushBulk(log, bulkRequest, committedIdentifiers);
             // create new bulk:
             bulkRequest = client.prepareBulk();
+            totalSize[0] = 0L;
           }
         }
       }
@@ -270,9 +274,17 @@ public final class DocumentProcessor {
     }
   }
   
+  private boolean needToSubmitBulk(BulkRequestBuilder bulkRequest, long size) {
+    if (bulkRequest.numberOfActions() >= bulkSize) {
+      return true;
+    }
+    if (size >= maxBulkMemory) {
+      return true;
+    }
+    return false;
+  }
+  
   private void pushBulk(Log log, BulkRequestBuilder bulkRequest, final Set<String> committedIdentifiers) {
-    assert committedIdentifiers.size() <= bulkRequest.numberOfActions();
-    
     final int items = bulkRequest.numberOfActions();
     final BulkResponse bulkResponse = bulkRequest.get();
     if (bulkResponse.hasFailures()) {
@@ -288,10 +300,9 @@ public final class DocumentProcessor {
     log.info(totalItems + " metadata items processed so far.");
   }
   
-  private boolean internalProcessDocument(Log log, BulkRequestBuilder bulkRequest, MetadataDocument mdoc) throws Exception {
+  private boolean internalProcessDocument(Log log, BulkRequestBuilder bulkRequest, long[] totalSize, MetadataDocument mdoc) throws Exception {
     final String identifier = mdoc.getIdentifier();
-    if (log.isDebugEnabled()) log.debug("Converting document: "
-        + mdoc.toString());
+    if (log.isDebugEnabled()) log.debug("Converting document: " + mdoc.toString());
     if (log.isTraceEnabled()) log.trace("XML: " + mdoc.getXML());
     KeyValuePairs kv = null;
     try {
@@ -326,9 +337,11 @@ public final class DocumentProcessor {
     } else {
       final XContentBuilder json = XContentFactory.jsonBuilder();
       kv.serializeToJSON(json);
+      if (totalSize != null) {
+        totalSize[0] += json.bytes().length();
+      }
       if (log.isDebugEnabled()) log.debug("Updating document: " + identifier);
       if (log.isTraceEnabled()) log.trace("Data: " + json.string());
-      //log.info("Data: " + json.string());
       bulkRequest.add(
         client.prepareIndex(targetIndex, iconfig.root.typeName, identifier).setSource(json)
       );

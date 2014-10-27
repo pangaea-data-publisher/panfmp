@@ -60,6 +60,9 @@ import de.pangaea.metadataportal.processor.MetadataDocument;
  * (default 100 metadata documents)</li>
  * <li><code>bulkSize</code>: size of bulk requests sent to Elasticsearch. (default
  * 100 metadata documents)</li>
+ * <li><code>maxBulkMemory</code>: maximum size of JSON source for a bulk request.
+ * After a bulk gets larger than this, it will be submitted. Please note, that a bulk
+ * might get significantly larger, because the check is done after the document is added.</li>
  * <li><code>validate</code>: validate harvested documents against schema given
  * in configuration? (default: true, if schema given)</li>
  * <li><code>conversionErrorAction</code>: What to do if a conversion error
@@ -369,7 +372,7 @@ public abstract class Harvester {
         // own
         "harvestMessageStep",
         // DocumentProcessor
-        "bulkSize", "numThreads", "maxQueue",
+        "bulkSize", "numThreads", "maxQueue", "maxBulkMemory",
         "conversionErrorAction",
         // XMLConverter
         "validate"));

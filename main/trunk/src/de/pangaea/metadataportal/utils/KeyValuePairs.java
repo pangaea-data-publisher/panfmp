@@ -67,7 +67,7 @@ public final class KeyValuePairs {
   }
   
   /** 
-   * Serializes the object to a sequence of fields. The empty object will be serailized as {@code null}.
+   * Serializes the object to a sequence of fields. The empty object will be serialized as {@code null}.
    */
   public void serializeToJSON(final XContentBuilder builder) throws IOException {
     if (map.isEmpty()) {
