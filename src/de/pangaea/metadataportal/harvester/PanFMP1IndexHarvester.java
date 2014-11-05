@@ -100,7 +100,7 @@ public class PanFMP1IndexHarvester extends SingleFileEntitiesHarvester {
 
       @SuppressWarnings("deprecation")
       final Version luceneMatchVersion = Version.parseLeniently(iconfig.properties.getProperty("luceneMatchVersion",
-          Version.LUCENE_CURRENT.name()));
+          Version.LUCENE_CURRENT.toString()));
       
       // analyzer
       final String anaCls = iconfig.properties.getProperty("analyzerClass", StandardAnalyzer.class.getName());

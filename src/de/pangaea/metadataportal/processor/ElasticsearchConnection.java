@@ -248,7 +248,7 @@ public final class ElasticsearchConnection implements Closeable {
     
     final ImmutableOpenMap<String, List<AliasMetaData>> indexCol = indicesAdmin.prepareGetAliases("*")
         .setIndices(ticonf.indexName)
-        .setIndicesOptions(IndicesOptions.strictSingleIndexNoExpand())
+        .setIndicesOptions(IndicesOptions.strictSingleIndexNoExpandForbidClosed())
         .get().getAliases();
     final Iterator<String> indexes = indexCol.keysIt();
     if (indexes.hasNext()) {
