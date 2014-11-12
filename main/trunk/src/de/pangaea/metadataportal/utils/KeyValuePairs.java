@@ -66,6 +66,14 @@ public final class KeyValuePairs {
     return map.isEmpty();
   }
   
+  private void serializeValue(final XContentBuilder builder, Object o) throws IOException {
+    if (o instanceof KeyValuePairs) {
+      ((KeyValuePairs) o).serializeToJSON(builder);
+    } else {
+      builder.value(o);
+    }
+  }
+  
   /** 
    * Serializes the object to a sequence of fields. The empty object will be serialized as {@code null}.
    */
@@ -80,16 +88,13 @@ public final class KeyValuePairs {
           case 0:
             break;
           case 1:
-            builder.field(e.getKey(), val[0]);
+            builder.field(e.getKey());
+            serializeValue(builder, val[0]);
             break;
           default:
             builder.startArray(e.getKey());
             for (final Object o : val) {
-              if (o instanceof KeyValuePairs) {
-                ((KeyValuePairs) o).serializeToJSON(builder);
-              } else {
-                builder.value(o);
-              }
+              serializeValue(builder, o);
             }
             builder.endArray();
         }
