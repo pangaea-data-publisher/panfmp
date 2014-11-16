@@ -149,12 +149,11 @@ public class ElasticsearchHarvester extends SingleFileEntitiesHarvester {
       .setSearchType(SearchType.SCAN).setScroll(time)
       .get();
     do {
-      scrollResp = client.prepareSearchScroll(scrollResp.getScrollId())
-        .setScroll(time)
-        .get();
       for (final SearchHit hit : scrollResp.getHits()) {
         addSearchHit(hit);
       }
+      if (scrollResp.getScrollId() == null) break;
+      scrollResp = client.prepareSearchScroll(scrollResp.getScrollId()).setScroll(time).get();
     } while (scrollResp.getHits().getHits().length > 0);
   }
   

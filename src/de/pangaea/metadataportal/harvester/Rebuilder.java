@@ -121,9 +121,6 @@ public final class Rebuilder extends Harvester {
       .setSearchType(SearchType.SCAN).setScroll(time)
       .get();
     do {
-      scrollResp = client.prepareSearchScroll(scrollResp.getScrollId())
-        .setScroll(time)
-        .get();
       for (final SearchHit hit : scrollResp.getHits()) {
         SearchHitField fld = hit.field(iconfig.root.fieldnameSource);
         if (fld == null || !iconfig.id.equals(fld.getValue())) {
@@ -138,6 +135,8 @@ public final class Rebuilder extends Harvester {
         }
         addDocument(mdoc);
       }
+      if (scrollResp.getScrollId() == null) break;
+      scrollResp = client.prepareSearchScroll(scrollResp.getScrollId()).setScroll(time).get();
     } while (scrollResp.getHits().getHits().length > 0);
     // finally update the date reference to be the same as from original index:
     setHarvestingDateReference(fromDateReference);
