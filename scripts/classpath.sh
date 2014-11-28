@@ -1,6 +1,6 @@
 #!/bin/sh
 CLASSPATH=
-for i in ../lib/*.jar ../dist/*.jar; do
+for i in ../lib/*.jar ../plugins/*.jar ../dist/*.jar; do
 	CLASSPATH="$CLASSPATH:$i"
 done
 if [ -x /usr/bin/cygpath ]; then
