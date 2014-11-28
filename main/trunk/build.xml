@@ -24,6 +24,7 @@
   <property name="src" location="src"/>
   <property name="build" location="build"/>
   <property name="dist" location="dist"/>
+  <property name="plugins" location="plugins"/>
   <property name="docs" location="apidocs"/>
 
   <property name="debug" value="on"/>
@@ -83,6 +84,7 @@
     <path id="path.tools-run">
       <path refid="path.build"/>
       <pathelement path="build"/>
+      <fileset dir="${plugins}" includes="*.jar"/>
     </path>
     <ivy:cachepath pathid="path.buildtools" conf="buildtools" log="${ivy.logging}"/>
     <taskdef uri="antlib:de.thetaphi.forbiddenapis" classpathref="path.buildtools"/>
@@ -226,6 +228,7 @@
         </chainedmapper>
       </mappedresources>
       <zipfileset dir="${dist}" prefix="${pkgname}/lib"/>
+      <zipfileset dir="${plugins}" prefix="${pkgname}/plugins"/>
       <zipfileset dir="${basedir}/conf" prefix="${pkgname}/conf"/>
       <zipfileset dir="${basedir}/scripts" prefix="${pkgname}/scripts"/>
       <zipfileset dir="${docs}" prefix="${pkgname}/javadocs"/>
