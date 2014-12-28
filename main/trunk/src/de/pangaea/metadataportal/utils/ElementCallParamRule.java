@@ -36,7 +36,6 @@ public final class ElementCallParamRule extends Rule {
       final Object parameters[] = (Object[]) digester.peekParams();
       parameters[paramIndex] = param;
     }
-    
   }
 
   private final int paramIndex;
