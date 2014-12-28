@@ -21,11 +21,11 @@ import org.xml.sax.Attributes;
 
 /**
  * Similar to digester's {@link org.apache.commons.digester.PathCallParamRule},
- * but puts only the element of the match onto the parameter stack.
+ * but puts only the element name of the match onto the parameter stack.
  */
-public final class ElementCallParamRule extends Rule {
+public final class ElementNameCallParamRule extends Rule {
   
-  public ElementCallParamRule(int paramIndex) {
+  public ElementNameCallParamRule(int paramIndex) {
     this.paramIndex = paramIndex;
   }
   
