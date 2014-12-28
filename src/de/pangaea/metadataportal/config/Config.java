@@ -46,6 +46,7 @@ import org.apache.commons.digester.AbstractObjectCreationFactory;
 import org.apache.commons.digester.ExtendedBaseRules;
 import org.apache.commons.digester.ObjectCreationFactory;
 import org.apache.commons.digester.SetPropertiesRule;
+import org.elasticsearch.common.io.Streams;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
@@ -400,19 +401,12 @@ public final class Config {
   public void setEsMappingFile(String v) throws IOException {
     if (esMappingFile != null)
       throw new IllegalArgumentException("Duplicate Elasticsearch mapping file");
-    esMappingFile = new File(makePathAbsolute(v, true));
+    esMappingFile = new File(makePathAbsolute(v));
     try (
         final InputStream in = new FileInputStream(esMappingFile);
         final Reader reader = new InputStreamReader(in, StandardCharsets.UTF_8)
     ) {
-      final StringBuilder sb = new StringBuilder();
-      final char[] buf = new char[8192];
-      for(;;) {
-        final int read = reader.read(buf);
-        if (read <= 0) break;
-        sb.append(buf, 0, read);
-      }
-      esMapping = sb.toString();
+      esMapping = Streams.copyToString(reader);
     }
   }
   
@@ -500,10 +494,22 @@ public final class Config {
   ExtendedDigester dig = null;
   
   // internal stuff (paramlists, factories, needed while parsing):
-  private static final ObjectCreationFactory ES_SETTINGS_BUILDER = new AbstractObjectCreationFactory() {
+  private final ObjectCreationFactory ES_SETTINGS_BUILDER = new AbstractObjectCreationFactory() {
     @Override
-    public Object createObject(Attributes attributes) {
-      return ImmutableSettings.settingsBuilder();
+    public Object createObject(Attributes attributes) throws IOException {
+      final ImmutableSettings.Builder builder = ImmutableSettings.settingsBuilder();
+      String src = attributes.getValue("file");
+      if (src == null) {
+        // fallback to also accept "src" attribute:
+        src = attributes.getValue("src");
+      }
+      if (src != null) {
+        final File f = new File(makePathAbsolute(src));
+        try (final InputStream in = new FileInputStream(f)) {
+          builder.loadFromStream(src, in);
+        }
+      }
+      return builder;
     }
   };
   private static final Class<?>[] DIGSTRING_PARAMS = new Class<?>[] { ExtendedDigester.class, String.class };

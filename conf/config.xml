@@ -117,7 +117,8 @@
 			<cfg:nameSuffix1>_v1</cfg:nameSuffix1>
 			<cfg:nameSuffix2>_v2</cfg:nameSuffix2>
 			<!-- settings that are used when creating the index for the first time (or for rebuild),
-				see: http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/index-modules.html -->
+				see: http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/index-modules.html
+        You can also specify an external file (relative to this one), from where settings are loaded: file="file.json" -->
 			<cfg:settings>
 				<cfg:number_of_shards>1</cfg:number_of_shards>
 				<cfg:number_of_replicas>0</cfg:number_of_replicas>
