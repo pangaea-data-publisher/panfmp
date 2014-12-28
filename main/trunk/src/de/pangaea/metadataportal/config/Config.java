@@ -56,7 +56,7 @@ import org.xml.sax.SAXException;
 import de.pangaea.metadataportal.Package;
 import de.pangaea.metadataportal.processor.ElasticsearchConnection;
 import de.pangaea.metadataportal.utils.BooleanParser;
-import de.pangaea.metadataportal.utils.ElementCallParamRule;
+import de.pangaea.metadataportal.utils.ElementNameCallParamRule;
 import de.pangaea.metadataportal.utils.ExtendedDigester;
 import de.pangaea.metadataportal.utils.HostAndPort;
 import de.pangaea.metadataportal.utils.PublicForDigesterUse;
@@ -192,7 +192,7 @@ public final class Config {
       dig.addFactoryCreate("config/sources/targetIndex/settings", ES_SETTINGS_BUILDER);
       dig.addSetNext("config/sources/targetIndex/settings", "setIndexSettings");
       dig.addCallMethod("config/sources/targetIndex/settings/*", "put", 2);
-      dig.addRule("config/sources/targetIndex/settings/*", new ElementCallParamRule(0));
+      dig.addRule("config/sources/targetIndex/settings/*", new ElementNameCallParamRule(0));
       dig.addCallParam("config/sources/targetIndex/settings/*", 1);
       
       dig.addCallMethod("config/sources/targetIndex/alias", "addAlias", 2);
@@ -226,7 +226,7 @@ public final class Config {
       dig.addFactoryCreate("config/elasticsearchCluster/settings", ES_SETTINGS_BUILDER);
       dig.addSetNext("config/elasticsearchCluster/settings", "setEsSettings");
       dig.addCallMethod("config/elasticsearchCluster/settings/*", "put", 2);
-      dig.addRule("config/elasticsearchCluster/settings/*", new ElementCallParamRule(0));
+      dig.addRule("config/elasticsearchCluster/settings/*", new ElementNameCallParamRule(0));
       dig.addCallParam("config/elasticsearchCluster/settings/*", 1);
       
       // parse config
