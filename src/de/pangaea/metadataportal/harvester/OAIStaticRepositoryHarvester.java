@@ -47,9 +47,9 @@ import de.pangaea.metadataportal.utils.SaxRule;
 public class OAIStaticRepositoryHarvester extends OAIHarvesterBase {
   // Object members
   private ExtendedDigester dig = null;
-  private String currMetadataPrefix = null;
+  String currMetadataPrefix = null;
   private Set<String> validIdentifiers = null;
-  private OAIMetadataSaxRule metadataSaxRule = null;
+  OAIMetadataSaxRule metadataSaxRule = null;
   
   // construtor
   public OAIStaticRepositoryHarvester(HarvesterConfig iconfig) {

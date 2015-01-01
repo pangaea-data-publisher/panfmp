@@ -209,7 +209,7 @@ public class WebCrawlingHarvester extends SingleFileEntitiesHarvester {
   
   // internal implementation
   
-  private void queueURL(String url) {
+  void queueURL(String url) {
     int p = url.indexOf('#');
     if (p >= 0) url = url.substring(0, p);
     // check if it is below base

@@ -221,7 +221,7 @@ public class PanFMP1IndexHarvester extends SingleFileEntitiesHarvester {
         "analyzerClass", "queryParserClass", "defaultQueryParserOperator", "identifierPrefix"));
   }
   
-  private void addLuceneDocument(Document ldoc) throws Exception {
+  void addLuceneDocument(Document ldoc) throws Exception {
     // read identifier
     String identifier = ldoc.get(FIELDNAME_IDENTIFIER);
     if (identifier == null) {

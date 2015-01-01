@@ -70,7 +70,7 @@ import de.pangaea.metadataportal.utils.XMLToKeyValuePairs;
  * @author Uwe Schindler
  */
 public class MetadataDocument {
-  private static final org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory
+  static final org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory
       .getLog(MetadataDocument.class);
   
   /**
@@ -636,7 +636,7 @@ public class MetadataDocument {
     
     private final boolean validate;
     
-    private XMLConverter() {
+    XMLConverter() {
       String v = iconfig.properties.getProperty("validate");
       if (iconfig.root.schema == null) {
         if (v != null) throw new IllegalStateException(
