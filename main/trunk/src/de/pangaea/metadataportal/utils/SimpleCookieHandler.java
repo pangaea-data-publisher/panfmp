@@ -16,28 +16,24 @@
 
 package de.pangaea.metadataportal.utils;
 
+import java.io.IOException;
 import java.net.CookieHandler;
+import java.net.CookieManager;
+import java.net.CookiePolicy;
 import java.net.URI;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Collections;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 import de.pangaea.metadataportal.harvester.Harvester;
 
 /**
+ * A CookieHandler that can be enabled and used per thread.
  * @author Uwe Schindler
  */
 public final class SimpleCookieHandler extends CookieHandler {
   
-  static final org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory
-      .getLog(SimpleCookieHandler.class);
+  static final org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(SimpleCookieHandler.class);
   
   /**
    * Singleton instance of this class. Should be set with
@@ -47,174 +43,50 @@ public final class SimpleCookieHandler extends CookieHandler {
   
   private SimpleCookieHandler() {}
   
-  private final ThreadLocal<List<Cookie>> cache = new ThreadLocal<>();
+  private final ThreadLocal<CookieManager> manager = new ThreadLocal<CookieManager>() {
+    @Override
+    protected CookieManager initialValue() {
+      return new CookieManager(null, CookiePolicy.ACCEPT_ORIGINAL_SERVER);
+    }
+  };
+  private final ThreadLocal<Boolean> enabled = new ThreadLocal<Boolean>() {
+    @Override
+    protected Boolean initialValue() {
+      return Boolean.FALSE;
+    }
+  };
   
   /**
    * Resets all recorded cookies for the current thread. This method is called
    * from {@link Harvester#open} to have an empty cookie list.
    */
   public void enable() {
-    cache.set(new LinkedList<Cookie>());
+    manager.remove();
+    enabled.set(true);
   }
   
+  /**
+   * Cleans up the cookie list and disables the handler.
+   */
   public void disable() {
-    cache.remove();
+    enabled.set(false);
+    manager.remove();
   }
   
   @Override
-  public void put(URI uri, Map<String,List<String>> responseHeaders) {
-    if (cache.get() == null) return;
-    for (Map.Entry<String,List<String>> entry : responseHeaders.entrySet()) {
-      if (!("Set-Cookie".equalsIgnoreCase(entry.getKey()) || "Set-Cookie2"
-          .equalsIgnoreCase(entry.getKey()))) continue;
-      List<String> setCookieList = entry.getValue();
-      for (String gItem : setCookieList) {
-        for (String item : gItem.split(","))
-          try {
-            final Cookie cookie = new Cookie(uri, item);
-            if (log.isDebugEnabled()) log.debug("Received cookie: " + cookie);
-            for (Iterator<Cookie> it = cache.get().iterator(); it.hasNext();) {
-              final Cookie existingCookie = it.next();
-              if (cookie.getName().equals(existingCookie.getName())) it
-                  .remove();
-            }
-            cache.get().add(cookie);
-          } catch (Exception e) {
-            log.warn("Parsing cookie failed: " + e);
-          }
-      }
+  public void put(URI uri, Map<String,List<String>> responseHeaders) throws IOException {
+    if (enabled.get().booleanValue()) {
+      manager.get().put(uri, responseHeaders);
     }
   }
   
   @Override
-  public Map<String,List<String>> get(URI uri,
-      Map<String,List<String>> requestHeaders) {
-    if (cache.get() == null) return Collections
-        .<String,List<String>> emptyMap();
-    
-    StringBuilder cookies = new StringBuilder();
-    Date now = new Date();
-    for (Iterator<Cookie> it = cache.get().iterator(); it.hasNext();) {
-      final Cookie cookie = it.next();
-      if (cookie.hasExpired(now)) {
-        it.remove();
-      } else if (cookie.matches(uri)) {
-        if (cookies.length() > 0) cookies.append(", ");
-        cookies.append(cookie.toString());
-      }
-    }
-    
-    if (cookies.length() > 0) {
-      if (log.isDebugEnabled()) log.debug("Sending cookies: " + cookies);
-      return Collections.singletonMap("Cookie",
-          Collections.singletonList(cookies.toString()));
+  public Map<String,List<String>> get(URI uri, Map<String,List<String>> requestHeaders) throws IOException {
+    if (enabled.get().booleanValue()) {
+      return manager.get().get(uri, requestHeaders);
     } else {
-      return Collections.<String,List<String>> emptyMap();
+      return Collections.emptyMap();
     }
-  }
-  
-  private static final class Cookie {
-    private String _name;
-    private String _value;
-    private String _domain;
-    private Date _expires;
-    private String _path;
-    
-    public Cookie(URI uri, String header) {
-      String attributes[] = header.split(";");
-      String nameValue = attributes[0].trim();
-      this._name = nameValue.substring(0, nameValue.indexOf('='));
-      this._value = nameValue.substring(nameValue.indexOf('=') + 1);
-      this._path = "/";
-      this._domain = uri.getHost();
-      
-      for (int i = 1; i < attributes.length; i++) {
-        nameValue = attributes[i].trim();
-        int equals = nameValue.indexOf('=');
-        if (equals == -1) continue;
-        String name = nameValue.substring(0, equals).trim();
-        String value = nameValue.substring(equals + 1).trim();
-        if (value.length() >= 2 && value.charAt(0) == '"'
-            && value.charAt(value.length() - 1) == '"') {
-          value = value.substring(1, value.length() - 1);
-        }
-        if (name.length() == 0 || value.length() == 0) continue;
-        if (name.equalsIgnoreCase("domain")) {
-          String uriDomain = uri.getHost();
-          if (uriDomain.equalsIgnoreCase(value)) {
-            this._domain = value;
-          } else {
-            if (!value.startsWith(".")) {
-              value = "." + value;
-            }
-            if (!uriDomain.toLowerCase(Locale.ROOT).endsWith(
-                value.toLowerCase(Locale.ROOT))) {
-              throw new IllegalArgumentException(
-                  "Trying to set foreign cookie '" + toString() + "'");
-            }
-            this._domain = value;
-          }
-        } else if (name.equalsIgnoreCase("path")) {
-          this._path = value;
-        } else if (name.equalsIgnoreCase("max-age")) {
-          this._expires = new Date(System.currentTimeMillis() + 1000L
-              * Integer.parseInt(value));
-        } else if (name.equalsIgnoreCase("expires")) {
-          try {
-            synchronized (EXPIRES_FORMAT_1) {
-              this._expires = EXPIRES_FORMAT_1.parse(value);
-            }
-          } catch (ParseException e1) {
-            try {
-              synchronized (EXPIRES_FORMAT_2) {
-                this._expires = EXPIRES_FORMAT_2.parse(value);
-              }
-            } catch (ParseException e2) {
-              log.warn("Bad date format in cookie header (ignoring expires value): "
-                  + value);
-              this._expires = null;
-            }
-          }
-        }
-      }
-    }
-    
-    public boolean hasExpired(Date now) {
-      if (_expires == null) return false;
-      return now.after(_expires);
-    }
-    
-    public String getName() {
-      return _name;
-    }
-    
-    public boolean matches(URI uri) {
-      String uriDomain = uri.getHost();
-      final boolean ok;
-      if (uriDomain.equalsIgnoreCase(this._domain)) {
-        ok = true;
-      } else {
-        ok = (uriDomain.toLowerCase(Locale.ROOT).endsWith(this._domain
-            .toLowerCase(Locale.ROOT)));
-      }
-      
-      String path = uri.getPath();
-      if (path == null) {
-        path = "/";
-      }
-      
-      return ok && path.startsWith(this._path);
-    }
-    
-    @Override
-    public String toString() {
-      return new StringBuilder(_name).append("=").append(_value).toString();
-    }
-    
-    private static final DateFormat EXPIRES_FORMAT_1 = new SimpleDateFormat(
-        "E, dd MMM yyyy H:m:s z", Locale.ROOT);
-    private static final DateFormat EXPIRES_FORMAT_2 = new SimpleDateFormat(
-        "E, dd-MMM-yyyy H:m:s z", Locale.ROOT);
   }
   
 }
