@@ -24,6 +24,7 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -32,14 +33,21 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.GetResponse;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
+import org.elasticsearch.index.query.FilterBuilders;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.SearchHit;
 
 import de.pangaea.metadataportal.config.HarvesterConfig;
 import de.pangaea.metadataportal.utils.KeyValuePairs;
@@ -68,7 +76,7 @@ public final class DocumentProcessor {
   
   private final AtomicInteger processed = new AtomicInteger(0);
   
-  private final int bulkSize;
+  private final int bulkSize, deleteUnseenBulkSize;
   private final long maxBulkMemory;
   private final DocumentErrorAction conversionErrorAction;
   
@@ -79,6 +87,7 @@ public final class DocumentProcessor {
   public static final String HARVESTER_METADATA_TYPE = "panfmp_meta";
 
   public static final int DEFAULT_BULK_SIZE = 100;
+  public static final int DEFAULT_DELETE_UNSEEN_BULK_SIZE = 1000;
 
   DocumentProcessor(Client client, HarvesterConfig iconfig, String targetIndex) throws IOException {
     this.client = client;
@@ -86,6 +95,7 @@ public final class DocumentProcessor {
     this.sourceIndex = iconfig.parent.indexName;
     this.targetIndex = (targetIndex == null) ? this.sourceIndex : targetIndex;
     this.bulkSize = Integer.parseInt(iconfig.properties.getProperty("bulkSize", Integer.toString(DEFAULT_BULK_SIZE)));
+    this.deleteUnseenBulkSize = Integer.parseInt(iconfig.properties.getProperty("deleteUnseenBulkSize", Integer.toString(DEFAULT_DELETE_UNSEEN_BULK_SIZE)));
     this.maxBulkMemory = Long.parseLong(iconfig.properties.getProperty("maxBulkMemory", Long.toString(Long.MAX_VALUE)));
     
     final String s = iconfig.properties.getProperty("conversionErrorAction", "STOP");
@@ -216,13 +226,56 @@ public final class DocumentProcessor {
    */
   private void deleteUnseenDocuments() {
     if (validIdentifiers != null) {
-      log.info("Removing metadata items not seen while harvesting (this may take a while)...");
-      final QueryBuilder query = QueryBuilders.boolQuery()
-          .must(QueryBuilders.termQuery(iconfig.root.fieldnameSource, iconfig.id))
-          .mustNot(QueryBuilders.idsQuery(iconfig.root.typeName).ids(validIdentifiers.toArray(new String[validIdentifiers.size()])));
-      final long count = client.prepareCount(targetIndex).setTypes(iconfig.root.typeName).setQuery(query).get().getCount();
-      log.info("Deleting approx. " + count + " metadata items...");
-      client.prepareDeleteByQuery(targetIndex).setTypes(iconfig.root.typeName).setQuery(query).get();
+      log.info("Removing metadata items not seen while harvesting...");
+      
+      final QueryBuilder query = QueryBuilders.constantScoreQuery(FilterBuilders.andFilter(
+        FilterBuilders.termFilter(iconfig.root.fieldnameSource, iconfig.id),
+        FilterBuilders.notFilter(FilterBuilders.idsFilter(iconfig.root.typeName).ids(validIdentifiers.toArray(new String[validIdentifiers.size()]))).cache(false)
+      ).cache(false));
+      
+      final TimeValue time = TimeValue.timeValueMinutes(10);
+      final Set<String> lostItems = new TreeSet<>();
+      long count = 0;
+      SearchResponse scrollResp = client.prepareSearch(targetIndex)
+        .setTypes(iconfig.root.typeName)
+        .setQuery(query)
+        .setFetchSource(false)
+        .setNoFields()
+        .setSize(deleteUnseenBulkSize)
+        .setSearchType(SearchType.SCAN).setScroll(time)
+        .get();
+      do {
+        final BulkRequestBuilder bulk = client.prepareBulk();
+        for (final SearchHit hit : scrollResp.getHits()) {
+          bulk.add(client.prepareDelete(targetIndex, iconfig.root.typeName, hit.getId()));
+        }
+        if (bulk.numberOfActions() > 0) {
+          lostItems.clear();
+          final BulkResponse bulkResponse = bulk.get();
+          if (bulkResponse.hasFailures()) {
+            throw new ElasticsearchException("Error while executing bulk request: " + bulkResponse.buildFailureMessage());
+          }
+          // count items for safety:
+          int deletedItems = 0;
+          for (final BulkItemResponse item : bulkResponse.getItems()) {
+            final DeleteResponse delResp = item.getResponse();
+            if (delResp.isFound()) {
+              deletedItems++;
+            } else {
+              lostItems.add(delResp.getId());
+            }
+          }
+          count += deletedItems;
+          if (!lostItems.isEmpty()) {
+            log.warn("Some metadata items could not be deleted because they disappeared in the meantime: " + lostItems);
+          }
+          log.info("Deleted " + count + " metadata items until now, working...");
+        }
+        if (scrollResp.getScrollId() == null) break;
+        scrollResp = client.prepareSearchScroll(scrollResp.getScrollId()).setScroll(time).get();
+      } while (scrollResp.getHits().getHits().length > 0);
+
+      log.info("Deleted a total number of " + count + " metadata items.");
     }
   }
   
