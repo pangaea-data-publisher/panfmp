@@ -87,7 +87,7 @@ public class ElasticsearchHarvester extends SingleFileEntitiesHarvester {
       throw new IllegalArgumentException("Cannot give both 'queryString' and 'jsonQuery' harvester property.");
     } else if (hasQstr) {
       queryInfo = "documents matching query [" + qstr + "]";
-      query = QueryBuilders.queryString(qstr);
+      query = QueryBuilders.queryStringQuery(qstr);
     } else if (hasJsonQuery) {
       queryInfo = "documents matching JSON query";
       query = QueryBuilders.wrapperQuery(jsonQuery);
