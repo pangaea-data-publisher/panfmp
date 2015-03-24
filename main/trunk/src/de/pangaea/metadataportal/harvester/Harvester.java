@@ -32,7 +32,6 @@ import de.pangaea.metadataportal.config.Config;
 import de.pangaea.metadataportal.config.HarvesterConfig;
 import de.pangaea.metadataportal.config.TargetIndexConfig;
 import de.pangaea.metadataportal.processor.ElasticsearchConnection;
-import de.pangaea.metadataportal.processor.CommitEvent;
 import de.pangaea.metadataportal.processor.DocumentProcessor;
 import de.pangaea.metadataportal.processor.BackgroundFailure;
 import de.pangaea.metadataportal.processor.MetadataDocument;
@@ -45,10 +44,6 @@ import de.pangaea.metadataportal.processor.MetadataDocument;
  * <ul>
  * <li><code>harvestMessageStep</code>: After how many documents should a status
  * message be printed out by the method {@link #addDocument}? (default: 100)</li>
- * <li><code>bulkSize</code>: how many documents should be
- * harvested before the changes are written to disk? If
- * {@link CommitEvent}s are used, the changes are also committed (seen
- * by search service) after this number of changes (default: 100)</li>
  * <li><code>numThreads</code>: how many threads should process
  * documents (XPath queries and XSL templates)? (default: 1) Raise this value,
  * if the indexer waits to often for more documents and you have more than one
@@ -60,6 +55,9 @@ import de.pangaea.metadataportal.processor.MetadataDocument;
  * (default 100 metadata documents)</li>
  * <li><code>bulkSize</code>: size of bulk requests sent to Elasticsearch. (default
  * 100 metadata documents)</li>
+ * <li><code>deleteUnseenBulkSize</code>: size of bulk requests for requesting/deleting
+ * unseen documents sent to Elasticsearch. (default 1000 deletes). This is only used
+ * by some harvesters, the number here can be generally large, as only IDs are transferred.</li>
  * <li><code>maxBulkMemory</code>: maximum size of JSON source for a bulk request.
  * After a bulk gets larger than this, it will be submitted. Please note, that a bulk
  * might get significantly larger, because the check is done after the document is added.</li>
@@ -372,7 +370,7 @@ public abstract class Harvester {
         // own
         "harvestMessageStep",
         // DocumentProcessor
-        "bulkSize", "numThreads", "maxQueue", "maxBulkMemory",
+        "bulkSize", "deleteUnseenBulkSize", "numThreads", "maxQueue", "maxBulkMemory",
         "conversionErrorAction",
         // XMLConverter
         "validate"));
