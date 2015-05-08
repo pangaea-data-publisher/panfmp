@@ -370,7 +370,7 @@ public abstract class Harvester {
         // own
         "harvestMessageStep",
         // DocumentProcessor
-        "bulkSize", "deleteUnseenBulkSize", "numThreads", "maxQueue", "maxBulkMemory",
+        "bulkSize", "deleteUnseenBulkSize", "numThreads", "maxQueue", "maxBulkMemory", "sourceContentType",
         "conversionErrorAction",
         // XMLConverter
         "validate"));

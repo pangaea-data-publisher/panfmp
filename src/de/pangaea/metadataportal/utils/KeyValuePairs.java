@@ -68,7 +68,7 @@ public final class KeyValuePairs {
   
   private void serializeValue(final XContentBuilder builder, Object o) throws IOException {
     if (o instanceof KeyValuePairs) {
-      ((KeyValuePairs) o).serializeToJSON(builder);
+      ((KeyValuePairs) o).serializeToContentBuilder(builder);
     } else {
       builder.value(o);
     }
@@ -77,7 +77,7 @@ public final class KeyValuePairs {
   /** 
    * Serializes the object to a sequence of fields. The empty object will be serialized as {@code null}.
    */
-  public void serializeToJSON(final XContentBuilder builder) throws IOException {
+  public void serializeToContentBuilder(final XContentBuilder builder) throws IOException {
     if (map.isEmpty()) {
       builder.nullValue();
     } else {
@@ -103,11 +103,15 @@ public final class KeyValuePairs {
     }
   }
   
+  /**
+   * {@inheritDoc}
+   * <p>This should be used for debugging only!
+   */
   @Override
   public String toString() {
     try {
       final XContentBuilder builder = XContentFactory.jsonBuilder();
-      serializeToJSON(builder);
+      serializeToContentBuilder(builder);
       return builder.string();
     } catch (IOException ioe) {
       throw new AssertionError(ioe);
