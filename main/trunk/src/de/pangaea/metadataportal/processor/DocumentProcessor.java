@@ -44,6 +44,7 @@ import org.elasticsearch.client.Client;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
+import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.FilterBuilders;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -79,7 +80,8 @@ public final class DocumentProcessor {
   private final int bulkSize, deleteUnseenBulkSize;
   private final long maxBulkMemory;
   private final DocumentErrorAction conversionErrorAction;
-  
+  private final XContentType contentType;
+    
   private final AtomicInteger runningThreads = new AtomicInteger(0);
   private ThreadGroup threadGroup;
   private Thread[] threadList;
@@ -88,6 +90,7 @@ public final class DocumentProcessor {
 
   public static final int DEFAULT_BULK_SIZE = 100;
   public static final int DEFAULT_DELETE_UNSEEN_BULK_SIZE = 1000;
+  public static final String DEFAULT_CONTENT_TYPE = "cbor";
 
   DocumentProcessor(Client client, HarvesterConfig iconfig, String targetIndex) throws IOException {
     this.client = client;
@@ -97,6 +100,7 @@ public final class DocumentProcessor {
     this.bulkSize = Integer.parseInt(iconfig.properties.getProperty("bulkSize", Integer.toString(DEFAULT_BULK_SIZE)));
     this.deleteUnseenBulkSize = Integer.parseInt(iconfig.properties.getProperty("deleteUnseenBulkSize", Integer.toString(DEFAULT_DELETE_UNSEEN_BULK_SIZE)));
     this.maxBulkMemory = Long.parseLong(iconfig.properties.getProperty("maxBulkMemory", Long.toString(Long.MAX_VALUE)));
+    this.contentType = XContentType.fromRestContentType(iconfig.properties.getProperty("sourceContentType", DEFAULT_CONTENT_TYPE));
     
     final String s = iconfig.properties.getProperty("conversionErrorAction", "STOP");
     try {
@@ -183,7 +187,7 @@ public final class DocumentProcessor {
     // save harvester metadata:
     log.info("Saving harvester metadata...");
     @SuppressWarnings({"rawtypes", "unchecked"}) // fix this type stupidness in ES:
-    final XContentBuilder builder = XContentFactory.jsonBuilder().map((Map) harvesterMetadata);
+    final XContentBuilder builder = XContentFactory.contentBuilder(contentType).map((Map) harvesterMetadata);
     client.prepareIndex(targetIndex, HARVESTER_METADATA_TYPE, iconfig.id)
       .setSource(builder).get();
 
@@ -388,15 +392,14 @@ public final class DocumentProcessor {
         client.prepareDelete(targetIndex, iconfig.root.typeName, identifier)
       );
     } else {
-      final XContentBuilder json = XContentFactory.jsonBuilder();
-      kv.serializeToJSON(json);
+      final XContentBuilder source = XContentFactory.contentBuilder(contentType);
+      kv.serializeToContentBuilder(source);
       if (totalSize != null) {
-        totalSize[0] += json.bytes().length();
+        totalSize[0] += source.bytes().length();
       }
       if (log.isDebugEnabled()) log.debug("Updating document: " + identifier);
-      if (log.isTraceEnabled()) log.trace("Data: " + json.string());
       bulkRequest.add(
-        client.prepareIndex(targetIndex, iconfig.root.typeName, identifier).setSource(json)
+        client.prepareIndex(targetIndex, iconfig.root.typeName, identifier).setSource(source)
       );
     }
     
