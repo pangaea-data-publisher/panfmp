@@ -88,7 +88,7 @@ public final class DocumentProcessor {
 
   public static final int DEFAULT_BULK_SIZE = 100;
   public static final int DEFAULT_DELETE_UNSEEN_BULK_SIZE = 1000;
-  public static final String DEFAULT_CONTENT_TYPE = "cbor";
+  public static final XContentType DEFAULT_CONTENT_TYPE = XContentType.CBOR;
 
   DocumentProcessor(Client client, HarvesterConfig iconfig, String targetIndex) throws IOException {
     this.client = client;
@@ -98,7 +98,16 @@ public final class DocumentProcessor {
     this.bulkSize = Integer.parseInt(iconfig.properties.getProperty("bulkSize", Integer.toString(DEFAULT_BULK_SIZE)));
     this.deleteUnseenBulkSize = Integer.parseInt(iconfig.properties.getProperty("deleteUnseenBulkSize", Integer.toString(DEFAULT_DELETE_UNSEEN_BULK_SIZE)));
     this.maxBulkMemory = Long.parseLong(iconfig.properties.getProperty("maxBulkMemory", Long.toString(Long.MAX_VALUE)));
-    this.contentType = XContentType.fromRestContentType(iconfig.properties.getProperty("sourceContentType", DEFAULT_CONTENT_TYPE));
+    
+    final String ct = iconfig.properties.getProperty("sourceContentType");
+    if (ct != null) {
+      this.contentType = XContentType.fromRestContentType(ct);
+      if (this.contentType == null) {
+        throw new IllegalArgumentException("Illegal content type for _source field (sourceContentType property): " + ct);
+      }
+    } else {
+      this.contentType = DEFAULT_CONTENT_TYPE;
+    }
     
     final String s = iconfig.properties.getProperty("conversionErrorAction", "STOP");
     try {
@@ -133,12 +142,13 @@ public final class DocumentProcessor {
     this.threadGroup = new ThreadGroup(getClass().getName() + "#ThreadGroup");
     this.threadList = new Thread[threadCount];
     for (int i = 0; i < threadCount; i++) {
+      final String name = String.format(Locale.ROOT, "%s#%d", getClass().getName(), i + 1);
       this.threadList[i] = new Thread(threadGroup, new Runnable() {
         @Override
         public void run() {
-          threadRun();
+          threadRun(name);
         }
-      }, getClass().getName() + "#" + (i + 1));
+      }, name);
     }
   }
   
@@ -273,10 +283,11 @@ public final class DocumentProcessor {
     }
   }
   
-  void threadRun() {
-    final Log log = LogFactory.getLog(Thread.currentThread().getName());
+  void threadRun(String name) {
+    final Log log = LogFactory.getLog(name);
     log.info("Processor thread started.");
     boolean finished = false;
+    runningThreads.incrementAndGet();
     try {
       final HashSet<String> committedIdentifiers = new HashSet<>(bulkSize);
       BulkRequestBuilder bulkRequest = client.prepareBulk();
@@ -402,7 +413,6 @@ public final class DocumentProcessor {
   private void startThreads() {
     if (threadList != null && runningThreads.get() == 0) {
       for (Thread t : threadList) {
-        runningThreads.incrementAndGet();
         t.start();
       }
     }
