@@ -406,7 +406,7 @@ public final class DocumentProcessor {
         pool = Executors.newFixedThreadPool(threadCount);
         for (int i = 0; i < threadCount; i++) {
           final String name = String.format(Locale.ROOT, "%s#%d", getClass().getName(), i + 1);
-          pool.submit(new Runnable() {
+          pool.execute(new Runnable() {
             @Override
             public void run() {
               runProcessor(name);
