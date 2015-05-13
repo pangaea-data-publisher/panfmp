@@ -172,10 +172,10 @@ public final class DocumentProcessor {
         }
         pool = null;
       }
+      
+      // exit here before we write any status info to disk:
+      throwFailure();
     }
-    
-    // exit here before we write any status info to disk:
-    throwFailure();
     
     // delete all unseen documents, if validIdentifiers is given:
     deleteUnseenDocuments();
@@ -282,7 +282,7 @@ public final class DocumentProcessor {
       BulkRequestBuilder bulkRequest = client.prepareBulk();
       long[] totalSize = new long[1];
       
-      while (failure.get() == null) {
+      while (!isFailed()) {
         final MetadataDocument mdoc;
         try {
           mdoc = mdocBuffer.take();
@@ -389,10 +389,11 @@ public final class DocumentProcessor {
   }
   
   private void throwFailure() throws BackgroundFailure {
-    final Exception f = failure.getAndSet(null);
+    final Exception f = failure.get();
     if (f != null) {
       synchronized(poolInitLock) {
         if (pool != null) {
+          // don't accept any docs anymore (also interrupt threads)
           pool.shutdownNow();
         }
       }
