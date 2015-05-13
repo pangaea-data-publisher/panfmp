@@ -161,6 +161,9 @@ public final class DocumentProcessor {
     
     synchronized(poolInitLock) {
       if (pool != null) {
+        if (this.isFailed()) {
+          mdocBuffer.clear();
+        }
         // enqueue dummy documents to signal end of processing to all threads in pool:
         for (int i = 0; i < threadCount; i++) {
           mdocBuffer.put(MDOC_EOF);
