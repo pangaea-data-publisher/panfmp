@@ -26,6 +26,9 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -53,17 +56,19 @@ import de.pangaea.metadataportal.config.HarvesterConfig;
 import de.pangaea.metadataportal.utils.KeyValuePairs;
 
 /**
- * Component of <b>panFMP</b> that analyzes and indexes harvested documents in
- * different threads.
+ * Component of <b>panFMP</b> that analyzes and indexes harvested documents in a thread pool.
  * 
  * @author Uwe Schindler
  */
 public final class DocumentProcessor {
   private static final Log log = LogFactory.getLog(DocumentProcessor.class);
   
-  protected final HarvesterConfig iconfig;
-  protected final Client client;
-  protected final String targetIndex, sourceIndex; // differs if rebuilding
+  private final HarvesterConfig iconfig;
+  private final Client client;
+  private final String targetIndex, sourceIndex; // differs if rebuilding
+  private final int threadCount;
+  
+  private volatile boolean isClosed = false;
   
   public final Map<String,String> harvesterMetadata = new LinkedHashMap<>();
   
@@ -79,10 +84,9 @@ public final class DocumentProcessor {
   private final long maxBulkMemory;
   private final DocumentErrorAction conversionErrorAction;
   private final XContentType contentType;
-    
-  private final AtomicInteger runningThreads = new AtomicInteger(0);
-  private ThreadGroup threadGroup;
-  private Thread[] threadList;
+  
+  private final Object poolInitLock = new Object();
+  private ExecutorService pool = null;
   
   public static final String HARVESTER_METADATA_TYPE = "panfmp_meta";
 
@@ -117,12 +121,12 @@ public final class DocumentProcessor {
           + Arrays.toString(DocumentErrorAction.values()));
     }
     
-    final int threadCount = Integer.parseInt(iconfig.properties.getProperty("numThreads", "1"));
-    if (threadCount < 1) {
+    this.threadCount = Integer.parseInt(iconfig.properties.getProperty("numThreads", "1"));
+    if (this.threadCount < 1) {
       throw new IllegalArgumentException("numThreads harvester-property must be >=1!");
     }
     final int maxQueue = Integer.parseInt(iconfig.properties.getProperty("maxQueue", "100"));
-    if (maxQueue < threadCount) {
+    if (maxQueue < this.threadCount) {
       throw new IllegalArgumentException("maxQueue must be >=numThreads!");
     }
     this.mdocBuffer = new ArrayBlockingQueue<>(maxQueue, true);
@@ -137,19 +141,6 @@ public final class DocumentProcessor {
         }
       }
     }
-    
-    // threads
-    this.threadGroup = new ThreadGroup(getClass().getName() + "#ThreadGroup");
-    this.threadList = new Thread[threadCount];
-    for (int i = 0; i < threadCount; i++) {
-      final String name = String.format(Locale.ROOT, "%s#%d", getClass().getName(), i + 1);
-      this.threadList[i] = new Thread(threadGroup, new Runnable() {
-        @Override
-        public void run() {
-          threadRun(name);
-        }
-      }, name);
-    }
   }
   
   public boolean isFailed() {
@@ -161,26 +152,27 @@ public final class DocumentProcessor {
   }
   
   public boolean isClosed() {
-    return (threadGroup == null || threadList == null);
+    return isClosed;
   }
   
   public void close() throws Exception {
     if (isClosed()) throw new IllegalStateException("DocumentProcessor already closed");
+    isClosed = true;
     
-    while (runningThreads.get() > 0) {
-      try {
-        for (int i = 0; i < threadList.length; i++)
+    synchronized(poolInitLock) {
+      if (pool != null) {
+        // enqueue dummy documents to signal end of processing to all threads in pool:
+        for (int i = 0; i < threadCount; i++) {
           mdocBuffer.put(MDOC_EOF);
-        for (Thread t : threadList) {
-          if (t.isAlive()) t.join();
         }
-      } catch (InterruptedException e) {
-        log.error(e);
+        // shutdown thread pool
+        pool.shutdown();
+        while (!pool.awaitTermination(5, TimeUnit.SECONDS)) {
+          log.warn("Still waiting for document processor threadpool to terminate...");
+        }
+        pool = null;
       }
     }
-      
-    threadGroup = null;
-    threadList = null;
     
     // exit here before we write any status info to disk:
     throwFailure();
@@ -190,10 +182,8 @@ public final class DocumentProcessor {
     
     // save harvester metadata:
     log.info("Saving harvester metadata...");
-    @SuppressWarnings({"rawtypes", "unchecked"}) // fix this type stupidness in ES:
-    final XContentBuilder builder = XContentFactory.contentBuilder(contentType).map((Map) harvesterMetadata);
-    client.prepareIndex(targetIndex, HARVESTER_METADATA_TYPE, iconfig.id)
-      .setSource(builder).get();
+    final XContentBuilder builder = XContentFactory.contentBuilder(contentType).map(harvesterMetadata);
+    client.prepareIndex(targetIndex, HARVESTER_METADATA_TYPE, iconfig.id).setSource(builder).get();
 
     log.info(processed + " metadata items processed - finished.");
   }
@@ -201,13 +191,13 @@ public final class DocumentProcessor {
   public void addDocument(MetadataDocument mdoc) throws BackgroundFailure, InterruptedException {
     if (isClosed()) throw new IllegalStateException("DocumentProcessor already closed");
     throwFailure();
-    startThreads();
+    startPool();
     mdocBuffer.put(mdoc);
   }
   
   /** This does not use bulk indexing, it starts converting and posts the document to Elasticsearch.
    * It can be used without harvester to index documents directly.
-   * This does not start a new thread. */
+   * This does not start a new thread pool. */
   public void processDocument(MetadataDocument mdoc) throws Exception {
     if (isClosed()) throw new IllegalStateException("DocumentProcessor already closed");
     
@@ -283,11 +273,10 @@ public final class DocumentProcessor {
     }
   }
   
-  void threadRun(String name) {
+  void runProcessor(String name) {
     final Log log = LogFactory.getLog(name);
-    log.info("Processor thread started.");
+    log.info("Processor started.");
     boolean finished = false;
-    runningThreads.incrementAndGet();
     try {
       final HashSet<String> committedIdentifiers = new HashSet<>(bulkSize);
       BulkRequestBuilder bulkRequest = client.prepareBulk();
@@ -325,10 +314,7 @@ public final class DocumentProcessor {
       // only
       if (!failure.compareAndSet(null, e)) log.error(e);
     } finally {
-      if (runningThreads.decrementAndGet() == 0) {
-        mdocBuffer.clear();
-      }
-      log.info("Processor thread stopped.");
+      log.info("Processor stopped.");
     }
   }
   
@@ -403,17 +389,30 @@ public final class DocumentProcessor {
   }
   
   private void throwFailure() throws BackgroundFailure {
-    Exception f = failure.getAndSet(null);
+    final Exception f = failure.getAndSet(null);
     if (f != null) {
-      if (threadGroup != null) threadGroup.interrupt();
+      synchronized(poolInitLock) {
+        if (pool != null) {
+          pool.shutdownNow();
+        }
+      }
       throw new BackgroundFailure(f);
     }
   }
   
-  private void startThreads() {
-    if (threadList != null && runningThreads.get() == 0) {
-      for (Thread t : threadList) {
-        t.start();
+  private void startPool() {
+    synchronized(poolInitLock) {
+      if (pool == null) {
+        pool = Executors.newFixedThreadPool(threadCount);
+        for (int i = 0; i < threadCount; i++) {
+          final String name = String.format(Locale.ROOT, "%s#%d", getClass().getName(), i + 1);
+          pool.submit(new Runnable() {
+            @Override
+            public void run() {
+              runProcessor(name);
+            }
+          });
+        }
       }
     }
   }
