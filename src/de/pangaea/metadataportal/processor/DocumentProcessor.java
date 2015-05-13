@@ -18,7 +18,6 @@ package de.pangaea.metadataportal.processor;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Locale;
@@ -72,7 +71,6 @@ public final class DocumentProcessor {
   private final BlockingQueue<MetadataDocument> mdocBuffer;
     
   private final AtomicReference<Exception> failure = new AtomicReference<>(null);
-  private final AtomicReference<CommitEvent> commitEvent = new AtomicReference<>(null);
   private Set<String> validIdentifiers = null;
   
   private final AtomicInteger processed = new AtomicInteger(0);
@@ -148,10 +146,6 @@ public final class DocumentProcessor {
     return (failure.get() != null);
   }
   
-  public void registerHarvesterCommitEvent(CommitEvent event) {
-    commitEvent.set(event);
-  }
-  
   public void setValidIdentifiers(Set<String> validIdentifiers) {
     this.validIdentifiers = validIdentifiers;
   }
@@ -216,10 +210,6 @@ public final class DocumentProcessor {
     }
     
     processed.addAndGet(1);
-    
-    // notify Harvester of commit
-    final CommitEvent ce = commitEvent.get();
-    if (ce != null) ce.harvesterCommitted(Collections.singleton(mdoc.getIdentifier()));
  
     log.info("Document update '" + mdoc.getIdentifier() + "' processed and submitted to Elasticsearch index '" + targetIndex + "'.");
   }
@@ -348,11 +338,6 @@ public final class DocumentProcessor {
       throw new ElasticsearchException("Error while executing bulk request: " + bulkResponse.buildFailureMessage());
     }
     final int totalItems = processed.addAndGet(items);
-    
-    // notify Harvester of index commit
-    final CommitEvent ce = commitEvent.get();
-    if (ce != null) ce.harvesterCommitted(Collections.unmodifiableSet(committedIdentifiers));
-    committedIdentifiers.clear();
 
     log.info(totalItems + " metadata items processed so far.");
   }
