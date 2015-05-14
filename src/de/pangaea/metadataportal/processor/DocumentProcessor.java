@@ -18,7 +18,6 @@ package de.pangaea.metadataportal.processor;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -214,7 +213,7 @@ public final class DocumentProcessor {
     
     processed.addAndGet(1);
  
-    log.info("Document update '" + mdoc.getIdentifier() + "' processed and submitted to Elasticsearch index '" + targetIndex + "'.");
+    log.info(String.format(Locale.ENGLISH, "Document update '%s' processed and submitted to Elasticsearch index '%s'.", mdoc.getIdentifier(), targetIndex));
   }
   
   /**
@@ -281,9 +280,8 @@ public final class DocumentProcessor {
     log.info("Processor started.");
     boolean finished = false;
     try {
-      final HashSet<String> committedIdentifiers = new HashSet<>(bulkSize);
       BulkRequestBuilder bulkRequest = client.prepareBulk();
-      long[] totalSize = new long[1];
+      final long[] totalSize = new long[1];
       
       while (!isFailed()) {
         final MetadataDocument mdoc;
@@ -295,9 +293,8 @@ public final class DocumentProcessor {
         if (mdoc == MDOC_EOF) break;
         
         if (internalProcessDocument(log, bulkRequest, totalSize, mdoc)) {
-          committedIdentifiers.add(mdoc.getIdentifier());
           if (needToSubmitBulk(bulkRequest, totalSize[0])) {
-            pushBulk(log, bulkRequest, committedIdentifiers);
+            pushBulk(log, bulkRequest);
             // create new bulk:
             bulkRequest = client.prepareBulk();
             totalSize[0] = 0L;
@@ -306,15 +303,14 @@ public final class DocumentProcessor {
       }
 
       if (bulkRequest.numberOfActions() > 0) {
-        pushBulk(log, bulkRequest, committedIdentifiers);
+        pushBulk(log, bulkRequest);
       }
       
       finished = true;
     } catch (Exception e) {
       if (!finished) log.warn("Only " + processed +
           " metadata items processed before the following error occurred: " + e);
-      // only store the first error in failure variable, other errors are logged
-      // only
+      // only store the first error in failure variable, other errors are only logged
       if (!failure.compareAndSet(null, e)) log.error(e);
     } finally {
       log.info("Processor stopped.");
@@ -331,7 +327,7 @@ public final class DocumentProcessor {
     return false;
   }
   
-  private void pushBulk(Log log, BulkRequestBuilder bulkRequest, final Set<String> committedIdentifiers) {
+  private void pushBulk(Log log, BulkRequestBuilder bulkRequest) {
     final int items = bulkRequest.numberOfActions();
     final BulkResponse bulkResponse = bulkRequest.get();
     if (bulkResponse.hasFailures()) {
@@ -353,20 +349,15 @@ public final class DocumentProcessor {
       // handle exception
       switch (conversionErrorAction) {
         case IGNOREDOCUMENT:
-          log.error(
-              "Conversion XML to Elasticsearch document failed for '"
-                  + identifier + "' (object ignored):", e);
+          log.error(String.format(Locale.ENGLISH, "Conversion XML to Elasticsearch document failed for '%s' (object ignored):", identifier), e);
           // exit method
           return false;
         case DELETEDOCUMENT:
-          log.error(
-              "Conversion XML to Elasticsearch document failed for '"
-                  + identifier + "' (object marked deleted):", e);
+          log.error(String.format(Locale.ENGLISH, "Conversion XML to Elasticsearch document failed for '%s' (object marked deleted):", identifier), e);
           kv = null;
           break;
         default:
-          log.fatal("Conversion XML to Lucene document failed for '"
-              + identifier + "' (fatal, stopping conversions).");
+          log.fatal(String.format(Locale.ENGLISH, "Conversion XML to Lucene document failed for '%s' (fatal, stopping conversions).", identifier));
           throw e;
       }
     }
