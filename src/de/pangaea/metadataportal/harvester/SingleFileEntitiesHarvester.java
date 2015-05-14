@@ -74,9 +74,7 @@ public abstract class SingleFileEntitiesHarvester extends Harvester {
   
   @Override
   public void close(boolean cleanShutdown) throws Exception {
-    if (cleanShutdown) {
-      processor.setValidIdentifiers(validIdentifiers);
-    }
+    setValidIdentifiers(validIdentifiers);
     super.close(cleanShutdown);
   }
   

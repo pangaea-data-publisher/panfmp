@@ -24,9 +24,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -66,7 +65,7 @@ import de.pangaea.metadataportal.utils.KeyValuePairs;
  * @author Uwe Schindler
  */
 public final class DocumentProcessor {
-  private static final Log log = LogFactory.getLog(DocumentProcessor.class);
+  static final Log log = LogFactory.getLog(DocumentProcessor.class);
   
   private final HarvesterConfig iconfig;
   private final Client client;
@@ -76,26 +75,26 @@ public final class DocumentProcessor {
   private volatile boolean isClosed = false;
   
   public final Map<String,String> harvesterMetadata = new LinkedHashMap<>();
-  
-  private static final MetadataDocument MDOC_EOF = new MetadataDocument(null);
-  private final BlockingQueue<MetadataDocument> mdocBuffer;
     
-  private final AtomicReference<Exception> failure = new AtomicReference<>(null);
-  private Set<String> validIdentifiers = null;
+  final AtomicReference<Exception> failure = new AtomicReference<>(null);
   
   final AtomicInteger processed = new AtomicInteger(0);
   
-  private final int bulkSize, deleteUnseenBulkSize;
+  private final int bulkSize, deleteUnseenBulkSize, maxQueue, concurrentBulkRequests;
   private final ByteSizeValue maxBulkMemory;
   private final DocumentErrorAction conversionErrorAction;
   private final XContentType contentType;
   
   private final Object poolInitLock = new Object();
   private ExecutorService pool = null;
+  BulkProcessor bulkProcessor = null;
   
   public static final String HARVESTER_METADATA_TYPE = "panfmp_meta";
 
   public static final int DEFAULT_BULK_SIZE = 100;
+  public static final int DEFAULT_MAX_QUEUE = 100;
+  public static final int DEFAULT_CONCURRENT_BULK_REQUESTS = 1;
+  public static final int DEFAULT_NUM_THREADS = 1;
   public static final int DEFAULT_DELETE_UNSEEN_BULK_SIZE = 1000;
   public static final XContentType DEFAULT_CONTENT_TYPE = XContentType.CBOR;
 
@@ -126,15 +125,16 @@ public final class DocumentProcessor {
           + Arrays.toString(DocumentErrorAction.values()));
     }
     
-    this.threadCount = Integer.parseInt(iconfig.properties.getProperty("numThreads", "1"));
+    this.concurrentBulkRequests = Integer.parseInt(iconfig.properties.getProperty("concurrentBulkRequests", Integer.toString(DEFAULT_CONCURRENT_BULK_REQUESTS)));
+
+    this.threadCount = Integer.parseInt(iconfig.properties.getProperty("numThreads", Integer.toString(DEFAULT_NUM_THREADS)));
     if (this.threadCount < 1) {
       throw new IllegalArgumentException("numThreads harvester-property must be >=1!");
     }
-    final int maxQueue = Integer.parseInt(iconfig.properties.getProperty("maxQueue", "100"));
-    if (maxQueue < this.threadCount) {
+    this.maxQueue = Integer.parseInt(iconfig.properties.getProperty("maxQueue", Integer.toString(DEFAULT_MAX_QUEUE)));
+    if (this.maxQueue < this.threadCount) {
       throw new IllegalArgumentException("maxQueue must be >=numThreads!");
     }
-    this.mdocBuffer = new ArrayBlockingQueue<>(maxQueue, true);
     
     // load metadata
     final GetResponse resp = client.prepareGet(sourceIndex, HARVESTER_METADATA_TYPE, iconfig.id).setFetchSource(true).get();
@@ -152,33 +152,28 @@ public final class DocumentProcessor {
     return (failure.get() != null);
   }
   
-  public void setValidIdentifiers(Set<String> validIdentifiers) {
-    this.validIdentifiers = validIdentifiers;
-  }
-  
   public boolean isClosed() {
     return isClosed;
   }
   
-  public void close() throws Exception {
+  public void close(Set<String> validIdentifiers) throws Exception {
     if (isClosed()) throw new IllegalStateException("DocumentProcessor already closed");
     isClosed = true;
     
     synchronized(poolInitLock) {
       if (pool != null) {
-        if (this.isFailed()) {
-          mdocBuffer.clear();
-        }
-        // enqueue dummy documents to signal end of processing to all threads in pool:
-        for (int i = 0; i < threadCount; i++) {
-          mdocBuffer.put(MDOC_EOF);
-        }
         // shutdown thread pool
         pool.shutdown();
         while (!pool.awaitTermination(5, TimeUnit.SECONDS)) {
           log.warn("Still waiting for document processor threadpool to terminate...");
         }
         pool = null;
+
+        bulkProcessor.flush();
+        while (!bulkProcessor.awaitClose(5, TimeUnit.SECONDS)) {
+          log.warn("Still waiting for bulk processor to finish...");
+        }
+        bulkProcessor = null;
       }
       
       // exit here before we write any status info to disk:
@@ -186,7 +181,9 @@ public final class DocumentProcessor {
     }
     
     // delete all unseen documents, if validIdentifiers is given:
-    deleteUnseenDocuments();
+    if (validIdentifiers != null) {
+      deleteUnseenDocuments(validIdentifiers);
+    }
     
     // save harvester metadata:
     log.info("Saving harvester metadata...");
@@ -196,11 +193,12 @@ public final class DocumentProcessor {
     log.info(processed + " metadata items processed - finished.");
   }
   
-  public void addDocument(MetadataDocument mdoc) throws BackgroundFailure, InterruptedException {
+  public void addDocument(MetadataDocument mdoc) throws BackgroundFailure {
     if (isClosed()) throw new IllegalStateException("DocumentProcessor already closed");
     throwFailure();
     startPool();
-    mdocBuffer.put(mdoc);
+    pool.execute(getRunnable(mdoc));
+    throwFailure(); // fail is queue was full and it was executed in this thread
   }
   
   /** This does not use bulk indexing, it starts converting and posts the document to Elasticsearch.
@@ -227,123 +225,82 @@ public final class DocumentProcessor {
    * check for validIdentifiers Set and remove all unknown
    * identifiers from ES.
    */
-  private void deleteUnseenDocuments() {
-    if (validIdentifiers != null) {
-      log.info("Removing metadata items not seen while harvesting...");
-      
-      final QueryBuilder query = QueryBuilders.constantScoreQuery(FilterBuilders.andFilter(
-        FilterBuilders.termFilter(iconfig.root.fieldnameSource, iconfig.id),
-        FilterBuilders.notFilter(FilterBuilders.idsFilter(iconfig.root.typeName).ids(validIdentifiers.toArray(new String[validIdentifiers.size()]))).cache(false)
-      ).cache(false));
-      
-      final TimeValue time = TimeValue.timeValueMinutes(10);
-      final Set<String> lostItems = new TreeSet<>();
-      long count = 0;
-      SearchResponse scrollResp = client.prepareSearch(targetIndex)
-        .setTypes(iconfig.root.typeName)
-        .setQuery(query)
-        .setFetchSource(false)
-        .setNoFields()
-        .setSize(deleteUnseenBulkSize)
-        .setSearchType(SearchType.SCAN).setScroll(time)
-        .get();
-      do {
-        final BulkRequestBuilder bulk = client.prepareBulk();
-        for (final SearchHit hit : scrollResp.getHits()) {
-          bulk.add(client.prepareDelete(targetIndex, iconfig.root.typeName, hit.getId()));
+  private void deleteUnseenDocuments(Set<String> validIdentifiers) {
+    log.info("Removing metadata items not seen while harvesting...");
+    
+    final QueryBuilder query = QueryBuilders.constantScoreQuery(FilterBuilders.andFilter(
+      FilterBuilders.termFilter(iconfig.root.fieldnameSource, iconfig.id),
+      FilterBuilders.notFilter(FilterBuilders.idsFilter(iconfig.root.typeName).ids(validIdentifiers.toArray(new String[validIdentifiers.size()]))).cache(false)
+    ).cache(false));
+    
+    final TimeValue time = TimeValue.timeValueMinutes(10);
+    final Set<String> lostItems = new TreeSet<>();
+    long count = 0;
+    SearchResponse scrollResp = client.prepareSearch(targetIndex)
+      .setTypes(iconfig.root.typeName)
+      .setQuery(query)
+      .setFetchSource(false)
+      .setNoFields()
+      .setSize(deleteUnseenBulkSize)
+      .setSearchType(SearchType.SCAN).setScroll(time)
+      .get();
+    do {
+      final BulkRequestBuilder bulk = client.prepareBulk();
+      for (final SearchHit hit : scrollResp.getHits()) {
+        bulk.add(client.prepareDelete(targetIndex, iconfig.root.typeName, hit.getId()));
+      }
+      if (bulk.numberOfActions() > 0) {
+        lostItems.clear();
+        final BulkResponse bulkResponse = bulk.get();
+        if (bulkResponse.hasFailures()) {
+          throw new ElasticsearchException("Error while executing bulk request: " + bulkResponse.buildFailureMessage());
         }
-        if (bulk.numberOfActions() > 0) {
-          lostItems.clear();
-          final BulkResponse bulkResponse = bulk.get();
-          if (bulkResponse.hasFailures()) {
-            throw new ElasticsearchException("Error while executing bulk request: " + bulkResponse.buildFailureMessage());
+        // count items for safety:
+        int deletedItems = 0;
+        for (final BulkItemResponse item : bulkResponse.getItems()) {
+          final DeleteResponse delResp = item.getResponse();
+          if (delResp.isFound()) {
+            deletedItems++;
+          } else {
+            lostItems.add(delResp.getId());
           }
-          // count items for safety:
-          int deletedItems = 0;
-          for (final BulkItemResponse item : bulkResponse.getItems()) {
-            final DeleteResponse delResp = item.getResponse();
-            if (delResp.isFound()) {
-              deletedItems++;
-            } else {
-              lostItems.add(delResp.getId());
-            }
-          }
-          count += deletedItems;
-          if (!lostItems.isEmpty()) {
-            log.warn("Some metadata items could not be deleted because they disappeared in the meantime: " + lostItems);
-          }
-          log.info("Deleted " + count + " metadata items until now, working...");
         }
-        if (scrollResp.getScrollId() == null) break;
-        scrollResp = client.prepareSearchScroll(scrollResp.getScrollId()).setScroll(time).get();
-      } while (scrollResp.getHits().getHits().length > 0);
+        count += deletedItems;
+        if (!lostItems.isEmpty()) {
+          log.warn("Some metadata items could not be deleted because they disappeared in the meantime: " + lostItems);
+        }
+        log.info("Deleted " + count + " metadata items until now, working...");
+      }
+      if (scrollResp.getScrollId() == null) break;
+      scrollResp = client.prepareSearchScroll(scrollResp.getScrollId()).setScroll(time).get();
+    } while (scrollResp.getHits().getHits().length > 0);
 
-      log.info("Deleted a total number of " + count + " metadata items.");
-    }
+    log.info("Deleted a total number of " + count + " metadata items.");
   }
   
-  void runProcessor(String name) {
-    final Log log = LogFactory.getLog(name);
-    log.info("Processor started.");
-    try {
-      final BulkProcessor bulkProcessor = BulkProcessor.builder(client, new BulkProcessor.Listener() {
-        @Override
-        public void beforeBulk(long executionId, BulkRequest request) {
-          if (log.isDebugEnabled()) {
-            log.debug(String.format(Locale.ENGLISH, "Sending bulk with %d actions to Elasticsearch...", request.numberOfActions()));
+  private Runnable getRunnable(final MetadataDocument mdoc) {
+    return new Runnable() {
+      @Override
+      public void run() {
+        if (failure.get() != null) {
+          return; // cancel execution
+        }
+        try {      
+          final ActionRequest<?> req = internalProcessDocument(log, mdoc);
+          if (req != null) {
+            bulkProcessor.add(req);
+          }
+        } catch (Exception e) {
+          // only store the first error in failure variable, other errors are only logged
+          if (!failure.compareAndSet(null, e)) {
+            log.error(e);
           }
         }
-        
-        @Override
-        public void afterBulk(long executionId, BulkRequest request, Throwable failure) {
-          throw new ElasticsearchException("Error executing bulk request.", failure);
-        }
-        
-        @Override
-        public void afterBulk(long executionId, BulkRequest request, BulkResponse response) {
-          if (response.hasFailures()) {
-            throw new ElasticsearchException("Error while executing bulk request: " + response.buildFailureMessage());
-          }
-          final int totalItems = processed.addAndGet(request.numberOfActions());
-          log.info(totalItems + " metadata items processed so far.");
-        }
-      }).setName(name)
-        .setConcurrentRequests(1)
-        .setBulkActions(bulkSize)
-        .setBulkSize(maxBulkMemory)
-        .build();
-      
-      while (!isFailed()) {
-        final MetadataDocument mdoc;
-        try {
-          mdoc = mdocBuffer.take();
-        } catch (InterruptedException ie) {
-          continue;
-        }
-        if (mdoc == MDOC_EOF) break;
-        
-        final ActionRequest<?> req = internalProcessDocument(log, mdoc);
-        if (req != null) {
-          bulkProcessor.add(req);
-        }
       }
-
-      bulkProcessor.flush();
-      while (!bulkProcessor.awaitClose(5, TimeUnit.SECONDS)) {
-        log.warn("Still waiting for bulk processor to finish...");
-      }
-    } catch (Exception e) {
-      log.warn(String.format(Locale.ENGLISH, "Only %d metadata items processed before the following error occurred: %s", processed, e));
-      // only store the first error in failure variable, other errors are only logged
-      if (!failure.compareAndSet(null, e)) {
-        log.error(e);
-      }
-    } finally {
-      log.info("Processor stopped.");
-    }
+    };
   }
   
-  private ActionRequest<?> internalProcessDocument(Log log, MetadataDocument mdoc) throws Exception {
+  ActionRequest<?> internalProcessDocument(Log log, MetadataDocument mdoc) throws Exception {
     final String identifier = mdoc.getIdentifier();
     if (log.isDebugEnabled()) log.debug("Converting document: " + mdoc.toString());
     if (log.isTraceEnabled()) log.trace("XML: " + mdoc.getXML());
@@ -362,7 +319,6 @@ public final class DocumentProcessor {
           kv = null;
           break;
         default:
-          log.fatal(String.format(Locale.ENGLISH, "Conversion XML to Elasticsearch document failed for '%s' (fatal, stopping conversions).", identifier));
           throw e;
       }
     }
@@ -381,12 +337,6 @@ public final class DocumentProcessor {
   private void throwFailure() throws BackgroundFailure {
     final Exception f = failure.get();
     if (f != null) {
-      synchronized(poolInitLock) {
-        if (pool != null) {
-          // don't accept any docs anymore (also interrupt threads)
-          pool.shutdownNow();
-        }
-      }
       throw new BackgroundFailure(f);
     }
   }
@@ -394,16 +344,38 @@ public final class DocumentProcessor {
   private void startPool() {
     synchronized(poolInitLock) {
       if (pool == null) {
-        pool = Executors.newFixedThreadPool(threadCount);
-        for (int i = 0; i < threadCount; i++) {
-          final String name = String.format(Locale.ROOT, "%s#%d", getClass().getName(), i + 1);
-          pool.execute(new Runnable() {
-            @Override
-            public void run() {
-              runProcessor(name);
+        assert bulkProcessor == null;
+        bulkProcessor = BulkProcessor.builder(client, new BulkProcessor.Listener() {
+          @Override
+          public void beforeBulk(long executionId, BulkRequest request) {
+            if (log.isDebugEnabled()) {
+              log.debug(String.format(Locale.ENGLISH, "Sending bulk with %d actions to Elasticsearch...", request.numberOfActions()));
             }
-          });
-        }
+          }
+          
+          @Override
+          public void afterBulk(long executionId, BulkRequest request, Throwable failure) {
+            throw new ElasticsearchException("Error executing bulk request.", failure);
+          }
+          
+          @Override
+          public void afterBulk(long executionId, BulkRequest request, BulkResponse response) {
+            if (response.hasFailures()) {
+              throw new ElasticsearchException("Error while executing bulk request: " + response.buildFailureMessage());
+            }
+            final int totalItems = processed.addAndGet(request.numberOfActions());
+            log.info(totalItems + " metadata items processed so far.");
+          }
+        }).setName(getClass().getSimpleName())
+          .setConcurrentRequests(concurrentBulkRequests)
+          .setBulkActions(bulkSize)
+          .setBulkSize(maxBulkMemory)
+          .build();
+
+        pool = new ThreadPoolExecutor(threadCount, threadCount,
+            0L, TimeUnit.MILLISECONDS,
+            new ArrayBlockingQueue<Runnable>(maxQueue, false),
+            new ThreadPoolExecutor.CallerRunsPolicy());
       }
     }
   }
