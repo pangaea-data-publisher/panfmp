@@ -329,7 +329,7 @@ public final class DocumentProcessor {
       }
 
       bulkProcessor.flush();
-      while (bulkProcessor.awaitClose(5, TimeUnit.SECONDS)) {
+      while (!bulkProcessor.awaitClose(5, TimeUnit.SECONDS)) {
         log.warn("Still waiting for bulk processor to finish...");
       }
     } catch (Exception e) {
