@@ -333,7 +333,7 @@ public final class DocumentProcessor {
         log.warn("Still waiting for bulk processor to finish...");
       }
     } catch (Exception e) {
-      log.warn(String.format("Only %d metadata items processed before the following error occurred: %s", processed, e));
+      log.warn(String.format(Locale.ENGLISH, "Only %d metadata items processed before the following error occurred: %s", processed, e));
       // only store the first error in failure variable, other errors are only logged
       if (!failure.compareAndSet(null, e)) {
         log.error(e);
