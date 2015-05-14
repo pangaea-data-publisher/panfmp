@@ -55,12 +55,16 @@ import de.pangaea.metadataportal.processor.MetadataDocument;
  * (default 100 metadata documents)</li>
  * <li><code>bulkSize</code>: size of bulk requests sent to Elasticsearch. (default
  * 100 metadata documents)</li>
+ * <li><code>concurrentBulkRequests</code>: how many bulk requests can be sent in
+ * parallel to Elasticsearch. (default 1)</li>
+ * <li><code>maxBulkMemory</code>: maximum size of CBOR/JSON source for a bulk request.
+ * After a bulk gets larger than this, it will be submitted. Please note, that a bulk
+ * might get significantly larger, because the check is done after the document is added.
+ * Can be given as a plain number (bytes) or using a unit like MB for megabytes.
+ * </li>
  * <li><code>deleteUnseenBulkSize</code>: size of bulk requests for requesting/deleting
  * unseen documents sent to Elasticsearch. (default 1000 deletes). This is only used
  * by some harvesters, the number here can be generally large, as only IDs are transferred.</li>
- * <li><code>maxBulkMemory</code>: maximum size of JSON source for a bulk request.
- * After a bulk gets larger than this, it will be submitted. Please note, that a bulk
- * might get significantly larger, because the check is done after the document is added.</li>
  * <li><code>validate</code>: validate harvested documents against schema given
  * in configuration? (default: true, if schema given)</li>
  * <li><code>conversionErrorAction</code>: What to do if a conversion error
@@ -287,7 +291,9 @@ public abstract class Harvester {
     }
     harvestingDateReference = null;
     
-    if (!processor.isClosed()) processor.close();
+    if (!processor.isClosed()) {
+      processor.close(cleanShutdown ? validIdentifiers : null);
+    }
     processor = null;
     
     if (cleanShutdown) {
@@ -357,6 +363,15 @@ public abstract class Harvester {
   }
   
   /**
+   * Set a set of all "seen" valid identifiers. Must be set, before
+   * {@link #close(boolean)} is called, as the information is passed
+   * to the processor before finalizing the index.
+   */
+  protected void setValidIdentifiers(Set<String> validIdentifiers) {
+    this.validIdentifiers = validIdentifiers;
+  }
+  
+  /**
    * This method is used by subclasses to enumerate all available harvester
    * properties that are implemented by them. Overwrite this method in your own
    * implementation and append all harvester names to the supplied
@@ -370,7 +385,7 @@ public abstract class Harvester {
         // own
         "harvestMessageStep",
         // DocumentProcessor
-        "bulkSize", "deleteUnseenBulkSize", "numThreads", "maxQueue", "maxBulkMemory", "sourceContentType",
+        "bulkSize", "deleteUnseenBulkSize", "numThreads", "maxQueue", "maxBulkMemory", "sourceContentType", "concurrentBulkRequests",
         "conversionErrorAction",
         // XMLConverter
         "validate"));
@@ -405,6 +420,7 @@ public abstract class Harvester {
   
   // private mebers
   private Date harvestingDateReference = null;
+  private Set<String> validIdentifiers = null;
   
   public static final String HARVESTER_METADATA_FIELD_LAST_HARVESTED = "lastHarvested";
   
