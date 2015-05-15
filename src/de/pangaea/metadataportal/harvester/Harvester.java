@@ -319,16 +319,29 @@ public abstract class Harvester {
    *           if an error occurred in background thread. Exceptions can be
    *           thrown asynchronous and may not affect the currect document. The
    *           real exception is thrown again in {@link #close}.
-   * @throws InterruptedException
-   *           if wait operation was interrupted.
    */
   protected void addDocument(MetadataDocument mdoc) throws Exception {
     if (processor == null) throw new IllegalStateException(
         "Harvester must be opened before using");
     processor.addDocument(mdoc);
     harvestCount++;
-    if (harvestCount % harvestMessageStep == 0) log.info("Harvested "
-        + harvestCount + " objects so far.");
+    if (harvestCount % harvestMessageStep == 0) log.info("Harvested " + harvestCount + " objects so far.");
+  }
+  
+  /**
+   * Queues the given ID for deletion. This delegates to {@link #addDocument},
+   * with an empty document.
+   * 
+   * @throws BackgroundFailure
+   *           if an error occurred in background thread. Exceptions can be
+   *           thrown asynchronous and may not affect the currect document. The
+   *           real exception is thrown again in {@link #close}.
+   */
+  protected void deleteDocument(String identifier) throws Exception {
+    final MetadataDocument mdoc = createMetadataDocumentInstance();
+    mdoc.setIdentifier(identifier);
+    mdoc.setDeleted(true);
+    addDocument(mdoc);
   }
   
   /**
