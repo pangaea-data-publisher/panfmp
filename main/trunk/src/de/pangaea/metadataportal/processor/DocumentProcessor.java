@@ -169,7 +169,6 @@ public final class DocumentProcessor {
         }
         pool = null;
 
-        bulkProcessor.flush();
         while (!bulkProcessor.awaitClose(5, TimeUnit.SECONDS)) {
           log.warn("Still waiting for bulk processor to finish...");
         }
