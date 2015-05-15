@@ -207,7 +207,7 @@ public final class DocumentProcessor {
   public void processDocument(MetadataDocument mdoc) throws Exception {
     if (isClosed()) throw new IllegalStateException("DocumentProcessor already closed");
     
-    final ActionRequest<?> req = internalProcessDocument(log, mdoc);
+    final ActionRequest<?> req = buildDocumentAction(mdoc);
     if (req instanceof IndexRequest) {
       client.index((IndexRequest) req).get();
       processed.addAndGet(1);
@@ -222,8 +222,7 @@ public final class DocumentProcessor {
   }
   
   /**
-   * check for validIdentifiers Set and remove all unknown
-   * identifiers from ES.
+   * Check for validIdentifiers Set and remove all unknown identifiers from ES.
    */
   private void deleteUnseenDocuments(Set<String> validIdentifiers) {
     log.info("Removing metadata items not seen while harvesting...");
@@ -247,7 +246,7 @@ public final class DocumentProcessor {
     do {
       final BulkRequestBuilder bulk = client.prepareBulk();
       for (final SearchHit hit : scrollResp.getHits()) {
-        bulk.add(client.prepareDelete(targetIndex, iconfig.root.typeName, hit.getId()));
+        bulk.add(new DeleteRequest(targetIndex, iconfig.root.typeName, hit.getId()));
       }
       if (bulk.numberOfActions() > 0) {
         lostItems.clear();
@@ -286,7 +285,7 @@ public final class DocumentProcessor {
           return; // cancel execution
         }
         try {      
-          final ActionRequest<?> req = internalProcessDocument(log, mdoc);
+          final ActionRequest<?> req = buildDocumentAction(mdoc);
           if (req != null) {
             bulkProcessor.add(req);
           }
@@ -300,10 +299,14 @@ public final class DocumentProcessor {
     };
   }
   
-  ActionRequest<?> internalProcessDocument(Log log, MetadataDocument mdoc) throws Exception {
+  /**
+   * Processes the given {@link MetadataDocument} and returns
+   * the {@link ActionRequest} to pass to Elasticsearch
+   * (can either be {@link IndexRequest} or {@link DeleteRequest}).
+   */
+  public ActionRequest<?> buildDocumentAction(MetadataDocument mdoc) throws Exception {
     final String identifier = mdoc.getIdentifier();
     if (log.isDebugEnabled()) log.debug("Converting document: " + mdoc.toString());
-    if (log.isTraceEnabled()) log.trace("XML: " + mdoc.getXML());
     KeyValuePairs kv = null;
     try {
       kv = mdoc.getKeyValuePairs();
@@ -325,12 +328,12 @@ public final class DocumentProcessor {
 
     if (kv == null || kv.isEmpty()) {
       if (log.isDebugEnabled()) log.debug("Deleting document: " + identifier);
-      return client.prepareDelete(targetIndex, iconfig.root.typeName, identifier).request();
+      return new DeleteRequest(targetIndex, iconfig.root.typeName, identifier);
     } else {
       final XContentBuilder source = XContentFactory.contentBuilder(contentType);
       kv.serializeToContentBuilder(source);
       if (log.isDebugEnabled()) log.debug("Updating document: " + identifier);
-      return client.prepareIndex(targetIndex, iconfig.root.typeName, identifier).setSource(source).request();
+      return new IndexRequest(targetIndex, iconfig.root.typeName, identifier).source(source);
     }
   }
   
