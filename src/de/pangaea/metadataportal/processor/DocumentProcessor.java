@@ -200,26 +200,6 @@ public final class DocumentProcessor {
     throwFailure(); // fail is queue was full and it was executed in this thread
   }
   
-  /** This does not use bulk indexing, it starts converting and posts the document to Elasticsearch.
-   * It can be used without harvester to index documents directly.
-   * This does not start a new thread pool. */
-  public void processDocument(MetadataDocument mdoc) throws Exception {
-    if (isClosed()) throw new IllegalStateException("DocumentProcessor already closed");
-    
-    final ActionRequest<?> req = buildDocumentAction(mdoc);
-    if (req == null) {
-      // nothing
-    } else if (req instanceof IndexRequest) {
-      client.index((IndexRequest) req).actionGet();
-      processed.addAndGet(1);
-    } else if (req instanceof DeleteRequest) {
-      client.delete((DeleteRequest) req).actionGet();
-      processed.addAndGet(1);
-    } else {
-      throw new IllegalArgumentException("Invalid ActionRequest type: " + req.getClass().getName());
-    }
-  }
-  
   /**
    * Check for validIdentifiers Set and remove all unknown identifiers from ES.
    */
