@@ -177,6 +177,8 @@ public final class DocumentProcessor {
       
       // exit here before we write any status info to disk:
       throwFailure();
+
+      log.info(processed + " metadata items processed - finished.");
     }
     
     // delete all unseen documents, if validIdentifiers is given:
@@ -188,8 +190,6 @@ public final class DocumentProcessor {
     log.info("Saving harvester metadata...");
     final XContentBuilder builder = XContentFactory.contentBuilder(contentType).map(harvesterMetadata);
     client.prepareIndex(targetIndex, HARVESTER_METADATA_TYPE, iconfig.id).setSource(builder).get();
-
-    log.info(processed + " metadata items processed - finished.");
   }
   
   public void addDocument(MetadataDocument mdoc) throws BackgroundFailure {
