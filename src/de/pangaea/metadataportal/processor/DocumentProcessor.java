@@ -209,11 +209,11 @@ public final class DocumentProcessor {
     
     final ActionRequest<?> req = buildDocumentAction(mdoc);
     if (req instanceof IndexRequest) {
-      client.index((IndexRequest) req).get();
+      client.index((IndexRequest) req).actionGet();
       processed.addAndGet(1);
       log.info(String.format(Locale.ENGLISH, "Document update '%s' processed and submitted to Elasticsearch index '%s'.", mdoc.getIdentifier(), targetIndex));
     } else if (req instanceof DeleteRequest) {
-      client.delete((DeleteRequest) req).get();
+      client.delete((DeleteRequest) req).actionGet();
       processed.addAndGet(1);
       log.info(String.format(Locale.ENGLISH, "Document delete '%s' processed and submitted to Elasticsearch index '%s'.", mdoc.getIdentifier(), targetIndex));
     } else {
