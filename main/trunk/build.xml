@@ -20,6 +20,14 @@
   </condition>
   <fail message="Minimum supported Java version is 1.7." unless="build.java.runtime"/>
 
+  <!-- workaround for https://issues.apache.org/bugzilla/show_bug.cgi?id=53347 -->
+  <condition property="build.compiler" value="javac1.7">
+    <or>
+      <antversion exactly="1.8.3" />
+      <antversion exactly="1.8.4" />
+    </or>
+  </condition>
+
   <!-- PROPERTIES -->
   <property name="src" location="src"/>
   <property name="build" location="build"/>
