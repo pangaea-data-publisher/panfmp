@@ -173,12 +173,12 @@ public final class DocumentProcessor {
           log.warn("Still waiting for bulk processor to finish...");
         }
         bulkProcessor = null;
-      }
-      
-      // exit here before we write any status info to disk:
-      throwFailure();
 
-      log.info(processed + " metadata items processed - finished.");
+        // exit here before we write any status info to disk:
+        throwFailure();
+
+        log.info(processed + " metadata items processed - finished.");
+      }
     }
     
     // delete all unseen documents, if validIdentifiers is given:
