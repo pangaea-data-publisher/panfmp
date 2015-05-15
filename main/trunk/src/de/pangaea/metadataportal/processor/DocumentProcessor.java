@@ -207,16 +207,16 @@ public final class DocumentProcessor {
     if (isClosed()) throw new IllegalStateException("DocumentProcessor already closed");
     
     final ActionRequest<?> req = buildDocumentAction(mdoc);
-    if (req instanceof IndexRequest) {
+    if (req == null) {
+      // nothing
+    } else if (req instanceof IndexRequest) {
       client.index((IndexRequest) req).actionGet();
       processed.addAndGet(1);
-      log.info(String.format(Locale.ENGLISH, "Document update '%s' processed and submitted to Elasticsearch index '%s'.", mdoc.getIdentifier(), targetIndex));
     } else if (req instanceof DeleteRequest) {
       client.delete((DeleteRequest) req).actionGet();
       processed.addAndGet(1);
-      log.info(String.format(Locale.ENGLISH, "Document delete '%s' processed and submitted to Elasticsearch index '%s'.", mdoc.getIdentifier(), targetIndex));
     } else {
-      log.warn(String.format(Locale.ENGLISH, "Nothing done for metadata item '%s'.", mdoc.getIdentifier()));
+      throw new IllegalArgumentException("Invalid ActionRequest type: " + req.getClass().getName());
     }
   }
   
