@@ -16,10 +16,10 @@
 
 package de.pangaea.metadataportal.harvester;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 import java.lang.reflect.Constructor;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Set;
@@ -152,10 +152,10 @@ public class PanFMP1IndexHarvester extends SingleFileEntitiesHarvester {
     if (d == null) {
       throw new IllegalArgumentException("Missing index directory path (property \"indexDir\")");
     }
-    final File dir = new File(iconfig.root.makePathAbsolute(d, false));
+    final Path dir = iconfig.root.makePathAbsolute(d);
     
     log.info("Opening index in directory '" + dir + "' for harvesting " + queryInfo + "...");
-    indexDir = FSDirectory.open(dir);
+    indexDir = FSDirectory.open(dir.toFile()); // TODO: change this in Lucene 5!
     reader = DirectoryReader.open(indexDir);
   }
   

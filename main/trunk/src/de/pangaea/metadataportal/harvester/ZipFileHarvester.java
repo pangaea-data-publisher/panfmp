@@ -16,9 +16,6 @@
 
 package de.pangaea.metadataportal.harvester;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,6 +23,10 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Set;
@@ -223,14 +224,14 @@ public class ZipFileHarvester extends SingleFileEntitiesHarvester {
         return in;
       } catch (MalformedURLException urle) {
         // normal file
-        File f = new File(zipFile);
-        long lastModified = f.lastModified();
+        Path f = Paths.get(zipFile);
+        long lastModified = Files.getLastModifiedTime(f).toMillis();
         if (useZipFileDate) setHarvestingDateReference((lastModified == 0L) ? null
             : new Date(lastModified));
         if (useZipFileDate && !isDocumentOutdated(lastModified)) return null;
-        return new FileInputStream(f);
-      } catch (FileNotFoundException fne) {
-        throw fne;
+        return Files.newInputStream(f);
+      } catch (NoSuchFileException nsfe) {
+        throw nsfe;
       } catch (IOException ioe) {
         int after = retryTime;
         if (ioe instanceof RetryAfterIOException) {

@@ -16,11 +16,14 @@
 
 package de.pangaea.metadataportal.harvester;
 
-import java.io.File;
-import java.io.FilenameFilter;
+import java.io.IOException;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Arrays;
 import java.util.Set;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.xml.transform.stream.StreamSource;
@@ -45,14 +48,15 @@ import de.pangaea.metadataportal.utils.BooleanParser;
  * 
  * @author Uwe Schindler
  */
-public class DirectoryHarvester extends SingleFileEntitiesHarvester implements FilenameFilter {
+public class DirectoryHarvester extends SingleFileEntitiesHarvester {
   
-  // Class members
-  private final boolean recursive;
-  private final Pattern filenameFilter;
-  private final String identifierPrefix;
+  static final String WRAPPED_MARKER = "###wrapped###";
+
+  final boolean recursive;
+  final Pattern filenameFilter;
+  final String identifierPrefix;
   
-  private File directory = null;
+  Path directory = null;
   
   public DirectoryHarvester(HarvesterConfig iconfig) {
     super(iconfig);
@@ -73,55 +77,64 @@ public class DirectoryHarvester extends SingleFileEntitiesHarvester implements F
     String directoryStr = iconfig.properties.getProperty("directory");
     if (directoryStr == null) throw new IllegalArgumentException(
         "Missing directory name to start harvesting (property \"directory\")");
-    directory = new File(iconfig.root.makePathAbsolute(directoryStr, false));
+    directory = iconfig.root.makePathAbsolute(directoryStr);
   }
 
   @Override
   public void harvest() throws Exception {
-    processDirectory(directory);
+    try {
+      Files.walkFileTree(directory, new SimpleFileVisitor<Path>() {
+        @Override
+        public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+          if (recursive || dir.equals(directory)) {
+            StringBuilder logstr = new StringBuilder("Walking into directory \"").append(dir).append("\" (recursive=").append(recursive);
+            if (filenameFilter != null) {
+              logstr.append(",filter=\"").append(filenameFilter).append("\"");
+            }
+            logstr.append(")...");
+            log.info(logstr);
+            return super.preVisitDirectory(dir, attrs);
+          } else {
+            return FileVisitResult.SKIP_SUBTREE;
+          }
+        }
+  
+        @Override
+        public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+          log.info("Finished directory \"" + dir + "\".");
+          return super.postVisitDirectory(dir, exc);
+        }
+  
+        @Override
+        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+          if (filenameFilter.matcher(file.getFileName().toString()).matches()) {
+            try {
+              processFile(file);
+            } catch (Exception e) {
+              throw new RuntimeException(WRAPPED_MARKER, e);
+            }
+          }
+          return super.visitFile(file, attrs);
+        }
+      });
+    } catch (RuntimeException e) {
+      if (WRAPPED_MARKER.equals(e.getMessage())) {
+        throw (Exception) e.getCause();
+      }
+      throw e;
+    }
   }
   
   @Override
   protected void enumerateValidHarvesterPropertyNames(Set<String> props) {
     super.enumerateValidHarvesterPropertyNames(props);
-    props.addAll(Arrays.<String> asList("directory", "recursive",
-        "identifierPrefix", "filenameFilter"));
+    props.addAll(Arrays.<String> asList("directory", "recursive", "identifierPrefix", "filenameFilter"));
   }
   
-  @Override
-  public boolean accept(File dir, String name) {
-    File file = new File(dir, name);
-    if (file.isDirectory()) return (recursive && !".".equals(name) && !".."
-        .equals(name));
-    if (filenameFilter == null) return true;
-    Matcher m = filenameFilter.matcher(name);
-    return m.matches();
-  }
-  
-  private void processFile(File file) throws Exception {
-    String identifier = "file:"
-        + identifierPrefix
-        + directory.toURI().normalize().relativize(file.toURI().normalize())
-            .toString();
-    addDocument(identifier, file.lastModified(), new StreamSource(file));
-  }
-  
-  private void processDirectory(File dir) throws Exception {
-    StringBuilder logstr = new StringBuilder("Walking into directory \"")
-        .append(dir).append("\" (recursive=").append(recursive);
-    if (filenameFilter != null) logstr.append(",filter=\"")
-        .append(filenameFilter).append("\"");
-    logstr.append(")...");
-    log.info(logstr);
-    
-    File[] files = dir.listFiles(this);
-    if (files == null) return;
-    for (File f : files) {
-      if (f.isDirectory()) processDirectory(f);
-      else if (f.isFile()) processFile(f);
-    }
-    
-    log.info("Finished directory \"" + dir + "\".");
+  void processFile(Path file) throws Exception {
+    final Path relative = directory.relativize(file);
+    final String identifier = "file:" + identifierPrefix + relative.toString().replace(relative.getFileSystem().getSeparator(), "/");
+    addDocument(identifier, Files.getLastModifiedTime(file).toMillis(), new StreamSource(file.toUri().toASCIIString()));
   }
   
 }
