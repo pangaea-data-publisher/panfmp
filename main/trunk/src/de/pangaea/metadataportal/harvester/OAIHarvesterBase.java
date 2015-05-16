@@ -364,7 +364,7 @@ public abstract class OAIHarvesterBase extends Harvester {
   @Override
   protected void enumerateValidHarvesterPropertyNames(Set<String> props) {
     super.enumerateValidHarvesterPropertyNames(props);
-    props.addAll(Arrays.<String> asList("setSpec", "retryCount",
+    props.addAll(Arrays.asList("setSpec", "retryCount",
         "retryAfterSeconds", "timeoutAfterSeconds", "metadataPrefix",
         "identifierPrefix", "ignoreDatestamps"));
   }

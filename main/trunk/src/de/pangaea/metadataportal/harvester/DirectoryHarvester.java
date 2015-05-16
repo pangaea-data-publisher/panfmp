@@ -17,6 +17,7 @@
 package de.pangaea.metadataportal.harvester;
 
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -128,12 +129,12 @@ public class DirectoryHarvester extends SingleFileEntitiesHarvester {
   @Override
   protected void enumerateValidHarvesterPropertyNames(Set<String> props) {
     super.enumerateValidHarvesterPropertyNames(props);
-    props.addAll(Arrays.<String> asList("directory", "recursive", "identifierPrefix", "filenameFilter"));
+    props.addAll(Arrays.asList("directory", "recursive", "identifierPrefix", "filenameFilter"));
   }
   
   void processFile(Path file) throws Exception {
-    final Path relative = directory.relativize(file);
-    final String identifier = "file:" + identifierPrefix + relative.toString().replace(relative.getFileSystem().getSeparator(), "/");
+    final URI relative = directory.toUri().relativize(file.toUri());
+    final String identifier = "file:" + identifierPrefix + relative.toASCIIString();
     addDocument(identifier, Files.getLastModifiedTime(file).toMillis(), new StreamSource(file.toUri().toASCIIString()));
   }
   
