@@ -109,7 +109,7 @@
     <fa:forbiddenapis internalRuntimeForbidden="true" classpathref="path.build" dir="${build}">
       <bundledsignatures name="jdk-unsafe-${jdk.version}"/>
       <bundledsignatures name="jdk-deprecated-${jdk.version}"/>
-      <signaturesfile name="./devtools/forbidden-signatures.txt"/>
+      <signaturesfile file="./devtools/forbidden-signatures.txt"/>
     </fa:forbiddenapis>
   </target>
 
