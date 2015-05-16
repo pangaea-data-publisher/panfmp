@@ -191,7 +191,7 @@ public class ElasticsearchHarvester extends SingleFileEntitiesHarvester {
   @Override
   protected void enumerateValidHarvesterPropertyNames(Set<String> props) {
     super.enumerateValidHarvesterPropertyNames(props);
-    props.addAll(Arrays.<String>asList("elasticsearchCluster", "datestampField", "xmlField", "indexes",
+    props.addAll(Arrays.asList("elasticsearchCluster", "datestampField", "xmlField", "indexes",
         "types", "identifierPrefix", "queryString", "jsonQuery"));
   }
   

@@ -16,7 +16,6 @@
 
 package de.pangaea.metadataportal.harvester;
 
-import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
@@ -41,6 +40,7 @@ import javax.xml.transform.stream.StreamSource;
 import de.pangaea.metadataportal.config.HarvesterConfig;
 import de.pangaea.metadataportal.processor.ElasticsearchConnection;
 import de.pangaea.metadataportal.utils.BooleanParser;
+import de.pangaea.metadataportal.utils.NoCloseInputStream;
 
 /**
  * Harvester for unzipping ZIP files and reading their contents. Identifiers
@@ -119,40 +119,36 @@ public class ZipFileHarvester extends SingleFileEntitiesHarvester {
     logstr.append(")...");
     log.info(logstr);
     
-    InputStream is = null;
-    ZipInputStream zis = null;
-    try {
-      is = openStream();
+    try (final InputStream is = openStream()) {
       if (is != null) {
-        zis = new ZipInputStream(is);
-        ZipEntry ze = null;
-        int count = 0;
-        while ((ze = zis.getNextEntry()) != null)
-          try {
-            count++;
-            if (ze.isDirectory()) continue;
-            if (filenameFilter != null) {
-              String name = ze.getName();
-              int p = name.lastIndexOf('/');
-              if (p >= 0) name = name.substring(p + 1);
-              Matcher m = filenameFilter.matcher(name);
-              if (!m.matches()) continue;
+        try (final ZipInputStream zis = new ZipInputStream(is)) {
+          ZipEntry ze = null;
+          int count = 0;
+          while ((ze = zis.getNextEntry()) != null) {
+            try {
+              count++;
+              if (ze.isDirectory()) continue;
+              if (filenameFilter != null) {
+                String name = ze.getName();
+                int p = name.lastIndexOf('/');
+                if (p >= 0) name = name.substring(p + 1);
+                Matcher m = filenameFilter.matcher(name);
+                if (!m.matches()) continue;
+              }
+              log.debug("Processing ZipEntry: " + ze);
+              processFile(new NoCloseInputStream(zis), ze);
+            } finally {
+              zis.closeEntry();
             }
-            log.debug("Processing ZipEntry: " + ze);
-            processFile(new NoCloseInputStream(zis), ze);
-          } finally {
-            zis.closeEntry();
           }
-        if (count <= 0) throw new ZipException(
-            "The file seems to be no ZIP file, it contains no file entries.");
-        log.info("Finished reading contents of ZIP file '" + zipFile + "'.");
+          if (count <= 0) throw new ZipException(
+              "The file seems to be no ZIP file, it contains no file entries.");
+          log.info("Finished reading contents of ZIP file '" + zipFile + "'.");
+        }
       } else {
         cancelMissingDocumentDelete();
         log.info("ZIP file '" + zipFile + "' not modified!");
       }
-    } finally {
-      if (zis != null) zis.close();
-      if (is != null) is.close();
     }
   }
   
@@ -219,15 +215,13 @@ public class ZipFileHarvester extends SingleFileEntitiesHarvester {
             return null;
           }
         }
-        if (useZipFileDate) setHarvestingDateReference((lastModified == 0L) ? null
-            : new Date(lastModified));
+        if (useZipFileDate) setHarvestingDateReference((lastModified == 0L) ? null : new Date(lastModified));
         return in;
       } catch (MalformedURLException urle) {
         // normal file
         Path f = Paths.get(zipFile);
         long lastModified = Files.getLastModifiedTime(f).toMillis();
-        if (useZipFileDate) setHarvestingDateReference((lastModified == 0L) ? null
-            : new Date(lastModified));
+        if (useZipFileDate) setHarvestingDateReference((lastModified == 0L) ? null : new Date(lastModified));
         if (useZipFileDate && !isDocumentOutdated(lastModified)) return null;
         return Files.newInputStream(f);
       } catch (NoSuchFileException nsfe) {
@@ -255,19 +249,6 @@ public class ZipFileHarvester extends SingleFileEntitiesHarvester {
     String identifier = "zip:" + identifierPrefix + ze.getName();
     addDocument(identifier, useZipFileDate ? -1L : ze.getTime(),
         new StreamSource(is, identifier));
-  }
-  
-  private static final class NoCloseInputStream extends FilterInputStream {
-    
-    public NoCloseInputStream(InputStream is) {
-      super(is);
-    }
-    
-    @Override
-    public void close() throws IOException {
-      // ignore close request
-    }
-    
   }
   
 }

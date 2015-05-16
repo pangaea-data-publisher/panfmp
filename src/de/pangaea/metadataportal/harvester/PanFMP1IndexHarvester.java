@@ -217,7 +217,7 @@ public class PanFMP1IndexHarvester extends SingleFileEntitiesHarvester {
   @Override
   protected void enumerateValidHarvesterPropertyNames(Set<String> props) {
     super.enumerateValidHarvesterPropertyNames(props);
-    props.addAll(Arrays.<String> asList("indexDir", "query", "luceneMatchVersion",
+    props.addAll(Arrays.asList("indexDir", "query", "luceneMatchVersion",
         "analyzerClass", "queryParserClass", "defaultQueryParserOperator", "identifierPrefix"));
   }
   

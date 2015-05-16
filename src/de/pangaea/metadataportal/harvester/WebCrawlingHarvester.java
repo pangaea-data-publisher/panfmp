@@ -198,12 +198,9 @@ public class WebCrawlingHarvester extends SingleFileEntitiesHarvester {
   @Override
   protected void enumerateValidHarvesterPropertyNames(Set<String> props) {
     super.enumerateValidHarvesterPropertyNames(props);
-    props.addAll(Arrays.<String> asList("baseUrl", "retryCount",
+    props.addAll(Arrays.asList("baseUrl", "retryCount",
         "retryAfterSeconds", "timeoutAfterSeconds", "filenameFilter",
-        "contentTypes", "excludeUrlPattern", "pauseBetweenRequests" /*
-                                                                     * in
-                                                                     * milliseconds
-                                                                     */
+        "contentTypes", "excludeUrlPattern", "pauseBetweenRequests"
     ));
   }
   

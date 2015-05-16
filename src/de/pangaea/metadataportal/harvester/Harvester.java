@@ -394,7 +394,7 @@ public abstract class Harvester {
    * @see #getValidHarvesterPropertyNames
    */
   protected void enumerateValidHarvesterPropertyNames(Set<String> props) {
-    props.addAll(Arrays.<String> asList(
+    props.addAll(Arrays.asList(
         // own
         "harvestMessageStep",
         // DocumentProcessor
