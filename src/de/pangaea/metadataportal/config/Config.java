@@ -16,17 +16,17 @@
 
 package de.pangaea.metadataportal.config;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.Reader;
 import java.lang.reflect.InvocationTargetException;
 import java.net.CookieHandler;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -73,6 +73,10 @@ public final class Config {
   private static final org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(Config.class);
   
   public Config(String file) throws Exception {
+    this(Paths.get(file));
+  }
+  
+  public Config(Path file) throws Exception {
     this.file = file;
     
     log.info(Package.getFullPackageDescription());
@@ -232,7 +236,7 @@ public final class Config {
       // parse config
       try {
         dig.push(this);
-        dig.parse(new File(file));
+        dig.parse(file.toUri().toURL());
       } catch (SAXException saxe) {
         Throwable e = saxe;
         // throw the real Exception not the digester one
@@ -260,29 +264,29 @@ public final class Config {
    * makes the given local filesystem path absolute and resolve it relative to
    * config directory
    **/
-  public final String makePathAbsolute(String file) throws IOException {
-    return makePathAbsolute(file, false);
+  public final Path makePathAbsolute(String file) throws IOException {
+    return Paths.get(makePathAbsolute(file, false));
   }
   
   /**
    * makes the given local filesystem path or URL absolute and resolve it
    * relative to config directory (if local)
    **/
-  public String makePathAbsolute(String file, boolean allowURL) throws IOException {
+  public String makePathAbsolute(String href, boolean allowURL) throws IOException {
     try {
       if (allowURL) {
-        return new URL(file).toString();
+        return new URL(href).toExternalForm();
       } else {
-        new URL(file);
-        throw new IllegalArgumentException(
-            "You can only use local file system pathes instead of '" + file
-                + "'.");
+        new URL(href);
+        throw new IllegalArgumentException(String.format(Locale.ENGLISH, "You can only use local file system pathes instead of '%s'.", href));
       }
     } catch (MalformedURLException me) {
-      File f = new File(file);
-      if (f.isAbsolute()) return f.getCanonicalPath();
-      else return new File(new File(this.file).getAbsoluteFile()
-          .getParentFile(), file).getCanonicalPath();
+      Path f = Paths.get(href);
+      if (f.isAbsolute()) {
+        return f.toRealPath().toString();
+      } else {
+        return this.file.resolveSibling(href).toRealPath().toString(); 
+      }
     }
   }
   
@@ -402,11 +406,8 @@ public final class Config {
   public void setEsMappingFile(String v) throws IOException {
     if (esMappingFile != null)
       throw new IllegalArgumentException("Duplicate Elasticsearch mapping file");
-    esMappingFile = new File(makePathAbsolute(v));
-    try (
-        final InputStream in = new FileInputStream(esMappingFile);
-        final Reader reader = new InputStreamReader(in, StandardCharsets.UTF_8)
-    ) {
+    esMappingFile = makePathAbsolute(v);
+    try (final Reader reader = Files.newBufferedReader(esMappingFile, StandardCharsets.UTF_8)) {
       esMapping = Streams.copyToString(reader);
     }
   }
@@ -458,7 +459,7 @@ public final class Config {
   
   // metadata mapping name
   public String typeName = "doc";
-  public File esMappingFile = null;
+  public Path esMappingFile = null;
   public String esMapping = null;
   
   // special fields
@@ -484,7 +485,7 @@ public final class Config {
   public final List<InetSocketTransportAddress> esTransports = new ArrayList<>();
   public Settings esSettings = null;
   
-  public final String file;
+  public final Path file;
   
   /* public Templates xsltBeforeXPath=null; */
   
@@ -504,8 +505,8 @@ public final class Config {
         src = attributes.getValue("src");
       }
       if (src != null) {
-        final File f = new File(makePathAbsolute(src));
-        try (final InputStream in = new FileInputStream(f)) {
+        final Path f = makePathAbsolute(src);
+        try (final InputStream in = Files.newInputStream(f)) {
           builder.loadFromStream(src, in);
         }
       }

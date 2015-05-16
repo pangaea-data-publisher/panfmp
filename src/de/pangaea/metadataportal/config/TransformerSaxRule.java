@@ -50,7 +50,7 @@ abstract class TransformerSaxRule extends SaxRule {
         });
       } else {
         th = StaticFactories.transFactory.newTemplatesHandler();
-        th.setSystemId(this.config.file);
+        th.setSystemId(this.config.file.toUri().toASCIIString());
         hasBody = true;
         setContentHandler(th);
       }
