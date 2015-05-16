@@ -98,13 +98,6 @@
     <taskdef uri="antlib:de.thetaphi.forbiddenapis" classpathref="path.buildtools"/>
   </target>
 
-  <!--<target name="-install-tasks" depends="-init" unless="installed.tasks">
-    <ivy:cachepath pathid="path.tasks" conf="buildtools" type="jar" log="${ivy.logging}"/>
-    <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpathref="path.tasks"/>
-    <taskdef uri="antlib:org.apache.maven.artifact.ant" classpathref="path.tasks"/>
-    <property name="installed.tasks" value="true"/>
-  </target>-->
-
   <!-- BUILD TARGETS -->
 
   <target name="compile" depends="-init">
@@ -116,6 +109,7 @@
     <fa:forbiddenapis internalRuntimeForbidden="true" classpathref="path.build" dir="${build}">
       <bundledsignatures name="jdk-unsafe-${jdk.version}"/>
       <bundledsignatures name="jdk-deprecated-${jdk.version}"/>
+      <signaturesfile name="./devtools/forbidden-signatures.txt"/>
     </fa:forbiddenapis>
   </target>
 
