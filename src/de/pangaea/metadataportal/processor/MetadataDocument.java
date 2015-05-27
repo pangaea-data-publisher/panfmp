@@ -19,6 +19,7 @@ package de.pangaea.metadataportal.processor;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.AbstractMap;
 import java.util.Date;
 import java.util.Map;
@@ -133,6 +134,7 @@ public class MetadataDocument {
     trans.setErrorListener(new LoggingErrorListener(log));
     trans.setOutputProperty(OutputKeys.INDENT, "no");
     trans.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
+    trans.setOutputProperty(OutputKeys.ENCODING, StandardCharsets.UTF_16.name());
     DOMSource in = new DOMSource(dom, identifier);
     StreamResult out = new StreamResult(xmlWriter);
     trans.transform(in, out);
@@ -336,6 +338,7 @@ public class MetadataDocument {
                 trans.setErrorListener(new LoggingErrorListener(log));
                 trans.setOutputProperty(OutputKeys.INDENT, "no");
                 trans.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
+                trans.setOutputProperty(OutputKeys.ENCODING, StandardCharsets.UTF_16.name());
                 trans.transform(in, out);
                 xmlWriter.close();
                 addField(kv, f, xmlWriter.toString());
@@ -524,6 +527,7 @@ public class MetadataDocument {
         "-//W3C//DTD XHTML 1.0 Transitional//EN");
     trans.setOutputProperty(OutputKeys.INDENT, "no");
     trans.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
+    trans.setOutputProperty(OutputKeys.ENCODING, StandardCharsets.UTF_16.name());
     
     // set variables in transformer
     Map<QName,Object> vars = XPathResolverImpl.getInstance()
