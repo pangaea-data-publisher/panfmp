@@ -1,0 +1,72 @@
+{
+  "_all" : {
+    "enabled" : false 
+  },
+  "_source" : {
+    "enabled" : true,
+    "excludes" : ["fulltext", "*Facet"]
+  },
+  "analyzer" : "standard",
+  "dynamic_templates" : [
+    {
+      "facets": {
+        "match": "*Facet",
+        "mapping": {
+          "type" : "string",
+          "index": "not_analyzed"
+        }
+      }
+    },
+    {
+      "default": {
+        "match": "*",
+        "mapping": {
+          "type" : "string",
+          "index": "analyzed"
+        }
+      }
+    }
+  ],
+  "properties" : {
+    "boost" : {
+      "type" : "float",
+      "index" : "no",
+      "doc_values" : true
+    },
+    "coordinates" : {
+      "type" : "geo_point"
+    },
+    "minDateTime" : {
+      "type" : "date",
+      "format" : "dateOptionalTime",
+      "precision_step": 8
+    },
+    "maxDateTime" : {
+      "type" : "date",
+      "format" : "dateOptionalTime",
+      "precision_step": 8
+    },
+    "minLatitude" : {
+      "type" : "double",
+      "precision_step": 8
+    },
+    "maxLatitude" : {
+      "type" : "double",
+      "precision_step": 8
+    },
+    "minLongitude" : {
+      "type" : "double",
+      "precision_step": 8
+    },
+    "maxLongitude" : {
+      "type" : "double",
+      "precision_step": 8
+    },
+    "minMonth" : {
+      "type" : "integer"
+    },
+    "maxMonth" : {
+      "type" : "integer"
+    }
+  }
+}
