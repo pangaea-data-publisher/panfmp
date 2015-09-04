@@ -37,13 +37,13 @@ import org.elasticsearch.client.Client;
 import org.elasticsearch.client.IndicesAdminClient;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.cluster.metadata.AliasMetaData;
-import org.elasticsearch.common.collect.ImmutableMap;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
-import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.indices.IndexAlreadyExistsException;
+
+import com.google.common.collect.ImmutableMap;
 
 import de.pangaea.metadataportal.config.Config;
 import de.pangaea.metadataportal.config.HarvesterConfig;
@@ -90,13 +90,13 @@ public final class ElasticsearchConnection implements Closeable {
   
   @SuppressWarnings("resource")
   public ElasticsearchConnection(Config config) {
-    final Settings settings = config.esSettings == null ? ImmutableSettings.Builder.EMPTY_SETTINGS : config.esSettings;
+    final Settings settings = config.esSettings == null ? Settings.Builder.EMPTY_SETTINGS : config.esSettings;
     log.info("Connecting to Elasticsearch nodes: " + config.esTransports);
     if (log.isDebugEnabled()) {
       log.debug("ES connection settings: " + settings.getAsMap());
     }
     this.conf = config;
-    this.client = new TransportClient(settings, false)
+    this.client = TransportClient.builder().settings(settings).loadConfigSettings(false).build()
       .addTransportAddresses(config.esTransports.toArray(new TransportAddress[config.esTransports.size()]));
   }
 
@@ -184,7 +184,6 @@ public final class ElasticsearchConnection implements Closeable {
         final PutMappingResponse resp = indicesAdmin.preparePutMapping(realIndexName)
             .setType(DocumentProcessor.HARVESTER_METADATA_TYPE)
             .setSource(HARVESTER_METADATA_MAPPING)
-            .setIgnoreConflicts(false)
             .get();
         log.info("Harvester metadata mapping updated: " + resp.isAcknowledged());
       }
@@ -192,7 +191,6 @@ public final class ElasticsearchConnection implements Closeable {
         final PutMappingResponse resp = indicesAdmin.preparePutMapping(realIndexName)
             .setType(conf.typeName)
             .setSource(mapping)
-            .setIgnoreConflicts(false)
             .get();
         log.info("XML metadata mapping updated: " + resp.isAcknowledged());
       }
@@ -281,7 +279,7 @@ public final class ElasticsearchConnection implements Closeable {
   private String getMapping() throws IOException {
     Map<String,Object> mapping, props;
     if (conf.esMapping != null) {
-      mapping = XContentFactory.xContent(conf.esMapping).createParser(conf.esMapping).mapOrderedAndClose();
+      mapping = XContentFactory.xContent(conf.esMapping).createParser(conf.esMapping).mapOrdered();
       if (mapping.containsKey(conf.typeName)) {
         if (mapping.size() != 1) {
           throw new IllegalArgumentException("If the typeName is part of the mapping, it must be the single root element.");

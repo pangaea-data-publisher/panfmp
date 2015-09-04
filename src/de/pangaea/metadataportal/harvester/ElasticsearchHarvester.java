@@ -27,7 +27,6 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
-import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.unit.TimeValue;
@@ -106,14 +105,14 @@ public class ElasticsearchHarvester extends SingleFileEntitiesHarvester {
     final String esAddress = iconfig.properties.getProperty("elasticsearchAddress");
     if (esAddress != null && !esAddress.isEmpty()) {
       // TODO: Really use ES settings from config!? => make configurable somehow
-      final Settings settings = iconfig.root.esSettings == null ? ImmutableSettings.Builder.EMPTY_SETTINGS : iconfig.root.esSettings;
+      final Settings settings = iconfig.root.esSettings == null ? Settings.Builder.EMPTY_SETTINGS : iconfig.root.esSettings;
       final InetSocketTransportAddress addr = new InetSocketTransportAddress(HostAndPort.parse(esAddress, ElasticsearchConnection.ELASTICSEARCH_DEFAULT_PORT));
       
       log.info("Connecting to external Elasticsearch node " + addr + " for harvesting " + queryInfo + "...");
       if (log.isDebugEnabled()) {
         log.debug("ES connection settings: " + settings.getAsMap());
       }
-      this.client = new TransportClient(settings, false).addTransportAddress(addr);
+      this.client = TransportClient.builder().settings(settings).loadConfigSettings(false).build().addTransportAddress(addr);
       this.closeClient = true;
     } else {
       log.info("Connecting to global Elasticsearch node for harvesting " + queryInfo + "...");
