@@ -46,6 +46,7 @@ import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentBuilder;
@@ -91,6 +92,7 @@ public final class DocumentProcessor {
   public static final String HARVESTER_METADATA_TYPE = "panfmp_meta";
 
   public static final int DEFAULT_BULK_SIZE = 100;
+  public static final ByteSizeValue DEFAULT_BULK_MEMORY = new ByteSizeValue(5, ByteSizeUnit.MB); // Elasticsearch's default, just copypasted
   public static final int DEFAULT_MAX_QUEUE = 100;
   public static final int DEFAULT_CONCURRENT_BULK_REQUESTS = 1;
   public static final int DEFAULT_NUM_THREADS = 1;
@@ -104,7 +106,8 @@ public final class DocumentProcessor {
     this.targetIndex = (targetIndex == null) ? this.sourceIndex : targetIndex;
     this.bulkSize = Integer.parseInt(iconfig.properties.getProperty("bulkSize", Integer.toString(DEFAULT_BULK_SIZE)));
     this.deleteUnseenBulkSize = Integer.parseInt(iconfig.properties.getProperty("deleteUnseenBulkSize", Integer.toString(DEFAULT_DELETE_UNSEEN_BULK_SIZE)));
-    this.maxBulkMemory = ByteSizeValue.parseBytesSizeValue(iconfig.properties.getProperty("maxBulkMemory", Long.toString(Long.MAX_VALUE)), "maxBulkMemory");
+    final String sz = iconfig.properties.getProperty("maxBulkMemory");
+    this.maxBulkMemory = (sz == null) ? DEFAULT_BULK_MEMORY : ByteSizeValue.parseBytesSizeValue(sz, "panfmp.maxBulkMemory");
     
     final String ct = iconfig.properties.getProperty("sourceContentType");
     if (ct != null) {
