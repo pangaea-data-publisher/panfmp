@@ -112,7 +112,7 @@ public class ElasticsearchHarvester extends SingleFileEntitiesHarvester {
       if (log.isDebugEnabled()) {
         log.debug("ES connection settings: " + settings.getAsMap());
       }
-      this.client = TransportClient.builder().settings(settings).loadConfigSettings(false).build().addTransportAddress(addr);
+      this.client = TransportClient.builder().settings(settings).build().addTransportAddress(addr);
       this.closeClient = true;
     } else {
       log.info("Connecting to global Elasticsearch node for harvesting " + queryInfo + "...");
