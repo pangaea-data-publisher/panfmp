@@ -96,7 +96,7 @@ public final class ElasticsearchConnection implements Closeable {
       log.debug("ES connection settings: " + settings.getAsMap());
     }
     this.conf = config;
-    this.client = TransportClient.builder().settings(settings).loadConfigSettings(false).build()
+    this.client = TransportClient.builder().settings(settings).build()
       .addTransportAddresses(config.esTransports.toArray(new TransportAddress[config.esTransports.size()]));
   }
 
