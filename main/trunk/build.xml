@@ -38,7 +38,7 @@
   <property name="debug" value="on"/>
   <property name="ivy.logging" value="download-only"/>
 
-  <property name="version" value="2.0-dev"/>
+  <property name="version" value="2.1-dev"/>
   <property name="versionsuffix" value="-${version}"/>
   <property name="pkgname" value="${ant.project.name}${versionsuffix}"/>
 
