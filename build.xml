@@ -82,8 +82,8 @@
       <equals arg1="${ivy.version}" arg2="${ivy.install.version}"/>
     </condition>
     <echo taskname="check-ivy" message="${ivy.version-message}"/>
-    <ivy:cachepath pathid="path.build" conf="build" type="jar" log="${ivy.logging}"/>
-    <ivy:cachepath pathid="path.bundle" conf="bundle" type="jar" log="${ivy.logging}"/>
+    <ivy:cachepath pathid="path.build" conf="build" log="${ivy.logging}"/>
+    <ivy:cachepath pathid="path.bundle" conf="bundle" log="${ivy.logging}"/>
     <!--<ivy:cachepath pathid="path.test" conf="test" log="${ivy.logging}"/>-->
     <path id="path.run">
       <path refid="path.bundle"/>

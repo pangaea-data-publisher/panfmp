@@ -6,7 +6,6 @@
     "enabled" : true,
     "excludes" : ["fulltext", "*Facet"]
   },
-  "analyzer" : "standard",
   "dynamic_templates" : [
     {
       "facets": {

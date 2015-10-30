@@ -47,7 +47,6 @@ import org.apache.commons.digester.ExtendedBaseRules;
 import org.apache.commons.digester.ObjectCreationFactory;
 import org.apache.commons.digester.SetPropertiesRule;
 import org.elasticsearch.common.io.Streams;
-import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.xml.sax.Attributes;
@@ -498,7 +497,7 @@ public final class Config {
   private final ObjectCreationFactory ES_SETTINGS_BUILDER = new AbstractObjectCreationFactory() {
     @Override
     public Object createObject(Attributes attributes) throws IOException {
-      final ImmutableSettings.Builder builder = ImmutableSettings.settingsBuilder();
+      final Settings.Builder builder = Settings.settingsBuilder();
       String src = attributes.getValue("file");
       if (src == null) {
         // fallback to also accept "src" attribute:
