@@ -32,13 +32,14 @@ import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.CompressionTools;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.DocumentStoredFieldVisitor;
-import org.apache.lucene.index.AtomicReader;
-import org.apache.lucene.index.AtomicReaderContext;
+import org.apache.lucene.index.LeafReader;
+import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexableField;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.Collector;
 import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.LeafCollector;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Scorer;
@@ -57,6 +58,12 @@ import de.pangaea.metadataportal.processor.ElasticsearchConnection;
  * different XML schema (by applying a transformation on the harvested XML
  * content) or replicate only sub-sets of other indexes, based on a query
  * string.
+ * <p>
+ * Since panFMP was upgraded to use Elasticsearch 2.0, it is no longer
+ * possible to directly read old Lucene 3 indexes as used by panFMP 1.x. To use
+ * this harvester, you have to first download a latest Apache Lucene 4.10.x
+ * version and run the IndexUpgrader command line tool. After converting the index,
+ * you can harvest the index using this tool.
  * <p>
  * This harvester supports the following additional <b>harvester properties</b>:
  * <ul>
@@ -155,7 +162,7 @@ public class PanFMP1IndexHarvester extends SingleFileEntitiesHarvester {
     final Path dir = iconfig.root.makePathAbsolute(d);
     
     log.info("Opening index in directory '" + dir + "' for harvesting " + queryInfo + "...");
-    indexDir = FSDirectory.open(dir.toFile()); // TODO: change this in Lucene 5!
+    indexDir = FSDirectory.open(dir);
     reader = DirectoryReader.open(indexDir);
   }
   
@@ -172,36 +179,37 @@ public class PanFMP1IndexHarvester extends SingleFileEntitiesHarvester {
     if (reader == null) throw new IllegalStateException(
         "Harvester was not opened!");
     try {
-      new IndexSearcher(reader).search(query, new Collector() {
-        private AtomicReader currReader = null;
-        
+      new IndexSearcher(reader).search(query, new Collector() {        
         @Override
-        public void setScorer(final Scorer scorer) {}
-        
-        @Override
-        public void setNextReader(final AtomicReaderContext ctx)
-            throws IOException {
-          this.currReader = ctx.reader();
+        public LeafCollector getLeafCollector(LeafReaderContext context) throws IOException {
+          final LeafReader reader = context.reader();
+          return new LeafCollector() {
+
+            @Override
+            public void setScorer(Scorer scorer) throws IOException {
+              // not needed
+            }
+
+            @Override
+            public void collect(int doc) throws IOException {
+              DocumentStoredFieldVisitor vis = new DocumentStoredFieldVisitor(FIELDNAME_IDENTIFIER,
+                  FIELDNAME_DATESTAMP, FIELDNAME_XML);
+              reader.document(doc, vis);
+              Document ldoc = vis.getDocument();
+              try {
+                addLuceneDocument(ldoc);
+              } catch (IOException ioe) {
+                throw ioe;
+              } catch (Exception e) {
+                throw new RuntimeException("###collectException###", e);
+              }
+            }
+            
+          };
         }
-        
+
         @Override
-        public void collect(final int doc) throws IOException {
-          DocumentStoredFieldVisitor vis = new DocumentStoredFieldVisitor(FIELDNAME_IDENTIFIER,
-              FIELDNAME_DATESTAMP, FIELDNAME_XML);
-          currReader.document(doc, vis);
-          Document ldoc = vis.getDocument();
-          try {
-            addLuceneDocument(ldoc);
-          } catch (IOException ioe) {
-            throw ioe;
-          } catch (Exception e) {
-            throw new RuntimeException("###collectException###", e);
-          }
-        }
-        
-        @Override
-        public boolean acceptsDocsOutOfOrder() {
-          // should be ordered for performance
+        public boolean needsScores() {
           return false;
         }
       });

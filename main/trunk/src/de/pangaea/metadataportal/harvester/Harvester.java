@@ -60,7 +60,7 @@ import de.pangaea.metadataportal.processor.MetadataDocument;
  * <li><code>maxBulkMemory</code>: maximum size of CBOR/JSON source for a bulk request.
  * After a bulk gets larger than this, it will be submitted. Please note, that a bulk
  * might get significantly larger, because the check is done after the document is added.
- * Can be given as a plain number (bytes) or using a unit like MB for megabytes.
+ * Must be given using a unit like MB for megabytes. (default 5 MB)
  * </li>
  * <li><code>deleteUnseenBulkSize</code>: size of bulk requests for requesting/deleting
  * unseen documents sent to Elasticsearch. (default 1000 deletes). This is only used
