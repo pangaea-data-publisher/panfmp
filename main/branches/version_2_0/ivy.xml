@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="2.0">
+  <info organisation="de.pangaea" module="metadataportal"/>
+  <configurations>
+     <conf name="build" transitive="true" visibility="private" />
+     <conf name="bundle" transitive="true" visibility="private" />
+     <conf name="buildtools" transitive="true" visibility="private" />
+  </configurations>
+  <dependencies>
+    <dependency org="org.elasticsearch" name="elasticsearch" rev="1.7.3" conf="build,bundle->default">
+      <exclude org="org.apache" module="lucene-expressions"/>
+      <exclude org="org.ow2.asm" module="asm.*" matcher="regexp"/>
+      <exclude org="org.antlr" module="antlr-runtime"/>
+    </dependency>
+
+    <dependency org="commons-logging" name="commons-logging" rev="1.1.3" conf="build,bundle->default"/>
+    <dependency org="commons-digester" name="commons-digester" rev="2.1" conf="build,bundle->default"/>
+    <dependency org="xerces" name="xercesImpl" rev="2.11.0" conf="build,bundle->default"/>
+    <dependency org="xalan" name="xalan" rev="2.7.2" conf="build,bundle->default"/>
+    
+    <dependency org="log4j" name="log4j" rev="1.2.17" transitive="false" conf="bundle->default">
+      <artifact name="log4j" type="jar"/>
+    </dependency>
+    
+    <dependency org="net.sourceforge.nekohtml" name="nekohtml" rev="1.9.21" conf="bundle->default"/>
+    
+    <!-- build tools: -->
+    <dependency org="de.thetaphi" name="forbiddenapis" rev="2.0" conf="buildtools->default"/>
+    <!--<dependency org="com.googlecode.jarjar" name="jarjar" rev="1.3" conf="buildtools"/>-->
+
+    <!-- Those are not used at all: -->
+    <exclude org="xml-resolver" module="xml-resolver"/>
+  </dependencies>
+</ivy-module>

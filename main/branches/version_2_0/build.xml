@@ -1,0 +1,306 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="panFMP" default="dist" basedir="." xmlns:ivy="antlib:org.apache.ivy.ant" xmlns:fa="antlib:de.thetaphi.forbiddenapis">
+  <fail message="Minimum supported ANT version is 1.8.0. Yours: ${ant.version}">
+    <condition>
+      <not><antversion atleast="1.8.0" /></not>
+    </condition>
+  </fail>
+
+  <!-- 
+    the propery "ant.java.version" is not always correct, depending on used ANT version.
+    E.g. Java 8 is only detected in ANT 1.8.3+.
+    Add newer Java version checks at beginning,
+    because ANT will nevert override existing properties!
+   -->
+  <condition property="build.java.runtime" value="1.8">
+    <hasmethod classname="java.util.Collections" method="emptySortedSet"/>
+  </condition>
+  <condition property="build.java.runtime" value="1.7">
+    <hasmethod classname="java.lang.Throwable" method="getSuppressed"/>
+  </condition>
+  <fail message="Minimum supported Java version is 1.7." unless="build.java.runtime"/>
+
+  <!-- workaround for https://issues.apache.org/bugzilla/show_bug.cgi?id=53347 -->
+  <condition property="build.compiler" value="javac1.7">
+    <or>
+      <antversion exactly="1.8.3" />
+      <antversion exactly="1.8.4" />
+    </or>
+  </condition>
+
+  <!-- PROPERTIES -->
+  <property name="src" location="src"/>
+  <property name="build" location="build"/>
+  <property name="dist" location="dist"/>
+  <property name="plugins" location="plugins"/>
+  <property name="docs" location="apidocs"/>
+
+  <property name="debug" value="on"/>
+  <property name="ivy.logging" value="download-only"/>
+
+  <property name="version" value="2.0-dev"/>
+  <property name="versionsuffix" value="-${version}"/>
+  <property name="pkgname" value="${ant.project.name}${versionsuffix}"/>
+
+  <property name="year" value="2007-2013"/>
+
+  <property name="javadoc.projectWebSite" value="http://www.panFMP.org/" />
+  <property name="javadoc.link.sun" value="http://docs.oracle.com/javase/7/docs/api/" />
+
+  <property name="jdk.version" value="1.7"/>
+
+  <!-- IVY -->
+  <property name="ivy.install.version" value="2.3.0" />
+  <property name="ivy.jar.dir" location=".ivy" />
+  <property name="ivy.jar.file" location="${ivy.jar.dir}/ivy-${ivy.install.version}.jar" />
+
+  <makeurl property="log4j-conf" file="scripts/console.log.properties"/>
+  
+  <property name="harvester" value="all"/>
+  <property name="index" value="all"/>
+
+  <!-- GPG settings -->
+  <property name="gpg.exe" value="gpg" />
+  <property name="gpg.key" value="E1EE085F" />
+
+  <condition property="ivy.available">
+    <typefound uri="antlib:org.apache.ivy.ant" name="configure" />
+  </condition>
+
+  <target name="-install.ivy" unless="ivy.available">
+    <mkdir dir="${ivy.jar.dir}"/>
+    <get src="http://repo1.maven.org/maven2/org/apache/ivy/ivy/${ivy.install.version}/ivy-${ivy.install.version}.jar" dest="${ivy.jar.file}" skipexisting="true"/>
+    <taskdef uri="antlib:org.apache.ivy.ant" classpath="${ivy.jar.file}"/>
+  </target>
+
+  <target name="-init" depends="-install.ivy">
+    <ivy:resolve log="${ivy.logging}"/>
+    <condition property="ivy.version-message"
+      value="The correct Apache Ivy version ${ivy.version} is installed."
+      else="You have installed a different Apache Ivy version (${ivy.version}) in your ANT classpath than the expected one (${ivy.install.version}). The build may fail!"
+    >
+      <equals arg1="${ivy.version}" arg2="${ivy.install.version}"/>
+    </condition>
+    <echo taskname="check-ivy" message="${ivy.version-message}"/>
+    <ivy:cachepath pathid="path.build" conf="build" type="jar" log="${ivy.logging}"/>
+    <ivy:cachepath pathid="path.bundle" conf="bundle" type="jar" log="${ivy.logging}"/>
+    <!--<ivy:cachepath pathid="path.test" conf="test" log="${ivy.logging}"/>-->
+    <path id="path.run">
+      <path refid="path.bundle"/>
+      <pathelement path="build"/>
+    </path>
+    <path id="path.tools-run">
+      <path refid="path.build"/>
+      <pathelement path="build"/>
+      <fileset dir="${plugins}" includes="*.jar"/>
+    </path>
+    <ivy:cachepath pathid="path.buildtools" conf="buildtools" log="${ivy.logging}"/>
+    <taskdef uri="antlib:de.thetaphi.forbiddenapis" classpathref="path.buildtools"/>
+  </target>
+
+  <!-- BUILD TARGETS -->
+
+  <target name="compile" depends="-init">
+    <mkdir dir="${build}"/>
+    <javac srcdir="${src}" destdir="${build}" source="${jdk.version}" target="${jdk.version}" classpathref="path.build"
+      deprecation="on" debug="${debug}" encoding="UTF-8" includeantruntime="false">
+      <compilerarg line="-Xlint:unchecked"/>
+    </javac>
+    <fa:forbiddenapis internalRuntimeForbidden="true" classpathref="path.build" dir="${build}">
+      <bundledsignatures name="jdk-unsafe-${jdk.version}"/>
+      <bundledsignatures name="jdk-deprecated-${jdk.version}"/>
+      <signaturesfile file="./devtools/forbidden-signatures.txt"/>
+    </fa:forbiddenapis>
+  </target>
+
+  <target name="dist" depends="compile">
+    <mkdir dir="${dist}"/>
+    <jar destfile="${dist}/${ant.project.name}${versionsuffix}.jar" basedir="${build}">
+      <manifest>
+        <attribute name="Package" value="de.pangaea.metadataportal"/>
+        <attribute name="Implementation-Title" value="${ant.project.name}"/>
+        <attribute name="Implementation-Version" value="${version}"/>
+        <attribute name="Implementation-Vendor" value="${ant.project.name} Developers c/o Uwe Schindler"/>
+      </manifest>    	
+      <metainf dir="${basedir}">
+        <include name="LICENSE.txt"/>
+        <include name="NOTICE.txt"/>
+      </metainf>
+    </jar>
+  </target>
+
+  <!-- EXECUTE SCRIPTS WITH CLASSPATH target -->
+  <target name="run-harvester" depends="compile">
+    <java fork="true" dir="." classname="de.pangaea.metadataportal.harvester.Harvester" classpathref="path.run">
+       <sysproperty key="log4j.configuration" value="${log4j-conf}"/>
+       <arg file="conf/config.xml"/>
+       <arg value="${harvester}"/>
+    </java>
+  </target>
+
+  <target name="run-rebuilder" depends="compile">
+    <java fork="true" dir="." classname="de.pangaea.metadataportal.harvester.Rebuilder" classpathref="path.run">
+       <sysproperty key="log4j.configuration" value="${log4j-conf}"/>
+       <arg file="conf/config.xml"/>
+       <arg value="${index}"/>
+    </java>
+  </target>
+
+  <target name="run-update-aliases" depends="compile">
+    <java fork="true" dir="." classname="de.pangaea.metadataportal.harvester.UpdateAliases" classpathref="path.run">
+       <sysproperty key="log4j.configuration" value="${log4j-conf}"/>
+       <arg file="conf/config.xml"/>
+       <arg value="${index}"/>
+    </java>
+  </target>
+
+  <!-- JAVADOCS TARGET -->
+  <target name="javadocs" depends="-init">
+    <delete dir="${docs}"/>
+    <mkdir dir="${docs}"/>
+    <javadoc sourcepath="${src}" destdir="${docs}" source="${jdk.version}" packagenames="*" classpathref="path.build" windowtitle="${ant.project.name} ${version} Documentation" overview="${src}/overview.html" charset="UTF-8" docencoding="UTF-8">
+      <link href="${javadoc.link.sun}"/>
+      <doctitle><![CDATA[<H1>${ant.project.name} ${version}</H1>]]></doctitle>
+      <bottom><![CDATA[<ADDRESS>Copyright &copy;${year} <A HREF='${javadoc.projectWebSite}' TARGET='_blank'>${ant.project.name}</A> Developers c/o Uwe Schindler</ADDRESS>]]></bottom>
+    </javadoc>
+    <patch-javadoc dir="${docs}" docencoding="UTF-8"/>
+  </target>	
+
+  <!-- use indenting with spaces here, otherwise javadoc output is misaligned! -->
+  <macrodef name="patch-javadoc">
+    <attribute name="dir"/>
+    <attribute name="docencoding" default="${file.encoding}"/>
+    <sequential>
+      <replace encoding="@{docencoding}" summary="true" taskname="patch-javadoc">
+        <fileset dir="@{dir}" casesensitive="false" includes="**/index.html,**/index.htm,**/toc.html,**/toc.htm">
+          <!-- TODO: add encoding="@{docencoding}" to contains check, when we are on ANT 1.9.0: -->
+          <not><contains text="function validURL(url) {" casesensitive="true" /></not>
+        </fileset>
+        <replacetoken><![CDATA[function loadFrames() {]]></replacetoken>
+        <replacevalue expandProperties="false"><![CDATA[if (targetPage != "" && !validURL(targetPage))
+        targetPage = "undefined";
+    function validURL(url) {
+        var pos = url.indexOf(".html");
+        if (pos == -1 || pos != url.length - 5)
+            return false;
+        var allowNumber = false;
+        var allowSep = false;
+        var seenDot = false;
+        for (var i = 0; i < url.length - 5; i++) {
+            var ch = url.charAt(i);
+            if ('a' <= ch && ch <= 'z' ||
+                    'A' <= ch && ch <= 'Z' ||
+                    ch == '$' ||
+                    ch == '_') {
+                allowNumber = true;
+                allowSep = true;
+            } else if ('0' <= ch && ch <= '9'
+                    || ch == '-') {
+                if (!allowNumber)
+                     return false;
+            } else if (ch == '/' || ch == '.') {
+                if (!allowSep)
+                    return false;
+                allowNumber = false;
+                allowSep = false;
+                if (ch == '.')
+                     seenDot = true;
+                if (ch == '/' && seenDot)
+                     return false;
+            } else {
+                return false;
+            }
+        }
+        return true;
+    }
+    function loadFrames() {]]></replacevalue>
+      </replace>
+    </sequential>
+  </macrodef>
+
+  <!-- PACKAGING -->
+  <target name="binpackage" depends="dist,javadocs">
+    <ivy:cachefileset setid="fileset.bundle" conf="bundle" log="${ivy.logging}"/>
+    <zip destfile="${basedir}/${pkgname}-bin.zip">
+      <mappedresources>
+        <fileset refid="fileset.bundle"/>
+        <chainedmapper>
+          <flattenmapper/>
+          <globmapper from="*" to="${pkgname}/lib/*"/>
+        </chainedmapper>
+      </mappedresources>
+      <zipfileset dir="${dist}" prefix="${pkgname}/lib"/>
+      <zipfileset dir="${plugins}" prefix="${pkgname}/plugins"/>
+      <zipfileset dir="${basedir}/conf" prefix="${pkgname}/conf"/>
+      <zipfileset dir="${basedir}/scripts" prefix="${pkgname}/scripts"/>
+      <zipfileset dir="${docs}" prefix="${pkgname}/javadocs"/>
+      <zipfileset dir="${basedir}" prefix="${pkgname}">
+        <include name="*.txt"/>
+      </zipfileset>
+    </zip>
+    <panfmp-checksum file="${basedir}/${pkgname}-bin.zip"/>
+  </target>
+
+  <target name="srcpackage" depends="clean">
+    <zip destfile="${basedir}/${pkgname}-src.zip">
+      <zipfileset dir="${basedir}" prefix="${pkgname}" excludes=".*/**"/>
+    </zip>
+    <panfmp-checksum file="${basedir}/${pkgname}-src.zip"/>
+  </target>
+
+  <target name="package">
+    <!-- this target was created as a target without dependencies and uses subcalls
+         to do it as two really separate targets in the right order -->
+    <antcall target="srcpackage"/>
+    <antcall target="binpackage"/>
+  </target>
+
+  <!-- CLEANUP TARGET -->
+  <target name="clean">
+    <delete dir="${build}"/>
+    <delete dir="${dist}"/>
+    <delete dir="${docs}"/>
+    <delete>
+      <fileset dir="${basedir}" includes="*.zip"/>
+      <fileset dir="${basedir}" includes="*.asc"/>
+      <fileset dir="${basedir}" includes="*.md5"/>
+      <fileset dir="${basedir}" includes="*.sha1"/>
+      <fileset dir="${basedir}" includes="*.asc"/>
+      <fileset dir="${basedir}/conf" includes="**/*.log"/>
+    </delete>
+  </target>
+
+  <!-- Macro for building checksum files: MD5 and SHA1 -->
+  <macrodef name="panfmp-checksum">
+    <attribute name="file"/>
+    <sequential>
+      <checksum file="@{file}" algorithm="md5" format="MD5SUM" forceoverwrite="yes" readbuffersize="65536"/>
+      <checksum file="@{file}" algorithm="sha1" format="MD5SUM" forceoverwrite="yes" readbuffersize="65536"/>
+    </sequential>
+  </macrodef>
+
+  <target name="sign-artifacts" depends="package">
+    <delete failonerror="false" dir="${basedir}" includes="*.asc"/>
+
+    <input message="Enter GPG keystore password: &gt;" addproperty="gpg.passphrase">
+      <handler classname="org.apache.tools.ant.input.SecureInputHandler" />
+    </input>
+
+    <apply executable="${gpg.exe}" inputstring="${gpg.passphrase}"
+           dest="${basedir}" type="file" maxparallel="1" verbose="yes">
+      <arg value="--passphrase-fd"/>
+      <arg value="0"/>
+      <arg value="--batch"/>
+      <arg value="--armor"/>
+      <arg value="--default-key"/>
+      <arg value="${gpg.key}"/>
+      <arg value="--output"/>
+      <targetfile/>
+      <arg value="--detach-sig"/>
+      <srcfile/>
+      <fileset dir="${basedir}" includes="*.zip"/>
+      <globmapper from="*" to="*.asc"/>
+    </apply>
+  </target>
+
+</project>
