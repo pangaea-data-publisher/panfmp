@@ -7,7 +7,7 @@
      <conf name="buildtools" transitive="true" visibility="private" />
   </configurations>
   <dependencies>
-    <dependency org="org.elasticsearch" name="elasticsearch" rev="2.0.0" conf="build,bundle->default">
+    <dependency org="org.elasticsearch" name="elasticsearch" rev="2.1.0" conf="build,bundle->default">
       <exclude org="org.apache" module="lucene-expressions"/>
       <exclude org="org.ow2.asm" module="asm.*" matcher="regexp"/>
       <exclude org="org.antlr" module="antlr-runtime"/>
@@ -26,7 +26,6 @@
     
     <!-- build tools: -->
     <dependency org="de.thetaphi" name="forbiddenapis" rev="2.0" conf="buildtools->default"/>
-    <!--<dependency org="com.googlecode.jarjar" name="jarjar" rev="1.3" conf="buildtools"/>-->
 
     <!-- Those are not used at all: -->
     <exclude org="xml-resolver" module="xml-resolver"/>
