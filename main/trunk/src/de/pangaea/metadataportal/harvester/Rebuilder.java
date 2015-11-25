@@ -19,12 +19,13 @@ package de.pangaea.metadataportal.harvester;
 import java.util.Set;
 
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHitField;
+import org.elasticsearch.search.sort.SortBuilders;
+import org.elasticsearch.search.sort.SortParseElement;
 
 import de.pangaea.metadataportal.config.Config;
 import de.pangaea.metadataportal.config.HarvesterConfig;
@@ -118,7 +119,8 @@ public final class Rebuilder extends Harvester {
       .setQuery(QueryBuilders.termQuery(iconfig.root.fieldnameSource, iconfig.id))
       .setFetchSource(false)
       .setSize(bulkSize)
-      .setSearchType(SearchType.SCAN).setScroll(time)
+      .addSort(SortBuilders.fieldSort(SortParseElement.DOC_FIELD_NAME))
+      .setScroll(time)
       .get();
     do {
       for (final SearchHit hit : scrollResp.getHits()) {
