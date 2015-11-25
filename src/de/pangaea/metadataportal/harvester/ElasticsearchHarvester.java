@@ -24,7 +24,6 @@ import java.util.Set;
 import javax.xml.transform.stream.StreamSource;
 
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.Settings;
@@ -35,6 +34,8 @@ import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHitField;
+import org.elasticsearch.search.sort.SortBuilders;
+import org.elasticsearch.search.sort.SortParseElement;
 
 import de.pangaea.metadataportal.config.HarvesterConfig;
 import de.pangaea.metadataportal.processor.DocumentProcessor;
@@ -145,7 +146,8 @@ public class ElasticsearchHarvester extends SingleFileEntitiesHarvester {
       .setQuery(query)
       .setFetchSource(false)
       .setSize(bulkSize)
-      .setSearchType(SearchType.SCAN).setScroll(time)
+      .addSort(SortBuilders.fieldSort(SortParseElement.DOC_FIELD_NAME))
+      .setScroll(time)
       .get();
     do {
       for (final SearchHit hit : scrollResp.getHits()) {

@@ -44,7 +44,6 @@ import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
@@ -55,6 +54,8 @@ import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.sort.SortBuilders;
+import org.elasticsearch.search.sort.SortParseElement;
 
 import de.pangaea.metadataportal.config.HarvesterConfig;
 import de.pangaea.metadataportal.utils.KeyValuePairs;
@@ -210,7 +211,7 @@ public final class DocumentProcessor {
     
     final QueryBuilder query = QueryBuilders.boolQuery()
       .filter(QueryBuilders.termQuery(iconfig.root.fieldnameSource, iconfig.id))
-      .filter(QueryBuilders.notQuery(QueryBuilders.idsQuery(iconfig.root.typeName).ids(validIdentifiers.toArray(new String[validIdentifiers.size()]))));
+      .mustNot(QueryBuilders.idsQuery(iconfig.root.typeName).ids(validIdentifiers.toArray(new String[validIdentifiers.size()])));
     
     final TimeValue time = TimeValue.timeValueMinutes(10);
     final Set<String> lostItems = new TreeSet<>();
@@ -221,7 +222,8 @@ public final class DocumentProcessor {
       .setFetchSource(false)
       .setNoFields()
       .setSize(deleteUnseenBulkSize)
-      .setSearchType(SearchType.SCAN).setScroll(time)
+      .addSort(SortBuilders.fieldSort(SortParseElement.DOC_FIELD_NAME))
+      .setScroll(time)
       .get();
     do {
       final BulkRequestBuilder bulk = client.prepareBulk();
