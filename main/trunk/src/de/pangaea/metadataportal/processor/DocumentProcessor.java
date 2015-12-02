@@ -174,9 +174,9 @@ public final class DocumentProcessor {
         }
         pool = null;
 
-        while (!bulkProcessor.awaitClose(5, TimeUnit.SECONDS)) {
-          log.warn("Still waiting for bulk processor to finish...");
-        }
+        // TODO: ES bulk processor does not support while()-based waiting
+        // (it closes on first try and waits afterwards)!
+        bulkProcessor.awaitClose(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
         bulkProcessor = null;
 
         // exit here before we write any status info to disk:
