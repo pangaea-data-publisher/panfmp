@@ -166,17 +166,21 @@ public final class DocumentProcessor {
     
     synchronized(poolInitLock) {
       if (pool != null) {
+        log.info("Waiting for document processor to finish...");
         // shutdown thread pool
         pool.shutdown();
         while (!pool.awaitTermination(5, TimeUnit.SECONDS)) {
-          log.warn("Still waiting for document processor threadpool to terminate...");
+          log.warn("Still waiting for document processor threadpool to finish...");
         }
         pool = null;
+        log.info("Document processor to terminated.");
 
+        log.info("Waiting for Elasticsearch bulk processor to finish...");
         // TODO: ES bulk processor does not support while()-based waiting
         // (it closes on first try and waits afterwards)!
         bulkProcessor.awaitClose(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
         bulkProcessor = null;
+        log.info("Elasticsearch bulk processor terminated.");
 
         // exit here before we write any status info to disk:
         throwFailure();
@@ -185,6 +189,9 @@ public final class DocumentProcessor {
       }
     }
     
+    // exit here before we write any status info to disk:
+    throwFailure();
+
     // delete all unseen documents, if validIdentifiers is given:
     if (validIdentifiers != null) {
       deleteUnseenDocuments(validIdentifiers);
