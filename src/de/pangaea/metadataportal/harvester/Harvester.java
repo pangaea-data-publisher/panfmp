@@ -16,7 +16,6 @@
 
 package de.pangaea.metadataportal.harvester;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -77,8 +76,7 @@ import de.pangaea.metadataportal.processor.MetadataDocument;
  */
 public abstract class Harvester {
   
-  private static final org.apache.commons.logging.Log staticLog = org.apache.commons.logging.LogFactory
-      .getLog(Harvester.class);
+  private static final org.apache.commons.logging.Log staticLog = org.apache.commons.logging.LogFactory.getLog(Harvester.class);
   
   /**
    * External entry point to the harvester interface. Called from the Java
@@ -116,7 +114,7 @@ public abstract class Harvester {
    * {@link Rebuilder}. Public code should use
    * {@link #runHarvester(Config,String)}.
    */
-  protected static void runHarvester(Config conf, String id, Class<? extends Harvester> harvesterClass) {
+  static void runHarvester(Config conf, String id, Class<? extends Harvester> harvesterClass) {
     final Set<String> activeIds;
     if (isAllIndexes(id)) {
       activeIds = conf.targetIndexes.keySet();
@@ -135,62 +133,58 @@ public abstract class Harvester {
       for (TargetIndexConfig ticonf : conf.targetIndexes.values()) {
         if (!activeIds.contains(ticonf.indexName) && Collections.disjoint(activeIds, ticonf.harvesters.keySet()))
           continue; // nothing to do for this index!
-        try {
-          final boolean isRebuilder = (harvesterClass == Rebuilder.class);
-          final String targetIndex = es.createIndex(ticonf, isRebuilder);
-          boolean globalCleanShutdown = true;
-          for (HarvesterConfig harvesterConf : ticonf.harvesters.values()) {
-            if (!(activeIds.contains(ticonf.indexName) || activeIds.contains(harvesterConf.id)))
-              continue;
-            final Class<? extends Harvester> hc = (harvesterClass == null) ? harvesterConf.harvesterClass : harvesterClass;
-            staticLog.info("Harvesting documents from \"" + harvesterConf.id + "\" using harvester class \"" + hc.getName() + "\"...");
-            Harvester h = null;
-            boolean cleanShutdown = false;
+        final boolean isRebuilder = (harvesterClass == Rebuilder.class);
+        final String targetIndex = es.createIndex(ticonf, isRebuilder);
+        boolean globalCleanShutdown = true;
+        for (HarvesterConfig harvesterConf : ticonf.harvesters.values()) {
+          if (!(activeIds.contains(ticonf.indexName) || activeIds.contains(harvesterConf.id)))
+            continue;
+          final Class<? extends Harvester> hc = (harvesterClass == null) ? harvesterConf.harvesterClass : harvesterClass;
+          staticLog.info("Harvesting documents from \"" + harvesterConf.id + "\" using harvester class \"" + hc.getName() + "\"...");
+          Harvester h = null;
+          boolean cleanShutdown = false;
+          try {
             try {
-              try {
-                h = hc.getConstructor(HarvesterConfig.class).newInstance(harvesterConf);
-                h.open(es, targetIndex);
-                h.harvest();
-                // everything OK => clean shutdown with storing all infos
-                cleanShutdown = true;
-              } catch (BackgroundFailure ibf) {
-                // do nothing, this exception is only to break out, real exception is
-                // thrown on close
-              } catch (SAXParseException saxe) {
-                staticLog.fatal("Harvesting documents from \"" + harvesterConf.id
-                    + "\" failed due to SAX parse error in \""
-                    + saxe.getSystemId() + "\", line " + saxe.getLineNumber()
-                    + ", column " + saxe.getColumnNumber() + ":", saxe);
-              } catch (TransformerException transfe) {
-                String loc = transfe.getLocationAsString();
-                staticLog.fatal("Harvesting documents from \"" + harvesterConf.id
-                    + "\" failed due to transformer/parse error"
-                    + ((loc != null) ? (" at " + loc) : "") + ":", transfe);
-              } catch (Exception e) {
-                staticLog.fatal("Harvesting documents from \"" + harvesterConf.id
-                    + "\" failed!", e);
-              }
-              // cleanup
-              if (h != null && !h.isClosed()) try {
-                h.close(cleanShutdown);
-                staticLog.info("Harvester \"" + harvesterConf.id + "\" closed.");
-              } catch (Exception e) {
-                staticLog.fatal("Error during harvesting from \"" + harvesterConf.id
-                    + "\" occurred:", e);
-              }
-            } finally {
-              globalCleanShutdown &= cleanShutdown;
+              h = hc.getConstructor(HarvesterConfig.class).newInstance(harvesterConf);
+              h.open(es, targetIndex);
+              h.harvest();
+              // everything OK => clean shutdown with storing all infos
+              cleanShutdown = true;
+            } catch (BackgroundFailure ibf) {
+              // do nothing, this exception is only to break out, real exception is
+              // thrown on close
+            } catch (SAXParseException saxe) {
+              staticLog.fatal("Harvesting documents from \"" + harvesterConf.id
+                  + "\" failed due to SAX parse error in \""
+                  + saxe.getSystemId() + "\", line " + saxe.getLineNumber()
+                  + ", column " + saxe.getColumnNumber() + ":", saxe);
+            } catch (TransformerException transfe) {
+              String loc = transfe.getLocationAsString();
+              staticLog.fatal("Harvesting documents from \"" + harvesterConf.id
+                  + "\" failed due to transformer/parse error"
+                  + ((loc != null) ? (" at " + loc) : "") + ":", transfe);
+            } catch (Exception e) {
+              staticLog.fatal("Harvesting documents from \"" + harvesterConf.id
+                  + "\" failed!", e);
             }
+            // cleanup
+            if (h != null && !h.isClosed()) try {
+              h.close(cleanShutdown);
+              staticLog.info("Harvester \"" + harvesterConf.id + "\" closed.");
+            } catch (Exception e) {
+              staticLog.fatal("Error during harvesting from \"" + harvesterConf.id
+                  + "\" occurred:", e);
+            }
+          } finally {
+            globalCleanShutdown &= cleanShutdown;
           }
-          es.closeIndex(ticonf, targetIndex, globalCleanShutdown);
-        } catch (IOException ioe) {
-          staticLog.fatal("Cannot initialize Elasticsearch index: " + ticonf.indexName, ioe);
         }
+        es.closeIndex(ticonf, targetIndex, globalCleanShutdown);
       }
     }
   }
   
-  protected static boolean isAllIndexes(String id) {
+  static boolean isAllIndexes(String id) {
     return id == null || "*".equals(id) || "all".equals(id);
   }
   

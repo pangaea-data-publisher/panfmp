@@ -16,7 +16,6 @@
 
 package de.pangaea.metadataportal.processor;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Locale;
@@ -102,7 +101,7 @@ public final class DocumentProcessor {
   public static final int DEFAULT_DELETE_UNSEEN_BULK_SIZE = 1000;
   public static final XContentType DEFAULT_CONTENT_TYPE = XContentType.CBOR;
 
-  DocumentProcessor(Client client, HarvesterConfig iconfig, String targetIndex) throws IOException {
+  DocumentProcessor(Client client, HarvesterConfig iconfig, String targetIndex) {
     this.client = client;
     this.iconfig = iconfig;
     this.sourceIndex = iconfig.parent.indexName;
