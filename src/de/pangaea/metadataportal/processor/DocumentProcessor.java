@@ -347,14 +347,24 @@ public final class DocumentProcessor {
           }
           
           @Override
-          public void afterBulk(long executionId, BulkRequest request, Throwable failure) {
-            throw new ElasticsearchException("Error executing bulk request.", failure);
+          public void afterBulk(long executionId, BulkRequest request, Throwable f) {
+            if (f instanceof Exception) {
+              // only store the first error in failure variable, other errors are only logged
+              if (!failure.compareAndSet(null, (Exception) f)) {
+                log.error(f);
+              }
+            } else if (f instanceof Error) {
+              throw (Error) f;
+            } else {
+              throw new AssertionError(f); // should not happen
+            }
           }
           
           @Override
           public void afterBulk(long executionId, BulkRequest request, BulkResponse response) {
             if (response.hasFailures()) {
-              throw new ElasticsearchException("Error while executing bulk request: " + response.buildFailureMessage());
+              afterBulk(executionId, request, new ElasticsearchException("Error while executing bulk request: " + response.buildFailureMessage()));
+              return;
             }
             final int totalItems = processed.addAndGet(request.numberOfActions());
             log.info(totalItems + " metadata items processed so far.");
