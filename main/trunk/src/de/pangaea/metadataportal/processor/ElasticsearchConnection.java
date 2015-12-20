@@ -117,7 +117,7 @@ public final class ElasticsearchConnection implements Closeable {
     return client;
   }
   
-  public DocumentProcessor getDocumentProcessor(HarvesterConfig iconfig, String targetIndex) throws IOException {
+  public DocumentProcessor getDocumentProcessor(HarvesterConfig iconfig, String targetIndex) {
     return new DocumentProcessor(client(), iconfig, targetIndex);
   }
   
@@ -140,7 +140,7 @@ public final class ElasticsearchConnection implements Closeable {
   }
   
   /** Creates the index (if needed), configures it (mapping), and creates aliases. The real index name to be used is returned. */
-  public String createIndex(TargetIndexConfig ticonf, boolean rebuilder) throws IOException {
+  public String createIndex(TargetIndexConfig ticonf, boolean rebuilder) {
     checkOpen();
     
     final IndicesAdminClient indicesAdmin = client.admin().indices();
@@ -276,46 +276,50 @@ public final class ElasticsearchConnection implements Closeable {
   }
   
   @SuppressWarnings("unchecked")
-  private String getMapping() throws IOException {
-    Map<String,Object> mapping, props;
-    if (conf.esMapping != null) {
-      mapping = XContentFactory.xContent(conf.esMapping).createParser(conf.esMapping).mapOrdered();
-      if (mapping.containsKey(conf.typeName)) {
-        if (mapping.size() != 1) {
-          throw new IllegalArgumentException("If the typeName is part of the mapping, it must be the single root element.");
+  private String getMapping() {
+    try {
+      Map<String,Object> mapping, props;
+      if (conf.esMapping != null) {
+        mapping = XContentFactory.xContent(conf.esMapping).createParser(conf.esMapping).mapOrdered();
+        if (mapping.containsKey(conf.typeName)) {
+          if (mapping.size() != 1) {
+            throw new IllegalArgumentException("If the typeName is part of the mapping, it must be the single root element.");
+          }
+          mapping = (Map<String,Object>) mapping.get(conf.typeName);
         }
-        mapping = (Map<String,Object>) mapping.get(conf.typeName);
+      } else {
+        mapping = new LinkedHashMap<>();
       }
-    } else {
-      mapping = new LinkedHashMap<>();
+      props = (Map<String,Object>) mapping.get("properties");
+      if (props == null) {
+        mapping.put("properties", props = new LinkedHashMap<>());
+      }
+      if (props.containsKey(conf.fieldnameDatestamp) || props.containsKey(conf.fieldnameSource) || props.containsKey(conf.fieldnameXML)) {
+        throw new IllegalArgumentException("The given mapping is not allowed to contain properties for internal field: " +
+            Arrays.asList(conf.fieldnameDatestamp, conf.fieldnameSource, conf.fieldnameXML));
+      }
+      props.put(conf.fieldnameDatestamp, ImmutableMap.of(
+        "type", "date",
+        "format", "dateOptionalTime",
+        "precision_step", 8,
+        "include_in_all", false
+      ));
+      props.put(conf.fieldnameSource, ImmutableMap.of(
+        "type", "string",
+        "index", "not_analyzed",
+        "include_in_all", false,
+        "store", false
+      ));
+      props.put(conf.fieldnameXML, ImmutableMap.of(
+        "type", "string",
+        "index", "no",
+        "include_in_all", false,
+        "store", false
+      ));
+      return XContentFactory.jsonBuilder().map(mapping).string();
+    } catch (IOException ioe) {
+      throw new AssertionError("Cannot happen, because no IO involved.", ioe);
     }
-    props = (Map<String,Object>) mapping.get("properties");
-    if (props == null) {
-      mapping.put("properties", props = new LinkedHashMap<>());
-    }
-    if (props.containsKey(conf.fieldnameDatestamp) || props.containsKey(conf.fieldnameSource) || props.containsKey(conf.fieldnameXML)) {
-      throw new IllegalArgumentException("The given mapping is not allowed to contain properties for internal field: " +
-          Arrays.asList(conf.fieldnameDatestamp, conf.fieldnameSource, conf.fieldnameXML));
-    }
-    props.put(conf.fieldnameDatestamp, ImmutableMap.of(
-      "type", "date",
-      "format", "dateOptionalTime",
-      "precision_step", 8,
-      "include_in_all", false
-    ));
-    props.put(conf.fieldnameSource, ImmutableMap.of(
-      "type", "string",
-      "index", "not_analyzed",
-      "include_in_all", false,
-      "store", false
-    ));
-    props.put(conf.fieldnameXML, ImmutableMap.of(
-      "type", "string",
-      "index", "no",
-      "include_in_all", false,
-      "store", false
-    ));
-    return XContentFactory.jsonBuilder().map(mapping).string();
   }
   
 }
