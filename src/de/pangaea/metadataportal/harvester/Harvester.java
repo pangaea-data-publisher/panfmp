@@ -16,6 +16,7 @@
 
 package de.pangaea.metadataportal.harvester;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -150,22 +151,8 @@ public abstract class Harvester {
               h.harvest();
               // everything OK => clean shutdown with storing all infos
               cleanShutdown = true;
-            } catch (BackgroundFailure ibf) {
-              // do nothing, this exception is only to break out, real exception is
-              // thrown on close
-            } catch (SAXParseException saxe) {
-              staticLog.fatal("Harvesting documents from \"" + harvesterConf.id
-                  + "\" failed due to SAX parse error in \""
-                  + saxe.getSystemId() + "\", line " + saxe.getLineNumber()
-                  + ", column " + saxe.getColumnNumber() + ":", saxe);
-            } catch (TransformerException transfe) {
-              String loc = transfe.getLocationAsString();
-              staticLog.fatal("Harvesting documents from \"" + harvesterConf.id
-                  + "\" failed due to transformer/parse error"
-                  + ((loc != null) ? (" at " + loc) : "") + ":", transfe);
             } catch (Exception e) {
-              staticLog.fatal("Harvesting documents from \"" + harvesterConf.id
-                  + "\" failed!", e);
+              logExceptions(e, harvesterConf);
             }
             // cleanup
             if (h != null && !h.isClosed()) try {
@@ -182,6 +169,26 @@ public abstract class Harvester {
         es.closeIndex(ticonf, targetIndex, globalCleanShutdown);
       }
     }
+  }
+  
+  private static void logExceptions(Throwable e, HarvesterConfig harvesterConf) {
+    if (e instanceof SAXParseException) {
+      final SAXParseException saxe = (SAXParseException) e;
+      staticLog.fatal("Harvesting documents from \"" + harvesterConf.id
+          + "\" failed due to SAX parse error in \""
+          + saxe.getSystemId() + "\", line " + saxe.getLineNumber()
+          + ", column " + saxe.getColumnNumber() + ":", saxe);
+    } else if (e instanceof TransformerException) {
+      final TransformerException transfe = (TransformerException) e;
+      String loc = transfe.getLocationAsString();
+      staticLog.fatal("Harvesting documents from \"" + harvesterConf.id
+          + "\" failed due to transformer/parse error"
+          + ((loc != null) ? (" at " + loc) : "") + ":", transfe);
+    } else if (e instanceof InvocationTargetException && e.getCause() != null) {
+      logExceptions(e.getCause(), harvesterConf);
+    } else {
+      staticLog.fatal("Harvesting documents from \"" + harvesterConf.id + "\" failed!", e);
+    } 
   }
   
   static boolean isAllIndexes(String id) {
