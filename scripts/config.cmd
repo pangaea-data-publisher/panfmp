@@ -1,6 +1,6 @@
 @echo off
 
-REM INFO: All paths are relative to the screipts/ directory
+REM INFO: All paths are relative to the scripts/ directory
 
 REM config file to use
 SET PANFMP_CONFIG="../conf/config.xml"
