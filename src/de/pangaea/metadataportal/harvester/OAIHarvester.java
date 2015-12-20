@@ -21,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -66,6 +67,7 @@ public class OAIHarvester extends OAIHarvesterBase {
   @Override
   public void open(ElasticsearchConnection es, String targetIndex) throws Exception {
     super.open(es, targetIndex);
+    
     // *** ListRecords ***
     listRecordsDig = new ExtendedDigester();
     digesterAddGeneralOAIRules(listRecordsDig);
@@ -255,6 +257,10 @@ public class OAIHarvester extends OAIHarvesterBase {
     if (fromDateReference != null && !ignoreDatestamps) {
       final String from = fineGranularity ? ISODateFormatter.formatLong(fromDateReference) : ISODateFormatter.formatShort(fromDateReference);
       url.append("&from=").append(URLEncoder.encode(from, StandardCharsets.UTF_8.name()));
+    } else if (deleteMissingDocuments && validIdentifiers == null) {
+      log.info("Tracking seen document identifiers enabled.");
+      // provide the validIdentifiers, so we can collect this information on non-incremental harvesting
+      validIdentifiers = new HashSet<>();
     }
     readStream(url.toString());
     setHarvestingDateReference(currResponseDate);

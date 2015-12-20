@@ -48,7 +48,6 @@ public class OAIStaticRepositoryHarvester extends OAIHarvesterBase {
   // Object members
   private ExtendedDigester dig = null;
   String currMetadataPrefix = null;
-  private Set<String> validIdentifiers = null;
   OAIMetadataSaxRule metadataSaxRule = null;
   
   // construtor
@@ -66,7 +65,9 @@ public class OAIStaticRepositoryHarvester extends OAIHarvesterBase {
           + "This may change in future (and so it is implemented in the harvester), "
           + "but may only work with non-conformant repositories, that list setSpecs in metadata headers.");
     }
-    validIdentifiers = new HashSet<>();
+    if (deleteMissingDocuments) {
+      validIdentifiers = new HashSet<>();
+    }
     
     // *** ListRecords ***
     dig = new ExtendedDigester();
@@ -140,9 +141,6 @@ public class OAIStaticRepositoryHarvester extends OAIHarvesterBase {
   @Override
   public void addDocument(MetadataDocument mdoc) throws Exception {
     if (metadataPrefix.equals(currMetadataPrefix)) {
-      if (!mdoc.isDeleted()) {
-        validIdentifiers.add(mdoc.getIdentifier());
-      }
       super.addDocument(mdoc);
     }
   }
@@ -150,7 +148,6 @@ public class OAIStaticRepositoryHarvester extends OAIHarvesterBase {
   @Override
   public void close(boolean cleanShutdown) throws Exception {
     dig = null;
-    setValidIdentifiers(validIdentifiers);
     super.close(cleanShutdown);
   }
   

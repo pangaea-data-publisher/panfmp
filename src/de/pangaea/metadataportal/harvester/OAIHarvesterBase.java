@@ -59,6 +59,9 @@ import de.pangaea.metadataportal.utils.SimpleCookieHandler;
  * <li><code>metadataPrefix</code>: OAI metadata prefix to harvest</li>
  * <li><code>identifierPrefix</code>: prepend all identifiers returned by OAI with this string</li>
  * <li><code>ignoreDatestamps</code>: does full harvesting, while ignoring all datestamps. They are saved, but ignored, if invalid.</li>
+ * <li><code>deleteMissingDocuments</code>: remove documents after harvesting that were
+ * deleted from source (maybe a heavy operation). The harvester only does this on full
+ * (not on incremental harvesting). (default: true)</li>
  * </ul>
  * 
  * @author Uwe Schindler
@@ -93,6 +96,12 @@ public abstract class OAIHarvesterBase extends Harvester {
   /** If enabled, does full harvesting, while ignoring all datestamps (default is {@code false}). They are saved, but ignored, if invalid. */
   protected final boolean ignoreDatestamps;
   
+  /** If enabled, on any kind of full harvesting it will track all valid identifiers and delete all of them not seen in index. */
+  protected final boolean deleteMissingDocuments;
+  
+  /** Contains all valid identifiers, if not {@code null}. Will be initialized by subclasses. */
+  protected Set<String> validIdentifiers = null;
+
   /**
    * The harvester should filter incoming documents according to its set
    * metadata. Should be disabled for OAI-PMH protocol with only one set.
@@ -121,6 +130,7 @@ public abstract class OAIHarvesterBase extends Harvester {
     }
     identifierPrefix = iconfig.properties.getProperty("identifierPrefix", "");
     ignoreDatestamps = BooleanParser.parseBoolean(iconfig.properties.getProperty("ignoreDatestamps", "false"));
+    deleteMissingDocuments = BooleanParser.parseBoolean(iconfig.properties.getProperty("deleteMissingDocuments", "true"));
   }
 
   @Override
@@ -134,6 +144,9 @@ public abstract class OAIHarvesterBase extends Harvester {
     if (filterIncomingSets && sets != null && mdoc instanceof OAIMetadataDocument) {
       final OAIMetadataDocument omdoc = (OAIMetadataDocument) mdoc;
       if (Collections.disjoint(omdoc.getSets(), sets)) omdoc.setDeleted(true);
+    }
+    if (validIdentifiers != null && !mdoc.isDeleted()) {
+      validIdentifiers.add(mdoc.getIdentifier());
     }
     super.addDocument(mdoc);
   }
@@ -189,8 +202,7 @@ public abstract class OAIHarvesterBase extends Harvester {
           if (checkModifiedDate != null && is == null) return false;
           dig.parse(is);
         } finally {
-          if (is != null && is.getByteStream() != null) is.getByteStream()
-              .close();
+          if (is != null && is.getByteStream() != null) is.getByteStream().close();
         }
         return true;
       } catch (org.xml.sax.SAXException saxe) {
@@ -356,6 +368,7 @@ public abstract class OAIHarvesterBase extends Harvester {
   
   @Override
   public void close(boolean cleanShutdown) throws Exception {
+    if (cleanShutdown && validIdentifiers != null) setValidIdentifiers(validIdentifiers);
     reset();
     SimpleCookieHandler.INSTANCE.disable();
     super.close(cleanShutdown);
