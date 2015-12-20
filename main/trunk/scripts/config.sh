@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# INFO: All paths are relative to the screipts/ directory
+# INFO: All paths are relative to the scripts/ directory
 
 # config file to use
 PANFMP_CONFIG="../conf/config.xml"
