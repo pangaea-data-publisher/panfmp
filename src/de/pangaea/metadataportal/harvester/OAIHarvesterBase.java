@@ -100,7 +100,7 @@ public abstract class OAIHarvesterBase extends Harvester {
   protected final boolean deleteMissingDocuments;
   
   /** Contains all valid identifiers, if not {@code null}. Will be initialized by subclasses. */
-  protected Set<String> validIdentifiers = null;
+  private Set<String> validIdentifiers = null;
 
   /**
    * The harvester should filter incoming documents according to its set
@@ -365,6 +365,29 @@ public abstract class OAIHarvesterBase extends Harvester {
   
   /** Resets the internal variables. */
   protected void reset() {}
+  
+  /**
+   * Enable unseen document deletes. This should be enabled by harvester
+   * before calling {@link #addDocument(MetadataDocument)}, so tracking
+   * can be enabled.
+   */
+  protected void enableMissingDocumentDelete() {
+    if (validIdentifiers == null && deleteMissingDocuments) {
+      log.info("Tracking of seen document identifiers enabled.");
+      validIdentifiers = new HashSet<>();
+    }
+  }
+  
+  /**
+   * Disable the property "deleteMissingDocuments" for this instance. This can
+   * be used, when the container (like a ZIP file was not modified), and all
+   * containing documents are not enumerated. To prevent deletion of all these
+   * documents call this.
+   */
+  protected void cancelMissingDocumentDelete() {
+    log.info("Tracking of seen document identifiers cancelled, no deletions will happen.");
+    validIdentifiers = null;
+  }
   
   @Override
   public void close(boolean cleanShutdown) throws Exception {

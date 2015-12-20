@@ -17,7 +17,6 @@
 package de.pangaea.metadataportal.harvester;
 
 import java.util.Date;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -65,9 +64,8 @@ public class OAIStaticRepositoryHarvester extends OAIHarvesterBase {
           + "This may change in future (and so it is implemented in the harvester), "
           + "but may only work with non-conformant repositories, that list setSpecs in metadata headers.");
     }
-    if (deleteMissingDocuments) {
-      validIdentifiers = new HashSet<>();
-    }
+    
+    enableMissingDocumentDelete();
     
     // *** ListRecords ***
     dig = new ExtendedDigester();
@@ -164,7 +162,7 @@ public class OAIStaticRepositoryHarvester extends OAIHarvesterBase {
       setHarvestingDateReference(modifiedDate.get());
     } else {
       log.info("Static OAI repository file was not modified since last harvesting, no need for re-harvesting!");
-      validIdentifiers = null;
+      cancelMissingDocumentDelete();
     }
   }
   
