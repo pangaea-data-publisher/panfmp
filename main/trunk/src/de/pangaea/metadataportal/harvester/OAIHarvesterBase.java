@@ -402,7 +402,7 @@ public abstract class OAIHarvesterBase extends Harvester {
     super.enumerateValidHarvesterPropertyNames(props);
     props.addAll(Arrays.asList("setSpec", "retryCount",
         "retryAfterSeconds", "timeoutAfterSeconds", "metadataPrefix",
-        "identifierPrefix", "ignoreDatestamps"));
+        "identifierPrefix", "ignoreDatestamps", "deleteMissingDocuments"));
   }
   
 }
