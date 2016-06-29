@@ -47,11 +47,12 @@ public final class KeyValuePairs {
   }
   
   public void add(final String key, final Object... values) {
+    if (values.length == 0) return;
     Object[] existingVals = map.get(key);
     if (existingVals == null) {
       map.put(key, values);
     } else {
-      Object[] newVals = new Object[existingVals.length + 1];
+      Object[] newVals = new Object[existingVals.length + values.length];
       System.arraycopy(existingVals, 0, newVals, 0, existingVals.length);
       System.arraycopy(values, 0, newVals, existingVals.length, values.length);
       map.put(key, newVals);
