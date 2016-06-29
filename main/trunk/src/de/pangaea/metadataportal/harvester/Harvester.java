@@ -221,7 +221,7 @@ public abstract class Harvester {
    * Step at which {@link #addDocument} prints log messages. Can be changed by
    * the harvester property <code>harvestMessageStep</code>.
    */
-  protected int harvestMessageStep = 100;
+  protected final int harvestMessageStep;
   
   /**
    * Date from which should be harvested (in time reference of the original
@@ -235,6 +235,10 @@ public abstract class Harvester {
   public Harvester(HarvesterConfig iconfig) {
     if (iconfig == null) throw new IllegalArgumentException("Missing harvester configuration");
     this.iconfig = iconfig;
+    harvestMessageStep = Integer.parseInt(iconfig.properties
+        .getProperty("harvestMessageStep", "100"));
+    if (harvestMessageStep <= 0) throw new IllegalArgumentException(
+        "Invalid value for harvestMessageStep: " + harvestMessageStep);
   }
   
   /**
@@ -247,11 +251,6 @@ public abstract class Harvester {
    *           exceptions can be thrown).
    */
   public void open(ElasticsearchConnection es, String targetIndex) throws Exception {
-    harvestMessageStep = Integer.parseInt(iconfig.properties
-        .getProperty("harvestMessageStep", "100"));
-    if (harvestMessageStep <= 0) throw new IllegalArgumentException(
-        "Invalid value for harvestMessageStep: " + harvestMessageStep);
-    
     processor = es.getDocumentProcessor(iconfig, targetIndex);
     Object v = processor.harvesterMetadata.get(HARVESTER_METADATA_FIELD_LAST_HARVESTED);
     if (v != null) {
@@ -261,6 +260,31 @@ public abstract class Harvester {
     } else {
       fromDateReference = null;
     }
+  }
+  
+  /**
+   * Prepares harvester for rebuilding the index by {@link Rebuilder}.
+   * By default this method does nothing, but can be overridden by subclasses
+   * that need to setup additional things.
+   * 
+   * @throws Exception
+   *           if an exception occurs during opening (various types of
+   *           exceptions can be thrown).
+   */
+  public void prepareReindex(ElasticsearchConnection es, String targetIndex) throws Exception {
+  }
+  
+  /**
+   * Does cleanup work after rebuilding the index by {@link Rebuilder}.
+   * By default this method does nothing, but can be overridden by subclasses
+   * that need to shutdown additional things.
+   * 
+   * @throws Exception
+   *           if an exception occurs during closing (various types of
+   *           exceptions can be thrown). Exceptions can be thrown asynchronous
+   *           and may not affect the correct document.
+   */
+  public void finishReindex(boolean cleanShutdown) throws Exception {
   }
   
   /**

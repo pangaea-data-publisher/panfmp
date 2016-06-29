@@ -91,12 +91,27 @@ public final class Rebuilder extends Harvester {
     log.info("Opening Elasticsearch index '" + sourceIndex + "' for rebuilding all documents of harvester '" + iconfig.id + "'...");
     this.client = es.client();
     super.open(es, targetIndex);
+    wrappedHarvester.prepareReindex(es, targetIndex);
   }
   
   @Override
   public void close(boolean cleanShutdown) throws Exception {
-    client = null;
-    super.close(cleanShutdown);
+    try {
+      wrappedHarvester.finishReindex(cleanShutdown);
+    } finally {
+      client = null;
+      super.close(cleanShutdown);
+    }
+  }
+
+  @Override
+  public void prepareReindex(ElasticsearchConnection es, String targetIndex) throws Exception {
+    throw new IllegalStateException();
+  }
+
+  @Override
+  public void finishReindex(boolean cleanShutdown) throws Exception {
+    throw new IllegalStateException();
   }
 
   @Override
