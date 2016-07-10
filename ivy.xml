@@ -7,7 +7,7 @@
      <conf name="buildtools" transitive="true" visibility="private" />
   </configurations>
   <dependencies>
-    <dependency org="org.elasticsearch" name="elasticsearch" rev="2.3.3" conf="build,bundle->default">
+    <dependency org="org.elasticsearch" name="elasticsearch" rev="2.3.4" conf="build,bundle->default">
       <exclude org="org.apache" module="lucene-expressions"/>
       <exclude org="org.ow2.asm" module="asm.*" matcher="regexp"/>
       <exclude org="org.antlr" module="antlr-runtime"/>
@@ -25,7 +25,7 @@
     <dependency org="net.sourceforge.nekohtml" name="nekohtml" rev="1.9.21" conf="bundle->default"/>
     
     <!-- build tools: -->
-    <dependency org="de.thetaphi" name="forbiddenapis" rev="2.0" conf="buildtools->default"/>
+    <dependency org="de.thetaphi" name="forbiddenapis" rev="2.2" conf="buildtools->default"/>
 
     <!-- Those are not used at all: -->
     <exclude org="xml-resolver" module="xml-resolver"/>
