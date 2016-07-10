@@ -106,9 +106,10 @@
       deprecation="on" debug="${debug}" encoding="UTF-8" includeantruntime="false">
       <compilerarg line="-Xlint:unchecked"/>
     </javac>
-    <fa:forbiddenapis internalRuntimeForbidden="true" classpathref="path.build" dir="${build}">
-      <bundledsignatures name="jdk-unsafe-${jdk.version}"/>
-      <bundledsignatures name="jdk-deprecated-${jdk.version}"/>
+    <fa:forbiddenapis classpathref="path.build" dir="${build}" targetVersion="${jdk.version}">
+      <bundledsignatures name="jdk-unsafe"/>
+      <bundledsignatures name="jdk-deprecated"/>
+      <bundledsignatures name="jdk-non-portable"/>
       <signaturesfile file="./devtools/forbidden-signatures.txt"/>
     </fa:forbiddenapis>
   </target>
