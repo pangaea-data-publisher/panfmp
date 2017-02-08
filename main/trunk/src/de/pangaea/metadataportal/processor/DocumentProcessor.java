@@ -76,7 +76,7 @@ public final class DocumentProcessor {
   
   final AtomicInteger processed = new AtomicInteger(0);
   
-  private final int bulkSize, deleteUnseenBulkSize, maxQueue, concurrentBulkRequests;
+  private final int bulkSize, maxQueue, concurrentBulkRequests;
   private final ByteSizeValue maxBulkMemory;
   private final DocumentErrorAction conversionErrorAction;
   private final XContentType contentType;
@@ -101,7 +101,6 @@ public final class DocumentProcessor {
     this.sourceIndex = iconfig.parent.indexName;
     this.targetIndex = (targetIndex == null) ? this.sourceIndex : targetIndex;
     this.bulkSize = Integer.parseInt(iconfig.properties.getProperty("bulkSize", Integer.toString(DEFAULT_BULK_SIZE)));
-    this.deleteUnseenBulkSize = Integer.parseInt(iconfig.properties.getProperty("deleteUnseenBulkSize", Integer.toString(DEFAULT_DELETE_UNSEEN_BULK_SIZE)));
     final String sz = iconfig.properties.getProperty("maxBulkMemory");
     this.maxBulkMemory = (sz == null) ? DEFAULT_BULK_MEMORY : ByteSizeValue.parseBytesSizeValue(sz, "panfmp.maxBulkMemory");
     
