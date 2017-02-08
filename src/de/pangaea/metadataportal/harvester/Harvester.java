@@ -62,9 +62,6 @@ import de.pangaea.metadataportal.processor.MetadataDocument;
  * might get significantly larger, because the check is done after the document is added.
  * Must be given using a unit like MB for megabytes. (default 5 MB)
  * </li>
- * <li><code>deleteUnseenBulkSize</code>: size of bulk requests for requesting/deleting
- * unseen documents sent to Elasticsearch. (default 1000 deletes). This is only used
- * by some harvesters, the number here can be generally large, as only IDs are transferred.</li>
  * <li><code>validate</code>: validate harvested documents against schema given
  * in configuration? (default: true, if schema given)</li>
  * <li><code>conversionErrorAction</code>: What to do if a conversion error
