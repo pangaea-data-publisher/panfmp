@@ -122,6 +122,7 @@
 			<cfg:settings>
 				<cfg:number_of_shards>1</cfg:number_of_shards>
 				<cfg:number_of_replicas>0</cfg:number_of_replicas>
+				<cfg:query.default_field>fulltext</cfg:query.default_field>
 			</cfg:settings>
 			<!-- aliases can be used to set some filters on specific fields, see:
 				http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-aliases.html

@@ -15,10 +15,7 @@
   <condition property="build.java.runtime" value="1.8">
     <hasmethod classname="java.util.Collections" method="emptySortedSet"/>
   </condition>
-  <condition property="build.java.runtime" value="1.7">
-    <hasmethod classname="java.lang.Throwable" method="getSuppressed"/>
-  </condition>
-  <fail message="Minimum supported Java version is 1.7." unless="build.java.runtime"/>
+  <fail message="Minimum supported Java version is 1.8." unless="build.java.runtime"/>
 
   <!-- workaround for https://issues.apache.org/bugzilla/show_bug.cgi?id=53347 -->
   <condition property="build.compiler" value="javac1.7">
@@ -38,16 +35,16 @@
   <property name="debug" value="on"/>
   <property name="ivy.logging" value="download-only"/>
 
-  <property name="version" value="2.1-dev"/>
+  <property name="version" value="2.2-dev"/>
   <property name="versionsuffix" value="-${version}"/>
   <property name="pkgname" value="${ant.project.name}${versionsuffix}"/>
 
   <property name="year" value="2007-2013"/>
 
   <property name="javadoc.projectWebSite" value="http://www.panFMP.org/" />
-  <property name="javadoc.link.sun" value="http://docs.oracle.com/javase/7/docs/api/" />
+  <property name="javadoc.link.sun" value="https://docs.oracle.com/javase/8/docs/api/" />
 
-  <property name="jdk.version" value="1.7"/>
+  <property name="jdk.version" value="1.8"/>
 
   <!-- IVY -->
   <property name="ivy.install.version" value="2.3.0" />
@@ -133,7 +130,7 @@
   <!-- EXECUTE SCRIPTS WITH CLASSPATH target -->
   <target name="run-harvester" depends="compile">
     <java fork="true" dir="." classname="de.pangaea.metadataportal.harvester.Harvester" classpathref="path.run">
-       <sysproperty key="log4j.configuration" value="${log4j-conf}"/>
+       <sysproperty key="log4j.configurationFile" value="${log4j-conf}"/>
        <arg file="conf/config.xml"/>
        <arg value="${harvester}"/>
     </java>
@@ -141,7 +138,7 @@
 
   <target name="run-rebuilder" depends="compile">
     <java fork="true" dir="." classname="de.pangaea.metadataportal.harvester.Rebuilder" classpathref="path.run">
-       <sysproperty key="log4j.configuration" value="${log4j-conf}"/>
+       <sysproperty key="log4j.configurationFile" value="${log4j-conf}"/>
        <arg file="conf/config.xml"/>
        <arg value="${index}"/>
     </java>
@@ -149,7 +146,7 @@
 
   <target name="run-update-aliases" depends="compile">
     <java fork="true" dir="." classname="de.pangaea.metadataportal.harvester.UpdateAliases" classpathref="path.run">
-       <sysproperty key="log4j.configuration" value="${log4j-conf}"/>
+       <sysproperty key="log4j.configurationFile" value="${log4j-conf}"/>
        <arg file="conf/config.xml"/>
        <arg value="${index}"/>
     </java>
@@ -163,62 +160,10 @@
       <link href="${javadoc.link.sun}"/>
       <doctitle><![CDATA[<H1>${ant.project.name} ${version}</H1>]]></doctitle>
       <bottom><![CDATA[<ADDRESS>Copyright &copy;${year} <A HREF='${javadoc.projectWebSite}' TARGET='_blank'>${ant.project.name}</A> Developers c/o Uwe Schindler</ADDRESS>]]></bottom>
+      <arg value="-Xdoclint:none"/>
     </javadoc>
-    <patch-javadoc dir="${docs}" docencoding="UTF-8"/>
   </target>	
-
-  <!-- use indenting with spaces here, otherwise javadoc output is misaligned! -->
-  <macrodef name="patch-javadoc">
-    <attribute name="dir"/>
-    <attribute name="docencoding" default="${file.encoding}"/>
-    <sequential>
-      <replace encoding="@{docencoding}" summary="true" taskname="patch-javadoc">
-        <fileset dir="@{dir}" casesensitive="false" includes="**/index.html,**/index.htm,**/toc.html,**/toc.htm">
-          <!-- TODO: add encoding="@{docencoding}" to contains check, when we are on ANT 1.9.0: -->
-          <not><contains text="function validURL(url) {" casesensitive="true" /></not>
-        </fileset>
-        <replacetoken><![CDATA[function loadFrames() {]]></replacetoken>
-        <replacevalue expandProperties="false"><![CDATA[if (targetPage != "" && !validURL(targetPage))
-        targetPage = "undefined";
-    function validURL(url) {
-        var pos = url.indexOf(".html");
-        if (pos == -1 || pos != url.length - 5)
-            return false;
-        var allowNumber = false;
-        var allowSep = false;
-        var seenDot = false;
-        for (var i = 0; i < url.length - 5; i++) {
-            var ch = url.charAt(i);
-            if ('a' <= ch && ch <= 'z' ||
-                    'A' <= ch && ch <= 'Z' ||
-                    ch == '$' ||
-                    ch == '_') {
-                allowNumber = true;
-                allowSep = true;
-            } else if ('0' <= ch && ch <= '9'
-                    || ch == '-') {
-                if (!allowNumber)
-                     return false;
-            } else if (ch == '/' || ch == '.') {
-                if (!allowSep)
-                    return false;
-                allowNumber = false;
-                allowSep = false;
-                if (ch == '.')
-                     seenDot = true;
-                if (ch == '/' && seenDot)
-                     return false;
-            } else {
-                return false;
-            }
-        }
-        return true;
-    }
-    function loadFrames() {]]></replacevalue>
-      </replace>
-    </sequential>
-  </macrodef>
-
+  
   <!-- PACKAGING -->
   <target name="binpackage" depends="dist,javadocs">
     <ivy:cachefileset setid="fileset.bundle" conf="bundle" log="${ivy.logging}"/>

@@ -11,8 +11,7 @@
       "facets": {
         "match": "*Facet",
         "mapping": {
-          "type" : "string",
-          "index": "not_analyzed"
+          "type" : "keyword"
         }
       }
     },
@@ -20,8 +19,7 @@
       "default": {
         "match": "*",
         "mapping": {
-          "type" : "string",
-          "index": "analyzed"
+          "type" : "text"
         }
       }
     }
@@ -37,29 +35,23 @@
     },
     "minDateTime" : {
       "type" : "date",
-      "format" : "dateOptionalTime",
-      "precision_step": 8
+      "format" : "dateOptionalTime"
     },
     "maxDateTime" : {
       "type" : "date",
-      "format" : "dateOptionalTime",
-      "precision_step": 8
+      "format" : "dateOptionalTime"
     },
     "minLatitude" : {
-      "type" : "double",
-      "precision_step": 8
+      "type" : "double"
     },
     "maxLatitude" : {
-      "type" : "double",
-      "precision_step": 8
+      "type" : "double"
     },
     "minLongitude" : {
-      "type" : "double",
-      "precision_step": 8
+      "type" : "double"
     },
     "maxLongitude" : {
-      "type" : "double",
-      "precision_step": 8
+      "type" : "double"
     },
     "minMonth" : {
       "type" : "integer"
