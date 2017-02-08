@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.ResourceAlreadyExistsException;
 import org.elasticsearch.action.admin.indices.alias.Alias;
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequestBuilder;
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesResponse;
@@ -35,15 +36,13 @@ import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
 import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.IndicesAdminClient;
-import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.cluster.metadata.AliasMetaData;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.TransportAddress;
+import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.common.xcontent.XContentFactory;
-import org.elasticsearch.indices.IndexAlreadyExistsException;
-
-import com.google.common.collect.ImmutableMap;
+import org.elasticsearch.transport.client.PreBuiltTransportClient;
 
 import de.pangaea.metadataportal.config.Config;
 import de.pangaea.metadataportal.config.HarvesterConfig;
@@ -77,7 +76,7 @@ public final class ElasticsearchConnection implements Closeable {
             .startObject("kv_pairs")
               .field("match", "*")
               .startObject("mapping")
-                .field("type", "string").field("index", "no").field("store", false)
+                .field("type", "keyword").field("index", false).field("store", false).field("doc_values", false)
               .endObject()
             .endObject()
           .endObject()
@@ -96,7 +95,7 @@ public final class ElasticsearchConnection implements Closeable {
       log.debug("ES connection settings: " + settings.getAsMap());
     }
     this.conf = config;
-    this.client = TransportClient.builder().settings(settings).build()
+    this.client = new PreBuiltTransportClient(settings)
       .addTransportAddresses(config.esTransports.toArray(new TransportAddress[config.esTransports.size()]));
   }
 
@@ -178,7 +177,7 @@ public final class ElasticsearchConnection implements Closeable {
       }
       final CreateIndexResponse resp = req.get();
       log.info("Index created and mappings assigned: " + resp.isAcknowledged());
-    } catch (IndexAlreadyExistsException e) {
+    } catch (ResourceAlreadyExistsException e) {
       log.info("Index already exists. Updating mappings for index='" + realIndexName + "'...");
       {
         final PutMappingResponse resp = indicesAdmin.preparePutMapping(realIndexName)
@@ -275,12 +274,23 @@ public final class ElasticsearchConnection implements Closeable {
     }
   }
   
+  private Map<Object, Object> mapOf(Object... items) {
+    if (items.length % 2 != 0) {
+      throw new IllegalArgumentException("Invalid number of arguments.");
+    }
+    final Map<Object, Object> map = new LinkedHashMap<>();
+    for (int i = 0; i < items.length; i += 2) {
+      map.put(items[i], items[i+1]);
+    }
+    return map;
+  }
+  
   @SuppressWarnings("unchecked")
   private String getMapping() {
     try {
       Map<String,Object> mapping, props;
       if (conf.esMapping != null) {
-        mapping = XContentFactory.xContent(conf.esMapping).createParser(conf.esMapping).mapOrdered();
+        mapping = XContentFactory.xContent(conf.esMapping).createParser(NamedXContentRegistry.EMPTY, conf.esMapping).mapOrdered();
         if (mapping.containsKey(conf.typeName)) {
           if (mapping.size() != 1) {
             throw new IllegalArgumentException("If the typeName is part of the mapping, it must be the single root element.");
@@ -298,23 +308,21 @@ public final class ElasticsearchConnection implements Closeable {
         throw new IllegalArgumentException("The given mapping is not allowed to contain properties for internal field: " +
             Arrays.asList(conf.fieldnameDatestamp, conf.fieldnameSource, conf.fieldnameXML));
       }
-      props.put(conf.fieldnameDatestamp, ImmutableMap.of(
+      props.put(conf.fieldnameDatestamp, mapOf(
         "type", "date",
         "format", "dateOptionalTime",
-        "precision_step", 8,
+        "index", true,
         "include_in_all", false
       ));
-      props.put(conf.fieldnameSource, ImmutableMap.of(
-        "type", "string",
-        "index", "not_analyzed",
-        "include_in_all", false,
-        "store", false
+      props.put(conf.fieldnameSource, mapOf(
+        "type", "keyword",
+        "index", true,
+        "include_in_all", false
       ));
-      props.put(conf.fieldnameXML, ImmutableMap.of(
-        "type", "string",
-        "index", "no",
-        "include_in_all", false,
-        "store", false
+      props.put(conf.fieldnameXML, mapOf(
+        "type", "keyword",
+        "index", false,
+        "doc_values", false
       ));
       return XContentFactory.jsonBuilder().map(mapping).string();
     } catch (IOException ioe) {

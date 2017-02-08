@@ -254,7 +254,7 @@ public abstract class Harvester {
     processor = es.getDocumentProcessor(iconfig, targetIndex);
     Object v = processor.harvesterMetadata.get(HARVESTER_METADATA_FIELD_LAST_HARVESTED);
     if (v != null) {
-      fromDateReference = XContentBuilder.defaultDatePrinter
+      fromDateReference = XContentBuilder.DEFAULT_DATE_PRINTER
           .parseDateTime(v.toString())
           .toDate();
     } else {
@@ -312,7 +312,7 @@ public abstract class Harvester {
     
     if (cleanShutdown && harvestingDateReference != null) {
       processor.harvesterMetadata.put(HARVESTER_METADATA_FIELD_LAST_HARVESTED,
-          XContentBuilder.defaultDatePrinter.print(harvestingDateReference.getTime()));
+          XContentBuilder.DEFAULT_DATE_PRINTER.print(harvestingDateReference.getTime()));
     }
     harvestingDateReference = null;
     

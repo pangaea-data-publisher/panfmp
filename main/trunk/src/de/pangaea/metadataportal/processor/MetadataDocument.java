@@ -41,7 +41,6 @@ import javax.xml.xpath.XPathExpressionException;
 
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHitField;
 import org.w3c.dom.Document;
 import org.w3c.dom.DocumentFragment;
 import org.w3c.dom.Node;
@@ -92,22 +91,21 @@ public class MetadataDocument {
   public void loadFromElasticSearchHit(SearchHit hit) throws Exception {
     deleted = false;
     datestamp = null;
+    final Map<String,Object> fields = hit.sourceAsMap();
     // read identifier
     identifier = hit.getId();
     // try to read date stamp
-    final SearchHitField dateFld = hit.field(iconfig.root.fieldnameDatestamp);
-    final String datestampStr = (dateFld == null) ? null : dateFld.<String>getValue();
+    final String datestampStr = (String) fields.get(iconfig.root.fieldnameDatestamp);
     if (datestampStr != null) {
       try {
-        datestamp = XContentBuilder.defaultDatePrinter.parseDateTime(datestampStr).toDate();
+        datestamp = XContentBuilder.DEFAULT_DATE_PRINTER.parseDateTime(datestampStr).toDate();
       } catch (IllegalArgumentException iae) {
         log.warn("Datestamp of document '" + identifier + "' is invalid: " + iae.getMessage() + " - Deleting datestamp.");
         datestamp = null;
       }
     }
     // read XML
-    final SearchHitField xmlFld = hit.field(iconfig.root.fieldnameXML);
-    final String xml = (xmlFld == null) ? null : xmlFld.<String>getValue();
+    final String xml = (String) fields.get(iconfig.root.fieldnameXML);
     if (xml == null) {
       setFinalDOM(null);
     } else {

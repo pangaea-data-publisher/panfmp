@@ -21,7 +21,6 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
@@ -35,28 +34,23 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.ActionRequest;
-import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkProcessor;
 import org.elasticsearch.action.bulk.BulkRequest;
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteRequest;
-import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
-import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentType;
+import org.elasticsearch.index.query.IdsQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.sort.SortBuilders;
-import org.elasticsearch.search.sort.SortParseElement;
+import org.elasticsearch.index.reindex.BulkIndexByScrollResponse;
+import org.elasticsearch.index.reindex.DeleteByQueryAction;
 
 import de.pangaea.metadataportal.config.HarvesterConfig;
 import de.pangaea.metadataportal.utils.KeyValuePairs;
@@ -113,7 +107,7 @@ public final class DocumentProcessor {
     
     final String ct = iconfig.properties.getProperty("sourceContentType");
     if (ct != null) {
-      this.contentType = XContentType.fromRestContentType(ct);
+      this.contentType = XContentType.fromMediaTypeOrFormat(ct);
       if (this.contentType == null) {
         throw new IllegalArgumentException("Illegal content type for _source field (sourceContentType property): " + ct);
       }
@@ -217,54 +211,18 @@ public final class DocumentProcessor {
   private void deleteUnseenDocuments(Set<String> validIdentifiers) {
     log.info("Removing metadata items not seen while harvesting...");
     
+    final IdsQueryBuilder bld = QueryBuilders.idsQuery(iconfig.root.typeName);
+    bld.ids().addAll(validIdentifiers);
     final QueryBuilder query = QueryBuilders.boolQuery()
       .filter(QueryBuilders.termQuery(iconfig.root.fieldnameSource, iconfig.id))
-      .mustNot(QueryBuilders.idsQuery(iconfig.root.typeName).ids(validIdentifiers.toArray(new String[validIdentifiers.size()])));
+      .mustNot(bld);
     
-    final TimeValue time = TimeValue.timeValueMinutes(10);
-    final Set<String> lostItems = new TreeSet<>();
-    long count = 0;
-    SearchResponse scrollResp = client.prepareSearch(targetIndex)
-      .setTypes(iconfig.root.typeName)
-      .setQuery(query)
-      .setFetchSource(false)
-      .setNoFields()
-      .setSize(deleteUnseenBulkSize)
-      .addSort(SortBuilders.fieldSort(SortParseElement.DOC_FIELD_NAME))
-      .setScroll(time)
+    final BulkIndexByScrollResponse response = DeleteByQueryAction.INSTANCE.newRequestBuilder(client)
+      .filter(query)
+      .source(targetIndex)
       .get();
-    do {
-      final BulkRequestBuilder bulk = client.prepareBulk();
-      for (final SearchHit hit : scrollResp.getHits()) {
-        bulk.add(new DeleteRequest(targetIndex, iconfig.root.typeName, hit.getId()));
-      }
-      if (bulk.numberOfActions() > 0) {
-        lostItems.clear();
-        final BulkResponse bulkResponse = bulk.get();
-        if (bulkResponse.hasFailures()) {
-          throw new ElasticsearchException("Error while executing bulk request: " + bulkResponse.buildFailureMessage());
-        }
-        // count items for safety:
-        int deletedItems = 0;
-        for (final BulkItemResponse item : bulkResponse.getItems()) {
-          final DeleteResponse delResp = item.getResponse();
-          if (delResp.isFound()) {
-            deletedItems++;
-          } else {
-            lostItems.add(delResp.getId());
-          }
-        }
-        count += deletedItems;
-        if (!lostItems.isEmpty()) {
-          log.warn("Some metadata items could not be deleted because they disappeared in the meantime: " + lostItems);
-        }
-        log.info("Deleted " + count + " metadata items until now, working...");
-      }
-      if (scrollResp.getScrollId() == null) break;
-      scrollResp = client.prepareSearchScroll(scrollResp.getScrollId()).setScroll(time).get();
-    } while (scrollResp.getHits().getHits().length > 0);
 
-    log.info("Deleted a total number of " + count + " metadata items.");
+    log.info("Deleted a total number of " + response.getDeleted() + " metadata items.");
   }
   
   private Runnable getRunnable(final MetadataDocument mdoc) {
@@ -275,7 +233,7 @@ public final class DocumentProcessor {
           return; // cancel execution
         }
         try {      
-          final ActionRequest<?> req = buildDocumentAction(mdoc);
+          final ActionRequest req = buildDocumentAction(mdoc);
           if (req != null) {
             bulkProcessor.add(req);
           }
@@ -294,7 +252,7 @@ public final class DocumentProcessor {
    * the {@link ActionRequest} to pass to Elasticsearch
    * (can either be {@link IndexRequest} or {@link DeleteRequest}).
    */
-  public ActionRequest<?> buildDocumentAction(MetadataDocument mdoc) throws Exception {
+  public ActionRequest buildDocumentAction(MetadataDocument mdoc) throws Exception {
     final String identifier = mdoc.getIdentifier();
     if (log.isDebugEnabled()) log.debug("Converting document: " + mdoc.toString());
     KeyValuePairs kv = null;

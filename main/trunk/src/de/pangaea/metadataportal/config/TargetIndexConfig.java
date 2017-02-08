@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentParser;
 
@@ -77,7 +78,7 @@ public final class TargetIndexConfig {
     }
     if (filter != null) {
       // validate JSON/...
-      final XContentParser parser = XContentFactory.xContent(filter).createParser(filter);
+      final XContentParser parser = XContentFactory.xContent(filter).createParser(NamedXContentRegistry.EMPTY, filter);
       while (parser.nextToken() != null);
     }
     aliases.put(name, filter);

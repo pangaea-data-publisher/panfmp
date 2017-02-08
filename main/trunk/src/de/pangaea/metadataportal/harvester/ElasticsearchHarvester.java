@@ -19,13 +19,13 @@ package de.pangaea.metadataportal.harvester;
 import java.io.StringReader;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.Map;
 import java.util.Set;
 
 import javax.xml.transform.stream.StreamSource;
 
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.unit.TimeValue;
@@ -33,9 +33,9 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHitField;
+import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
-import org.elasticsearch.search.sort.SortParseElement;
+import org.elasticsearch.transport.client.PreBuiltTransportClient;
 
 import de.pangaea.metadataportal.config.HarvesterConfig;
 import de.pangaea.metadataportal.processor.DocumentProcessor;
@@ -113,7 +113,7 @@ public class ElasticsearchHarvester extends SingleFileEntitiesHarvester {
       if (log.isDebugEnabled()) {
         log.debug("ES connection settings: " + settings.getAsMap());
       }
-      this.client = TransportClient.builder().settings(settings).build().addTransportAddress(addr);
+      this.client = new PreBuiltTransportClient(settings).addTransportAddress(addr);
       this.closeClient = true;
     } else {
       log.info("Connecting to global Elasticsearch node for harvesting " + queryInfo + "...");
@@ -142,11 +142,10 @@ public class ElasticsearchHarvester extends SingleFileEntitiesHarvester {
     final TimeValue time = TimeValue.timeValueMinutes(10);
     SearchResponse scrollResp = client.prepareSearch(sourceIndexes)
       .setTypes(types)
-      .addFields(datestampField, xmlField)
       .setQuery(query)
-      .setFetchSource(false)
+      .setFetchSource(new String[] { datestampField, xmlField }, null)
       .setSize(bulkSize)
-      .addSort(SortBuilders.fieldSort(SortParseElement.DOC_FIELD_NAME))
+      .addSort(SortBuilders.fieldSort(FieldSortBuilder.DOC_FIELD_NAME))
       .setScroll(time)
       .get();
     do {
@@ -160,14 +159,14 @@ public class ElasticsearchHarvester extends SingleFileEntitiesHarvester {
   
   private void addSearchHit(SearchHit hit) throws Exception {
     final String identifier = identifierPrefix + hit.getId();
+    final Map<String,Object> fields = hit.sourceAsMap();
     
     // try to read date stamp
     Date datestamp = null;
-    final SearchHitField dateFld = hit.field(datestampField);
-    final String datestampStr = (dateFld == null) ? null : dateFld.<String>getValue();
+    final String datestampStr = (String) fields.get(datestampField);
     if (datestampStr != null) {
       try {
-        datestamp = XContentBuilder.defaultDatePrinter.parseDateTime(datestampStr).toDate();
+        datestamp = XContentBuilder.DEFAULT_DATE_PRINTER.parseDateTime(datestampStr).toDate();
       } catch (IllegalArgumentException iae) {
         log.warn("Datestamp of document '" + identifier + "' is invalid: " + iae.getMessage() + " - Deleting datestamp.");
         datestamp = null;
@@ -176,8 +175,7 @@ public class ElasticsearchHarvester extends SingleFileEntitiesHarvester {
 
     if (isDocumentOutdated(datestamp)) {
       // read XML
-      final SearchHitField xmlFld = hit.field(xmlField);
-      final String xml = (xmlFld == null) ? null : xmlFld.<String>getValue();
+      final String xml = (String) fields.get(xmlField);
       if (xml != null) {
         addDocument(identifier, datestamp, new StreamSource(new StringReader(xml), identifier));
       } else {

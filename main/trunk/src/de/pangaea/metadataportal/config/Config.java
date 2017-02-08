@@ -497,7 +497,7 @@ public final class Config {
   private final ObjectCreationFactory ES_SETTINGS_BUILDER = new AbstractObjectCreationFactory() {
     @Override
     public Object createObject(Attributes attributes) throws IOException {
-      final Settings.Builder builder = Settings.settingsBuilder();
+      final Settings.Builder builder = Settings.builder();
       String src = attributes.getValue("file");
       if (src == null) {
         // fallback to also accept "src" attribute:

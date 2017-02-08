@@ -16,6 +16,7 @@
 
 package de.pangaea.metadataportal.harvester;
 
+import java.util.Objects;
 import java.util.Set;
 
 import org.elasticsearch.action.search.SearchResponse;
@@ -23,9 +24,8 @@ import org.elasticsearch.client.Client;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHitField;
+import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
-import org.elasticsearch.search.sort.SortParseElement;
 
 import de.pangaea.metadataportal.config.Config;
 import de.pangaea.metadataportal.config.HarvesterConfig;
@@ -130,17 +130,15 @@ public final class Rebuilder extends Harvester {
     final TimeValue time = TimeValue.timeValueMinutes(10);
     SearchResponse scrollResp = client.prepareSearch(sourceIndex)
       .setTypes(iconfig.root.typeName)
-      .addFields(iconfig.root.fieldnameDatestamp, iconfig.root.fieldnameXML, iconfig.root.fieldnameSource)
       .setQuery(QueryBuilders.termQuery(iconfig.root.fieldnameSource, iconfig.id))
-      .setFetchSource(false)
       .setSize(bulkSize)
-      .addSort(SortBuilders.fieldSort(SortParseElement.DOC_FIELD_NAME))
+      .setFetchSource(new String[] { iconfig.root.fieldnameDatestamp, iconfig.root.fieldnameXML, iconfig.root.fieldnameSource }, null)
+      .addSort(SortBuilders.fieldSort(FieldSortBuilder.DOC_FIELD_NAME))
       .setScroll(time)
       .get();
     do {
       for (final SearchHit hit : scrollResp.getHits()) {
-        SearchHitField fld = hit.field(iconfig.root.fieldnameSource);
-        if (fld == null || !iconfig.id.equals(fld.getValue())) {
+        if (!Objects.equals(iconfig.id, hit.sourceAsMap().get(iconfig.root.fieldnameSource))) {
           log.warn("Document '" + hit.getId() + "' is from an invalid source, the harvester ID does not match! This may be caused by an invalid Elasticsearch mapping.");
           continue;
         }
