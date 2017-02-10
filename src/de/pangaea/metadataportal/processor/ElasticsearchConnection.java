@@ -40,8 +40,8 @@ import org.elasticsearch.cluster.metadata.AliasMetaData;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.TransportAddress;
-import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.common.xcontent.XContentFactory;
+import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.transport.client.PreBuiltTransportClient;
 
 import de.pangaea.metadataportal.config.Config;
@@ -290,7 +290,7 @@ public final class ElasticsearchConnection implements Closeable {
     try {
       Map<String,Object> mapping, props;
       if (conf.esMapping != null) {
-        mapping = XContentFactory.xContent(conf.esMapping).createParser(NamedXContentRegistry.EMPTY, conf.esMapping).mapOrdered();
+        mapping = XContentHelper.convertToMap(XContentFactory.xContent(conf.esMapping), conf.esMapping, true);
         if (mapping.containsKey(conf.typeName)) {
           if (mapping.size() != 1) {
             throw new IllegalArgumentException("If the typeName is part of the mapping, it must be the single root element.");
