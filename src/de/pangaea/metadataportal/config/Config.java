@@ -302,7 +302,7 @@ public final class Config {
         "XHTML fields may only be declared as a XSLT template (using <field-template/>)");
     if (f.defaultValue != null && f.datatype != FieldConfig.DataType.NUMBER && f.datatype != FieldConfig.DataType.INTEGER
         && f.datatype != FieldConfig.DataType.DATETIME) throw new IllegalArgumentException(
-        "A default value can only be given for NUMBER, INTEGER, or DATETIME fields");
+        "A default value can only be given for NUMBER, INTEGER, BOOLEAN, or DATETIME fields");
     fields.put(f.name, f);
   }
   
