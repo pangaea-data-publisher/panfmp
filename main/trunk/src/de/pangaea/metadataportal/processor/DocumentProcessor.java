@@ -33,10 +33,11 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.action.ActionRequest;
+import org.elasticsearch.action.DocWriteRequest;
 import org.elasticsearch.action.bulk.BulkProcessor;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.action.bulk.byscroll.BulkByScrollResponse;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest;
@@ -49,7 +50,6 @@ import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.IdsQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.reindex.BulkIndexByScrollResponse;
 import org.elasticsearch.index.reindex.DeleteByQueryAction;
 
 import de.pangaea.metadataportal.config.HarvesterConfig;
@@ -216,7 +216,7 @@ public final class DocumentProcessor {
       .filter(QueryBuilders.termQuery(iconfig.root.fieldnameSource, iconfig.id))
       .mustNot(bld);
     
-    final BulkIndexByScrollResponse response = DeleteByQueryAction.INSTANCE.newRequestBuilder(client)
+    final BulkByScrollResponse response = DeleteByQueryAction.INSTANCE.newRequestBuilder(client)
       .filter(query)
       .source(targetIndex)
       .get();
@@ -232,7 +232,7 @@ public final class DocumentProcessor {
           return; // cancel execution
         }
         try {      
-          final ActionRequest req = buildDocumentAction(mdoc);
+          final DocWriteRequest<?> req = buildDocumentAction(mdoc);
           if (req != null) {
             bulkProcessor.add(req);
           }
@@ -248,10 +248,10 @@ public final class DocumentProcessor {
   
   /**
    * Processes the given {@link MetadataDocument} and returns
-   * the {@link ActionRequest} to pass to Elasticsearch
+   * the {@link DocWriteRequest} to pass to Elasticsearch
    * (can either be {@link IndexRequest} or {@link DeleteRequest}).
    */
-  public ActionRequest buildDocumentAction(MetadataDocument mdoc) throws Exception {
+  public DocWriteRequest<?> buildDocumentAction(MetadataDocument mdoc) throws Exception {
     final String identifier = mdoc.getIdentifier();
     if (log.isDebugEnabled()) log.debug("Converting document: " + mdoc.toString());
     KeyValuePairs kv = null;
