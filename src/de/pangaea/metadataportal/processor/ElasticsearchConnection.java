@@ -42,6 +42,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentHelper;
+import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.transport.client.PreBuiltTransportClient;
 
 import de.pangaea.metadataportal.config.Config;
@@ -166,8 +167,8 @@ public final class ElasticsearchConnection implements Closeable {
     try {
       final CreateIndexRequestBuilder req = indicesAdmin.prepareCreate(realIndexName)
         .setCause(rebuilder ? "for rebuilding" : "new harvesting")
-        .addMapping(DocumentProcessor.HARVESTER_METADATA_TYPE, HARVESTER_METADATA_MAPPING)
-        .addMapping(conf.typeName, mapping);
+        .addMapping(DocumentProcessor.HARVESTER_METADATA_TYPE, HARVESTER_METADATA_MAPPING, XContentType.JSON)
+        .addMapping(conf.typeName, mapping, XContentType.JSON);
       if (ticonf.indexSettings != null) req.setSettings(ticonf.indexSettings);
       if (!rebuilder) {
         req.addAlias(new Alias(ticonf.indexName));
@@ -182,14 +183,14 @@ public final class ElasticsearchConnection implements Closeable {
       {
         final PutMappingResponse resp = indicesAdmin.preparePutMapping(realIndexName)
             .setType(DocumentProcessor.HARVESTER_METADATA_TYPE)
-            .setSource(HARVESTER_METADATA_MAPPING)
+            .setSource(HARVESTER_METADATA_MAPPING, XContentType.JSON)
             .get();
         log.info("Harvester metadata mapping updated: " + resp.isAcknowledged());
       }
       {
         final PutMappingResponse resp = indicesAdmin.preparePutMapping(realIndexName)
             .setType(conf.typeName)
-            .setSource(mapping)
+            .setSource(mapping, XContentType.JSON)
             .get();
         log.info("XML metadata mapping updated: " + resp.isAcknowledged());
       }
