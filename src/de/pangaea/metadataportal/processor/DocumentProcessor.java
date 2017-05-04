@@ -225,22 +225,19 @@ public final class DocumentProcessor {
   }
   
   private Runnable getRunnable(final MetadataDocument mdoc) {
-    return new Runnable() {
-      @Override
-      public void run() {
-        if (failure.get() != null) {
-          return; // cancel execution
+    return () -> {
+      if (failure.get() != null) {
+        return; // cancel execution
+      }
+      try {      
+        final DocWriteRequest<?> req = buildDocumentAction(mdoc);
+        if (req != null) {
+          bulkProcessor.add(req);
         }
-        try {      
-          final DocWriteRequest<?> req = buildDocumentAction(mdoc);
-          if (req != null) {
-            bulkProcessor.add(req);
-          }
-        } catch (Exception e) {
-          // only store the first error in failure variable, other errors are only logged
-          if (!failure.compareAndSet(null, e)) {
-            log.error(e);
-          }
+      } catch (Exception e) {
+        // only store the first error in failure variable, other errors are only logged
+        if (!failure.compareAndSet(null, e)) {
+          log.error(e);
         }
       }
     };
