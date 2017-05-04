@@ -25,9 +25,9 @@ package de.pangaea.metadataportal.processor;
 @SuppressWarnings("serial")
 public class BackgroundFailure extends Exception {
   
-  public BackgroundFailure(Exception e) {
+  public BackgroundFailure(Throwable t) {
     super();
-    initCause(e);
+    initCause(t);
   }
   
 }

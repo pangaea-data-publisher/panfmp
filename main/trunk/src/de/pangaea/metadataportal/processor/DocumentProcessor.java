@@ -72,7 +72,7 @@ public final class DocumentProcessor {
   
   public final Map<String,String> harvesterMetadata = new LinkedHashMap<>();
     
-  final AtomicReference<Exception> failure = new AtomicReference<>(null);
+  final AtomicReference<Throwable> failure = new AtomicReference<>(null);
   
   final AtomicInteger processed = new AtomicInteger(0);
   
@@ -234,7 +234,7 @@ public final class DocumentProcessor {
         if (req != null) {
           bulkProcessor.add(req);
         }
-      } catch (Exception e) {
+      } catch (Throwable e) {
         // only store the first error in failure variable, other errors are only logged
         if (!failure.compareAndSet(null, e)) {
           log.error(e);
@@ -282,7 +282,7 @@ public final class DocumentProcessor {
   }
   
   private void throwFailure() throws BackgroundFailure {
-    final Exception f = failure.get();
+    final Throwable f = failure.get();
     if (f != null) {
       throw new BackgroundFailure(f);
     }
@@ -305,7 +305,7 @@ public final class DocumentProcessor {
             if (f instanceof Exception) {
               // only store the first error in failure variable, other errors are only logged
               if (!failure.compareAndSet(null, (Exception) f)) {
-                log.error(f);
+                log.error("Exception happened while doing bulk request.", f);
               }
             } else if (f instanceof Error) {
               throw (Error) f;
