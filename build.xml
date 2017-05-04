@@ -47,7 +47,7 @@
   <property name="jdk.version" value="1.8"/>
 
   <!-- IVY -->
-  <property name="ivy.install.version" value="2.3.0" />
+  <property name="ivy.install.version" value="2.4.0" />
   <property name="ivy.jar.dir" location=".ivy" />
   <property name="ivy.jar.file" location="${ivy.jar.dir}/ivy-${ivy.install.version}.jar" />
 
