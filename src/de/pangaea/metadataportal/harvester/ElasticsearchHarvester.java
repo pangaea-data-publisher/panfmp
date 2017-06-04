@@ -159,7 +159,7 @@ public class ElasticsearchHarvester extends SingleFileEntitiesHarvester {
   
   private void addSearchHit(SearchHit hit) throws Exception {
     final String identifier = identifierPrefix + hit.getId();
-    final Map<String,Object> fields = hit.sourceAsMap();
+    final Map<String,Object> fields = hit.getSourceAsMap();
     
     // try to read date stamp
     Date datestamp = null;
