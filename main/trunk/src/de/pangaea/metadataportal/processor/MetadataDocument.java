@@ -91,7 +91,7 @@ public class MetadataDocument {
   public void loadFromElasticSearchHit(SearchHit hit) throws Exception {
     deleted = false;
     datestamp = null;
-    final Map<String,Object> fields = hit.sourceAsMap();
+    final Map<String,Object> fields = hit.getSourceAsMap();
     // read identifier
     identifier = hit.getId();
     // try to read date stamp
