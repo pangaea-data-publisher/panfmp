@@ -362,8 +362,6 @@ public abstract class Harvester {
   /**
    * Checks, if the supplied Datestamp needs harvesting. This method can be used
    * to find out, if a documents needs harvesting.
-   * 
-   * @see #isDocumentOutdated(long)
    */
   protected boolean isDocumentOutdated(Instant lastModified) {
     return fromDateReference == null || lastModified == null || fromDateReference.isBefore(lastModified);
