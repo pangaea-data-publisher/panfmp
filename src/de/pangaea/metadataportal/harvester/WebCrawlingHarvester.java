@@ -23,6 +23,7 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -451,7 +452,7 @@ public class WebCrawlingHarvester extends SingleFileEntitiesHarvester {
         } else if (contentTypes.contains(contentType)) {
           if (acceptFile(url)) {
             long lastModified = conn.getLastModified();
-            if (isDocumentOutdated(lastModified)) {
+            if (isDocumentOutdated(lastModified == 0L ? null : Instant.ofEpochMilli(lastModified))) {
               log.info("Harvesting '" + url + "'...");
               
               // reopen for GET and parse as XML

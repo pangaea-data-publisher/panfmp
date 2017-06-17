@@ -20,6 +20,7 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
+import java.time.ZoneOffset;
 import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
@@ -111,7 +112,7 @@ public final class LenientDateParser {
       DateFormat.getTimeInstance(DateFormat.MEDIUM, Locale.US),
       DateFormat.getTimeInstance(DateFormat.SHORT, Locale.US),};
   static {
-    TimeZone UTC = TimeZone.getTimeZone("UTC");
+    TimeZone UTC = TimeZone.getTimeZone(ZoneOffset.UTC);
     for (int i = 0, c = dateFormats.length; i < c; i++) {
       DateFormat df = dateFormats[i];
       df.setTimeZone(UTC);

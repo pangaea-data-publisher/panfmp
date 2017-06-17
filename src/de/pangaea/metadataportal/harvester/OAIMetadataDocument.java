@@ -16,7 +16,7 @@
 
 package de.pangaea.metadataportal.harvester;
 
-import java.text.ParseException;
+import java.time.format.DateTimeParseException;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -50,12 +50,12 @@ public class OAIMetadataDocument extends MetadataDocument {
   
   @PublicForDigesterUse
   @Deprecated
-  public void setHeaderInfo(String status, String identifier, String datestampStr) throws ParseException {
+  public void setHeaderInfo(String status, String identifier, String datestampStr) {
     setDeleted(status != null && status.equals("deleted"));
     setIdentifier(identifierPrefix + identifier);
     try {
-      setDatestamp(ISODateFormatter.parseDate(datestampStr));
-    } catch (ParseException pe) {
+      setDatestamp(ISODateFormatter.parseOAIDate(datestampStr));
+    } catch (DateTimeParseException pe) {
       if (!ignoreDatestamps) {
         throw pe;
       } else {

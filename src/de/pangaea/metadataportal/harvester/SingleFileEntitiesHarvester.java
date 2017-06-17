@@ -16,8 +16,8 @@
 
 package de.pangaea.metadataportal.harvester;
 
+import java.time.Instant;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
@@ -54,7 +54,7 @@ public abstract class SingleFileEntitiesHarvester extends Harvester {
   private final DocumentErrorAction parseErrorAction;
   
   private Set<String> validIdentifiers = null;
-  private long newestDatestamp = -1;
+  private Instant newestDatestamp = null;
   
   public SingleFileEntitiesHarvester(HarvesterConfig iconfig) {
     super(iconfig);
@@ -96,24 +96,24 @@ public abstract class SingleFileEntitiesHarvester extends Harvester {
    *          identifiers
    * @see #addDocument(MetadataDocument)
    */
-  protected final void addDocument(String identifier, Date lastModified,
+  protected final void addDocument(String identifier, long lastModified,
       Source xml) throws Exception {
     addDocument(identifier,
-        (lastModified == null) ? -1L : lastModified.getTime(), xml);
+        (lastModified < 0L) ? null : Instant.ofEpochMilli(lastModified), xml);
   }
   
   /**
    * Adds a document to the {@link #processor} working in the background.
    * 
-   * @see #addDocument(String,Date,Source)
+   * @see #addDocument(String,Instant,Source)
    */
-  protected void addDocument(String identifier, long lastModified, Source xml)
+  protected void addDocument(String identifier, Instant lastModified, Source xml)
       throws Exception {
     if (validIdentifiers != null) validIdentifiers.add(identifier);
     
-    if (lastModified > 0L) {
-      if (newestDatestamp <= 0L || newestDatestamp < lastModified) {
-        setHarvestingDateReference(new Date(newestDatestamp = lastModified));
+    if (lastModified != null) {
+      if (newestDatestamp == null || newestDatestamp.isBefore(lastModified)) {
+        setHarvestingDateReference(newestDatestamp = lastModified);
       }
       if (!isDocumentOutdated(lastModified)) return;
     }
@@ -122,8 +122,7 @@ public abstract class SingleFileEntitiesHarvester extends Harvester {
     
     MetadataDocument mdoc = createMetadataDocumentInstance();
     mdoc.setIdentifier(identifier);
-    mdoc.setDatestamp((lastModified > 0L) ? new java.util.Date(lastModified)
-        : null);
+    mdoc.setDatestamp(lastModified);
     
     Exception e = null;
     String errstr = null;

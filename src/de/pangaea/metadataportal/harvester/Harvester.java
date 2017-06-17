@@ -17,15 +17,14 @@
 package de.pangaea.metadataportal.harvester;
 
 import java.lang.reflect.InvocationTargetException;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 import java.util.Set;
 import java.util.TreeSet;
 
 import javax.xml.transform.TransformerException;
 
-import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.xml.sax.SAXParseException;
 
 import de.pangaea.metadataportal.config.Config;
@@ -35,6 +34,7 @@ import de.pangaea.metadataportal.processor.ElasticsearchConnection;
 import de.pangaea.metadataportal.processor.DocumentProcessor;
 import de.pangaea.metadataportal.processor.BackgroundFailure;
 import de.pangaea.metadataportal.processor.MetadataDocument;
+import de.pangaea.metadataportal.utils.ISODateFormatter;
 
 /**
  * Harvester interface to panFMP. This class is the abstract superclass of all
@@ -224,7 +224,7 @@ public abstract class Harvester {
    * Date from which should be harvested (in time reference of the original
    * server)
    */
-  protected Date fromDateReference = null;
+  protected Instant fromDateReference = null;
   
   /**
    * Default constructor.
@@ -250,13 +250,7 @@ public abstract class Harvester {
   public void open(ElasticsearchConnection es, String targetIndex) throws Exception {
     processor = es.getDocumentProcessor(iconfig, targetIndex);
     Object v = processor.harvesterMetadata.get(HARVESTER_METADATA_FIELD_LAST_HARVESTED);
-    if (v != null) {
-      fromDateReference = XContentBuilder.DEFAULT_DATE_PRINTER
-          .parseDateTime(v.toString())
-          .toDate();
-    } else {
-      fromDateReference = null;
-    }
+    fromDateReference = (v != null) ? Instant.parse(v.toString()) : null;
   }
   
   /**
@@ -308,8 +302,7 @@ public abstract class Harvester {
     if (processor == null) throw new IllegalStateException("Harvester must be opened before closing");
     
     if (cleanShutdown && harvestingDateReference != null) {
-      processor.harvesterMetadata.put(HARVESTER_METADATA_FIELD_LAST_HARVESTED,
-          XContentBuilder.DEFAULT_DATE_PRINTER.print(harvestingDateReference.getTime()));
+      processor.harvesterMetadata.put(HARVESTER_METADATA_FIELD_LAST_HARVESTED, ISODateFormatter.formatElasticsearch(harvestingDateReference));
     }
     harvestingDateReference = null;
     
@@ -372,19 +365,8 @@ public abstract class Harvester {
    * 
    * @see #isDocumentOutdated(long)
    */
-  protected final boolean isDocumentOutdated(Date lastModified) {
-    return isDocumentOutdated((lastModified == null) ? -1L : lastModified
-        .getTime());
-  }
-  
-  /**
-   * Checks, if the supplied Datestamp needs harvesting. This method can be used
-   * to find out, if a documents needs harvesting.
-   * 
-   * @see #isDocumentOutdated(Date)
-   */
-  protected boolean isDocumentOutdated(long lastModified) {
-    return (lastModified <= 0L || fromDateReference == null || fromDateReference.getTime() < lastModified);
+  protected boolean isDocumentOutdated(Instant lastModified) {
+    return fromDateReference == null || lastModified == null || fromDateReference.isBefore(lastModified);
   }
   
   /**
@@ -393,7 +375,7 @@ public abstract class Harvester {
    * {@link #fromDateReference}. As long as this is null, the harvester will not
    * write or update the value in Elasticsearch.
    */
-  protected void setHarvestingDateReference(Date harvestingDateReference) {
+  protected void setHarvestingDateReference(Instant harvestingDateReference) {
     this.harvestingDateReference = harvestingDateReference;
   }
   
@@ -454,7 +436,7 @@ public abstract class Harvester {
   public abstract void harvest() throws Exception;
   
   // private mebers
-  private Date harvestingDateReference = null;
+  private Instant harvestingDateReference = null;
   private Set<String> validIdentifiers = null;
   
   public static final String HARVESTER_METADATA_FIELD_LAST_HARVESTED = "lastHarvested";
