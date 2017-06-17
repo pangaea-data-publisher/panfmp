@@ -264,7 +264,9 @@ public class OAIHarvester extends OAIHarvesterBase {
     setHarvestingDateReference(currResponseDate);
     
     while (currResumptionToken != null) {
-      log.debug("Resumption token expires in " + currResumptionExpiration.getSeconds() + "s");
+      if (currResumptionExpiration != null) {
+        log.debug("Resumption token expires in " + currResumptionExpiration.getSeconds() + "s");
+      }
       url = new StringBuilder(baseUrl)
         .append("?verb=ListRecords&resumptionToken=")
         .append(URLEncoder.encode(currResumptionToken, StandardCharsets.UTF_8.name()));
