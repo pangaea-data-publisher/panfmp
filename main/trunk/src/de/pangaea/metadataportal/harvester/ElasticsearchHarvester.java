@@ -17,8 +17,8 @@
 package de.pangaea.metadataportal.harvester;
 
 import java.io.StringReader;
+import java.time.Instant;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.Map;
 import java.util.Set;
 
@@ -29,7 +29,6 @@ import org.elasticsearch.client.Client;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
@@ -162,11 +161,11 @@ public class ElasticsearchHarvester extends SingleFileEntitiesHarvester {
     final Map<String,Object> fields = hit.getSourceAsMap();
     
     // try to read date stamp
-    Date datestamp = null;
+    Instant datestamp = null;
     final String datestampStr = (String) fields.get(datestampField);
     if (datestampStr != null) {
       try {
-        datestamp = XContentBuilder.DEFAULT_DATE_PRINTER.parseDateTime(datestampStr).toDate();
+        datestamp = Instant.parse(datestampStr);
       } catch (IllegalArgumentException iae) {
         log.warn("Datestamp of document '" + identifier + "' is invalid: " + iae.getMessage() + " - Deleting datestamp.");
         datestamp = null;

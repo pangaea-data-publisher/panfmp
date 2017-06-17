@@ -18,8 +18,9 @@ package de.pangaea.metadataportal.harvester;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.text.ParseException;
-import java.util.Date;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -53,8 +54,8 @@ public class OAIHarvester extends OAIHarvesterBase {
   // Object members
   private ExtendedDigester listRecordsDig = null, identifyDig = null;
   private String currResumptionToken = null;
-  private long currResumptionExpiration = -1L;
-  private Date currResponseDate = null;
+  private Duration currResumptionExpiration = null;
+  private Instant currResponseDate = null;
   private boolean fineGranularity = false; // default for OAI 2.0
   
   public OAIHarvester(HarvesterConfig iconfig) {
@@ -174,10 +175,10 @@ public class OAIHarvester extends OAIHarvesterBase {
     if (token != null && token.equals("")) token = null;
     this.currResumptionToken = token;
     if (expirationDateStr != null && currResponseDate != null) try {
-      currResumptionExpiration = ISODateFormatter.parseDate(expirationDateStr).getTime() - currResponseDate.getTime();
-      if (currResumptionExpiration <= 0L) currResumptionExpiration = -1L;
+      currResumptionExpiration = Duration.between(currResponseDate, ISODateFormatter.parseOAIDate(expirationDateStr));
+      if (currResumptionExpiration.isNegative()) currResumptionExpiration = null;
     } catch (Exception e) {
-      currResumptionExpiration = -1L;
+      currResumptionExpiration = null;
     }
   }
   
@@ -189,10 +190,10 @@ public class OAIHarvester extends OAIHarvesterBase {
   
   @PublicForDigesterUse
   @Deprecated
-  public void setResponseDate(String date) throws ParseException {
+  public void setResponseDate(String date) {
     try {
-      currResponseDate = ISODateFormatter.parseDate(date);
-    } catch (ParseException pe) {
+      currResponseDate = ISODateFormatter.parseOAIDate(date);
+    } catch (DateTimeParseException pe) {
       if (!ignoreDatestamps) {
         throw pe;
       } else {
@@ -263,8 +264,7 @@ public class OAIHarvester extends OAIHarvesterBase {
     setHarvestingDateReference(currResponseDate);
     
     while (currResumptionToken != null) {
-      log.debug("Resumption token expires in " + currResumptionExpiration
-          + " ms");
+      log.debug("Resumption token expires in " + currResumptionExpiration.getSeconds() + "s");
       url = new StringBuilder(baseUrl)
         .append("?verb=ListRecords&resumptionToken=")
         .append(URLEncoder.encode(currResumptionToken, StandardCharsets.UTF_8.name()));

@@ -20,8 +20,8 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.AbstractMap;
-import java.util.Date;
 import java.util.Map;
 import java.util.Set;
 
@@ -98,7 +98,7 @@ public class MetadataDocument {
     final String datestampStr = (String) fields.get(iconfig.root.fieldnameDatestamp);
     if (datestampStr != null) {
       try {
-        datestamp = XContentBuilder.DEFAULT_DATE_PRINTER.parseDateTime(datestampStr).toDate();
+        datestamp = Instant.parse(datestampStr);
       } catch (IllegalArgumentException iae) {
         log.warn("Datestamp of document '" + identifier + "' is invalid: " + iae.getMessage() + " - Deleting datestamp.");
         datestamp = null;
@@ -185,14 +185,14 @@ public class MetadataDocument {
   /**
    * Set the datestamp (last modification time of document file).
    */
-  public void setDatestamp(Date datestamp) {
+  public void setDatestamp(Instant datestamp) {
     this.datestamp = datestamp;
   }
   
   /**
    * @see #setDatestamp
    */
-  public Date getDatestamp() {
+  public Instant getDatestamp() {
     return datestamp;
   }
   
@@ -217,8 +217,7 @@ public class MetadataDocument {
         + " deleted="
         + deleted
         + " datestamp="
-        + ((datestamp != null) ? ISODateFormatter.formatLong(datestamp)
-            : (String) null);
+        + datestamp;
   }
   
   /**
@@ -272,7 +271,7 @@ public class MetadataDocument {
       KeyValuePairs kv = new KeyValuePairs();
       kv.add(iconfig.root.fieldnameSource, iconfig.id);
       if (datestamp != null) {
-        kv.add(iconfig.root.fieldnameDatestamp, datestamp);
+        kv.add(iconfig.root.fieldnameDatestamp, ISODateFormatter.formatElasticsearch(datestamp));
       }
       return kv;
     }
@@ -616,7 +615,7 @@ public class MetadataDocument {
   /**
    * @see #setDatestamp
    */
-  protected Date datestamp = null;
+  protected Instant datestamp = null;
   
   /**
    * @see #setIdentifier

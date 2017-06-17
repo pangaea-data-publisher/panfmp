@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.lang.reflect.Constructor;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Set;
@@ -239,20 +240,20 @@ public class PanFMP1IndexHarvester extends SingleFileEntitiesHarvester {
     // normalize name with prefix
     identifier = identifierPrefix + identifier;
     // try to read date stamp
-    long datestamp = -1L;
+    Instant datestamp = null;
     // try to read date stamp
     try {
       final IndexableField fld = ldoc
           .getField(FIELDNAME_DATESTAMP);
-      datestamp = fld.numericValue().longValue();
+      datestamp = Instant.ofEpochMilli(fld.numericValue().longValue());
     } catch (NullPointerException npe) {
       log.warn("Datestamp of document '" + identifier
           + "' is invalid - Ignoring datestamp.");
-      datestamp = -1L;
+      datestamp = null;
     } catch (NumberFormatException ne) {
       log.warn("Datestamp of document '" + identifier + "' is invalid: "
           + ne.getMessage() + " - Ignoring datestamp.");
-      datestamp = -1L;
+      datestamp = null;
     }
     // read XML
     if (isDocumentOutdated(datestamp)) {

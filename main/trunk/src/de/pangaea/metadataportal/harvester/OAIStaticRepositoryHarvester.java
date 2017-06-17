@@ -16,7 +16,7 @@
 
 package de.pangaea.metadataportal.harvester;
 
-import java.util.Date;
+import java.time.Instant;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -156,7 +156,7 @@ public class OAIStaticRepositoryHarvester extends OAIHarvesterBase {
         "No URL of the OAI static repository was given!");
     
     log.info("Harvesting static repository at \"" + url + "\"...");
-    AtomicReference<Date> modifiedDate = new AtomicReference<>(fromDateReference);
+    AtomicReference<Instant> modifiedDate = new AtomicReference<>(fromDateReference);
     if (doParse(dig, url, modifiedDate)) {
       // set the date for next harvesting
       setHarvestingDateReference(modifiedDate.get());

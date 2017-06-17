@@ -26,8 +26,8 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -182,7 +182,7 @@ public class ZipFileHarvester extends SingleFileEntitiesHarvester {
           
           // currently only for HTTP enabled
           if (fromDateReference != null && useZipFileDate) conn
-              .setIfModifiedSince(fromDateReference.getTime());
+              .setIfModifiedSince(fromDateReference.toEpochMilli());
         }
         
         conn.setUseCaches(false);
@@ -209,19 +209,19 @@ public class ZipFileHarvester extends SingleFileEntitiesHarvester {
         if (fromDateReference != null && useZipFileDate) {
           if ((conn instanceof HttpURLConnection && ((HttpURLConnection) conn)
               .getResponseCode() == HttpURLConnection.HTTP_NOT_MODIFIED)
-              || !isDocumentOutdated(lastModified)) {
+              || !isDocumentOutdated(lastModified == 0 ? null : Instant.ofEpochMilli(lastModified))) {
             log.debug("File not modified since " + fromDateReference);
             if (in != null) in.close();
             return null;
           }
         }
-        if (useZipFileDate) setHarvestingDateReference((lastModified == 0L) ? null : new Date(lastModified));
+        if (useZipFileDate) setHarvestingDateReference((lastModified == 0L) ? null : Instant.ofEpochMilli(lastModified));
         return in;
       } catch (MalformedURLException urle) {
         // normal file
         Path f = Paths.get(zipFile);
-        long lastModified = Files.getLastModifiedTime(f).toMillis();
-        if (useZipFileDate) setHarvestingDateReference((lastModified == 0L) ? null : new Date(lastModified));
+        Instant lastModified = Files.getLastModifiedTime(f).toInstant();
+        if (useZipFileDate) setHarvestingDateReference(lastModified);
         if (useZipFileDate && !isDocumentOutdated(lastModified)) return null;
         return Files.newInputStream(f);
       } catch (NoSuchFileException nsfe) {

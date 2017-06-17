@@ -22,9 +22,9 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
@@ -180,7 +180,7 @@ public abstract class OAIHarvesterBase extends Harvester {
    *          the URL is parsed by this digester instance.
    * @param checkModifiedDate
    *          for static repositories, it is possible to give a reference to a
-   *          {@link Date} for checking the last modification, in this case
+   *          {@link Instant} for checking the last modification, in this case
    *          <code>false</code> is returned, if the URL was not modified. If it
    *          was modified, the reference contains a new <code>Date</code>
    *          object with the new modification date. Supply <code>null</code>
@@ -190,7 +190,7 @@ public abstract class OAIHarvesterBase extends Harvester {
    *         and no harvesting was done.
    */
   protected boolean doParse(ExtendedDigester dig, String url,
-      AtomicReference<Date> checkModifiedDate) throws Exception {
+      AtomicReference<Instant> checkModifiedDate) throws Exception {
     URL u = new URL(url);
     for (int retry = 0; retry <= retryCount; retry++) {
       try {
@@ -267,7 +267,7 @@ public abstract class OAIHarvesterBase extends Harvester {
    *          the URL to open
    * @param checkModifiedDate
    *          for static repositories, it is possible to give a reference to a
-   *          {@link Date} for checking the last modification, in this case
+   *          {@link Instant} for checking the last modification, in this case
    *          <code>null</code> is returned, if the URL was not modified. If it
    *          was modified, the reference contains a new <code>Date</code>
    *          object with the new modification date. Supply <code>null</code>
@@ -276,7 +276,7 @@ public abstract class OAIHarvesterBase extends Harvester {
    * @see #getEntityResolver
    */
   protected InputSource getInputSource(URL url,
-      AtomicReference<Date> checkModifiedDate) throws IOException {
+      AtomicReference<Instant> checkModifiedDate) throws IOException {
     String proto = url.getProtocol().toLowerCase(Locale.ROOT);
     if (!("http".equals(proto) || "https".equals(proto))) throw new IllegalArgumentException(
         "OAI only allows HTTP(S) as network protocol!");
@@ -296,8 +296,9 @@ public abstract class OAIHarvesterBase extends Harvester {
     conn.setRequestProperty("Accept-Charset", StandardCharsets.UTF_8.name() + ", *;q=0.1");
     conn.setRequestProperty("Accept", "text/xml, application/xml, *;q=0.1");
     
-    if (checkModifiedDate != null && checkModifiedDate.get() != null) conn
-        .setIfModifiedSince(checkModifiedDate.get().getTime());
+    if (checkModifiedDate != null && checkModifiedDate.get() != null) {
+      conn.setIfModifiedSince(checkModifiedDate.get().toEpochMilli());
+    }
     
     conn.setUseCaches(false);
     conn.setInstanceFollowRedirects(true);
@@ -327,7 +328,7 @@ public abstract class OAIHarvesterBase extends Harvester {
         return null;
       }
       long d = conn.getLastModified();
-      checkModifiedDate.set((d == 0L) ? null : new Date(d));
+      checkModifiedDate.set((d == 0L) ? null : Instant.ofEpochMilli(d));
     }
     
     String encoding = conn.getContentEncoding();
