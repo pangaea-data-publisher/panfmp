@@ -29,8 +29,8 @@ import java.util.Locale;
  * Simple static class to create and parse ISO-8601 date stamps (used by OAI
  * harvester): The used date formats are:
  * <ul>
- * <li>Long date: <code>yyyy-MM-dd'T'HH:mm:ss'Z'</code></li>
- * <li>Short date: <code>yyyy-MM-dd</code></li>
+ * <li>Long date: <code>uuuu-MM-dd'T'HH:mm:ss'Z'</code></li>
+ * <li>Short date: <code>uuuu-MM-dd</code></li>
  * </ul>
  * 
  * @author Uwe Schindler
@@ -83,9 +83,9 @@ public final class ISODateFormatter {
   }
   
   private static final DateTimeFormatter ELASTIC_DATE_FORMAT =
-      DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.ROOT).withZone(ZoneOffset.UTC);
+      DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.ROOT).withZone(ZoneOffset.UTC);
   private static final DateTimeFormatter LONG_DATE_FORMAT =
-      DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.ROOT).withZone(ZoneOffset.UTC);
+      DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss'Z'", Locale.ROOT).withZone(ZoneOffset.UTC);
   private static final DateTimeFormatter SHORT_DATE_FORMAT =
-      DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.ROOT).withZone(ZoneOffset.UTC);
+      DateTimeFormatter.ofPattern("uuuu-MM-dd", Locale.ROOT).withZone(ZoneOffset.UTC);
 }
