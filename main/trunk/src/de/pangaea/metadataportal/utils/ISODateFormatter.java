@@ -18,11 +18,13 @@ package de.pangaea.metadataportal.utils;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
-import java.time.temporal.ChronoUnit;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.ResolverStyle;
 import java.time.temporal.TemporalAccessor;
+import java.time.temporal.TemporalQueries;
 import java.util.Locale;
 
 /**
@@ -40,41 +42,21 @@ public final class ISODateFormatter {
   private ISODateFormatter() {} // no instance
   
   /**
-   * Parses the given string into a {@link Instant}. It accepts short and long
+   * Parses the given string from the OAI protocol into an {@link Instant}. It accepts short and long
    * dates (with time)
    */
   public static Instant parseOAIDate(String date) {
-    return parseOAIDate(date, false);
-  }
-  
-  /**
-   * Parses the given string into a {@link Instant}. It accepts short and long
-   * dates (with time). If roundUp is {@code true} it round the date up to
-   * one millisecond before next.
-   */
-  public static Instant parseOAIDate(String date, boolean roundUp) {
-    if (date == null) {
-      return null;
+    final TemporalAccessor temporal = PARSE_DATE_FORMAT.parse(date);
+    LocalTime time = temporal.query(TemporalQueries.localTime());
+    if (time == null) {
+      time = LocalTime.MIDNIGHT;
     }
-    try {
-      Instant d = SHORT_DATE_FORMAT.parse(date, LocalDate::from).atStartOfDay().toInstant(ZoneOffset.UTC);
-      if (roundUp) d = d.plus(1L, ChronoUnit.DAYS).minusMillis(1L);
-      return d;
-    } catch (DateTimeParseException e) {
-      Instant d = LONG_DATE_FORMAT.parse(date, Instant::from);
-      if (roundUp) d = d.truncatedTo(ChronoUnit.SECONDS).plus(1L, ChronoUnit.SECONDS).minusMillis(1L);
-      return d;
-    }
+    return LocalDate.from(temporal).atTime(time).toInstant(ZoneOffset.UTC);
   }
   
-  /** Formats a long OAI date. */
-  public static String formatLong(TemporalAccessor date) {
-    return LONG_DATE_FORMAT.format(date);
-  }
-  
-  /** Formats a short OAI date. */
-  public static String formatShort(TemporalAccessor date) {
-    return SHORT_DATE_FORMAT.format(date);
+  /** Formats an ISO date, according to the OAI granularity. */
+  public static String formatOAIDate(TemporalAccessor date, boolean fineGranularity) {
+    return (fineGranularity ? LONG_DATE_FORMAT : SHORT_DATE_FORMAT).format(date);
   }
   
   /** Formats an Elasticsearch date. */
@@ -84,8 +66,17 @@ public final class ISODateFormatter {
   
   private static final DateTimeFormatter ELASTIC_DATE_FORMAT =
       DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.ROOT).withZone(ZoneOffset.UTC);
+  
   private static final DateTimeFormatter LONG_DATE_FORMAT =
       DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss'Z'", Locale.ROOT).withZone(ZoneOffset.UTC);
   private static final DateTimeFormatter SHORT_DATE_FORMAT =
       DateTimeFormatter.ofPattern("uuuu-MM-dd", Locale.ROOT).withZone(ZoneOffset.UTC);
+  
+  private static final DateTimeFormatter PARSE_DATE_FORMAT = new DateTimeFormatterBuilder()
+      .appendPattern("uuuu-MM-dd")
+      .optionalStart()
+      .appendLiteral('T')
+      .appendPattern("HH:mm:ss")
+      .appendLiteral('Z')
+      .toFormatter(Locale.ROOT).withResolverStyle(ResolverStyle.STRICT).withZone(ZoneOffset.UTC);
 }
