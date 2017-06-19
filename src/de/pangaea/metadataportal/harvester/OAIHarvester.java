@@ -255,7 +255,7 @@ public class OAIHarvester extends OAIHarvesterBase {
       }
     }
     if (fromDateReference != null && !ignoreDatestamps) {
-      final String from = fineGranularity ? ISODateFormatter.formatLong(fromDateReference) : ISODateFormatter.formatShort(fromDateReference);
+      final String from = ISODateFormatter.formatOAIDate(fromDateReference, fineGranularity);
       url.append("&from=").append(URLEncoder.encode(from, StandardCharsets.UTF_8.name()));
     } else {
       enableMissingDocumentDelete();
