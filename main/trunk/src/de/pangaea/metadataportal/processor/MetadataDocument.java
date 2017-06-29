@@ -346,7 +346,7 @@ public class MetadataDocument {
                   continue;
                 // we need to do this, otherwise may get adjacent text nodes (e.g. for XSL docfrags):
                 nod.normalize();
-                final Object o = new XMLToKeyValuePairs(true).convertChilds(nod);
+                final Object o = new XMLToKeyValuePairs(false).convertChilds(nod);
                 if (o != null) {
                   if (log.isTraceEnabled()) log.trace("AddField: " + f.name + '=' + o);
                   kv.add(f.name, o);
