@@ -22,6 +22,8 @@ import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
 /**
@@ -55,13 +57,22 @@ public final class XMLToKeyValuePairs {
       return null;
     }
     boolean hasText = false, hasElementsOrAttrs = false;
+    NamedNodeMap atts = null;
+    if (serializeAttributes && parentNode instanceof Element) {
+      atts = ((Element)parentNode).getAttributes();
+      for (int i = 0, c = atts.getLength(); i < c; i++) {
+        if (!isXsiNamespaced(atts.item(i))) {
+          hasElementsOrAttrs = true;
+        }
+      }
+    }
     for (Node nod = parentNode.getFirstChild(); nod != null; nod = nod.getNextSibling()) {
       switch (nod.getNodeType()) {
         case Node.ELEMENT_NODE:
           hasElementsOrAttrs = true;
           break;
         case Node.ATTRIBUTE_NODE:
-          if (serializeAttributes) {
+          if (serializeAttributes && !isXsiNamespaced(nod)) {
             hasElementsOrAttrs = true;
           }
           break;
@@ -75,6 +86,11 @@ public final class XMLToKeyValuePairs {
     }
     if (hasElementsOrAttrs) {
       final KeyValuePairs kv = new KeyValuePairs();
+      if (serializeAttributes && atts != null) {
+        for (int i = 0, c = atts.getLength(); i < c; i++) {
+          convertNode(kv, atts.item(i));
+        }
+      }
       for (Node nod = parentNode.getFirstChild(); nod != null; nod = nod.getNextSibling()) {
         convertNode(kv, nod);
       }
@@ -88,6 +104,10 @@ public final class XMLToKeyValuePairs {
     }
   }
   
+  private boolean isXsiNamespaced(Node n) {
+    return XMLConstants.W3C_XML_SCHEMA_INSTANCE_NS_URI.equals(n.getNamespaceURI());
+  }
+  
   private void convertNode(final KeyValuePairs kv, final Node n) throws JAXBException {
     if (n == null) return;
     switch (n.getNodeType()) {
@@ -98,7 +118,7 @@ public final class XMLToKeyValuePairs {
       case Node.DOCUMENT_FRAGMENT_NODE:
         throw new IllegalArgumentException("Invalid node type (DOCUMENT_NODE or DOCUMENT_FRAGMENT_NODE)");
       case Node.ATTRIBUTE_NODE:
-        if (jaxbUnmarshaller != null && XMLConstants.W3C_XML_SCHEMA_INSTANCE_NS_URI.equals(n.getNamespaceURI())) {
+        if (isXsiNamespaced(n)) {
           // ignore xsi: attributes
         } else if (serializeAttributes) {
           kv.add("@" + n.getLocalName(), n.getNodeValue());
