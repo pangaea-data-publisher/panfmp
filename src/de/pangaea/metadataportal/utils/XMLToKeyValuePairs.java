@@ -16,6 +16,11 @@
 
 package de.pangaea.metadataportal.utils;
 
+import java.util.Collections;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import javax.xml.XMLConstants;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
@@ -40,6 +45,13 @@ public final class XMLToKeyValuePairs {
   private final boolean serializeAttributes;
   private final Unmarshaller jaxbUnmarshaller;
   
+  private static final Set<String> HIDDEN_ATTR_NAMESPACES = Collections.unmodifiableSet(
+      Stream.of(
+          XMLConstants.XMLNS_ATTRIBUTE_NS_URI,
+          XMLConstants.XML_NS_URI,
+          XMLConstants.W3C_XML_SCHEMA_INSTANCE_NS_URI
+      ).collect(Collectors.toSet()));
+ 
   public XMLToKeyValuePairs(boolean serializeAttributes) throws JAXBException {
     this.serializeAttributes = serializeAttributes;
     this.jaxbUnmarshaller = JAXBContext.newInstance().createUnmarshaller();
@@ -103,9 +115,9 @@ public final class XMLToKeyValuePairs {
       return null;
     }
   }
-  
+   
   private boolean isXsiNamespaced(Node n) {
-    return XMLConstants.W3C_XML_SCHEMA_INSTANCE_NS_URI.equals(n.getNamespaceURI());
+    return HIDDEN_ATTR_NAMESPACES.contains(n.getNamespaceURI());
   }
   
   private void convertNode(final KeyValuePairs kv, final Node n) throws JAXBException {
