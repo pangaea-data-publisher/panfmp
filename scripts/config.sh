@@ -9,7 +9,7 @@ PANFMP_CONFIG="../conf/config.xml"
 PANFMP_LOCK="../conf/lock"
 
 # java options for harvesting and management tools
-PANFMP_TOOLS_JAVA_OPTIONS="-Xms64M -Xmx512M"
+PANFMP_TOOLS_JAVA_OPTIONS="-XX:+UseG1GC -Xms64M -Xmx512M"
 
 # log4j configuration file for harvesting and management tools
 PANFMP_TOOLS_LOG4J_CONFIG="./console.log.properties"
