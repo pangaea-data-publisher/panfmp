@@ -323,8 +323,7 @@ public final class DocumentProcessor {
             final int totalItems = processed.addAndGet(request.numberOfActions());
             log.info(totalItems + " metadata items processed so far.");
           }
-        }).setName(getClass().getSimpleName())
-          .setConcurrentRequests(concurrentBulkRequests)
+        }).setConcurrentRequests(concurrentBulkRequests)
           .setBulkActions(bulkSize)
           .setBulkSize(maxBulkMemory)
           .build();
