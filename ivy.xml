@@ -7,21 +7,21 @@
      <conf name="buildtools" transitive="true" visibility="private" />
   </configurations>
   <dependencies>
-    <dependency org="org.elasticsearch.client" name="transport" rev="5.6.1" conf="build,bundle->default"/>
+    <dependency org="org.elasticsearch.client" name="transport" rev="5.6.2" conf="build,bundle->default"/>
 
     <dependency org="commons-logging" name="commons-logging" rev="1.1.3" conf="build,bundle->default"/>
     <dependency org="commons-digester" name="commons-digester" rev="2.1" conf="build,bundle->default"/>
     <dependency org="xerces" name="xercesImpl" rev="2.11.0" conf="build,bundle->default"/>
     <dependency org="xalan" name="xalan" rev="2.7.2" conf="build,bundle->default"/>
     
-    <dependency org="org.apache.logging.log4j" name="log4j-api" rev="2.9.0" conf="build,bundle->default"/>
-    <dependency org="org.apache.logging.log4j" name="log4j-core" rev="2.9.0" conf="build,bundle->default"/>
-    <dependency org="org.apache.logging.log4j" name="log4j-jcl" rev="2.9.0"  conf="build,bundle->default"/>
+    <dependency org="org.apache.logging.log4j" name="log4j-api" rev="2.9.1" conf="build,bundle->default"/>
+    <dependency org="org.apache.logging.log4j" name="log4j-core" rev="2.9.1" conf="build,bundle->default"/>
+    <dependency org="org.apache.logging.log4j" name="log4j-jcl" rev="2.9.1"  conf="build,bundle->default"/>
     
     <dependency org="net.sourceforge.nekohtml" name="nekohtml" rev="1.9.21" conf="bundle->default"/>
     
     <!-- build tools: -->
-    <dependency org="de.thetaphi" name="forbiddenapis" rev="2.3" conf="buildtools->default"/>
+    <dependency org="de.thetaphi" name="forbiddenapis" rev="2.4.1" conf="buildtools->default"/>
 
     <!-- Those are not used at all: -->
     <exclude org="xml-resolver" module="xml-resolver"/>
