@@ -26,7 +26,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Locale;
 import java.util.Set;
 import java.util.SortedSet;
@@ -177,10 +176,7 @@ public class WebCrawlingHarvester extends SingleFileEntitiesHarvester {
     
     // remove invalid URLs from queued list (because until now we had no baseURL
     // restriction)
-    Iterator<String> it = needsHarvest.iterator();
-    while (it.hasNext()) {
-      if (!it.next().startsWith(baseURL)) it.remove();
-    }
+    needsHarvest.removeIf(s -> !s.startsWith(baseURL));
     
     // harvest queue
     while (!needsHarvest.isEmpty()) {
