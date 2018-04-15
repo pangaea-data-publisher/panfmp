@@ -31,6 +31,7 @@
   <property name="dist" location="dist"/>
   <property name="plugins" location="plugins"/>
   <property name="docs" location="apidocs"/>
+  <property name="plib" location="patched-lib"/>
 
   <property name="debug" value="on"/>
   <property name="ivy.logging" value="download-only"/>
@@ -85,6 +86,7 @@
     <path id="path.run">
       <path refid="path.bundle"/>
       <pathelement path="build"/>
+      <fileset dir="${plib}" includes="*.jar"/>
     </path>
     <path id="path.tools-run">
       <path refid="path.build"/>
@@ -176,6 +178,7 @@
         </chainedmapper>
       </mappedresources>
       <zipfileset dir="${dist}" prefix="${pkgname}/lib"/>
+      <zipfileset dir="${plib}" prefix="${pkgname}/lib"/>
       <zipfileset dir="${plugins}" prefix="${pkgname}/plugins"/>
       <zipfileset dir="${basedir}/conf" prefix="${pkgname}/conf"/>
       <zipfileset dir="${basedir}/scripts" prefix="${pkgname}/scripts"/>

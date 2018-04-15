@@ -21,9 +21,12 @@
     <dependency org="net.sourceforge.nekohtml" name="nekohtml" rev="1.9.21" conf="bundle->default"/>
     
     <!-- build tools: -->
-    <dependency org="de.thetaphi" name="forbiddenapis" rev="2.4.1" conf="buildtools->default"/>
+    <dependency org="de.thetaphi" name="forbiddenapis" rev="2.5" conf="buildtools->default"/>
 
     <!-- Those are not used at all: -->
     <exclude org="xml-resolver" module="xml-resolver"/>
+    
+    <!-- use our patched version instead: -->
+    <exclude org="xalan" module="serializer"/>
   </dependencies>
 </ivy-module>
