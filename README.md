@@ -24,7 +24,7 @@ for tracking bugs, managing source code (Git). Please visit our
 for details about installing and using panFMP!
 
 panFMP version 1.1.0 was released on 2014-04-23. You can download the
-artifacts on the [Sourceforge download](https://sourceforge.net/projects/panfmp/files/)
+artifacts on the [GitHub releases](https://github.com/pangaea-data-publisher/panfmp/releases)
 page. This version is the last version including the full search server
 based on Lucene 3.6. If you want to test the latest developments, daily development
 snapshots are available directly from this homepage. The new version is using
