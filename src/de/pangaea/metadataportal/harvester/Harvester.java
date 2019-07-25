@@ -100,8 +100,8 @@ public abstract class Harvester {
    * ) sources. The harvester implementation is defined by the given
    * configuration.
    */
-  public static void runHarvester(Config conf, String harvesterId) {
-    runHarvester(conf, harvesterId, null);
+  public static boolean runHarvester(Config conf, String harvesterId) {
+    return runHarvester(conf, harvesterId, null);
   }
   
   /**
@@ -112,7 +112,7 @@ public abstract class Harvester {
    * {@link Rebuilder}. Public code should use
    * {@link #runHarvester(Config,String)}.
    */
-  static void runHarvester(Config conf, String id, Class<? extends Harvester> harvesterClass) {
+  static boolean runHarvester(Config conf, String id, Class<? extends Harvester> harvesterClass) {
     final Set<String> activeIds;
     if (isAllIndexes(id)) {
       activeIds = conf.targetIndexes.keySet();
@@ -124,10 +124,11 @@ public abstract class Harvester {
     
     if (Collections.disjoint(activeIds, conf.harvestersAndIndexes)) {
       staticLog.warn("No sources to harvest.");
-      return;
+      return false;
     }
     
     try (final ElasticsearchConnection es = new ElasticsearchConnection(conf)) {
+      boolean anyUpdate = false;
       for (TargetIndexConfig ticonf : conf.targetIndexes.values()) {
         if (!activeIds.contains(ticonf.indexName) && Collections.disjoint(activeIds, ticonf.harvesters.keySet()))
           continue; // nothing to do for this index!
@@ -164,7 +165,9 @@ public abstract class Harvester {
           }
         }
         es.closeIndex(ticonf, targetIndex, globalCleanShutdown);
+        anyUpdate |= globalCleanShutdown;
       }
+      return anyUpdate;
     }
   }
   

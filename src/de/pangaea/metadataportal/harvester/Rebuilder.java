@@ -64,9 +64,9 @@ public final class Rebuilder extends Harvester {
     }
   }
   
-  public static void runRebuilder(Config conf, String id) {
+  public static boolean runRebuilder(Config conf, String id) {
     if (isAllIndexes(id) || conf.targetIndexes.containsKey(id)) {
-      runHarvester(conf, id, Rebuilder.class);
+      return runHarvester(conf, id, Rebuilder.class);
     } else {
       throw new IllegalArgumentException("There is no targetIndex defined with id=\"" + id + "\"!");
     }
