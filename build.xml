@@ -67,7 +67,7 @@
 
   <target name="-install.ivy" unless="ivy.available">
     <mkdir dir="${ivy.jar.dir}"/>
-    <get src="http://repo1.maven.org/maven2/org/apache/ivy/ivy/${ivy.install.version}/ivy-${ivy.install.version}.jar" dest="${ivy.jar.file}" skipexisting="true"/>
+    <get src="https://repo1.maven.org/maven2/org/apache/ivy/ivy/${ivy.install.version}/ivy-${ivy.install.version}.jar" dest="${ivy.jar.file}" skipexisting="true"/>
     <taskdef uri="antlib:org.apache.ivy.ant" classpath="${ivy.jar.file}"/>
   </target>
 
