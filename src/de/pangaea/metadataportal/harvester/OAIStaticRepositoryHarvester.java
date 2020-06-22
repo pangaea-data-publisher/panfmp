@@ -66,7 +66,10 @@ public class OAIStaticRepositoryHarvester extends OAIHarvesterBase {
     }
     
     enableMissingDocumentDelete();
-    
+  }
+
+  @Override
+  protected void recreateDigester() {
     // *** ListRecords ***
     dig = new ExtendedDigester();
     
@@ -157,7 +160,7 @@ public class OAIStaticRepositoryHarvester extends OAIHarvesterBase {
     
     log.info("Harvesting static repository at \"" + url + "\"...");
     AtomicReference<Instant> modifiedDate = new AtomicReference<>(fromDateReference);
-    if (doParse(dig, url, modifiedDate)) {
+    if (doParse(() -> dig, url, modifiedDate)) {
       // set the date for next harvesting
       setHarvestingDateReference(modifiedDate.get());
     } else {

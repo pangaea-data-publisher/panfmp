@@ -28,7 +28,6 @@ import java.util.Set;
 import org.apache.commons.digester.ExtendedBaseRules;
 
 import de.pangaea.metadataportal.config.HarvesterConfig;
-import de.pangaea.metadataportal.processor.ElasticsearchConnection;
 import de.pangaea.metadataportal.utils.ExtendedDigester;
 import de.pangaea.metadataportal.utils.ISODateFormatter;
 import de.pangaea.metadataportal.utils.PublicForDigesterUse;
@@ -63,11 +62,8 @@ public class OAIHarvester extends OAIHarvesterBase {
     this.filterIncomingSets = sets != null && sets.size() > 1;
   }
 
-  // construtor
   @Override
-  public void open(ElasticsearchConnection es, String targetIndex) throws Exception {
-    super.open(es, targetIndex);
-    
+  protected void recreateDigester() {
     // *** ListRecords ***
     listRecordsDig = new ExtendedDigester();
     digesterAddGeneralOAIRules(listRecordsDig);
@@ -124,8 +120,7 @@ public class OAIHarvester extends OAIHarvesterBase {
     identifyDig.addDoNothing("OAI-PMH/Identify/*");
   }
   
-  private void digesterAddGeneralOAIRules(ExtendedDigester dig)
-      throws Exception {
+  private void digesterAddGeneralOAIRules(ExtendedDigester dig) {
     dig.setEntityResolver(getEntityResolver(dig.getEntityResolver()));
     dig.setNamespaceAware(true);
     dig.setValidating(false);
@@ -210,13 +205,13 @@ public class OAIHarvester extends OAIHarvesterBase {
   // harvester code
   private void readStream(String url) throws Exception {
     log.info("Harvesting \"" + url + "\"...");
-    doParse(listRecordsDig, url, null);
+    doParse(() -> listRecordsDig, url, null);
   }
   
   private void checkIdentify(String baseURL) throws Exception {
     StringBuilder url = new StringBuilder(baseURL).append("?verb=Identify");
     log.info("Reading identify response from \"" + url + "\"...");
-    doParse(identifyDig, url.toString(), null);
+    doParse(() -> identifyDig, url.toString(), null);
     log.info("Repository supports " + (fineGranularity ? "seconds" : "days")
         + "-granularity in selective harvesting.");
   }

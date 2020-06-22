@@ -29,6 +29,7 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.InflaterInputStream;
 
@@ -137,6 +138,7 @@ public abstract class OAIHarvesterBase extends Harvester {
   public void open(ElasticsearchConnection es, String targetIndex) throws Exception {
     super.open(es, targetIndex);    
     SimpleCookieHandler.INSTANCE.enable();
+    recreateDigester();
   }
   
   @Override
@@ -172,10 +174,20 @@ public abstract class OAIHarvesterBase extends Harvester {
   }
   
   /**
+   * Recreates all digesters that are used by parsing the OAI XML.
+   * This method is called initiall once and later on network errors
+   * before parsing same document again.
+   * This allows to recover from document parsing failing somewhere in 
+   * the middle of a document.
+   */
+  protected abstract void recreateDigester();
+  
+  /**
    * Harvests a URL using the suplied digester.
    * 
-   * @param dig
-   *          the digester instance.
+   * @param digSupplier
+   *          a {@link Supplier} that gives access to a (possibly recreated)
+   *          digester instance.
    * @param url
    *          the URL is parsed by this digester instance.
    * @param checkModifiedDate
@@ -189,11 +201,12 @@ public abstract class OAIHarvesterBase extends Harvester {
    * @return <code>true</code> if harvested, <code>false</code> if not modified
    *         and no harvesting was done.
    */
-  protected boolean doParse(ExtendedDigester dig, String url,
+  protected boolean doParse(Supplier<ExtendedDigester> digSupplier, String url,
       AtomicReference<Instant> checkModifiedDate) throws Exception {
     URL u = new URL(url);
     for (int retry = 0; retry <= retryCount; retry++) {
       try {
+        final ExtendedDigester dig = digSupplier.get();
         dig.clear();
         dig.resetRoot();
         dig.push(this);
@@ -224,6 +237,8 @@ public abstract class OAIHarvesterBase extends Harvester {
         try {
           Thread.sleep(1000L * after);
         } catch (InterruptedException ie) {}
+        log.debug("Recreating digester instances to recover from incomplete parsers...");
+        recreateDigester();
       }
     }
     throw new IOException("Unable to properly connect OAI server.");
