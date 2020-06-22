@@ -56,10 +56,10 @@ public class OAIMetadataDocument extends MetadataDocument {
     try {
       setDatestamp(ISODateFormatter.parseOAIDate(datestampStr));
     } catch (DateTimeParseException pe) {
-      if (!ignoreDatestamps) {
-        throw pe;
-      } else {
+      if (ignoreDatestamps || deleted) {
         log.warn("Invalid datestamp in OAI response (ignored): " + datestampStr);
+      } else {
+        throw pe;
       }
     }
   }
