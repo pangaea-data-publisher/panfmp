@@ -18,6 +18,8 @@ package de.pangaea.metadataportal.utils;
 
 import java.util.Collections;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -45,12 +47,18 @@ public final class XMLToKeyValuePairs {
   private final boolean serializeAttributes;
   private final Unmarshaller jaxbUnmarshaller;
   
+  /**
+   * If an element has a local name with this prefix, it is converted to a JSON attribute, prefixed by {@code @}.
+   */
+  public static final String ATTRIBUTE_ELEMENT_PREFIX = "__AT_";
+  
   private static final Set<String> HIDDEN_ATTR_NAMESPACES = Collections.unmodifiableSet(
       Stream.of(
           XMLConstants.XMLNS_ATTRIBUTE_NS_URI,
           XMLConstants.XML_NS_URI,
           XMLConstants.W3C_XML_SCHEMA_INSTANCE_NS_URI
       ).collect(Collectors.toSet()));
+  private static final Pattern PATTERN_SPECIAL_ATTRIBUTE_ELEMENT = Pattern.compile(Pattern.quote(ATTRIBUTE_ELEMENT_PREFIX).concat("(.*)"));
  
   public XMLToKeyValuePairs(boolean serializeAttributes) throws JAXBException {
     this.serializeAttributes = serializeAttributes;
@@ -124,7 +132,14 @@ public final class XMLToKeyValuePairs {
     if (n == null) return;
     switch (n.getNodeType()) {
       case Node.ELEMENT_NODE:
-        kv.add(n.getLocalName(), convertChilds(n));
+        String name = n.getLocalName();
+        if (serializeAttributes) {
+          final Matcher matcher = PATTERN_SPECIAL_ATTRIBUTE_ELEMENT.matcher(name);
+          if (matcher.matches()) {
+            name = "@".concat(matcher.group(1));
+          }
+        }
+        kv.add(name, convertChilds(n));
         break;
       case Node.DOCUMENT_NODE:
       case Node.DOCUMENT_FRAGMENT_NODE:
