@@ -14,9 +14,9 @@
     <dependency org="xerces" name="xercesImpl" rev="2.12.0" conf="build,bundle->default"/>
     <dependency org="xalan" name="xalan" rev="2.7.2" conf="build,bundle->default"/>
     
-    <dependency org="org.apache.logging.log4j" name="log4j-api" rev="2.11.1" conf="build,bundle->default"/>
-    <dependency org="org.apache.logging.log4j" name="log4j-core" rev="2.11.1" conf="build,bundle->default"/>
-    <dependency org="org.apache.logging.log4j" name="log4j-jcl" rev="2.11.1"  conf="build,bundle->default"/>
+    <dependency org="org.apache.logging.log4j" name="log4j-api" rev="2.13.3" conf="build,bundle->default"/>
+    <dependency org="org.apache.logging.log4j" name="log4j-core" rev="2.13.3" conf="build,bundle->default"/>
+    <dependency org="org.apache.logging.log4j" name="log4j-jcl" rev="2.13.3"  conf="build,bundle->default"/>
     
     <dependency org="net.sourceforge.nekohtml" name="nekohtml" rev="1.9.22" conf="bundle->default"/>
     
