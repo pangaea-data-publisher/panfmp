@@ -21,7 +21,7 @@
 			<!-- we want to remove all documents harvested with harvester 'pangaea-carboocean' that are from project 'JGOFS' -->
 			<cfg:deny>$dp:harvesterIdentifier='pangaea-carboocean' and /dif:DIF/dif:Project/dif:Short_Name[contains(.,'JGOFS')]</cfg:deny>
 			<!-- we want to remove all documents with wrong namespace -->
-			<!--<cfg:deny>namespace-uri(/*)!='http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/'</cfg:deny>-->
+			<cfg:deny>namespace-uri(/*)!='http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/'</cfg:deny>
 		</cfg:filters>
 		<!--
 			Field definitions:
