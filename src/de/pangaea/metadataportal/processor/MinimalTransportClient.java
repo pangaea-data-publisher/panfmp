@@ -40,10 +40,10 @@ import io.netty.util.concurrent.GlobalEventExecutor;
  * This is a minimalistic {@link TransportClient} using Netty 4 only.
  * <p>
  * Pretty exact copy of {@code PreBuiltTransportClient} but only with
- * Netty 4 plugin dependency. {@link PreBuiltTransportClient} expects
+ * Netty 4 plugin dependency. {@code PreBuiltTransportClient} expects
  * both Netty 3 and Netty 4 to be present.
  *
- * @see https://github.com/elastic/elasticsearch/issues/31240
+ * @see <https://github.com/elastic/elasticsearch/issues/31240>
  **/
 public class MinimalTransportClient extends TransportClient {
   static {
