@@ -43,7 +43,6 @@ import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.common.xcontent.XContentType;
-import org.elasticsearch.transport.client.PreBuiltTransportClient;
 
 import de.pangaea.metadataportal.config.Config;
 import de.pangaea.metadataportal.config.HarvesterConfig;
@@ -96,7 +95,7 @@ public final class ElasticsearchConnection implements Closeable {
       log.debug("ES connection settings: " + settings.getAsMap());
     }
     this.conf = config;
-    this.client = new PreBuiltTransportClient(settings)
+    this.client = new MinimalTransportClient(settings)
       .addTransportAddresses(config.esTransports.toArray(new TransportAddress[config.esTransports.size()]));
   }
 

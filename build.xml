@@ -82,9 +82,16 @@
     <echo taskname="check-ivy" message="${ivy.version-message}"/>
     <ivy:cachepath pathid="path.build" conf="build" log="${ivy.logging}"/>
     <ivy:cachepath pathid="path.bundle" conf="bundle" log="${ivy.logging}"/>
+    <ivy:cachepath pathid="path.addons" conf="addons" log="${ivy.logging}"/>
     <!--<ivy:cachepath pathid="path.test" conf="test" log="${ivy.logging}"/>-->
     <path id="path.run">
       <path refid="path.bundle"/>
+      <pathelement path="build"/>
+      <fileset dir="${plib}" includes="*.jar"/>
+    </path>
+    <path id="path.push-server.run">
+      <path refid="path.bundle"/>
+      <path refid="path.addons"/>
       <pathelement path="build"/>
       <fileset dir="${plib}" includes="*.jar"/>
     </path>
@@ -154,6 +161,13 @@
     </java>
   </target>
 
+  <target name="run-push-server" depends="compile">
+    <java fork="true" dir="." classname="de.pangaea.metadataportal.push.PushServer" classpathref="path.push-server.run">
+       <sysproperty key="log4j.configurationFile" value="${log4j-conf}"/>
+       <arg file="conf/config.xml"/>
+    </java>
+  </target>
+
   <!-- JAVADOCS TARGET -->
   <target name="javadocs" depends="-init">
     <delete dir="${docs}"/>
@@ -169,16 +183,24 @@
   <!-- PACKAGING -->
   <target name="binpackage" depends="dist,javadocs">
     <ivy:cachefileset setid="fileset.bundle" conf="bundle" log="${ivy.logging}"/>
+    <ivy:cachefileset setid="fileset.addons" conf="addons" log="${ivy.logging}"/>
     <zip destfile="${basedir}/${pkgname}-bin.zip">
       <mappedresources>
         <fileset refid="fileset.bundle"/>
         <chainedmapper>
           <flattenmapper/>
-          <globmapper from="*" to="${pkgname}/lib/*"/>
+          <globmapper from="*" to="${pkgname}/lib/core/*"/>
         </chainedmapper>
       </mappedresources>
-      <zipfileset dir="${dist}" prefix="${pkgname}/lib"/>
-      <zipfileset dir="${plib}" prefix="${pkgname}/lib"/>
+      <mappedresources>
+        <fileset refid="fileset.addons"/>
+        <chainedmapper>
+          <flattenmapper/>
+          <globmapper from="*" to="${pkgname}/lib/addons/*"/>
+        </chainedmapper>
+      </mappedresources>
+      <zipfileset dir="${dist}" prefix="${pkgname}/lib/core"/>
+      <zipfileset dir="${plib}" prefix="${pkgname}/lib/core"/>
       <zipfileset dir="${plugins}" prefix="${pkgname}/plugins"/>
       <zipfileset dir="${basedir}/conf" prefix="${pkgname}/conf"/>
       <zipfileset dir="${basedir}/scripts" prefix="${pkgname}/scripts"/>

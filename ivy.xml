@@ -4,10 +4,12 @@
   <configurations>
      <conf name="build" transitive="true" visibility="private" />
      <conf name="bundle" transitive="true" visibility="private" />
+     <conf name="addons" transitive="true" visibility="private" />
      <conf name="buildtools" transitive="true" visibility="private" />
   </configurations>
   <dependencies>
-    <dependency org="org.elasticsearch.client" name="transport" rev="5.6.16" conf="build,bundle->default"/>
+    <dependency org="org.elasticsearch" name="elasticsearch" rev="5.6.16" conf="build,bundle->default"/>
+    <dependency org="org.elasticsearch.plugin" name="transport-netty4-client" rev="5.6.16" conf="build,bundle->default"/>
 
     <dependency org="commons-logging" name="commons-logging" rev="1.2" conf="build,bundle->default"/>
     <dependency org="commons-digester" name="commons-digester" rev="2.1" conf="build,bundle->default"/>
@@ -19,6 +21,9 @@
     <dependency org="org.apache.logging.log4j" name="log4j-jcl" rev="2.13.3"  conf="build,bundle->default"/>
     
     <dependency org="net.sourceforge.nekohtml" name="nekohtml" rev="1.9.22" conf="bundle->default"/>
+    
+    <!-- HTTP server to accept document pushes: -->
+    <dependency org="io.undertow" name="undertow-core" rev="1.4.28.Final" conf="build,addons->default"/>
     
     <!-- build tools: -->
     <dependency org="de.thetaphi" name="forbiddenapis" rev="3.1" conf="buildtools->default"/>
