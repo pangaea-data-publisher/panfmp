@@ -183,16 +183,24 @@
   <!-- PACKAGING -->
   <target name="binpackage" depends="dist,javadocs">
     <ivy:cachefileset setid="fileset.bundle" conf="bundle" log="${ivy.logging}"/>
+    <ivy:cachefileset setid="fileset.addons" conf="addons" log="${ivy.logging}"/>
     <zip destfile="${basedir}/${pkgname}-bin.zip">
       <mappedresources>
         <fileset refid="fileset.bundle"/>
         <chainedmapper>
           <flattenmapper/>
-          <globmapper from="*" to="${pkgname}/lib/*"/>
+          <globmapper from="*" to="${pkgname}/lib/core/*"/>
         </chainedmapper>
       </mappedresources>
-      <zipfileset dir="${dist}" prefix="${pkgname}/lib"/>
-      <zipfileset dir="${plib}" prefix="${pkgname}/lib"/>
+      <mappedresources>
+        <fileset refid="fileset.addons"/>
+        <chainedmapper>
+          <flattenmapper/>
+          <globmapper from="*" to="${pkgname}/lib/addons/*"/>
+        </chainedmapper>
+      </mappedresources>
+      <zipfileset dir="${dist}" prefix="${pkgname}/lib/core"/>
+      <zipfileset dir="${plib}" prefix="${pkgname}/lib/core"/>
       <zipfileset dir="${plugins}" prefix="${pkgname}/plugins"/>
       <zipfileset dir="${basedir}/conf" prefix="${pkgname}/conf"/>
       <zipfileset dir="${basedir}/scripts" prefix="${pkgname}/scripts"/>
