@@ -82,9 +82,16 @@
     <echo taskname="check-ivy" message="${ivy.version-message}"/>
     <ivy:cachepath pathid="path.build" conf="build" log="${ivy.logging}"/>
     <ivy:cachepath pathid="path.bundle" conf="bundle" log="${ivy.logging}"/>
+    <ivy:cachepath pathid="path.addons" conf="addons" log="${ivy.logging}"/>
     <!--<ivy:cachepath pathid="path.test" conf="test" log="${ivy.logging}"/>-->
     <path id="path.run">
       <path refid="path.bundle"/>
+      <pathelement path="build"/>
+      <fileset dir="${plib}" includes="*.jar"/>
+    </path>
+    <path id="path.push-server.run">
+      <path refid="path.bundle"/>
+      <path refid="path.addons"/>
       <pathelement path="build"/>
       <fileset dir="${plib}" includes="*.jar"/>
     </path>
@@ -151,6 +158,13 @@
        <sysproperty key="log4j.configurationFile" value="${log4j-conf}"/>
        <arg file="conf/config.xml"/>
        <arg value="${index}"/>
+    </java>
+  </target>
+
+  <target name="run-push-server" depends="compile">
+    <java fork="true" dir="." classname="de.pangaea.metadataportal.push.PushServer" classpathref="path.push-server.run">
+       <sysproperty key="log4j.configurationFile" value="${log4j-conf}"/>
+       <arg file="conf/config.xml"/>
     </java>
   </target>
 

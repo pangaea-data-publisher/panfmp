@@ -57,14 +57,21 @@ public abstract class SingleFileEntitiesHarvester extends Harvester {
   private Instant newestDatestamp = null;
   
   public SingleFileEntitiesHarvester(HarvesterConfig iconfig) {
+    this(iconfig, parseDocumentErrorAction(iconfig));
+  }
+  
+  protected SingleFileEntitiesHarvester(HarvesterConfig iconfig, DocumentErrorAction parseErrorAction) {
     super(iconfig);
+    this.parseErrorAction = parseErrorAction;
 
     if (BooleanParser.parseBoolean(iconfig.properties.getProperty(
         "deleteMissingDocuments", "true"))) validIdentifiers = new HashSet<>();
-
+  }
+  
+  private static DocumentErrorAction parseDocumentErrorAction(HarvesterConfig iconfig) {
     final String s = iconfig.properties.getProperty("parseErrorAction", DocumentErrorAction.IGNOREDOCUMENT.name());
     try {
-      parseErrorAction = DocumentErrorAction.valueOf(s.toUpperCase(Locale.ROOT));
+      return DocumentErrorAction.valueOf(s.toUpperCase(Locale.ROOT));
     } catch (IllegalArgumentException e) {
       throw new IllegalArgumentException("Invalid value '" + s
           + "' for harvester property 'parseErrorAction', valid ones are: "

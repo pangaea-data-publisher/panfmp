@@ -34,11 +34,11 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
-import org.elasticsearch.transport.client.PreBuiltTransportClient;
 
 import de.pangaea.metadataportal.config.HarvesterConfig;
 import de.pangaea.metadataportal.processor.DocumentProcessor;
 import de.pangaea.metadataportal.processor.ElasticsearchConnection;
+import de.pangaea.metadataportal.processor.MinimalTransportClient;
 import de.pangaea.metadataportal.utils.HostAndPort;
 
 /**
@@ -112,7 +112,7 @@ public class ElasticsearchHarvester extends SingleFileEntitiesHarvester {
       if (log.isDebugEnabled()) {
         log.debug("ES connection settings: " + settings.getAsMap());
       }
-      this.client = new PreBuiltTransportClient(settings).addTransportAddress(addr);
+      this.client = new MinimalTransportClient(settings).addTransportAddress(addr);
       this.closeClient = true;
     } else {
       log.info("Connecting to global Elasticsearch node for harvesting " + queryInfo + "...");

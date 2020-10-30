@@ -112,7 +112,7 @@ public abstract class Harvester {
    * {@link Rebuilder}. Public code should use
    * {@link #runHarvester(Config,String)}.
    */
-  static boolean runHarvester(Config conf, String id, Class<? extends Harvester> harvesterClass) {
+  protected static boolean runHarvester(Config conf, String id, Class<? extends Harvester> harvesterClass) {
     final Set<String> activeIds;
     if (isAllIndexes(id)) {
       activeIds = conf.targetIndexes.keySet();
@@ -191,7 +191,7 @@ public abstract class Harvester {
     } 
   }
   
-  static boolean isAllIndexes(String id) {
+  protected static boolean isAllIndexes(String id) {
     return id == null || "*".equals(id) || "all".equals(id);
   }
   
