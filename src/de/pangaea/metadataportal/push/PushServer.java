@@ -53,8 +53,8 @@ import io.undertow.util.StatusCodes;
  * prefix, pass system property {@code server.rootPath}. This prepends this
  * path to the above pattern.
  * 
- * @see de.pangaea.metadataportal.harvester.NoOpHarvester
  * @author Uwe Schindler
+ * @see de.pangaea.metadataportal.harvester.NoOpHarvester
  */
 public class PushServer {
   

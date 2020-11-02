@@ -35,7 +35,15 @@ import de.pangaea.metadataportal.processor.DocumentErrorAction;
 import de.pangaea.metadataportal.processor.ElasticsearchConnection;
 import de.pangaea.metadataportal.processor.MetadataDocument;
 
+/**
+ * Fake {@link Harvester} class to implement by {@link PushServer}.
+ * 
+ * @author Uwe Schindler
+ * @see PushServer
+ */
 public final class PushWrapperHarvester extends SingleFileEntitiesHarvester {
+  
+  // TODO: Redo this code and remove stupid ThreadLocals.
   
   private static final ThreadLocal<Consumer<PushWrapperHarvester>> STARTUP_CALLBACK_HOLDER = new ThreadLocal<>();
   private static final ThreadLocal<Consumer<PushWrapperHarvester>> SHUTDOWN_CALLBACK_HOLDER = new ThreadLocal<>();
