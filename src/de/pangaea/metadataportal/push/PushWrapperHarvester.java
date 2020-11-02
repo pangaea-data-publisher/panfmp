@@ -39,6 +39,7 @@ public final class PushWrapperHarvester extends SingleFileEntitiesHarvester {
   
   private static final ThreadLocal<Consumer<PushWrapperHarvester>> STARTUP_CALLBACK_HOLDER = new ThreadLocal<>();
   private static final ThreadLocal<Consumer<PushWrapperHarvester>> SHUTDOWN_CALLBACK_HOLDER = new ThreadLocal<>();
+  private static final long TIMEOUT = TimeUnit.SECONDS.toNanos(60);
   
   public static boolean isValidHarvesterId(Config conf, String id) {
     return !isAllIndexes(id) && conf.harvestersAndIndexes.contains(id) && !conf.targetIndexes.containsKey(id);
@@ -66,7 +67,6 @@ public final class PushWrapperHarvester extends SingleFileEntitiesHarvester {
   
   // harvester interface
   private final Harvester wrappedHarvester;
-  private final long timeout = TimeUnit.SECONDS.toNanos(60);
   private final AtomicLong lastAccessed = new AtomicLong(System.nanoTime());
   private final CountDownLatch latch = new CountDownLatch(1);
   
@@ -127,7 +127,7 @@ public final class PushWrapperHarvester extends SingleFileEntitiesHarvester {
     
     log.info("Waiting for push connections...");
     STARTUP_CALLBACK_HOLDER.get().accept(this);
-    while (latch.getCount() > 0L && System.nanoTime() - lastAccessed.get() < timeout) {
+    while (latch.getCount() > 0L && System.nanoTime() - lastAccessed.get() < TIMEOUT) {
       latch.await(1, TimeUnit.SECONDS);
     }
     SHUTDOWN_CALLBACK_HOLDER.get().accept(this);
