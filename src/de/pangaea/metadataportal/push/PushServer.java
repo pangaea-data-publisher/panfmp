@@ -92,7 +92,7 @@ public class PushServer {
   }
 
   private void runServer() {
-    log.info(String.format(Locale.ENGLISH, "Starting panFMP push server and listening on %s:%d...", host, port));
+    log.info(String.format(Locale.ENGLISH, "Starting panFMP push server and listening on [%s:%d]...", host, port));
     HttpHandler handler = Handlers.routing(false)
         .put("/{harvester}/*", this::handlePut)
         .delete("/{harvester}/*", this::handleDelete)
