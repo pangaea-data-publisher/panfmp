@@ -31,6 +31,7 @@
 
     <!-- Those are not used at all: -->
     <exclude org="xml-resolver" module="xml-resolver"/>
+    <exclude org="commons-codec" module="commons-codec"/>
     
     <!-- use our patched version instead: -->
     <exclude org="xalan" module="serializer"/>
