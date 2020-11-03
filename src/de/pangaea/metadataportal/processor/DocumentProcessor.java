@@ -83,7 +83,7 @@ public final class DocumentProcessor {
   
   private final Object poolInitLock = new Object();
   private ExecutorService pool = null;
-  BulkProcessor bulkProcessor = null;
+  private volatile BulkProcessor bulkProcessor = null;
   
   public static final String HARVESTER_METADATA_TYPE = "panfmp_meta";
 
@@ -234,9 +234,7 @@ public final class DocumentProcessor {
       try {      
         final DocWriteRequest<?> req = buildDocumentAction(mdoc);
         if (req != null) {
-          synchronized(poolInitLock) {
-            bulkProcessor.add(req);
-          }
+          bulkProcessor.add(req);
         }
       } catch (Throwable e) {
         // only store the first error in failure variable, other errors are only logged
