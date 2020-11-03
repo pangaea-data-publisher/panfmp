@@ -24,12 +24,12 @@ package de.pangaea.metadataportal.processor;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.network.NetworkModule;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.index.reindex.ReindexPlugin;
 import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.transport.Netty4Plugin;
 
@@ -77,7 +77,7 @@ public class MinimalTransportClient extends TransportClient {
   }
   
   private static final Collection<Class<? extends Plugin>> PRE_INSTALLED_PLUGINS =
-      Collections.singleton(Netty4Plugin.class);
+      Arrays.asList(Netty4Plugin.class, ReindexPlugin.class);
   
   /**
    * Creates a new transport client with pre-installed plugins.

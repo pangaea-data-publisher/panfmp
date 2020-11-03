@@ -10,6 +10,7 @@
   <dependencies>
     <dependency org="org.elasticsearch" name="elasticsearch" rev="5.6.16" conf="build,bundle->default"/>
     <dependency org="org.elasticsearch.plugin" name="transport-netty4-client" rev="5.6.16" conf="build,bundle->default"/>
+    <dependency org="org.elasticsearch.plugin" name="reindex-client" rev="5.6.16" conf="build,bundle->default"/>
 
     <dependency org="commons-logging" name="commons-logging" rev="1.2" conf="build,bundle->default"/>
     <dependency org="commons-digester" name="commons-digester" rev="2.1" conf="build,bundle->default"/>
