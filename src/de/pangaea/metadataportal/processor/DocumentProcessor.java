@@ -199,8 +199,10 @@ public final class DocumentProcessor {
   public void addDocument(MetadataDocument mdoc) throws BackgroundFailure {
     if (isClosed()) throw new IllegalStateException("DocumentProcessor already closed");
     throwFailure();
-    startPool();
-    pool.execute(getRunnable(mdoc));
+    synchronized(poolInitLock) {
+      startPool();
+      pool.execute(getRunnable(mdoc));
+    }
     throwFailure(); // fail is queue was full and it was executed in this thread
   }
   
@@ -232,7 +234,9 @@ public final class DocumentProcessor {
       try {      
         final DocWriteRequest<?> req = buildDocumentAction(mdoc);
         if (req != null) {
-          bulkProcessor.add(req);
+          synchronized(poolInitLock) {
+            bulkProcessor.add(req);
+          }
         }
       } catch (Throwable e) {
         // only store the first error in failure variable, other errors are only logged
