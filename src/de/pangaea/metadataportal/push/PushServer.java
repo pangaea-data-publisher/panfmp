@@ -17,6 +17,7 @@
 package de.pangaea.metadataportal.push;
 
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Locale;
 import java.util.Map;
@@ -126,9 +127,7 @@ public class PushServer {
     try {
       lastMod = (lastModHdr == null) ? null : DateUtils.parseDate(lastModHdr).toInstant();
     } catch (NullPointerException npe) {
-      log.error("Invalid last modified date in HTTP request: " + lastModHdr);
-      e.setStatusCode(StatusCodes.BAD_REQUEST);
-      e.endExchange();
+      sendError(e, StatusCodes.BAD_REQUEST, "Invalid last modified date in HTTP request: " + lastModHdr);
       return;
     }
     
@@ -141,11 +140,10 @@ public class PushServer {
       saxSrc.setEncoding(e.getRequestCharset());
       getHarvester(harvester).addDocument(documentId, lastMod, new SAXSource(saxSrc));
       e.setStatusCode(StatusCodes.ACCEPTED);
+      e.endExchange();
     } catch (Exception ex) {
-      log.error(ex);
-      e.setStatusCode(getStatusCode(ex));
+      sendError(e, "Error processing " + e.getRequestMethod() + " request", ex);
     }
-    e.endExchange();
   }
   
   private void handleDelete(HttpServerExchange e) {
@@ -159,11 +157,10 @@ public class PushServer {
     try {
       getHarvester(harvester).deleteDocument(documentId);
       e.setStatusCode(StatusCodes.ACCEPTED);
+      e.endExchange();
     } catch (Exception ex) {
-      log.error(ex);
-      e.setStatusCode(getStatusCode(ex));
+      sendError(e, "Error processing " + e.getRequestMethod() + " request", ex);
     }
-    e.endExchange();
   }
   
   private void handleCommit(HttpServerExchange e) {
@@ -190,6 +187,31 @@ public class PushServer {
     e.endExchange();
   }
   
+  private static void sendError(HttpServerExchange e, String message, Exception ex) {
+    log.error(String.format(Locale.ROOT, "[%s] %s", e.getRequestPath(),  message), ex);
+    e.setStatusCode(getStatusCode(ex));
+    if (e.isResponseChannelAvailable()) {
+      e.getResponseHeaders().add(Headers.CONTENT_TYPE, "text/plain; charset=UTF-8");
+      e.getResponseSender().send(String.format(Locale.ROOT, "%s: %s", message, ex), StandardCharsets.UTF_8);
+    }
+  }
+  
+  private static void sendError(HttpServerExchange e, int statusCode, String message) {
+    log.error(String.format(Locale.ROOT, "[%s] %s", e.getRequestPath(),  message));
+    e.setStatusCode(statusCode);
+    if (e.isResponseChannelAvailable()) {
+      e.getResponseHeaders().add(Headers.CONTENT_TYPE, "text/plain; charset=UTF-8");
+      e.getResponseSender().send(message, StandardCharsets.UTF_8);
+    }
+  }
+  
+  private static int getStatusCode(Throwable e) {
+    if (e instanceof IllegalArgumentException) {
+      return StatusCodes.NOT_FOUND;
+    }
+    return StatusCodes.INTERNAL_SERVER_ERROR;
+  }
+  
   private void shutdownHook(GracefulShutdownHandler rootHandler) {
     log.info("Shutting down...");
     rootHandler.shutdown();
@@ -213,13 +235,6 @@ public class PushServer {
   
   private PushWrapperHarvester getHarvester(String id) {
     return harvesters.computeIfAbsent(id, key -> PushWrapperHarvester.initializeWrapper(conf, key, h -> harvesters.remove(id)));
-  }
-  
-  private int getStatusCode(Throwable e) {
-    if (e instanceof IllegalArgumentException) {
-      return StatusCodes.NOT_FOUND;
-    }
-    return StatusCodes.INTERNAL_SERVER_ERROR;
   }
   
 }
