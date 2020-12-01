@@ -222,7 +222,7 @@ public final class DocumentProcessor {
     log.info("Removing metadata items not seen while harvesting...");
     long deleted = 0L;
 
-    if (validIdentifiers.size() < DEFAULT_DELETE_UNSEEN_BULK_SIZE) {
+    if (validIdentifiers.size() <= DEFAULT_DELETE_UNSEEN_BULK_SIZE) {
       final IdsQueryBuilder bld = QueryBuilders.idsQuery(iconfig.root.typeName);
       bld.ids().addAll(validIdentifiers);
       final QueryBuilder query = QueryBuilders.boolQuery()
