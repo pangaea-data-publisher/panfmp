@@ -313,6 +313,7 @@ public abstract class Harvester {
       processor.close(cleanShutdown ? validIdentifiers : null);
     }
     processor = null;
+    validIdentifiers = null;
     
     if (cleanShutdown) {
       log.info("Harvested " + harvestCount + " objects - finished.");

@@ -44,6 +44,7 @@ import de.pangaea.metadataportal.processor.ElasticsearchConnection;
 import de.pangaea.metadataportal.processor.MetadataDocument;
 import de.pangaea.metadataportal.utils.BooleanParser;
 import de.pangaea.metadataportal.utils.ExtendedDigester;
+import de.pangaea.metadataportal.utils.HugeStringHashBuilder;
 import de.pangaea.metadataportal.utils.SimpleCookieHandler;
 
 /**
@@ -101,7 +102,7 @@ public abstract class OAIHarvesterBase extends Harvester {
   protected final boolean deleteMissingDocuments;
   
   /** Contains all valid identifiers, if not {@code null}. Will be initialized by subclasses. */
-  private Set<String> validIdentifiers = null;
+  private HugeStringHashBuilder validIdentifiersBuilder = null;
 
   /**
    * The harvester should filter incoming documents according to its set
@@ -147,8 +148,8 @@ public abstract class OAIHarvesterBase extends Harvester {
       final OAIMetadataDocument omdoc = (OAIMetadataDocument) mdoc;
       if (Collections.disjoint(omdoc.getSets(), sets)) omdoc.setDeleted(true);
     }
-    if (validIdentifiers != null && !mdoc.isDeleted()) {
-      validIdentifiers.add(mdoc.getIdentifier());
+    if (validIdentifiersBuilder != null && !mdoc.isDeleted()) {
+      validIdentifiersBuilder.add(mdoc.getIdentifier());
     }
     super.addDocument(mdoc);
   }
@@ -388,9 +389,9 @@ public abstract class OAIHarvesterBase extends Harvester {
    * can be enabled.
    */
   protected void enableMissingDocumentDelete() {
-    if (validIdentifiers == null && deleteMissingDocuments) {
+    if (validIdentifiersBuilder == null && deleteMissingDocuments) {
       log.info("Tracking of seen document identifiers enabled.");
-      validIdentifiers = new HashSet<>();
+      validIdentifiersBuilder = new HugeStringHashBuilder();
     }
   }
   
@@ -402,12 +403,14 @@ public abstract class OAIHarvesterBase extends Harvester {
    */
   protected void cancelMissingDocumentDelete() {
     log.info("Tracking of seen document identifiers cancelled, no deletions will happen.");
-    validIdentifiers = null;
+    validIdentifiersBuilder = null;
   }
   
   @Override
   public void close(boolean cleanShutdown) throws Exception {
-    if (cleanShutdown && validIdentifiers != null) setValidIdentifiers(validIdentifiers);
+    if (cleanShutdown && validIdentifiersBuilder != null) {
+      setValidIdentifiers(validIdentifiersBuilder.build());
+    }
     reset();
     SimpleCookieHandler.INSTANCE.disable();
     super.close(cleanShutdown);

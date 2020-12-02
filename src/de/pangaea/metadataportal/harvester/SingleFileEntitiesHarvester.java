@@ -18,7 +18,6 @@ package de.pangaea.metadataportal.harvester;
 
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
 
@@ -28,6 +27,7 @@ import de.pangaea.metadataportal.config.HarvesterConfig;
 import de.pangaea.metadataportal.processor.DocumentErrorAction;
 import de.pangaea.metadataportal.processor.MetadataDocument;
 import de.pangaea.metadataportal.utils.BooleanParser;
+import de.pangaea.metadataportal.utils.HugeStringHashBuilder;
 
 /**
  * Abstract harvester class for single file entities (like files from web page
@@ -53,7 +53,7 @@ public abstract class SingleFileEntitiesHarvester extends Harvester {
   
   private final DocumentErrorAction parseErrorAction;
   
-  private Set<String> validIdentifiers = null;
+  private HugeStringHashBuilder validIdentifiersBuilder = null;
   private Instant newestDatestamp = null;
   
   public SingleFileEntitiesHarvester(HarvesterConfig iconfig) {
@@ -65,7 +65,7 @@ public abstract class SingleFileEntitiesHarvester extends Harvester {
     this.parseErrorAction = parseErrorAction;
 
     if (BooleanParser.parseBoolean(iconfig.properties.getProperty(
-        "deleteMissingDocuments", "true"))) validIdentifiers = new HashSet<>();
+        "deleteMissingDocuments", "true"))) validIdentifiersBuilder = new HugeStringHashBuilder();
   }
   
   private static DocumentErrorAction parseDocumentErrorAction(HarvesterConfig iconfig) {
@@ -81,7 +81,9 @@ public abstract class SingleFileEntitiesHarvester extends Harvester {
   
   @Override
   public void close(boolean cleanShutdown) throws Exception {
-    setValidIdentifiers(validIdentifiers);
+    if (cleanShutdown && validIdentifiersBuilder != null) {
+      setValidIdentifiers(validIdentifiersBuilder.build());
+    }
     super.close(cleanShutdown);
   }
   
@@ -116,7 +118,7 @@ public abstract class SingleFileEntitiesHarvester extends Harvester {
    */
   protected void addDocument(String identifier, Instant lastModified, Source xml)
       throws Exception {
-    if (validIdentifiers != null) validIdentifiers.add(identifier);
+    if (validIdentifiersBuilder != null) validIdentifiersBuilder.add(identifier);
     
     if (lastModified != null) {
       if (newestDatestamp == null || newestDatestamp.isBefore(lastModified)) {
@@ -173,7 +175,7 @@ public abstract class SingleFileEntitiesHarvester extends Harvester {
    * documents call this.
    */
   protected void cancelMissingDocumentDelete() {
-    validIdentifiers = null;
+    validIdentifiersBuilder = null;
   }
   
   @Override
