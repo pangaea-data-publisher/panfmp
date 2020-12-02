@@ -42,13 +42,14 @@ public final class HugeStringHashBuilder {
   }
   
   /** Adds a String */
-  public void add(String str) {
-    Objects.requireNonNull(str,"str");
+  public HugeStringHashBuilder add(String str) {
+    Objects.requireNonNull(str, "str");
     if (hash == null) {
-      throw new IllegalStateException("Cannot add additional elements once Set is built.");
+      throw new IllegalStateException("Cannot add additional elements once Set<String> is built.");
     }
     scratch.copyChars(str);
     hash.add(scratch.get());
+    return this;
   }
   
   /** Builds a read only set. After calling this method, you cannot reuse the instance. */
@@ -57,9 +58,11 @@ public final class HugeStringHashBuilder {
       throw new IllegalStateException("build() can only be called once.");
     }
     scratch.clear();
-    final BytesRefHash privateHash = hash;
-    hash = null; // hand over to the new set, so we don't produce memory leak:
-    return new SetImpl(privateHash);
+    try {
+      return new SetImpl(hash);
+    } finally {
+      hash = null; // free memory
+    }
   }
   
   private static final class SetImpl extends AbstractSet<String> {
@@ -72,8 +75,8 @@ public final class HugeStringHashBuilder {
     
     @Override
     public Stream<String> stream() {
-      final BytesRef scratch = new BytesRef();
-      return IntStream.range(0, hash.size()).mapToObj(i -> hash.get(i, scratch).utf8ToString());
+      // we can't use a scratch BytesRef, as stream may be executed in parallel:
+      return IntStream.range(0, hash.size()).mapToObj(keyId -> hash.get(keyId, new BytesRef()).utf8ToString());
     }
     
     @Override
