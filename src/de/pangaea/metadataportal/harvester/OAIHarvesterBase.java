@@ -58,6 +58,8 @@ import de.pangaea.metadataportal.utils.SimpleCookieHandler;
  * <li><code>retryAfterSeconds</code>: time between retries in seconds (default:
  * 60)</li>
  * <li><code>timeoutAfterSeconds</code>: HTTP Timeout for harvesting in seconds</li>
+ * <li><code>authorizationHeader</code>: Optional 'Authorization' HTTP header contents
+ * to be sent with request.</li>
  * <li><code>metadataPrefix</code>: OAI metadata prefix to harvest</li>
  * <li><code>identifierPrefix</code>: prepend all identifiers returned by OAI with this string</li>
  * <li><code>ignoreDatestamps</code>: does full harvesting, while ignoring all datestamps. They are saved, but ignored, if invalid.</li>
