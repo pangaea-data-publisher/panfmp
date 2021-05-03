@@ -77,6 +77,12 @@ public abstract class OAIHarvesterBase extends Harvester {
   public static final int DEFAULT_RETRY_COUNT = 5;
   public static final int DEFAULT_TIMEOUT = 180; // seconds
   
+  public static final String USER_AGENT = new StringBuilder("Java/")
+      .append(System.getProperty("java.version")).append(" (")
+      .append(de.pangaea.metadataportal.Package.getProductName()).append('/')
+      .append(de.pangaea.metadataportal.Package.getVersion())
+      .append("; OAI downloader)").toString();
+  
   /** the used metadata prefix from the configuration */
   protected final String metadataPrefix;
   
@@ -85,8 +91,8 @@ public abstract class OAIHarvesterBase extends Harvester {
   
   /** the sets to harvest from the configuration, <code>null</code> to harvest all */
   protected final Set<String> sets;
-  /** the retryCount from configuration */
   
+  /** the retryCount from configuration */
   protected final int retryCount;
   
   /** the retryTime from configuration */
@@ -94,6 +100,9 @@ public abstract class OAIHarvesterBase extends Harvester {
   
   /** the timeout from configuration */
   protected final int timeout;
+  
+  /** the authorizationHeader from configuration */
+  protected final String authorizationHeader;
   
   /** If enabled, does full harvesting, while ignoring all datestamps (default is {@code false}). They are saved, but ignored, if invalid. */
   protected final boolean ignoreDatestamps;
@@ -126,6 +135,7 @@ public abstract class OAIHarvesterBase extends Harvester {
     retryCount = Integer.parseInt(iconfig.properties.getProperty("retryCount", Integer.toString(DEFAULT_RETRY_COUNT)));
     retryTime = Integer.parseInt(iconfig.properties.getProperty("retryAfterSeconds", Integer.toString(DEFAULT_RETRY_TIME)));
     timeout = Integer.parseInt(iconfig.properties.getProperty("timeoutAfterSeconds", Integer.toString(DEFAULT_TIMEOUT)));
+    authorizationHeader = iconfig.properties.getProperty("authorizationHeader");
     metadataPrefix = iconfig.properties.getProperty("metadataPrefix");
     if (metadataPrefix == null) {
       throw new NullPointerException("No metadataPrefix for the OAI repository was given!");
@@ -299,13 +309,10 @@ public abstract class OAIHarvesterBase extends Harvester {
     HttpURLConnection conn = (HttpURLConnection) url.openConnection();
     conn.setConnectTimeout(timeout * 1000);
     conn.setReadTimeout(timeout * 1000);
-    
-    StringBuilder ua = new StringBuilder("Java/")
-        .append(System.getProperty("java.version")).append(" (")
-        .append(de.pangaea.metadataportal.Package.getProductName()).append('/')
-        .append(de.pangaea.metadataportal.Package.getVersion())
-        .append("; OAI downloader)");
-    conn.setRequestProperty("User-Agent", ua.toString());
+    conn.setRequestProperty("User-Agent", USER_AGENT);
+    if (authorizationHeader != null) {
+      conn.setRequestProperty("Authorization", authorizationHeader);
+    }
     
     conn.setRequestProperty("Accept-Encoding",
         "gzip, deflate, identity;q=0.3, *;q=0");
@@ -421,7 +428,8 @@ public abstract class OAIHarvesterBase extends Harvester {
     super.enumerateValidHarvesterPropertyNames(props);
     props.addAll(Arrays.asList("setSpec", "retryCount",
         "retryAfterSeconds", "timeoutAfterSeconds", "metadataPrefix",
-        "identifierPrefix", "ignoreDatestamps", "deleteMissingDocuments"));
+        "identifierPrefix", "ignoreDatestamps", "deleteMissingDocuments",
+        "authorizationHeader"));
   }
   
 }
