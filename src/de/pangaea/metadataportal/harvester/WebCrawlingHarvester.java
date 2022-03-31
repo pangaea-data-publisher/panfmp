@@ -288,7 +288,7 @@ public class WebCrawlingHarvester extends SingleFileEntitiesHarvester {
   
   private void analyzeHTML(final URL baseURL, final InputSource source)
       throws Exception {
-    XMLReader r = htmlReaderClass.newInstance();
+    XMLReader r = htmlReaderClass.getConstructor().newInstance();
     r.setFeature("http://xml.org/sax/features/namespaces", true);
     r.setFeature("http://cyberneko.org/html/features/balance-tags", true);
     r.setFeature("http://cyberneko.org/html/features/report-errors", false);

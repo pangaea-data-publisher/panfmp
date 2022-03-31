@@ -6,17 +6,6 @@
     </condition>
   </fail>
 
-  <!-- 
-    the propery "ant.java.version" is not always correct, depending on used ANT version.
-    E.g. Java 8 is only detected in ANT 1.8.3+.
-    Add newer Java version checks at beginning,
-    because ANT will nevert override existing properties!
-   -->
-  <condition property="build.java.runtime" value="1.8">
-    <hasmethod classname="java.util.Collections" method="emptySortedSet"/>
-  </condition>
-  <fail message="Minimum supported Java version is 1.8." unless="build.java.runtime"/>
-
   <!-- workaround for https://issues.apache.org/bugzilla/show_bug.cgi?id=53347 -->
   <condition property="build.compiler" value="javac1.7">
     <or>
@@ -42,10 +31,10 @@
 
   <property name="year" value="2007-2013"/>
 
-  <property name="javadoc.projectWebSite" value="http://www.panFMP.org/" />
-  <property name="javadoc.link.sun" value="https://docs.oracle.com/javase/8/docs/api/" />
+  <property name="javadoc.projectWebSite" value="https://www.panFMP.org/" />
+  <property name="javadoc.link.oracle" value="https://docs.oracle.com/en/java/javase/11/docs/api/" />
 
-  <property name="jdk.version" value="1.8"/>
+  <property name="jdk.version" value="11"/>
 
   <!-- IVY -->
   <property name="ivy.install.version" value="2.4.0" />
@@ -108,9 +97,9 @@
 
   <target name="compile" depends="-init">
     <mkdir dir="${build}"/>
-    <javac srcdir="${src}" destdir="${build}" source="${jdk.version}" target="${jdk.version}" classpathref="path.build"
+    <javac srcdir="${src}" destdir="${build}" classpathref="path.build"
       deprecation="on" debug="${debug}" encoding="UTF-8" includeantruntime="false">
-      <compilerarg line="-Xlint:unchecked"/>
+      <compilerarg line="-Xlint:unchecked --release ${jdk.version}"/>
     </javac>
     <fa:forbiddenapis classpathref="path.build" dir="${build}" targetVersion="${jdk.version}">
       <bundledsignatures name="jdk-unsafe"/>
@@ -172,11 +161,11 @@
   <target name="javadocs" depends="-init">
     <delete dir="${docs}"/>
     <mkdir dir="${docs}"/>
-    <javadoc sourcepath="${src}" destdir="${docs}" source="${jdk.version}" packagenames="*" classpathref="path.build" windowtitle="${ant.project.name} ${version} Documentation" overview="${src}/overview.html" charset="UTF-8" docencoding="UTF-8">
-      <link href="${javadoc.link.sun}"/>
+    <javadoc sourcepath="${src}" destdir="${docs}" packagenames="*" classpathref="path.build" windowtitle="${ant.project.name} ${version} Documentation" overview="${src}/overview.html" charset="UTF-8" docencoding="UTF-8">
+      <link href="${javadoc.link.oracle}"/>
       <doctitle><![CDATA[<H1>${ant.project.name} ${version}</H1>]]></doctitle>
       <bottom><![CDATA[<ADDRESS>Copyright &copy;${year} <A HREF='${javadoc.projectWebSite}' TARGET='_blank'>${ant.project.name}</A> Developers c/o Uwe Schindler</ADDRESS>]]></bottom>
-      <arg value="-Xdoclint:none"/>
+      <arg line="-Xdoclint:none --release ${jdk.version}"/>
     </javadoc>
   </target>	
   

@@ -14,7 +14,7 @@
 
     <dependency org="commons-logging" name="commons-logging" rev="1.2" conf="build,bundle->default"/>
     <dependency org="commons-digester" name="commons-digester" rev="2.1" conf="build,bundle->default"/>
-    <dependency org="xerces" name="xercesImpl" rev="2.12.1" conf="build,bundle->default"/>
+    <dependency org="xerces" name="xercesImpl" rev="2.12.2" conf="build,bundle->default"/>
     <dependency org="xalan" name="xalan" rev="2.7.2" conf="build,bundle->default"/>
     <dependency org="jakarta.xml.bind" name="jakarta.xml.bind-api" rev="3.0.1" conf="build,bundle->default"/>
     
@@ -32,6 +32,7 @@
     <dependency org="de.thetaphi" name="forbiddenapis" rev="3.2" conf="buildtools->default"/>
 
     <!-- Those are not used at all: -->
+    <exclude org="xml-apis" module="xml-apis"/>
     <exclude org="xml-resolver" module="xml-resolver"/>
     <exclude org="commons-codec" module="commons-codec"/>
     
