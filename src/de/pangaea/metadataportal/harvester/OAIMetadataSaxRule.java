@@ -16,9 +16,6 @@
 
 package de.pangaea.metadataportal.harvester;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
 
 import org.xml.sax.ContentHandler;
@@ -90,8 +87,7 @@ public final class OAIMetadataSaxRule extends SaxRule {
     }
   }
   
-  private static final Set<String> EXCLUDE_NS = Collections
-      .unmodifiableSet(new HashSet<>(Arrays.asList(
-          OAIHarvesterBase.OAI_NS, OAIHarvesterBase.OAI_STATICREPOSITORY_NS)));
+  private static final Set<String> EXCLUDE_NS = Set.of(OAIHarvesterBase.OAI_NS,
+      OAIHarvesterBase.OAI_STATICREPOSITORY_NS);
   
 }

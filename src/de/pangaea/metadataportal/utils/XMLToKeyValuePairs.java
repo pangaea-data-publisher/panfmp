@@ -16,22 +16,20 @@
 
 package de.pangaea.metadataportal.utils;
 
-import java.util.Collections;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.xml.XMLConstants;
-import jakarta.xml.bind.JAXBContext;
-import jakarta.xml.bind.JAXBElement;
-import jakarta.xml.bind.JAXBException;
-import jakarta.xml.bind.Unmarshaller;
 
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
+
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBElement;
+import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.Unmarshaller;
 
 /**
  * Used to serialize {@link Node} from a DOM tree to an Object (mainly {@link KeyValuePairs}).
@@ -52,12 +50,11 @@ public final class XMLToKeyValuePairs {
    */
   public static final String ATTRIBUTE_ELEMENT_PREFIX = "__AT_";
   
-  private static final Set<String> HIDDEN_ATTR_NAMESPACES = Collections.unmodifiableSet(
-      Stream.of(
+  private static final Set<String> HIDDEN_ATTR_NAMESPACES = Set.of(
           XMLConstants.XMLNS_ATTRIBUTE_NS_URI,
           XMLConstants.XML_NS_URI,
           XMLConstants.W3C_XML_SCHEMA_INSTANCE_NS_URI
-      ).collect(Collectors.toSet()));
+      );
   private static final Pattern PATTERN_SPECIAL_ATTRIBUTE_ELEMENT = Pattern.compile(Pattern.quote(ATTRIBUTE_ELEMENT_PREFIX).concat("(.*)"));
  
   public XMLToKeyValuePairs(boolean serializeAttributes) throws JAXBException {

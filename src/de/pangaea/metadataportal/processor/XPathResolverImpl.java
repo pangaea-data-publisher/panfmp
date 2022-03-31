@@ -16,10 +16,7 @@
 
 package de.pangaea.metadataportal.processor;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -97,10 +94,9 @@ public final class XPathResolverImpl implements XPathFunctionResolver, XPathVari
   public static final QName VARIABLE_HARVESTER_ID = new QName(
       DOCUMENT_PROCESSOR_NAMESPACE, "harvesterIdentifier");
   
-  public static final Set<QName> BASE_VARIABLES = Collections
-      .unmodifiableSet(new HashSet<>(Arrays.asList(
+  public static final Set<QName> BASE_VARIABLES = Set.of(
           VARIABLE_DOC_IDENTIFIER, VARIABLE_DOC_DATESTAMP,
-          VARIABLE_HARVESTER_ID)));
+          VARIABLE_HARVESTER_ID);
   
   private static XPathResolverImpl instance = new XPathResolverImpl();
   

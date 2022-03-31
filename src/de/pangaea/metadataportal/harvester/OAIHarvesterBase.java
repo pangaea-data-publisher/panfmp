@@ -25,7 +25,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
@@ -129,7 +128,7 @@ public abstract class OAIHarvesterBase extends Harvester {
     final String s = iconfig.properties.getProperty("setSpec");
     if (s != null) {
       String[] sets = s.split("[\\,\\;\\s]+");
-      this.sets = (sets.length == 0) ? null : Collections.unmodifiableSet(new HashSet<>(Arrays.asList(sets)));
+      this.sets = (sets.length == 0) ? null : Set.of(sets);
     } else {
       this.sets = null;
     }

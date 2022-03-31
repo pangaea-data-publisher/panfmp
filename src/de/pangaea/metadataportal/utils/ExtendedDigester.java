@@ -340,8 +340,8 @@ public class ExtendedDigester extends Digester {
         if (namespaceURI == null) throw new IllegalArgumentException(
             "Namespace URI cannot be null");
         List<String> plist = nsToPrefix.get(namespaceURI);
-        if (plist == null) return Collections.<String> emptyList().iterator();
-        else return Collections.unmodifiableList(plist).iterator();
+        return (plist == null) ? List.<String>of().iterator() :
+          Collections.unmodifiableList(plist).iterator();
       }
     };
   }
