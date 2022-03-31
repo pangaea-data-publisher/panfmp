@@ -122,7 +122,8 @@ public final class XMLToKeyValuePairs {
   }
    
   private boolean isXsiNamespaced(Node n) {
-    return HIDDEN_ATTR_NAMESPACES.contains(n.getNamespaceURI());
+    final String uri = n.getNamespaceURI();
+    return uri == null ? false : HIDDEN_ATTR_NAMESPACES.contains(uri);
   }
   
   private void convertNode(final KeyValuePairs kv, final Node n) throws JAXBException {
