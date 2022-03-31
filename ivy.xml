@@ -23,6 +23,7 @@
     <dependency org="org.apache.logging.log4j" name="log4j-jcl" rev="2.17.2"  conf="build,bundle->default"/>
     
     <dependency org="net.sourceforge.nekohtml" name="nekohtml" rev="1.9.22" conf="bundle->default"/>
+    <dependency org="com.sun.xml.bind" name="jaxb-impl" rev="3.0.2" conf="bundle->default"/>
     
     <!-- HTTP server to accept document pushes: -->
     <dependency org="io.undertow" name="undertow-core" rev="1.4.28.Final" conf="build,addons->default"/>
