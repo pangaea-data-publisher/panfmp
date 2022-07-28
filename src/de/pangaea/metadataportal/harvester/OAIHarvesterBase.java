@@ -79,7 +79,7 @@ public abstract class OAIHarvesterBase extends Harvester {
   public static final int DEFAULT_TIMEOUT = 180; // seconds
   
   public static final String USER_AGENT = new StringBuilder("Java/")
-      .append(System.getProperty("java.version")).append(" (")
+      .append(Runtime.version()).append(" (")
       .append(de.pangaea.metadataportal.Package.getProductName()).append('/')
       .append(de.pangaea.metadataportal.Package.getVersion())
       .append("; OAI downloader)").toString();

@@ -226,7 +226,7 @@ public class WebCrawlingHarvester extends SingleFileEntitiesHarvester {
       conn.setRequestMethod(method);
       
       StringBuilder ua = new StringBuilder("Java/")
-          .append(System.getProperty("java.version")).append(" (")
+          .append(Runtime.version()).append(" (")
           .append(de.pangaea.metadataportal.Package.getProductName())
           .append('/').append(de.pangaea.metadataportal.Package.getVersion())
           .append("; WebCrawlingHarvester)");

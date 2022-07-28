@@ -169,7 +169,7 @@ public class ZipFileHarvester extends SingleFileEntitiesHarvester {
         
         if (conn instanceof HttpURLConnection) {
           StringBuilder ua = new StringBuilder("Java/")
-              .append(System.getProperty("java.version")).append(" (")
+              .append(Runtime.version()).append(" (")
               .append(de.pangaea.metadataportal.Package.getProductName())
               .append('/')
               .append(de.pangaea.metadataportal.Package.getVersion())
