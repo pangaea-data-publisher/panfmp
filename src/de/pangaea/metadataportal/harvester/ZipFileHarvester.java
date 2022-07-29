@@ -79,6 +79,13 @@ public class ZipFileHarvester extends SingleFileEntitiesHarvester {
   public static final int DEFAULT_RETRY_COUNT = 5;
   public static final int DEFAULT_TIMEOUT = 180; // seconds
   
+  public static final String USER_AGENT = new StringBuilder("Java/")
+      .append(Runtime.version()).append(" (")
+      .append(de.pangaea.metadataportal.Package.getProductName())
+      .append('/')
+      .append(de.pangaea.metadataportal.Package.getVersion())
+      .append("; ZipFileHarvester)").toString();
+  
   /** the retryCount from configuration */
   protected final int retryCount;
   /** the retryTime from configuration */
@@ -168,13 +175,7 @@ public class ZipFileHarvester extends SingleFileEntitiesHarvester {
         conn.setReadTimeout(timeout * 1000);
         
         if (conn instanceof HttpURLConnection) {
-          StringBuilder ua = new StringBuilder("Java/")
-              .append(Runtime.version()).append(" (")
-              .append(de.pangaea.metadataportal.Package.getProductName())
-              .append('/')
-              .append(de.pangaea.metadataportal.Package.getVersion())
-              .append("; ZipFileHarvester)");
-          conn.setRequestProperty("User-Agent", ua.toString());
+          conn.setRequestProperty("User-Agent", USER_AGENT);
           
           conn.setRequestProperty("Accept-Encoding", "identity, *;q=0");
           conn.setRequestProperty("Accept", "application/zip, *;q=0.1");

@@ -18,19 +18,27 @@ package de.pangaea.metadataportal.harvester;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.CookieManager;
+import java.net.CookiePolicy;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.http.HttpClient;
+import java.net.http.HttpClient.Redirect;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.InflaterInputStream;
 
 import org.apache.commons.digester.AbstractObjectCreationFactory;
 import org.apache.commons.digester.ObjectCreationFactory;
@@ -43,8 +51,8 @@ import de.pangaea.metadataportal.processor.ElasticsearchConnection;
 import de.pangaea.metadataportal.processor.MetadataDocument;
 import de.pangaea.metadataportal.utils.BooleanParser;
 import de.pangaea.metadataportal.utils.ExtendedDigester;
+import de.pangaea.metadataportal.utils.HttpClientUtils;
 import de.pangaea.metadataportal.utils.HugeStringHashBuilder;
-import de.pangaea.metadataportal.utils.SimpleCookieHandler;
 
 /**
  * Abstract base class for OAI harvesting support in panFMP. Use one of the
@@ -100,7 +108,7 @@ public abstract class OAIHarvesterBase extends Harvester {
   protected final int retryTime;
   
   /** the timeout from configuration */
-  protected final int timeout;
+  protected final Duration timeout;
   
   /** the authorizationHeader from configuration */
   protected final String authorizationHeader;
@@ -114,6 +122,9 @@ public abstract class OAIHarvesterBase extends Harvester {
   /** Contains all valid identifiers, if not {@code null}. Will be initialized by subclasses. */
   private HugeStringHashBuilder validIdentifiersBuilder = null;
 
+  /** HttpClient to use, configured with correct connect timeout. */
+  protected final HttpClient httpClient;
+  
   /**
    * The harvester should filter incoming documents according to its set
    * metadata. Should be disabled for OAI-PMH protocol with only one set.
@@ -135,7 +146,7 @@ public abstract class OAIHarvesterBase extends Harvester {
     
     retryCount = Integer.parseInt(iconfig.properties.getProperty("retryCount", Integer.toString(DEFAULT_RETRY_COUNT)));
     retryTime = Integer.parseInt(iconfig.properties.getProperty("retryAfterSeconds", Integer.toString(DEFAULT_RETRY_TIME)));
-    timeout = Integer.parseInt(iconfig.properties.getProperty("timeoutAfterSeconds", Integer.toString(DEFAULT_TIMEOUT)));
+    timeout = Duration.ofSeconds(Integer.parseInt(iconfig.properties.getProperty("timeoutAfterSeconds", Integer.toString(DEFAULT_TIMEOUT))));
     authorizationHeader = iconfig.properties.getProperty("authorizationHeader");
     metadataPrefix = iconfig.properties.getProperty("metadataPrefix");
     if (metadataPrefix == null) {
@@ -144,12 +155,17 @@ public abstract class OAIHarvesterBase extends Harvester {
     identifierPrefix = iconfig.properties.getProperty("identifierPrefix", "");
     ignoreDatestamps = BooleanParser.parseBoolean(iconfig.properties.getProperty("ignoreDatestamps", "false"));
     deleteMissingDocuments = BooleanParser.parseBoolean(iconfig.properties.getProperty("deleteMissingDocuments", "true"));
+    
+    httpClient = HttpClient.newBuilder()
+        .followRedirects(Redirect.NORMAL)
+        .connectTimeout(timeout)
+        .cookieHandler(new CookieManager(null, CookiePolicy.ACCEPT_ORIGINAL_SERVER))
+        .build();
   }
 
   @Override
   public void open(ElasticsearchConnection es, String targetIndex) throws Exception {
     super.open(es, targetIndex);    
-    SimpleCookieHandler.INSTANCE.enable();
     recreateDigester();
   }
   
@@ -215,7 +231,7 @@ public abstract class OAIHarvesterBase extends Harvester {
    */
   protected boolean doParse(Supplier<ExtendedDigester> digSupplier, String url,
       AtomicReference<Instant> checkModifiedDate) throws Exception {
-    URL u = new URL(url);
+    final URI u = new URI(url);
     for (int retry = 0; retry <= retryCount; retry++) {
       try {
         final ExtendedDigester dig = digSupplier.get();
@@ -234,16 +250,11 @@ public abstract class OAIHarvesterBase extends Harvester {
         // throw the real Exception not the digester one
         if (saxe.getException() != null) throw saxe.getException();
         else throw saxe;
-      } catch (IOException ioe) {
+      } catch (RetryAfterIOException ioe) {
         int after = retryTime;
-        if (ioe instanceof RetryAfterIOException) {
-          if (retry >= retryCount) throw (IOException) ioe.getCause();
-          log.warn("OAI server returned '503 Service Unavailable' with a 'Retry-After' value being set.");
-          after = ((RetryAfterIOException) ioe).getRetryAfter();
-        } else {
-          if (retry >= retryCount) throw ioe;
-          log.error("OAI server access failed with exception: ", ioe);
-        }
+        if (retry >= retryCount) throw (IOException) ioe.getCause();
+        log.warn(ioe.getMessage());
+        after = ((RetryAfterIOException) ioe).getRetryAfter();
         log.info("Retrying after " + after + " seconds ("
             + (retryCount - retry) + " retries left)...");
         try {
@@ -271,13 +282,15 @@ public abstract class OAIHarvesterBase extends Harvester {
       public InputSource resolveEntity(String publicId, String systemId)
           throws IOException, SAXException {
         try {
-          URL url = new URL(systemId);
-          String proto = url.getProtocol().toLowerCase(Locale.ROOT);
+          URI uri = new URI(systemId);
+          String proto = uri.getScheme().toLowerCase(Locale.ROOT);
           if ("http".equals(proto) || "https".equals(proto)) return getInputSource(
-              url, null);
+              uri, null);
           else return (parent == null) ? null : parent.resolveEntity(publicId,
               systemId);
-        } catch (MalformedURLException malu) {
+        } catch (InterruptedException e) {
+          throw new IOException(e);
+        } catch (URISyntaxException e) {
           return (parent == null) ? null : parent.resolveEntity(publicId,
               systemId);
         }
@@ -300,92 +313,90 @@ public abstract class OAIHarvesterBase extends Harvester {
    *          object with the new modification date. Supply <code>null</code>
    *          for no checking of last modification, a last modification date is
    *          then not returned back (as there is no reference).
+   * @throws InterruptedException 
    * @see #getEntityResolver
    */
-  protected InputSource getInputSource(URL url,
-      AtomicReference<Instant> checkModifiedDate) throws IOException {
-    String proto = url.getProtocol().toLowerCase(Locale.ROOT);
+  protected InputSource getInputSource(URI url,
+      AtomicReference<Instant> checkModifiedDate) throws IOException, InterruptedException {
+    String proto = url.getScheme().toLowerCase(Locale.ROOT);
     if (!("http".equals(proto) || "https".equals(proto))) throw new IllegalArgumentException(
         "OAI only allows HTTP(S) as network protocol!");
-    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-    conn.setConnectTimeout(timeout * 1000);
-    conn.setReadTimeout(timeout * 1000);
-    conn.setRequestProperty("User-Agent", USER_AGENT);
+    final var reqBuilder = HttpRequest.newBuilder(url).GET()
+        .timeout(timeout)
+        .setHeader("User-Agent", USER_AGENT)
+        .setHeader("Accept-Charset", StandardCharsets.UTF_8.name() + ", *;q=0.1")
+        .setHeader("Accept", "text/xml, application/xml, *;q=0.1");
+    HttpClientUtils.sendCompressionHeaders(reqBuilder);
     if (authorizationHeader != null) {
-      conn.setRequestProperty("Authorization", authorizationHeader);
+      reqBuilder.header("Authorization", authorizationHeader);
     }
-    
-    conn.setRequestProperty("Accept-Encoding",
-        "gzip, deflate, identity;q=0.3, *;q=0");
-    conn.setRequestProperty("Accept-Charset", StandardCharsets.UTF_8.name() + ", *;q=0.1");
-    conn.setRequestProperty("Accept", "text/xml, application/xml, *;q=0.1");
-    
     if (checkModifiedDate != null && checkModifiedDate.get() != null) {
-      conn.setIfModifiedSince(checkModifiedDate.get().toEpochMilli());
+      reqBuilder.setHeader("If-Modified-Since", DateTimeFormatter.RFC_1123_DATE_TIME.format(checkModifiedDate.get().atOffset(ZoneOffset.UTC)));
     }
-    
-    conn.setUseCaches(false);
-    conn.setInstanceFollowRedirects(true);
+
     log.debug("Opening connection...");
-    InputStream in = null;
+    final HttpResponse<InputStream> resp;
     try {
-      conn.connect();
-      in = conn.getInputStream();
+      resp = httpClient.send(reqBuilder.build(), BodyHandlers.ofInputStream());
     } catch (IOException ioe) {
-      int after, code;
-      try {
-        after = conn.getHeaderFieldInt("Retry-After", -1);
-        code = conn.getResponseCode();
-      } catch (IOException ioe2) {
-        after = -1;
-        code = -1;
-      }
-      if (code == HttpURLConnection.HTTP_UNAVAILABLE && after > 0) throw new RetryAfterIOException(
-          after, ioe);
-      throw ioe;
+      throw new RetryAfterIOException(retryTime, ioe);
     }
-    
-    if (checkModifiedDate != null) {
-      if (conn.getResponseCode() == HttpURLConnection.HTTP_NOT_MODIFIED) {
-        log.debug("File not modified since " + checkModifiedDate.get());
-        if (in != null) in.close();
+    boolean success = false;
+    try {
+      final int statusCode = resp.statusCode();
+      switch (statusCode) {
+        case HttpURLConnection.HTTP_UNAVAILABLE:
+          var retryAfter = resp.headers().firstValue("Retry-After").map(Integer::parseInt);
+          if (retryAfter.isPresent()) {
+            throw new RetryAfterIOException(retryAfter.get(),
+                "OAI server returned '503 Service Unavailable', repeating after " + retryAfter.get() + "s.");
+          }
+          throw new IOException("OAI service unavailable (status 503)");
+        case HttpURLConnection.HTTP_NOT_MODIFIED:
+          if (checkModifiedDate != null) {
+            log.debug("File not modified since " + checkModifiedDate.get());
+            return null;
+          }
+          throw new IOException("OAI service returned 'not modified', although");
+        case HttpURLConnection.HTTP_OK:
+          break;
+        default:
+          if (statusCode >= 500) {
+            throw new RetryAfterIOException(retryTime, "OAI Server returned error code, repeating after " + retryTime + "s: " + statusCode);
+          }
+          throw new IOException("OAI service returned invalid status code: " + statusCode);
+      }
+      
+      if (checkModifiedDate != null) {
+        var d = resp.headers().firstValue("Last-Modified").map(DateTimeFormatter.RFC_1123_DATE_TIME::parse).map(Instant::from).orElse(null);
+        checkModifiedDate.set(d);
+      }
+      
+      // get charset from content-type to fill into InputSource to prevent
+      // SAXParser from guessing it
+      // if charset is superseded by <?xml ?> declaration, it is changed later by
+      // parser
+      final String charset = resp.headers().firstValue("Content-Type").map(contentType -> {
+        contentType = contentType.toLowerCase(Locale.ROOT);
+        int charsetStart = contentType.indexOf("charset=");
+        if (charsetStart >= 0) {
+          int charsetEnd = contentType.indexOf(";", charsetStart);
+          if (charsetEnd == -1) charsetEnd = contentType.length();
+          charsetStart += "charset=".length();
+          return contentType.substring(charsetStart, charsetEnd).trim();
+        }
         return null;
-      }
-      long d = conn.getLastModified();
-      checkModifiedDate.set((d == 0L) ? null : Instant.ofEpochMilli(d));
+      }).orElse(null);
+      log.debug("Charset from Content-Type: '" + charset + "'");
+      
+      final InputSource src = new InputSource(HttpClientUtils.getDecompressingInputStream(resp));
+      src.setSystemId(url.toString());
+      src.setEncoding(charset);
+      success = true;
+      return src;
+    } finally {
+      if (!success) resp.body().close();
     }
-    
-    String encoding = conn.getContentEncoding();
-    if (encoding == null) encoding = "identity";
-    encoding = encoding.toLowerCase(Locale.ROOT);
-    log.debug("HTTP server uses " + encoding + " content encoding.");
-    if ("gzip".equals(encoding)) in = new GZIPInputStream(in);
-    else if ("deflate".equals(encoding)) in = new InflaterInputStream(in);
-    else if (!"identity".equals(encoding)) throw new IOException(
-        "Server uses an invalid content encoding: " + encoding);
-    
-    // get charset from content-type to fill into InputSource to prevent
-    // SAXParser from guessing it
-    // if charset is superseded by <?xml ?> declaration, it is changed later by
-    // parser
-    String contentType = conn.getContentType();
-    String charset = null;
-    if (contentType != null) {
-      contentType = contentType.toLowerCase(Locale.ROOT);
-      int charsetStart = contentType.indexOf("charset=");
-      if (charsetStart >= 0) {
-        int charsetEnd = contentType.indexOf(";", charsetStart);
-        if (charsetEnd == -1) charsetEnd = contentType.length();
-        charsetStart += "charset=".length();
-        charset = contentType.substring(charsetStart, charsetEnd).trim();
-      }
-    }
-    log.debug("Charset from Content-Type: '" + charset + "'");
-    
-    InputSource src = new InputSource(in);
-    src.setSystemId(url.toString());
-    src.setEncoding(charset);
-    return src;
   }
   
   /** Resets the internal variables. */
@@ -420,7 +431,6 @@ public abstract class OAIHarvesterBase extends Harvester {
       setValidIdentifiers(validIdentifiersBuilder.build());
     }
     reset();
-    SimpleCookieHandler.INSTANCE.disable();
     super.close(cleanShutdown);
   }
   

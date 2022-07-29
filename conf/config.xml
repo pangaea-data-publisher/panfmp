@@ -147,7 +147,7 @@
 		<cfg:harvester id="pangaea-carboocean">
 			<cfg:class>de.pangaea.metadataportal.harvester.OAIHarvester</cfg:class>
 			<cfg:properties>
-				<cfg:baseUrl>http://ws.pangaea.de/oai/</cfg:baseUrl>
+				<cfg:baseUrl>https://ws.pangaea.de/oai/provider</cfg:baseUrl>
 				<cfg:metadataPrefix>dif</cfg:metadataPrefix>
 				<cfg:setSpec>CARBOOCEAN</cfg:setSpec>
 				<cfg:validate>false</cfg:validate>

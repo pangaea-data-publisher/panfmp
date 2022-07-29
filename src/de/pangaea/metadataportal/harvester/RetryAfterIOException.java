@@ -26,8 +26,16 @@ package de.pangaea.metadataportal.harvester;
 public class RetryAfterIOException extends java.io.IOException {
   
   public RetryAfterIOException(int retryAfter, java.io.IOException ioe) {
-    super();
+    this(retryAfter, "HTTP request delayed by " + retryAfter + " seconds: " + ioe.getMessage(), ioe);
+  }
+  
+  public RetryAfterIOException(int retryAfter, String message, java.io.IOException ioe) {
+    this(retryAfter, message);
     initCause(ioe);
+  }
+  
+  public RetryAfterIOException(int retryAfter, String message) {
+    super(message);
     this.retryAfter = retryAfter;
   }
   

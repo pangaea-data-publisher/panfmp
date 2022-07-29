@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.lang.reflect.InvocationTargetException;
-import java.net.CookieHandler;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -59,7 +58,6 @@ import de.pangaea.metadataportal.utils.ElementNameCallParamRule;
 import de.pangaea.metadataportal.utils.ExtendedDigester;
 import de.pangaea.metadataportal.utils.HostAndPort;
 import de.pangaea.metadataportal.utils.PublicForDigesterUse;
-import de.pangaea.metadataportal.utils.SimpleCookieHandler;
 import de.pangaea.metadataportal.utils.StaticFactories;
 
 /**
@@ -79,13 +77,6 @@ public final class Config {
     this.file = file;
     
     log.info(Package.getFullPackageDescription());
-    
-    final CookieHandler defCookieH = CookieHandler.getDefault();
-    if (defCookieH != null && defCookieH != SimpleCookieHandler.INSTANCE) {
-      log.warn("There is a CookieHandler already registered with the JVM, panFMP's customized HTTP cookie handling will be not available during harvesting.");
-    } else {
-      CookieHandler.setDefault(SimpleCookieHandler.INSTANCE);
-    }
     
     try {
       dig = new ExtendedDigester();
