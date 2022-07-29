@@ -178,10 +178,13 @@ public class WebCrawlingHarvester extends SingleFileEntitiesHarvester {
                   // initial redirect for sure
     harvested.add(urlStr);
     URI newbaseURL = processURL(new URI(urlStr));
+    if (newbaseURL == null) {
+      throw new IOException("Cannot find base URL: " + urlStr);
+    }
     
     // get an URL that points to the current directory
     // from now on this is used as baseURL
-    baseURL = ("".equals(newbaseURL.getPath())) ? newbaseURL.toString()
+    baseURL = newbaseURL.getPath().isEmpty() ? newbaseURL.toString()
         : newbaseURL.resolve("./").toString();
     log.debug("URL directory which harvesting may not escape: " + baseURL);
     
@@ -367,7 +370,7 @@ public class WebCrawlingHarvester extends SingleFileEntitiesHarvester {
           case HttpURLConnection.HTTP_NOT_FOUND:
           case HttpURLConnection.HTTP_GONE:
             log.warn("Cannot find URL '" + resp.uri() + "'.");
-            return uri;
+            return null;
           default:
             if (statusCode >= 500) {
               throw new RetryAfterIOException(retryTime, "Webserver returned error code, repeating after " + retryTime + "s: " + statusCode);
