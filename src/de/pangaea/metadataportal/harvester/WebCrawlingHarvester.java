@@ -70,6 +70,8 @@ import de.pangaea.metadataportal.utils.StaticFactories;
  * <li><code>retryAfterSeconds</code>: time between retries in seconds (default:
  * 60)</li>
  * <li><code>timeoutAfterSeconds</code>: HTTP Timeout for harvesting in seconds</li>
+ * <li><code>authorizationHeader</code>: Optional 'Authorization' HTTP header contents
+ * to be sent with request.</li>
  * <li><code>filenameFilter</code>: regex to match the filename. The regex is
  * applied against the whole filename (this is like ^pattern$)! (default: none)</li>
  * <li><code>contentTypes</code>: MIME types of documents to index (maybe
