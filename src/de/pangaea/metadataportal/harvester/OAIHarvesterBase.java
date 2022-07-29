@@ -395,7 +395,11 @@ public abstract class OAIHarvesterBase extends Harvester {
       success = true;
       return src;
     } finally {
-      if (!success) resp.body().close();
+      if (!success) try {
+        resp.body().close();
+      } catch (IOException ioe) {
+        // ignore
+      }
     }
   }
   

@@ -356,26 +356,36 @@ public class WebCrawlingHarvester extends SingleFileEntitiesHarvester {
         } catch (IOException ioe) {
           throw new RetryAfterIOException(retryTime, ioe);
         }
-        final int statusCode = resp.statusCode();
-        switch (statusCode) {
-          case HttpURLConnection.HTTP_UNAVAILABLE:
-            var retryAfter = resp.headers().firstValue("Retry-After").map(Integer::parseInt);
-            if (retryAfter.isPresent()) {
-              throw new RetryAfterIOException(retryAfter.get(),
-                  "Webserver returned '503 Service Unavailable', repeating after " + retryAfter.get() + "s.");
-            }
-            throw new IOException("Webserver unavailable (status 503)");
-          case HttpURLConnection.HTTP_OK:
-            break;
-          case HttpURLConnection.HTTP_NOT_FOUND:
-          case HttpURLConnection.HTTP_GONE:
-            log.warn("Cannot find URL '" + resp.uri() + "'.");
-            return null;
-          default:
-            if (statusCode >= 500) {
+        boolean success = false;
+        try {
+          final int statusCode = resp.statusCode();
+          switch (statusCode) {
+            case HttpURLConnection.HTTP_UNAVAILABLE:
+              var retryAfter = resp.headers().firstValue("Retry-After").map(Integer::parseInt);
+              if (retryAfter.isPresent()) {
+                throw new RetryAfterIOException(retryAfter.get(),
+                    "Webserver returned '503 Service Unavailable', repeating after " + retryAfter.get() + "s.");
+              }
               throw new RetryAfterIOException(retryTime, "Webserver returned error code, repeating after " + retryTime + "s: " + statusCode);
-            }
-            throw new IOException("Webserver returned invalid status code: " + statusCode);
+            case HttpURLConnection.HTTP_OK:
+              break;
+            case HttpURLConnection.HTTP_NOT_FOUND:
+            case HttpURLConnection.HTTP_GONE:
+              log.warn("Cannot find URL '" + resp.uri() + "'.");
+              return null;
+            default:
+              if (statusCode >= 500) {
+                throw new RetryAfterIOException(retryTime, "Webserver returned error code, repeating after " + retryTime + "s: " + statusCode);
+              }
+              throw new IOException("Webserver returned invalid status code: " + statusCode);
+          }
+          success = true;
+        } finally {
+          if (!success) try {
+            resp.body().close();
+          } catch (IOException ioe) {
+            // ignore
+          }
         }
         
         try (final InputStream in = HttpClientUtils.getDecompressingInputStream(resp)) {
