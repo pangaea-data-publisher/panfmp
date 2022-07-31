@@ -337,7 +337,7 @@ public abstract class OAIHarvesterBase extends Harvester {
     log.debug("Opening connection...");
     final HttpResponse<InputStream> resp;
     try {
-      resp = httpClient.send(reqBuilder.build(), BodyHandlers.ofInputStream());
+      resp = HttpClientUtils.sendHttpRequestWithRetry(httpClient, reqBuilder.build(), BodyHandlers.ofInputStream());
     } catch (IOException ioe) {
       throw new RetryAfterIOException(retryTime, ioe);
     }

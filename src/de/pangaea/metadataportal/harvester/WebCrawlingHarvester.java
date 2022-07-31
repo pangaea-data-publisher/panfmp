@@ -352,7 +352,7 @@ public class WebCrawlingHarvester extends SingleFileEntitiesHarvester {
       try {
         final HttpResponse<InputStream> resp;
         try {
-          resp = httpClient.send(reqBuilder.build(), BodyHandlers.ofInputStream());
+          resp = HttpClientUtils.sendHttpRequestWithRetry(httpClient, reqBuilder.build(), BodyHandlers.ofInputStream());
         } catch (IOException ioe) {
           throw new RetryAfterIOException(retryTime, ioe);
         }

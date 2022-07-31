@@ -18,6 +18,7 @@ package de.pangaea.metadataportal.utils;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.Locale;
@@ -52,5 +53,19 @@ public final class HttpClientUtils {
   public static void sendCompressionHeaders(final HttpRequest.Builder builder) {
     builder.setHeader("Accept-Encoding", "gzip, deflate, identity;q=0.3, *;q=0");
   }
+  
+  /** Workaround for: https://stackoverflow.com/questions/55087292/how-to-handle-http-2-goaway-with-httpclient */
+  public static <T> HttpResponse<T> sendHttpRequestWithRetry(HttpClient client, HttpRequest request,
+      HttpResponse.BodyHandler<T> responseBodyHandler) throws IOException, InterruptedException {
+    try {
+      return client.send(request, responseBodyHandler);
+    } catch (IOException e) {
+      if (e.getMessage() != null && e.getMessage().contains("GOAWAY")) {
+        return client.send(request, responseBodyHandler);
+      }
+      throw e;
+    }
+  }
+
     
 }
