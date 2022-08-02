@@ -288,8 +288,6 @@ public abstract class OAIHarvesterBase extends Harvester {
               uri, null);
           else return (parent == null) ? null : parent.resolveEntity(publicId,
               systemId);
-        } catch (InterruptedException e) {
-          throw new IOException(e);
         } catch (URISyntaxException e) {
           return (parent == null) ? null : parent.resolveEntity(publicId,
               systemId);
@@ -313,11 +311,10 @@ public abstract class OAIHarvesterBase extends Harvester {
    *          object with the new modification date. Supply <code>null</code>
    *          for no checking of last modification, a last modification date is
    *          then not returned back (as there is no reference).
-   * @throws InterruptedException 
    * @see #getEntityResolver
    */
   protected InputSource getInputSource(URI url,
-      AtomicReference<Instant> checkModifiedDate) throws IOException, InterruptedException {
+      AtomicReference<Instant> checkModifiedDate) throws IOException {
     String proto = url.getScheme().toLowerCase(Locale.ROOT);
     if (!("http".equals(proto) || "https".equals(proto))) throw new IllegalArgumentException(
         "OAI only allows HTTP(S) as network protocol!");

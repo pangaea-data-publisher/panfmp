@@ -56,16 +56,20 @@ public final class HttpClientUtils {
   
   /** Workaround for: https://stackoverflow.com/questions/55087292/how-to-handle-http-2-goaway-with-httpclient */
   public static <T> HttpResponse<T> sendHttpRequestWithRetry(HttpClient client, HttpRequest request,
-      HttpResponse.BodyHandler<T> responseBodyHandler) throws IOException, InterruptedException {
+      HttpResponse.BodyHandler<T> responseBodyHandler) throws IOException {
     try {
-      return client.send(request, responseBodyHandler);
-    } catch (IOException e) {
-      if (e.getMessage() != null && e.getMessage().contains("GOAWAY")) {
+      try {
         return client.send(request, responseBodyHandler);
+      } catch (IOException e) {
+        if (e.getMessage() != null && e.getMessage().contains("GOAWAY")) {
+          return client.send(request, responseBodyHandler);
+        }
+        throw e;
       }
-      throw e;
+    } catch (InterruptedException ie) {
+      Thread.currentThread().interrupt();
+      throw new IOException("Connection interrupted.");
     }
   }
-
     
 }
