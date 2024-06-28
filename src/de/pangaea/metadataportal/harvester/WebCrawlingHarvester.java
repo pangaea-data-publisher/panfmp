@@ -361,12 +361,13 @@ public class WebCrawlingHarvester extends SingleFileEntitiesHarvester {
           final int statusCode = resp.statusCode();
           switch (statusCode) {
             case HttpURLConnection.HTTP_UNAVAILABLE:
+              final var ioe1 = new IOException("Webserver returned '503 Service Unavailable'");
               var retryAfter = resp.headers().firstValue("Retry-After").map(Integer::parseInt);
               if (retryAfter.isPresent()) {
                 throw new RetryAfterIOException(retryAfter.get(),
-                    "Webserver returned '503 Service Unavailable', repeating after " + retryAfter.get() + "s.");
+                    "Webserver returned '503 Service Unavailable', repeating after " + retryAfter.get() + "s.", ioe1);
               }
-              throw new RetryAfterIOException(retryTime, "Webserver returned error code, repeating after " + retryTime + "s: " + statusCode);
+              throw new RetryAfterIOException(retryTime, "Webserver returned error code, repeating after " + retryTime + "s: " + statusCode, ioe1);
             case HttpURLConnection.HTTP_OK:
               break;
             case HttpURLConnection.HTTP_NOT_FOUND:
@@ -374,10 +375,11 @@ public class WebCrawlingHarvester extends SingleFileEntitiesHarvester {
               log.warn("Cannot find URL '" + resp.uri() + "'.");
               return null;
             default:
+              final var ioe2 = new IOException("Webserver returned invalid status code: " + statusCode);
               if (statusCode >= 500) {
-                throw new RetryAfterIOException(retryTime, "Webserver returned error code, repeating after " + retryTime + "s: " + statusCode);
+                throw new RetryAfterIOException(retryTime, "Webserver returned error code, repeating after " + retryTime + "s: " + statusCode, ioe2);
               }
-              throw new IOException("Webserver returned invalid status code: " + statusCode);
+              throw ioe2;
           }
           success = true;
         } finally {
@@ -458,7 +460,7 @@ public class WebCrawlingHarvester extends SingleFileEntitiesHarvester {
         }
       } catch (RetryAfterIOException ioe) {
         int after = retryTime;
-        if (retry >= retryCount) throw (IOException) ioe.getCause();
+        if (retry >= retryCount) throw ioe.getCause();
         log.warn(ioe.getMessage());
         after = ((RetryAfterIOException) ioe).getRetryAfter();
         log.info("Retrying after " + after + " seconds ("

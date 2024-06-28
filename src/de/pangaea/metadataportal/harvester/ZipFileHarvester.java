@@ -230,9 +230,10 @@ public class ZipFileHarvester extends SingleFileEntitiesHarvester {
       } catch (IOException ioe) {
         int after = retryTime;
         if (ioe instanceof RetryAfterIOException) {
-          if (retry >= retryCount) throw (IOException) ioe.getCause();
+          RetryAfterIOException ra = (RetryAfterIOException) ioe;
+          if (retry >= retryCount) throw ra.getCause();
           log.warn("HTTP server returned '503 Service Unavailable' with a 'Retry-After' value being set.");
-          after = ((RetryAfterIOException) ioe).getRetryAfter();
+          after = ra.getRetryAfter();
         } else {
           if (retry >= retryCount) throw ioe;
           log.error("Server access failed with exception: ", ioe);

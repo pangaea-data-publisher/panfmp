@@ -252,7 +252,7 @@ public abstract class OAIHarvesterBase extends Harvester {
         else throw saxe;
       } catch (RetryAfterIOException ioe) {
         int after = retryTime;
-        if (retry >= retryCount) throw (IOException) ioe.getCause();
+        if (retry >= retryCount) throw ioe.getCause();
         log.warn(ioe.getMessage());
         after = ((RetryAfterIOException) ioe).getRetryAfter();
         log.info("Retrying after " + after + " seconds ("
@@ -343,25 +343,27 @@ public abstract class OAIHarvesterBase extends Harvester {
       final int statusCode = resp.statusCode();
       switch (statusCode) {
         case HttpURLConnection.HTTP_UNAVAILABLE:
+          final var ioe1 = new IOException("OAI server returned '503 Service Unavailable'");
           var retryAfter = resp.headers().firstValue("Retry-After").map(Integer::parseInt);
           if (retryAfter.isPresent()) {
             throw new RetryAfterIOException(retryAfter.get(),
-                "OAI server returned '503 Service Unavailable', repeating after " + retryAfter.get() + "s.");
+                "OAI server returned '503 Service Unavailable', repeating after " + retryAfter.get() + "s.", ioe1);
           }
-          throw new IOException("OAI service unavailable (status 503)");
+          throw new RetryAfterIOException(retryTime, "OAI server returned error code, repeating after " + retryTime + "s: " + statusCode, ioe1);
         case HttpURLConnection.HTTP_NOT_MODIFIED:
           if (checkModifiedDate != null) {
             log.debug("File not modified since " + checkModifiedDate.get());
             return null;
           }
-          throw new IOException("OAI service returned 'not modified', although");
+          throw new IOException("OAI service returned 'not modified', although we did no 'If-Modified-Since' request.");
         case HttpURLConnection.HTTP_OK:
           break;
         default:
+          final var ioe2 = new IOException("OAI service returned invalid status code: " + statusCode);
           if (statusCode >= 500) {
-            throw new RetryAfterIOException(retryTime, "OAI Server returned error code, repeating after " + retryTime + "s: " + statusCode);
+            throw new RetryAfterIOException(retryTime, "OAI Server returned error code, repeating after " + retryTime + "s: " + statusCode, ioe2);
           }
-          throw new IOException("OAI service returned invalid status code: " + statusCode);
+          throw ioe2;
       }
       
       if (checkModifiedDate != null) {

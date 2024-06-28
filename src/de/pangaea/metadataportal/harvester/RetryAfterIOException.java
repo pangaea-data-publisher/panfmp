@@ -16,6 +16,8 @@
 
 package de.pangaea.metadataportal.harvester;
 
+import java.io.IOException;
+
 /**
  * Thrown when HTTP server responds with
  * {@link java.net.HttpURLConnection#HTTP_UNAVAILABLE}.
@@ -23,7 +25,7 @@ package de.pangaea.metadataportal.harvester;
  * @author Uwe Schindler
  */
 @SuppressWarnings("serial")
-public class RetryAfterIOException extends java.io.IOException {
+public class RetryAfterIOException extends IOException {
   
   public RetryAfterIOException(int retryAfter, java.io.IOException ioe) {
     this(retryAfter, "HTTP request delayed by " + retryAfter + " seconds: " + ioe.getMessage(), ioe);
@@ -43,5 +45,10 @@ public class RetryAfterIOException extends java.io.IOException {
     return retryAfter;
   }
   
+  @Override
+  public IOException getCause() {
+    return (IOException) getCause();
+  }
+
   private int retryAfter;
 }

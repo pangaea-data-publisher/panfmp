@@ -29,7 +29,7 @@
     <dependency org="io.undertow" name="undertow-core" rev="1.4.28.Final" conf="build,addons->default"/>
     
     <!-- build tools: -->
-    <dependency org="de.thetaphi" name="forbiddenapis" rev="3.5" conf="buildtools->default"/>
+    <dependency org="de.thetaphi" name="forbiddenapis" rev="3.7" conf="buildtools->default"/>
 
     <!-- Those are not used at all: -->
     <exclude org="xml-apis" module="xml-apis"/>
