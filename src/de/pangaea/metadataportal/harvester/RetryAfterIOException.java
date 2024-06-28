@@ -47,7 +47,7 @@ public class RetryAfterIOException extends IOException {
   
   @Override
   public IOException getCause() {
-    return (IOException) getCause();
+    return (IOException) super.getCause();
   }
 
   private int retryAfter;
