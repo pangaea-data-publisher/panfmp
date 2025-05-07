@@ -12,15 +12,15 @@
     <dependency org="org.elasticsearch.plugin" name="transport-netty4-client" rev="5.6.16" conf="build,bundle->default"/>
     <dependency org="org.elasticsearch.plugin" name="reindex-client" rev="5.6.16" conf="build,bundle->default"/>
 
-    <dependency org="commons-logging" name="commons-logging" rev="1.2" conf="build,bundle->default"/>
+    <dependency org="commons-logging" name="commons-logging" rev="1.3.5" conf="build,bundle->default"/>
     <dependency org="commons-digester" name="commons-digester" rev="2.1" conf="build,bundle->default"/>
     <dependency org="xerces" name="xercesImpl" rev="2.12.2" conf="build,bundle->default"/>
     <dependency org="xalan" name="xalan" rev="2.7.3" conf="build,bundle->default"/>
     <dependency org="jakarta.xml.bind" name="jakarta.xml.bind-api" rev="3.0.1" conf="build,bundle->default"/>
     
-    <dependency org="org.apache.logging.log4j" name="log4j-api" rev="2.17.2" conf="build,bundle->default"/>
-    <dependency org="org.apache.logging.log4j" name="log4j-core" rev="2.17.2" conf="build,bundle->default"/>
-    <dependency org="org.apache.logging.log4j" name="log4j-jcl" rev="2.17.2"  conf="build,bundle->default"/>
+    <dependency org="org.apache.logging.log4j" name="log4j-api" rev="2.24.3" conf="build,bundle->default"/>
+    <dependency org="org.apache.logging.log4j" name="log4j-core" rev="2.24.3" conf="build,bundle->default"/>
+    <dependency org="org.apache.logging.log4j" name="log4j-jcl" rev="2.24.3"  conf="build,bundle->default"/>
     
     <dependency org="net.sourceforge.nekohtml" name="nekohtml" rev="1.9.22" conf="bundle->default"/>
     <dependency org="com.sun.xml.bind" name="jaxb-impl" rev="3.0.2" conf="bundle->default"/>
@@ -29,7 +29,7 @@
     <dependency org="io.undertow" name="undertow-core" rev="1.4.28.Final" conf="build,addons->default"/>
     
     <!-- build tools: -->
-    <dependency org="de.thetaphi" name="forbiddenapis" rev="3.7" conf="buildtools->default"/>
+    <dependency org="de.thetaphi" name="forbiddenapis" rev="3.9" conf="buildtools->default"/>
 
     <!-- Those are not used at all: -->
     <exclude org="xml-apis" module="xml-apis"/>
